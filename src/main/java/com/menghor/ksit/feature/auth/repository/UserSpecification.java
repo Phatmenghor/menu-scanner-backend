@@ -10,13 +10,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
 public class UserSpecification {
-    public static Specification<UserEntity> excludeShopAdmin() {
-        return (root, query, criteriaBuilder) -> {
-            // Join roles to check for non-SHOP_ADMIN
-            Join<UserEntity, Role> roleJoin = root.join("roles", JoinType.INNER);
-            return criteriaBuilder.notEqual(roleJoin.get("name"), RoleEnum.SHOP_ADMIN);
-        };
-    }
 
     public static Specification<UserEntity> hasUsername(String username) {
         return (root, query, criteriaBuilder) -> {
@@ -42,31 +35,39 @@ public class UserSpecification {
         };
     }
 
-    // Specification for ALL users (including SHOP_ADMIN)
-    public static Specification<UserEntity> createAllRolesSpecification(String username, Status status, RoleEnum role) {
-        Specification<UserEntity> spec = Specification.where(null);
-
-        if (StringUtils.hasText(username)) {
-            spec = spec.and(hasUsername(username));
-        }
-
-        if (status != null) {
-            spec = spec.and(hasStatus(status));
-        }
-
-        if (role != null) {
-            spec = spec.and(hasRole(role));
-        }
-
-        return spec;
+    public static Specification<UserEntity> hasName(String name) {
+        return (root, query, criteriaBuilder) -> {
+            if (!StringUtils.hasText(name)) return criteriaBuilder.conjunction();
+            String searchTerm = "%" + name.toLowerCase() + "%";
+            return criteriaBuilder.or(
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")), searchTerm),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("lastName")), searchTerm)
+            );
+        };
     }
 
-    // Specification excluding SHOP_ADMIN by default
-    public static Specification<UserEntity> createSpecification(String username, Status status, RoleEnum role) {
-        Specification<UserEntity> spec = Specification.where(excludeShopAdmin());
+    // Combined search across multiple fields
+    public static Specification<UserEntity> search(String searchTerm) {
+        return (root, query, criteriaBuilder) -> {
+            if (!StringUtils.hasText(searchTerm)) return criteriaBuilder.conjunction();
 
-        if (StringUtils.hasText(username)) {
-            spec = spec.and(hasUsername(username));
+            String term = "%" + searchTerm.toLowerCase() + "%";
+            return criteriaBuilder.or(
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("username")), term),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")), term),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("lastName")), term),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("studentId")), term),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("employeeId")), term)
+            );
+        };
+    }
+
+    // Specification for all users
+    public static Specification<UserEntity> createAllRolesSpecification(String searchTerm, Status status, RoleEnum role) {
+        Specification<UserEntity> spec = Specification.where(null);
+
+        if (StringUtils.hasText(searchTerm)) {
+            spec = spec.and(search(searchTerm));
         }
 
         if (status != null) {

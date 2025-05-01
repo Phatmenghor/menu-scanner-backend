@@ -16,7 +16,6 @@ import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.RoleRepository;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.auth.security.JWTGenerator;
-import com.menghor.ksit.feature.setting.repository.SubscriptionRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,8 +29,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -46,7 +45,6 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JWTGenerator jwtGenerator;
     private final UserMapper userMapper;
-    private final SubscriptionRepository subscriptionRepository;
 
     @PostMapping("login")
     public ApiResponse<AuthResponseDto> login(@RequestBody LoginDto loginDto) {
@@ -56,21 +54,6 @@ public class AuthController {
         }
 
         UserEntity userEntity = userEntityOpt.get();
-
-        // Additional check for SHOP_ADMIN role
-        boolean isShopAdmin = userEntity.getRoles().stream()
-                .anyMatch(role -> role.getName() == RoleEnum.SHOP_ADMIN);
-
-        if (isShopAdmin) {
-            boolean hasActiveSubscription = subscriptionRepository
-                    .hasActiveSubscription(userEntity.getId(), LocalDateTime.now());
-
-            if (!hasActiveSubscription) {
-                log.warn("Shop admin user {} attempted to login without active subscription",
-                        userEntity.getUsername());
-                throw new BadRequestException("Your subscription has expired. Please renew to continue.");
-            }
-        }
 
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -99,16 +82,38 @@ public class AuthController {
             throw new DuplicateNameException("Email is already in use, please choose another one.");
         }
 
-        // Fetch the role safely
-        Role role = roleRepository.findByName(registerDto.getRole())
-                .orElseThrow(() -> new BadRequestException("Invalid role provided."));
-
+        // Create user entity
         UserEntity user = new UserEntity();
         user.setUsername(registerDto.getEmail());
         user.setPassword(passwordEncoder.encode(registerDto.getPassword()));
-        user.setRoles(Collections.singletonList(role));
+
+        // Handle multiple roles assignment
+        List<Role> roles = new ArrayList<>();
+
+        if (registerDto.getRoles() != null && !registerDto.getRoles().isEmpty()) {
+            // Add multiple roles if provided
+            for (RoleEnum roleEnum : registerDto.getRoles()) {
+                Role role = roleRepository.findByName(roleEnum)
+                        .orElseThrow(() -> new BadRequestException("Invalid role provided: " + roleEnum));
+                roles.add(role);
+            }
+        } else if (registerDto.getRole() != null) {
+            // For backward compatibility - handle single role assignment
+            Role role = roleRepository.findByName(registerDto.getRole())
+                    .orElseThrow(() -> new BadRequestException("Invalid role provided."));
+            roles.add(role);
+        } else {
+            // Default to STUDENT role if nothing specified
+            Role defaultRole = roleRepository.findByName(RoleEnum.STUDENT)
+                    .orElseThrow(() -> new BadRequestException("Default role not found."));
+            roles.add(defaultRole);
+        }
+
+        user.setRoles(roles);
+
         // Always set a status value
-        user.setStatus(registerDto.getStatus() != null ? registerDto.getStatus() : Status.INACTIVE);
+        user.setStatus(registerDto.getStatus() != null ? registerDto.getStatus() : Status.ACTIVE);
+
         // Save the user
         UserEntity savedUser = userRepository.save(user);
 

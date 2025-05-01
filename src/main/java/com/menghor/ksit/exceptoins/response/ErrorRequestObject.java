@@ -11,4 +11,5 @@ public class ErrorRequestObject {
     private Integer statusCode;
     private List<Map<String, String>> message;
     private Date timestamp;
+    private String path;
 }

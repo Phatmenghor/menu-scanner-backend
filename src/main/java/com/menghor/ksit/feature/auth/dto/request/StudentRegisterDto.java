@@ -1,19 +1,20 @@
 package com.menghor.ksit.feature.auth.dto.request;
 
-import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
-import lombok.Data;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-public class RegisterDto {
-
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class StudentRegisterDto {
+    
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
     private String email;
@@ -21,22 +22,19 @@ public class RegisterDto {
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must have at least 6 characters")
     private String password;
-
-    // Single role for backward compatibility
-    private RoleEnum role;
-
-    // Support for multiple roles
-    private List<RoleEnum> roles;
-
-    private Status status = Status.ACTIVE; // Default status is ACTIVE
-
-    // Additional fields for student-specific information
+    
+    @NotBlank(message = "First name is required")
     private String firstName;
+    
+    @NotBlank(message = "Last name is required")
     private String lastName;
-    private String studentId;
+    
     private String contactNumber;
 
-    // Additional fields for staff/admin information
-    private String position;
-    private String department;
+    // Student-specific fields
+    private String studentId;
+    private String grade;
+    private Integer yearOfAdmission;
+    
+    private Status status = Status.ACTIVE; // Default status is ACTIVE
 }

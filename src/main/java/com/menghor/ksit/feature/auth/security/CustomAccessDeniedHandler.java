@@ -1,10 +1,8 @@
 package com.menghor.ksit.feature.auth.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
-import com.menghor.ksit.feature.setting.repository.SubscriptionRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,6 +20,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -53,8 +52,21 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
             try {
                 // Find the user entity with roles
-                UserEntity user = userRepository.findWithRolesAndShopByUsername(username)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+                Optional<UserEntity> userOpt = userRepository.findByUsername(username);
+
+                if (userOpt.isPresent()) {
+                    UserEntity user = userOpt.get();
+                    log.warn("Access denied to user {} (roles: {}) for path: {}",
+                            username,
+                            user.getRoles().stream().map(r -> r.getName().name()).toList(),
+                            request.getRequestURI());
+
+                    errorResponse.put("message", "You don't have permission to access this resource");
+                } else {
+                    errorResponse.put("message", "User not found");
+                }
+
+                response.setStatus(HttpStatus.FORBIDDEN.value());
 
             } catch (Exception e) {
                 // Error finding user

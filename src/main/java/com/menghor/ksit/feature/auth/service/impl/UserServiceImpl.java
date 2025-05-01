@@ -18,8 +18,6 @@ import com.menghor.ksit.feature.auth.repository.RoleRepository;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.auth.repository.UserSpecification;
 import com.menghor.ksit.feature.auth.service.UserService;
-import com.menghor.ksit.feature.setting.mapper.SubscriptionMapper;
-import com.menghor.ksit.feature.setting.repository.SubscriptionRepository;
 import com.menghor.ksit.utils.database.SecurityUtils;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
@@ -32,6 +30,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,21 +43,18 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
-    private final SubscriptionRepository subscriptionRepository;
-    private final SubscriptionMapper subscriptionMapper;
 
     @Override
     public UserResponseDto getAllUsers(UserFilterDto filterDto) {
-        // Default method: excludes SHOP_ADMIN
-        return getUsersWithSpecification(filterDto, UserSpecification::createSpecification);
+        // Default method: includes all users
+        return getUsersWithSpecification(filterDto, UserSpecification::createAllRolesSpecification);
     }
 
     @Override
     public UserResponseDto getAllUsersIncludingShopAdmin(UserFilterDto filterDto) {
-        // Method to get ALL users including SHOP_ADMIN
-        return getUsersWithSpecification(filterDto, UserSpecification::createAllRolesSpecification);
+        // This method now does the same as getAllUsers for backward compatibility
+        return getAllUsers(filterDto);
     }
-
 
     private UserResponseDto getUsersWithSpecification(
             UserFilterDto filterDto,
@@ -88,7 +84,7 @@ public class UserServiceImpl implements UserService {
         // Find users with specification
         Page<UserEntity> userPage = userRepository.findAll(spec, pageable);
 
-        log.info("Found {} users before subscription filtering", userPage.getContent().size());
+        log.info("Found {} users", userPage.getContent().size());
 
         // Ensure all users have a status value
         userPage.getContent().forEach(user -> {
@@ -98,30 +94,12 @@ public class UserServiceImpl implements UserService {
             }
         });
 
-        // Use the bulk enrichment method in UserMapper
-        List<UserDto> userDtos = userMapper.enrichUsersWithSubscriptions(userPage.getContent());
+        // Convert to DTOs
+        List<UserDto> userDtos = userPage.getContent().stream()
+                .map(userMapper::toDto)
+                .collect(Collectors.toList());
 
-        // If subscription filter is applied, filter the list manually
-        if (filterDto.getHasActiveSubscription() != null) {
-            boolean wantActive = filterDto.getHasActiveSubscription();
-            List<UserDto> filteredUsers = userDtos.stream()
-                    .filter(user -> user.getHasActiveSubscription() == wantActive)
-                    .collect(Collectors.toList());
-
-            log.info("After subscription filtering: {} users", filteredUsers.size());
-
-            // Create a new UserResponseDto with the filtered content
-            UserResponseDto response = new UserResponseDto();
-            response.setContent(filteredUsers);
-            response.setPageNo(userPage.getNumber() + 1);
-            response.setPageSize(userPage.getSize());
-            response.setTotalElements(filteredUsers.size());  // This is an approximation
-            response.setTotalPages(Math.max(1, (int) Math.ceil((double) filteredUsers.size() / pageSize)));
-            response.setLast(true);  // This is an approximation
-            return response;
-        }
-
-        // Create the UserResponseDto using the mapper
+        // Create the UserResponseDto
         return userMapper.toPageDto(userDtos, userPage);
     }
 
@@ -131,10 +109,9 @@ public class UserServiceImpl implements UserService {
         Specification<UserEntity> createSpec(String username, Status status, RoleEnum role);
     }
 
-
     @Override
     public UserDto getUserById(Long id) {
-        UserEntity user = userRepository.findUserWithShopById(id)
+        UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id)));
 
         // Ensure status is set
@@ -143,8 +120,7 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
         }
 
-        List<UserDto> enrichedUsers = userMapper.enrichUsersWithSubscriptions(List.of(user));
-        return enrichedUsers.get(0);
+        return userMapper.toDto(user);
     }
 
     @Override
@@ -157,8 +133,7 @@ public class UserServiceImpl implements UserService {
             userRepository.save(currentUser);
         }
 
-        List<UserDto> enrichedUsers = userMapper.enrichUsersWithSubscriptions(List.of(currentUser));
-        return enrichedUsers.get(0);
+        return userMapper.toDto(currentUser);
     }
 
     @Override
@@ -167,11 +142,24 @@ public class UserServiceImpl implements UserService {
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id)));
 
-        // Update fields from DTO if provided
+        // Update basic fields from DTO if provided
         userMapper.updateUserFromDto(updateDto, user);
 
-        // If role is being updated, fetch the role entity
-        if (updateDto.getRole() != null) {
+        // Handle roles update - there are two possibilities:
+        // 1. Multiple roles via dto.getRoles()
+        // 2. Single role via dto.getRole() (for backward compatibility)
+
+        if (updateDto.getRoles() != null && !updateDto.getRoles().isEmpty()) {
+            // Handle multiple roles
+            List<Role> roles = new ArrayList<>();
+            for (RoleEnum roleEnum : updateDto.getRoles()) {
+                Role role = roleRepository.findByName(roleEnum)
+                        .orElseThrow(() -> new NotFoundException("Role not found: " + roleEnum));
+                roles.add(role);
+            }
+            user.setRoles(roles);
+        } else if (updateDto.getRole() != null) {
+            // Handle single role (backward compatibility)
             Role role = roleRepository.findByName(updateDto.getRole())
                     .orElseThrow(() -> new NotFoundException("Role not found: " + updateDto.getRole()));
             user.getRoles().clear();
@@ -184,11 +172,8 @@ public class UserServiceImpl implements UserService {
         }
 
         UserEntity updatedUser = userRepository.save(user);
-
-        List<UserDto> enrichedUsers = userMapper.enrichUsersWithSubscriptions(List.of(updatedUser));
-        return enrichedUsers.get(0);
+        return userMapper.toDto(updatedUser);
     }
-
 
     @Transactional
     @Override
@@ -220,7 +205,6 @@ public class UserServiceImpl implements UserService {
         }
 
         UserEntity userEntity = userRepository.save(user);
-
         return userMapper.toDto(userEntity);
     }
 
@@ -245,7 +229,6 @@ public class UserServiceImpl implements UserService {
         }
 
         UserEntity userEntity = userRepository.save(user);
-
         return userMapper.toDto(userEntity);
     }
 }

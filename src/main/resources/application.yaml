@@ -8,12 +8,12 @@ spring:
       show-sql: true
       format_sql: true
     properties:
-        hibernate:
-            jdbc:
-              lob:
-                non_contextual_creation: true
-            temp:
-                use_jdbc_metadata_defaults: false
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        temp:
+          use_jdbc_metadata_defaults: false
 
   datasource:
     url: jdbc:postgresql://localhost:5433/ks_it_school
@@ -38,7 +38,7 @@ logging:
   config: classpath:logback-spring.xml
   level:
     root: INFO
-    com.menghor.smart_shop: INFO
+    com.menghor.ksit: INFO
     org.springframework: INFO
     org.hibernate: WARN
 
@@ -49,7 +49,7 @@ server:
 jwt:
   secret:
     key: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
-  expiration-min: 9999999999999
+  expiration-min: 14400  # 10 days in minutes
 
 springdoc:
   swagger-ui:
@@ -60,4 +60,4 @@ springdoc:
   api-docs:
     path: /v3/api-docs
     enabled: true
-  packagesToScan: com.menghor.smart_shop
+  packagesToScan: com.menghor.ksit

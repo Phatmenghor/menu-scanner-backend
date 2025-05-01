@@ -2,7 +2,6 @@ package com.menghor.ksit.feature.auth.security;
 
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
-import com.menghor.ksit.feature.setting.repository.SubscriptionRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,7 +28,6 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private final JWTGenerator tokenGenerator;
     private final CustomUserDetailsService customUserDetailsService;
     private final UserRepository userRepository;
-    private final SubscriptionRepository subscriptionRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

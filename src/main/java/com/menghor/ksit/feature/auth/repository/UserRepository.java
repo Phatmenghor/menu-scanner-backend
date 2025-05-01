@@ -13,16 +13,12 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpecificationExecutor<UserEntity> {
 
-    @EntityGraph(attributePaths = {"shop", "roles"})
-    @Query("SELECT u FROM UserEntity u LEFT JOIN FETCH u.shop LEFT JOIN FETCH u.roles WHERE u.id = :id")
-    Optional<UserEntity> findUserWithShopById(@Param("id") Long id);
-
-    @EntityGraph(attributePaths = {"roles", "shop"})
+    @EntityGraph(attributePaths = {"roles"})
     Optional<UserEntity> findByUsername(String username);
 
     boolean existsByUsername(String username);
 
-    @EntityGraph(attributePaths = {"roles", "shop"})
-    @Query("SELECT u FROM UserEntity u LEFT JOIN FETCH u.shop LEFT JOIN FETCH u.roles WHERE u.username = :username")
-    Optional<UserEntity> findWithRolesAndShopByUsername(@Param("username") String username);
+    @EntityGraph(attributePaths = {"roles"})
+    @Query("SELECT u FROM UserEntity u JOIN FETCH u.roles WHERE u.id = :id")
+    Optional<UserEntity> findUserWithRolesById(@Param("id") Long id);
 }

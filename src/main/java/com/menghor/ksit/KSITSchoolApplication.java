@@ -11,5 +11,4 @@ public class KSITSchoolApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(KSITSchoolApplication.class, args);
 	}
-
 }

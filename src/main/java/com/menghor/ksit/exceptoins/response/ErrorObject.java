@@ -9,4 +9,5 @@ public class ErrorObject {
     private int statusCode;
     private String message;
     private Date timestamp;
+    private String path;
 }

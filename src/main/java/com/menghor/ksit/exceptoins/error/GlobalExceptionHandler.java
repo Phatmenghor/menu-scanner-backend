@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
 import java.util.*;
@@ -20,50 +21,60 @@ public class GlobalExceptionHandler {
     // Handle NotFoundException
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorObject> handleNotFoundException(NotFoundException ex, WebRequest request) {
+        String path = ((ServletWebRequest) request).getRequest().getRequestURI();
+
         ErrorObject errorObject = new ErrorObject();
         errorObject.setStatusCode(HttpStatus.NOT_FOUND.value());
         errorObject.setMessage(ex.getMessage());
         errorObject.setTimestamp(new Date());
+        errorObject.setPath(path);
         return new ResponseEntity<>(errorObject, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorObject> handleBadCredentialsException(BadCredentialsException ex) {
-        ErrorObject errorObject = new ErrorObject();
-        errorObject.setStatusCode(HttpStatus.UNAUTHORIZED.value());
-        errorObject.setMessage("Invalid username or password");
-        errorObject.setTimestamp(new Date());
-        return new ResponseEntity<>(errorObject, HttpStatus.UNAUTHORIZED);
     }
 
     // Handle BadRequestException
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorObject> handleBadRequestException(BadRequestException ex, WebRequest request) {
+        String path = ((ServletWebRequest) request).getRequest().getRequestURI();
+
         ErrorObject errorObject = new ErrorObject();
         errorObject.setStatusCode(HttpStatus.BAD_REQUEST.value());
         errorObject.setMessage(ex.getMessage());
         errorObject.setTimestamp(new Date());
+        errorObject.setPath(path);
         return new ResponseEntity<>(errorObject, HttpStatus.BAD_REQUEST);
     }
 
     // Generic Exception Handler
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorObject> handleGlobalException(Exception ex, WebRequest request) {
+        String path = ((ServletWebRequest) request).getRequest().getRequestURI();
+
         ErrorObject errorObject = new ErrorObject();
         errorObject.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
         errorObject.setMessage("An unexpected error occurred: " + ex.getMessage());
         errorObject.setTimestamp(new Date());
+        errorObject.setPath(path);
         return new ResponseEntity<>(errorObject, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleInvalidArgumentException(IllegalArgumentException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ErrorObject> handleInvalidArgumentException(IllegalArgumentException ex, WebRequest request) {
+        String path = ((ServletWebRequest) request).getRequest().getRequestURI();
+
+        ErrorObject errorObject = new ErrorObject();
+        errorObject.setStatusCode(HttpStatus.BAD_REQUEST.value());
+        errorObject.setMessage(ex.getMessage());
+        errorObject.setTimestamp(new Date());
+        errorObject.setPath(path);
+        return new ResponseEntity<>(errorObject, HttpStatus.BAD_REQUEST);
     }
 
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorRequestObject> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ErrorRequestObject> handleValidationExceptions(
+            MethodArgumentNotValidException ex, WebRequest request) {
+
+        String path = ((ServletWebRequest) request).getRequest().getRequestURI();
+
         ErrorRequestObject errorObject = new ErrorRequestObject();
         errorObject.setStatusCode(HttpStatus.BAD_REQUEST.value());
 
@@ -79,20 +90,24 @@ public class GlobalExceptionHandler {
         // Set the error messages as a list of maps
         errorObject.setMessage(errorMessages);
         errorObject.setTimestamp(new Date());
+        errorObject.setPath(path);
 
         return new ResponseEntity<>(errorObject, HttpStatus.BAD_REQUEST);
     }
 
     // Handle duplicate name exception
     @ExceptionHandler(DuplicateNameException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateNameException(DuplicateNameException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleDuplicateNameException(
+            DuplicateNameException ex, WebRequest request) {
+
+        String path = ((ServletWebRequest) request).getRequest().getRequestURI();
+
         ErrorResponse errorResponse = new ErrorResponse(
                 "error",              // status
-                ex.getMessage(),            // message (e.g., "Name already exists")
-                HttpStatus.CONFLICT.value() // status code (409)
+                ex.getMessage(),      // message (e.g., "Name already exists")
+                HttpStatus.CONFLICT.value(), // status code (409)
+                path                  // path
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
-
-
 }

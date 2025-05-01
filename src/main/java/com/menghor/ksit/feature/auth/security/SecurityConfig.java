@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -22,6 +23,7 @@ import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true) // Enable @PreAuthorize annotations
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -52,9 +54,6 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/swagger-resources/**",
                                 "/api/v1/auth/**",
-                                "/api/v1/plans/**",
-                                "/api/v1/subscriptions/check/**",
-                                "/api/v1/images/**",
                                 "/favicon.ico",
                                 "/*.ico",
                                 "/static/**",
@@ -75,11 +74,6 @@ public class SecurityConfig {
 
         // Allow all origins
         configuration.setAllowedOrigins(Collections.singletonList("*"));
-
-        // Or if you need credentials to be included, use the following instead
-        // (but then specific origins must be listed rather than wildcard "*")
-        // configuration.setAllowedOriginPatterns(Collections.singletonList("*"));
-        // configuration.setAllowCredentials(true);
 
         // Allow all common methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
