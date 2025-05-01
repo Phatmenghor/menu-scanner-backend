@@ -21,7 +21,11 @@ public class JWTGenerator {
     @Value("${jwt.expiration-min}")
     private long jwtExpirationInMinutes;
 
-    private Key getSigningKey() {
+    /**
+     * Public method to get signing key
+     * @return Key used for signing and verifying JWT tokens
+     */
+    public Key getSigningKey() {
         return new SecretKeySpec(secretKey.getBytes(), SignatureAlgorithm.HS512.getJcaName());
     }
 
@@ -33,7 +37,6 @@ public class JWTGenerator {
 
         Date expireDate = new Date(currentDate.getTime() + expirationTimeInMs);
         return Jwts.builder()
-
                 .setIssuedAt(new Date())
                 .setExpiration(expireDate)
                 .setSubject(username)
@@ -63,4 +66,17 @@ public class JWTGenerator {
         }
     }
 
+    /**
+     * Additional method to get token expiration
+     * @param token JWT token
+     * @return Expiration date of the token
+     */
+    public Date getTokenExpiration(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getExpiration();
+    }
 }

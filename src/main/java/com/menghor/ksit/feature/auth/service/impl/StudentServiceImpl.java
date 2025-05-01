@@ -6,8 +6,7 @@ import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.dto.request.StudentUpdateDto;
 import com.menghor.ksit.feature.auth.dto.request.UserUpdateDto;
-import com.menghor.ksit.feature.auth.dto.resposne.StudentDetailsDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserDto;
+import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsDto;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.auth.service.StudentService;
@@ -27,84 +26,79 @@ public class StudentServiceImpl implements StudentService {
     private final UserService userService;
 
     @Override
-    public StudentDetailsDto getStudentDetails(Long id) {
-        // Fetch user with roles
-        UserEntity user = userRepository.findUserWithRolesById(id)
-                .orElseThrow(() -> new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id)));
+    public UserDetailsDto getStudentDetails(Long id) {
+        log.info("Fetching student details for user ID: {}", id);
 
-        // Verify this is a student user
+        UserEntity user = userRepository.findUserWithRolesById(id)
+                .orElseThrow(() -> {
+                    log.warn("User not found with ID: {}", id);
+                    return new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id));
+                });
+
         boolean isStudent = user.getRoles().stream()
                 .anyMatch(role -> role.getName() == RoleEnum.STUDENT);
 
         if (!isStudent) {
+            log.warn("User with ID {} is not a student", id);
             throw new BadRequestException("User is not a student");
         }
 
-        // Map to student details DTO
-        return mapToStudentDetailsDto(user);
+        log.info("Successfully retrieved student details for user ID: {}", id);
+        return userService.getUserById(id);
     }
 
     @Override
-    public StudentDetailsDto getCurrentStudentDetails() {
+    public UserDetailsDto getCurrentStudentDetails() {
+        log.info("Fetching current student details");
+
         UserEntity currentUser = securityUtils.getCurrentUser();
 
-        // Verify this is a student user
         boolean isStudent = currentUser.getRoles().stream()
                 .anyMatch(role -> role.getName() == RoleEnum.STUDENT);
 
         if (!isStudent) {
+            log.warn("Current user (ID: {}) is not a student", currentUser.getId());
             throw new BadRequestException("Current user is not a student");
         }
 
-        // Map to student details DTO
-        return mapToStudentDetailsDto(currentUser);
+        log.info("Successfully retrieved current student details for user ID: {}", currentUser.getId());
+        return userService.getUserByToken();
     }
 
     @Override
-    public UserDto updateStudent(Long id, StudentUpdateDto updateDto) {
-        // Fetch the student
-        UserEntity student = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id)));
+    public UserDetailsDto updateStudent(Long id, StudentUpdateDto updateDto) {
+        log.info("Updating student with ID: {}", id);
 
-        // Verify this is a student user
+        UserEntity student = userRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("User not found with ID: {}", id);
+                    return new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id));
+                });
+
         boolean isStudent = student.getRoles().stream()
                 .anyMatch(role -> role.getName() == RoleEnum.STUDENT);
 
         if (!isStudent) {
+            log.warn("User with ID {} is not a student", id);
             throw new BadRequestException("User is not a student");
         }
 
-        // Map student update DTO to user update DTO for the service
-        UserUpdateDto userUpdateDto = new UserUpdateDto();
-        userUpdateDto.setUsername(updateDto.getUsername());
-        userUpdateDto.setFirstName(updateDto.getFirstName());
-        userUpdateDto.setLastName(updateDto.getLastName());
-        userUpdateDto.setContactNumber(updateDto.getContactNumber());
-        userUpdateDto.setStudentId(updateDto.getStudentId());
-        userUpdateDto.setGrade(updateDto.getGrade());
-        userUpdateDto.setYearOfAdmission(updateDto.getYearOfAdmission());
-        userUpdateDto.setStatus(updateDto.getStatus());
+        UserUpdateDto userUpdateDto = getUserUpdateDto(updateDto);
+        log.info("Proceeding to update student info for user ID: {}", id);
 
-        // Use the user service to perform the update
         return userService.updateUser(id, userUpdateDto);
     }
 
-    /**
-     * Helper method to map UserEntity to StudentDetailsDto
-     */
-    private StudentDetailsDto mapToStudentDetailsDto(UserEntity user) {
-        return StudentDetailsDto.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .contactNumber(user.getContactNumber())
-                .status(user.getStatus())
-                .studentId(user.getStudentId())
-                .grade(user.getGrade())
-                .yearOfAdmission(user.getYearOfAdmission())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
+    private static UserUpdateDto getUserUpdateDto(StudentUpdateDto updateDto) {
+        return UserUpdateDto.builder()
+                .username(updateDto.getUsername())
+                .firstName(updateDto.getFirstName())
+                .lastName(updateDto.getLastName())
+                .contactNumber(updateDto.getContactNumber())
+                .studentId(updateDto.getStudentId())
+                .grade(updateDto.getGrade())
+                .yearOfAdmission(updateDto.getYearOfAdmission())
+                .status(updateDto.getStatus())
                 .build();
     }
 }

@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.menghor</groupId>
-	<artifactId>smart-shop</artifactId>
+	<artifactId>ks-it</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>smart-shop</name>
-	<description>project for car</description>
+	<name>ks-it</name>
+	<description>project for school-management</description>
 	<url/>
 	<licenses>
 		<license/>

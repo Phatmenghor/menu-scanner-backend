@@ -47,18 +47,26 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         // Public endpoints that don't require authentication
                         .requestMatchers(
+                                // Swagger and API docs
                                 "/v3/api-docs/**",
                                 "/v3/api-docs*/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/webjars/**",
                                 "/swagger-resources/**",
-                                "/api/v1/auth/**",
+
+                                // Authentication endpoints
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/register/student",
+                                "/api/v1/auth/refresh-token",
+
+                                // Static resources
                                 "/favicon.ico",
                                 "/*.ico",
                                 "/static/**",
-                                "/error"         // Add the error page
+                                "/error"
                         ).permitAll()
+
                         // All other requests need authentication
                         .anyRequest().authenticated()
                 )

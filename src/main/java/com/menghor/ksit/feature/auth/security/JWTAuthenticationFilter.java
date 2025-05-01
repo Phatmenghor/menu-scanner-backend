@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.auth.security;
 
 import com.menghor.ksit.feature.auth.models.UserEntity;
+import com.menghor.ksit.feature.auth.repository.BlacklistedTokenRepository;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -28,6 +29,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private final JWTGenerator tokenGenerator;
     private final CustomUserDetailsService customUserDetailsService;
     private final UserRepository userRepository;
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -37,7 +39,11 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             String token = getJWTFromRequest(request);
             log.debug("Token from request: {}", token);
 
-            if (StringUtils.hasText(token) && tokenGenerator.validateToken(token)) {
+            // Check if token is blacklisted
+            if (StringUtils.hasText(token) &&
+                    !blacklistedTokenRepository.existsByToken(token) &&
+                    tokenGenerator.validateToken(token)) {
+
                 String username = tokenGenerator.getUsernameFromJWT(token);
                 log.debug("Username from token: {}", username);
 
@@ -62,14 +68,8 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                     userOpt.ifPresent(user -> request.setAttribute("currentUser", user));
 
                 } catch (org.springframework.security.core.userdetails.UsernameNotFoundException ex) {
-                    // Log the specific authentication failure
                     log.error("Authentication failed for user {}: {}", username, ex.getMessage());
-
-                    // Clear the security context
                     SecurityContextHolder.clearContext();
-
-                    // Rethrow to be handled by AuthenticationEntryPoint
-                    throw new AuthenticationException(ex.getMessage()) {};
                 }
             }
 
@@ -77,12 +77,8 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             log.error("Authentication process failed", e);
-
-            // Clear the security context
             SecurityContextHolder.clearContext();
-
-            // Rethrow to be handled by AuthenticationEntryPoint
-            throw new AuthenticationException(e.getMessage()) {};
+            throw e;
         }
     }
 

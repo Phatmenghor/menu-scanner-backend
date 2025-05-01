@@ -4,16 +4,16 @@ import com.menghor.ksit.feature.auth.dto.request.ChangePasswordByAdminRequestDto
 import com.menghor.ksit.feature.auth.dto.request.ChangePasswordRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.UserFilterDto;
 import com.menghor.ksit.feature.auth.dto.request.UserUpdateDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.UserAllResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsDto;
 
 public interface UserService {
-    UserResponseDto getAllUsers(UserFilterDto filterDto);
-    UserResponseDto getAllUsersIncludingShopAdmin(UserFilterDto filterDto);
-    UserDto getUserById(Long id);
-    UserDto getUserByToken();
-    UserDto updateUser(Long id, UserUpdateDto updateDto);
-    UserDto deleteUserId(Long id);
-    UserDto changePassword(ChangePasswordRequestDto requestDto);
-    UserDto changePasswordByAdmin(ChangePasswordByAdminRequestDto requestDto);
+    UserAllResponseDto getAllUsers(UserFilterDto filterDto);
+    UserAllResponseDto getAllUsersIncludingShopAdmin(UserFilterDto filterDto);
+    UserDetailsDto getUserById(Long id);
+    UserDetailsDto getUserByToken();
+    UserDetailsDto updateUser(Long id, UserUpdateDto updateDto);
+    UserDetailsDto deleteUserId(Long id);
+    UserDetailsDto changePassword(ChangePasswordRequestDto requestDto);
+    UserDetailsDto changePasswordByAdmin(ChangePasswordByAdminRequestDto requestDto);
 }

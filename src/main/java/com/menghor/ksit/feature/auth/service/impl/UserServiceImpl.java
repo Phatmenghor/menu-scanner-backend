@@ -9,8 +9,8 @@ import com.menghor.ksit.feature.auth.dto.request.ChangePasswordByAdminRequestDto
 import com.menghor.ksit.feature.auth.dto.request.ChangePasswordRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.UserFilterDto;
 import com.menghor.ksit.feature.auth.dto.request.UserUpdateDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.UserAllResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsDto;
 import com.menghor.ksit.feature.auth.mapper.UserMapper;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
@@ -45,18 +45,18 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
 
     @Override
-    public UserResponseDto getAllUsers(UserFilterDto filterDto) {
-        // Default method: includes all users
+    public UserAllResponseDto getAllUsers(UserFilterDto filterDto) {
+        log.info("Fetching all users with filter: {}", filterDto);
         return getUsersWithSpecification(filterDto, UserSpecification::createAllRolesSpecification);
     }
 
     @Override
-    public UserResponseDto getAllUsersIncludingShopAdmin(UserFilterDto filterDto) {
-        // This method now does the same as getAllUsers for backward compatibility
+    public UserAllResponseDto getAllUsersIncludingShopAdmin(UserFilterDto filterDto) {
+        log.info("Fetching all users including shop admin with filter: {}", filterDto);
         return getAllUsers(filterDto);
     }
 
-    private UserResponseDto getUsersWithSpecification(
+    private UserAllResponseDto getUsersWithSpecification(
             UserFilterDto filterDto,
             SpecificationCreator specificationCreator
     ) {
@@ -67,7 +67,6 @@ public class UserServiceImpl implements UserService {
         // Validate pagination parameters
         PaginationUtils.validatePagination(filterDto.getPageNo(), filterDto.getPageSize());
 
-        // Adjust page number for 0-based indexing
         int pageNo = filterDto.getPageNo() - 1;
         int pageSize = filterDto.getPageSize();
         Pageable pageable = PageRequest.of(pageNo, pageSize);
@@ -83,10 +82,8 @@ public class UserServiceImpl implements UserService {
 
         // Find users with specification
         Page<UserEntity> userPage = userRepository.findAll(spec, pageable);
-
         log.info("Found {} users", userPage.getContent().size());
 
-        // Ensure all users have a status value
         userPage.getContent().forEach(user -> {
             if (user.getStatus() == null) {
                 user.setStatus(Status.ACTIVE); // Default to ACTIVE
@@ -95,24 +92,26 @@ public class UserServiceImpl implements UserService {
         });
 
         // Convert to DTOs
-        List<UserDto> userDtos = userPage.getContent().stream()
+        List<UserDetailsDto> userDtos = userPage.getContent().stream()
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());
 
-        // Create the UserResponseDto
         return userMapper.toPageDto(userDtos, userPage);
     }
 
-    // Functional interface for specification creation
     @FunctionalInterface
     private interface SpecificationCreator {
         Specification<UserEntity> createSpec(String username, Status status, RoleEnum role);
     }
 
     @Override
-    public UserDto getUserById(Long id) {
+    public UserDetailsDto getUserById(Long id) {
+        log.info("Fetching user by ID: {}", id);
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id)));
+                .orElseThrow(() -> {
+                    log.error("User with ID {} not found", id);
+                    return new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id));
+                });
 
         // Ensure status is set
         if (user.getStatus() == null) {
@@ -124,10 +123,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto getUserByToken() {
+    public UserDetailsDto getUserByToken() {
         UserEntity currentUser = securityUtils.getCurrentUser();
+        log.info("Fetching current user details for user ID: {}", currentUser.getId());
 
-        // Ensure status is set
         if (currentUser.getStatus() == null) {
             currentUser.setStatus(Status.ACTIVE);
             userRepository.save(currentUser);
@@ -138,97 +137,117 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserDto updateUser(Long id, UserUpdateDto updateDto) {
-        UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id)));
+    public UserDetailsDto updateUser(Long id, UserUpdateDto updateDto) {
+        log.info("Updating user with ID: {}", id);
 
-        // Update basic fields from DTO if provided
+        UserEntity user = userRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("User with ID {} not found", id);
+                    return new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id));
+                });
+
         userMapper.updateUserFromDto(updateDto, user);
 
-        // Handle roles update - there are two possibilities:
-        // 1. Multiple roles via dto.getRoles()
-        // 2. Single role via dto.getRole() (for backward compatibility)
-
         if (updateDto.getRoles() != null && !updateDto.getRoles().isEmpty()) {
-            // Handle multiple roles
             List<Role> roles = new ArrayList<>();
             for (RoleEnum roleEnum : updateDto.getRoles()) {
                 Role role = roleRepository.findByName(roleEnum)
-                        .orElseThrow(() -> new NotFoundException("Role not found: " + roleEnum));
+                        .orElseThrow(() -> {
+                            log.error("Role {} not found", roleEnum);
+                            return new NotFoundException("Role not found: " + roleEnum);
+                        });
                 roles.add(role);
             }
             user.setRoles(roles);
         } else if (updateDto.getRole() != null) {
-            // Handle single role (backward compatibility)
             Role role = roleRepository.findByName(updateDto.getRole())
-                    .orElseThrow(() -> new NotFoundException("Role not found: " + updateDto.getRole()));
+                    .orElseThrow(() -> {
+                        log.error("Role {} not found", updateDto.getRole());
+                        return new NotFoundException("Role not found: " + updateDto.getRole());
+                    });
             user.getRoles().clear();
             user.getRoles().add(role);
         }
 
-        // Ensure status is set
         if (user.getStatus() == null) {
             user.setStatus(updateDto.getStatus() != null ? updateDto.getStatus() : Status.ACTIVE);
         }
 
         UserEntity updatedUser = userRepository.save(user);
+        log.info("User with ID {} updated successfully", id);
+
         return userMapper.toDto(updatedUser);
     }
 
     @Transactional
     @Override
-    public UserDto deleteUserId(Long id) {
+    public UserDetailsDto deleteUserId(Long id) {
+        log.info("Deleting user with ID: {}", id);
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id)));
+                .orElseThrow(() -> {
+                    log.error("User with ID {} not found", id);
+                    return new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id));
+                });
+
         user.getRoles().clear();
         userRepository.deleteById(id);
+        log.info("User with ID {} deleted successfully", id);
+
         return userMapper.toDto(user);
     }
 
     @Override
-    public UserDto changePassword(ChangePasswordRequestDto requestDto) {
+    public UserDetailsDto changePassword(ChangePasswordRequestDto requestDto) {
+        log.info("Changing password for current user");
+
         UserEntity user = securityUtils.getCurrentUser();
 
         if (!passwordEncoder.matches(requestDto.getCurrentPassword(), user.getPassword())) {
+            log.warn("Current password is incorrect for user ID: {}", user.getId());
             throw new BadRequestException(ErrorMessages.CURRENT_PASSWORD_INCORRECT);
         }
 
         if (!requestDto.getNewPassword().equals(requestDto.getConfirmNewPassword())) {
+            log.warn("New passwords do not match for user ID: {}", user.getId());
             throw new BadRequestException(ErrorMessages.PASSWORDS_DO_NOT_MATCH);
         }
 
         user.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
 
-        // Ensure status is set
         if (user.getStatus() == null) {
             user.setStatus(Status.ACTIVE);
         }
 
-        UserEntity userEntity = userRepository.save(user);
-        return userMapper.toDto(userEntity);
+        UserEntity updatedUser = userRepository.save(user);
+        log.info("Password changed successfully for user ID: {}", user.getId());
+
+        return userMapper.toDto(updatedUser);
     }
 
     @Override
-    public UserDto changePasswordByAdmin(ChangePasswordByAdminRequestDto requestDto) {
+    public UserDetailsDto changePasswordByAdmin(ChangePasswordByAdminRequestDto requestDto) {
+        log.info("Changing password for user ID: {}", requestDto.getId());
+
         UserEntity user = userRepository.findById(requestDto.getId())
                 .orElseThrow(() -> {
-                    log.error("User with id {} not found", requestDto.getId());
+                    log.error("User with ID {} not found", requestDto.getId());
                     return new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, requestDto.getId()));
                 });
 
-        // Optionally, verify that new password and confirm password match
         if (!requestDto.getNewPassword().equals(requestDto.getConfirmNewPassword())) {
+            log.warn("New passwords do not match for user ID: {}", requestDto.getId());
             throw new BadRequestException(ErrorMessages.PASSWORDS_DO_NOT_MATCH);
         }
 
         user.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
 
-        // Ensure status is set
         if (user.getStatus() == null) {
             user.setStatus(Status.ACTIVE);
         }
 
-        UserEntity userEntity = userRepository.save(user);
-        return userMapper.toDto(userEntity);
+        UserEntity updatedUser = userRepository.save(user);
+        log.info("Password changed successfully for user ID: {}", requestDto.getId());
+
+        return userMapper.toDto(updatedUser);
     }
 }

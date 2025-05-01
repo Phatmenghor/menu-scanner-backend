@@ -14,7 +14,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserDto {
+public class UserDetailsDto {
     private Long id;
     private String username;  // Email
     private List<RoleEnum> roles;
@@ -27,28 +27,30 @@ public class UserDto {
     private String lastName;
     private String contactNumber;
 
-    // These fields will be populated based on role:
-    // For staff/admin/developer
+    // Staff/Admin/Developer specific fields
     private String position;
     private String department;
     private String employeeId;
 
-    // For student
+    // Student-specific fields
     private String studentId;
     private String grade;
     private Integer yearOfAdmission;
 
-    // Helper method to check if this user is a student
+    // Helper methods to check user type
     public boolean isStudent() {
         return roles != null && roles.contains(RoleEnum.STUDENT);
     }
 
-    // Helper method to check if this user is staff, admin, or developer
-    public boolean isStaffOrAdmin() {
-        return roles != null && (
-                roles.contains(RoleEnum.STAFF) ||
-                        roles.contains(RoleEnum.ADMIN) ||
-                        roles.contains(RoleEnum.DEVELOPER)
-        );
+    public boolean isStaff() {
+        return roles != null && roles.contains(RoleEnum.STAFF);
+    }
+
+    public boolean isAdmin() {
+        return roles != null && roles.contains(RoleEnum.ADMIN);
+    }
+
+    public boolean isDeveloper() {
+        return roles != null && roles.contains(RoleEnum.DEVELOPER);
     }
 }

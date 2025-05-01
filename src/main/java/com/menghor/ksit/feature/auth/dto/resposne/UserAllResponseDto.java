@@ -11,8 +11,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserResponseDto {
-    private List<UserDto> content;
+public class UserAllResponseDto {
+    private List<UserDetailsDto> content;
     private int pageNo;
     private int pageSize;
     private long totalElements;

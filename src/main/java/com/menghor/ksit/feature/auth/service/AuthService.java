@@ -1,44 +1,30 @@
 package com.menghor.ksit.feature.auth.service;
 
-import com.menghor.ksit.feature.auth.dto.request.RegisterDto;
+import com.menghor.ksit.feature.auth.dto.request.UserRegisterDto;
+import com.menghor.ksit.feature.auth.dto.request.StudentRegisterDto;
 import com.menghor.ksit.feature.auth.dto.resposne.AuthResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.LoginDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserDto;
+import com.menghor.ksit.feature.auth.dto.resposne.LoginResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsDto;
 
-/**
- * Service for authentication-related operations
- */
 public interface AuthService {
-    
     /**
      * Authenticate a user and generate JWT token
-     * 
-     * @param loginDto Login credentials
-     * @return Authentication response with token and user details
      */
-    AuthResponseDto login(LoginDto loginDto);
-    
+    AuthResponseDto login(LoginResponseDto loginResponseDto);
+
     /**
-     * Register a new staff or admin user
-     * 
-     * @param registerDto Staff/admin registration data
-     * @return Created user details
+     * Student registration (Open to all)
      */
-    UserDto registerStaff(StaffRegisterDto registerDto);
-    
+    UserDetailsDto registerStudent(StudentRegisterDto registerDto);
+
     /**
-     * Register a new student user
-     * 
-     * @param registerDto Student registration data
-     * @return Created user details
+     * Advanced registration for staff, admin, developer
+     * Controlled by role and authorization
      */
-    UserDto registerStudent(StudentRegisterDto registerDto);
-    
+    UserDetailsDto registerAdvanced(UserRegisterDto registerDto);
+
     /**
-     * Register any type of user (generic method)
-     * 
-     * @param registerDto Registration data
-     * @return Created user details
+     * Token refresh mechanism
      */
-    UserDto register(RegisterDto registerDto);
+    AuthResponseDto refreshToken(String refreshToken);
 }

@@ -1,14 +1,14 @@
 package com.menghor.ksit.feature.auth.service.impl;
 
 import com.menghor.ksit.enumations.RoleEnum;
-import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.DuplicateNameException;
-import com.menghor.ksit.exceptoins.error.NotFoundException;
-import com.menghor.ksit.feature.auth.dto.request.RegisterDto;
+import com.menghor.ksit.feature.auth.dto.request.*;
 import com.menghor.ksit.feature.auth.dto.resposne.AuthResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.LoginDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserDto;
+import com.menghor.ksit.feature.auth.dto.resposne.LoginResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsDto;
 import com.menghor.ksit.feature.auth.mapper.UserMapper;
+import com.menghor.ksit.feature.auth.mapper.UserRegistrationMapper;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.RoleRepository;
@@ -28,7 +28,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -41,200 +40,125 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JWTGenerator jwtGenerator;
     private final UserMapper userMapper;
+    private final UserRegistrationMapper registrationMapper;
 
     @Override
-    public AuthResponseDto login(LoginDto loginDto) {
-        Optional<UserEntity> userEntityOpt = userRepository.findByUsername(loginDto.getEmail());
-        if (userEntityOpt.isEmpty()) {
-            throw new NotFoundException("User not found");
-        }
+    public AuthResponseDto login(LoginResponseDto loginResponseDto) {
+        log.info("Attempting login for email: {}", loginResponseDto.getEmail());
 
-        UserEntity userEntity = userEntityOpt.get();
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginResponseDto.getEmail(),
+                        loginResponseDto.getPassword()));
 
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginDto.getEmail(),
-                            loginDto.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = jwtGenerator.generateToken(authentication);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String token = jwtGenerator.generateToken(authentication);
+        UserEntity userEntity = userRepository.findByUsername(loginResponseDto.getEmail())
+                .orElseThrow(() -> {
+                    log.warn("Login failed: User not found for email: {}", loginResponseDto.getEmail());
+                    return new BadRequestException("User not found");
+                });
 
-            UserDto userDto = userMapper.toDto(userEntity);
-
-            return new AuthResponseDto(token, userDto);
-
-        } catch (Exception e) {
-            log.error("Login failed for user {}: {}", loginDto.getEmail(), e.getMessage());
-            throw e;
-        }
+        log.info("Login successful for email: {}", loginResponseDto.getEmail());
+        return new AuthResponseDto(token, userMapper.toDto(userEntity));
     }
 
     @Override
     @Transactional
-    public UserDto registerStaff(StaffRegisterDto registerDto) {
-        // Check if email is already in use
-        if (userRepository.existsByUsername(registerDto.getEmail())) {
-            throw new DuplicateNameException("Email is already in use, please choose another one.");
-        }
+    public UserDetailsDto registerStudent(StudentRegisterDto registerDto) {
+        log.info("Registering new student with email: {}", registerDto.getEmail());
+        validateUserRegistration(registerDto.getEmail());
 
-        // Create user entity
-        UserEntity user = new UserEntity();
-        user.setUsername(registerDto.getEmail());
+        UserEntity user = registrationMapper.toEntityFromStudentRegister(registerDto);
         user.setPassword(passwordEncoder.encode(registerDto.getPassword()));
-        
-        // Set common personal information
-        user.setFirstName(registerDto.getFirstName());
-        user.setLastName(registerDto.getLastName());
-        user.setContactNumber(registerDto.getContactNumber());
-        
-        // Set staff-specific fields
-        user.setPosition(registerDto.getPosition());
-        user.setDepartment(registerDto.getDepartment());
-        user.setEmployeeId(registerDto.getEmployeeId());
-        
-        // Handle role assignment
-        List<Role> roles = new ArrayList<>();
-        
-        if (registerDto.getRoles() != null && !registerDto.getRoles().isEmpty()) {
-            // Add multiple roles if provided
-            for (RoleEnum roleEnum : registerDto.getRoles()) {
-                // Only allow ADMIN, STAFF, DEVELOPER roles
-                if (roleEnum != RoleEnum.STUDENT) {
-                    Role role = roleRepository.findByName(roleEnum)
-                            .orElseThrow(() -> new BadRequestException("Invalid role provided: " + roleEnum));
-                    roles.add(role);
-                } else {
-                    throw new BadRequestException("Cannot assign STUDENT role in staff registration");
-                }
-            }
-        } else if (registerDto.getRole() != null) {
-            // For single role assignment
-            if (registerDto.getRole() != RoleEnum.STUDENT) {
-                Role role = roleRepository.findByName(registerDto.getRole())
-                        .orElseThrow(() -> new BadRequestException("Invalid role provided."));
-                roles.add(role);
-            } else {
-                throw new BadRequestException("Cannot assign STUDENT role in staff registration");
-            }
-        } else {
-            // Default to STAFF role if nothing specified
-            Role defaultRole = roleRepository.findByName(RoleEnum.STAFF)
-                    .orElseThrow(() -> new BadRequestException("Default role not found."));
-            roles.add(defaultRole);
-        }
-        
-        user.setRoles(roles);
-        
-        // Set status
-        user.setStatus(registerDto.getStatus() != null ? registerDto.getStatus() : Status.ACTIVE);
-        
-        // Save the user
-        UserEntity savedUser = userRepository.save(user);
 
-        // Return user DTO
+        user.setRoles(determineRoles(RoleEnum.STUDENT));
+
+        UserEntity savedUser = userRepository.save(user);
+        log.info("Student registered successfully with email: {}", registerDto.getEmail());
         return userMapper.toDto(savedUser);
     }
 
     @Override
     @Transactional
-    public UserDto registerStudent(StudentRegisterDto registerDto) {
-        // Check if email is already in use
-        if (userRepository.existsByUsername(registerDto.getEmail())) {
-            throw new DuplicateNameException("Email is already in use, please choose another one.");
-        }
+    public UserDetailsDto registerAdvanced(UserRegisterDto registerDto) {
+        log.info("Registering new user (advanced) with email: {}", registerDto.getEmail());
+        validateUserRegistration(registerDto.getEmail());
 
-        // Create user entity
-        UserEntity user = new UserEntity();
-        user.setUsername(registerDto.getEmail());
+        UserEntity user = registrationMapper.toEntityFromAdvancedRegister(registerDto);
         user.setPassword(passwordEncoder.encode(registerDto.getPassword()));
-        
-        // Set common personal information
-        user.setFirstName(registerDto.getFirstName());
-        user.setLastName(registerDto.getLastName());
-        user.setContactNumber(registerDto.getContactNumber());
-        
-        // Set student-specific fields
-        user.setStudentId(registerDto.getStudentId());
-        user.setGrade(registerDto.getGrade());
-        user.setYearOfAdmission(registerDto.getYearOfAdmission());
-        
-        // Assign STUDENT role
-        Role studentRole = roleRepository.findByName(RoleEnum.STUDENT)
-                .orElseThrow(() -> new BadRequestException("STUDENT role not found."));
-        user.setRoles(Collections.singletonList(studentRole));
-        
-        // Set status
-        user.setStatus(registerDto.getStatus() != null ? registerDto.getStatus() : Status.ACTIVE);
-        
-        // Save the user
-        UserEntity savedUser = userRepository.save(user);
 
-        // Return user DTO
-        return userMapper.toDto(savedUser);
-    }
-
-    @Override
-    @Transactional
-    public UserDto register(RegisterDto registerDto) {
-        // Check if email is already in use
-        if (userRepository.existsByUsername(registerDto.getEmail())) {
-            throw new DuplicateNameException("Email is already in use, please choose another one.");
-        }
-
-        // Create user entity
-        UserEntity user = new UserEntity();
-        user.setUsername(registerDto.getEmail());
-        user.setPassword(passwordEncoder.encode(registerDto.getPassword()));
-        
-        // Set personal information
-        user.setFirstName(registerDto.getFirstName());
-        user.setLastName(registerDto.getLastName());
-        user.setContactNumber(registerDto.getContactNumber());
-        
-        // Set role-specific information based on the role
-        if (registerDto.getRole() == RoleEnum.STUDENT || 
-                (registerDto.getRoles() != null && registerDto.getRoles().contains(RoleEnum.STUDENT))) {
-            user.setStudentId(registerDto.getStudentId());
-            user.setGrade(registerDto.getGrade());
-            user.setYearOfAdmission(registerDto.getYearOfAdmission());
-        } else {
-            user.setPosition(registerDto.getPosition());
-            user.setDepartment(registerDto.getDepartment());
-            user.setEmployeeId(registerDto.getEmployeeId());
-        }
-        
-        // Handle role assignment
         List<Role> roles = new ArrayList<>();
-        
+
         if (registerDto.getRoles() != null && !registerDto.getRoles().isEmpty()) {
-            // Add multiple roles if provided
+            log.info("Assigning multiple roles to user: {}", registerDto.getRoles());
             for (RoleEnum roleEnum : registerDto.getRoles()) {
                 Role role = roleRepository.findByName(roleEnum)
-                        .orElseThrow(() -> new BadRequestException("Invalid role provided: " + roleEnum));
+                        .orElseThrow(() -> {
+                            log.warn("Invalid role during registration: {}", roleEnum);
+                            return new BadRequestException("Invalid role: " + roleEnum);
+                        });
                 roles.add(role);
             }
         } else if (registerDto.getRole() != null) {
-            // For single role assignment
             Role role = roleRepository.findByName(registerDto.getRole())
-                    .orElseThrow(() -> new BadRequestException("Invalid role provided."));
+                    .orElseThrow(() -> {
+                        log.warn("Invalid single role during registration: {}", registerDto.getRole());
+                        return new BadRequestException("Invalid role");
+                    });
             roles.add(role);
         } else {
-            // Default to STUDENT role if nothing specified
             Role defaultRole = roleRepository.findByName(RoleEnum.STUDENT)
-                    .orElseThrow(() -> new BadRequestException("Default role not found."));
+                    .orElseThrow(() -> {
+                        log.warn("Default role not found for registration");
+                        return new BadRequestException("Default role not found");
+                    });
             roles.add(defaultRole);
         }
-        
-        user.setRoles(roles);
-        
-        // Always set a status value
-        user.setStatus(registerDto.getStatus() != null ? registerDto.getStatus() : Status.ACTIVE);
-        
-        // Save the user
-        UserEntity savedUser = userRepository.save(user);
 
-        // Return success response
+        user.setRoles(roles);
+        UserEntity savedUser = userRepository.save(user);
+        log.info("Advanced user registered successfully with email: {}", registerDto.getEmail());
         return userMapper.toDto(savedUser);
+    }
+
+    private void validateUserRegistration(String email) {
+        if (userRepository.existsByUsername(email)) {
+            log.warn("Attempt to register with duplicate email: {}", email);
+            throw new DuplicateNameException("Email is already in use");
+        }
+    }
+
+    private List<Role> determineRoles(RoleEnum roleEnum) {
+        Role role = roleRepository.findByName(roleEnum)
+                .orElseThrow(() -> {
+                    log.warn("Role not found: {}", roleEnum);
+                    return new BadRequestException("Invalid role: " + roleEnum);
+                });
+        return Collections.singletonList(role);
+    }
+
+    @Override
+    public AuthResponseDto refreshToken(String refreshToken) {
+        log.info("Refreshing token");
+        try {
+            String username = jwtGenerator.getUsernameFromJWT(refreshToken.substring(7));
+            UserEntity userEntity = userRepository.findByUsername(username)
+                    .orElseThrow(() -> {
+                        log.warn("Token refresh failed: User not found for username: {}", username);
+                        return new BadRequestException("User not found");
+                    });
+
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    username, null, Collections.emptyList());
+            String newToken = jwtGenerator.generateToken(authentication);
+
+            log.info("Token refreshed successfully for user: {}", username);
+            return new AuthResponseDto(newToken, userMapper.toDto(userEntity));
+        } catch (Exception e) {
+            log.error("Token refresh failed", e);
+            throw new BadRequestException("Token refresh failed: " + e.getMessage());
+        }
     }
 }
