@@ -16,9 +16,9 @@ spring:
           use_jdbc_metadata_defaults: false
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/ks_it_school
+    url: jdbc:postgresql://localhost:5432/ks_it_school
     username: postgres
-    password: Hour1819
+    password: root
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10

@@ -59,6 +59,12 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/register/student",
                                 "/api/v1/auth/refresh-token",
+                                "/api/v1/rooms/**",
+                                "/api/v1/subjects/**",
+                                "/api/v1/departments/**",
+                                "/api/v1/semesters/**",
+                                "/api/v1/majors/**",
+                                "/api/v1/classes/**",
 
                                 // Static resources
                                 "/favicon.ico",

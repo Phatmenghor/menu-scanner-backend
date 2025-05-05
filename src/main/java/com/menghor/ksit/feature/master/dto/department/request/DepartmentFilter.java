@@ -1,0 +1,12 @@
+package com.menghor.ksit.feature.master.dto.department.request;
+
+import com.menghor.ksit.enumations.Status;
+import lombok.Data;
+
+@Data
+public class DepartmentFilter {
+    private String search;
+    private Status status;
+    private Integer pageNo = 1;
+    private Integer pageSize = 10;
+}
