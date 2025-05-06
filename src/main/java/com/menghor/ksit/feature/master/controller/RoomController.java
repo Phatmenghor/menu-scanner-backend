@@ -33,7 +33,7 @@ public class RoomController {
         RoomResponseDto roomResponseDto = roomService.getRoomById(id);
         return new ApiResponse<>(
                 "Success",
-                "Get room by id "+ id + " successfully...!",
+                "Get room by id " + id + " successfully...!",
                 roomResponseDto
         );
     }

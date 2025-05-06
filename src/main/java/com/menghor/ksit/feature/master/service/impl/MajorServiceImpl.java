@@ -48,7 +48,7 @@ public class MajorServiceImpl implements MajorService {
     @Override
     public MajorResponseDto getMajorById(Long id) {
         MajorEntity major = majorRepository.findById(id)
-                .orElseThrow(()-> new NotFoundException("Major id " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Major id " + id + " not found. Please try again."));
 
         return majorMapper.toResponseDto(major);
     }
@@ -57,10 +57,10 @@ public class MajorServiceImpl implements MajorService {
     @Override
     public MajorResponseDto updateMajorById(Long id, MajorRequestDto majorRequestDto) {
         MajorEntity major = majorRepository.findById(id)
-                .orElseThrow(()-> new NotFoundException("Major id " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Major id " + id + " not found. Please try again."));
 
         DepartmentEntity department = departmentRepository.findById(majorRequestDto.getDepartmentId())
-                        .orElseThrow(() -> new NotFoundException("Department " + majorRequestDto.getDepartmentId() + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Department " + majorRequestDto.getDepartmentId() + " not found. Please try again."));
 
         major.setCode(majorRequestDto.getCode());
         major.setName(majorRequestDto.getName());
