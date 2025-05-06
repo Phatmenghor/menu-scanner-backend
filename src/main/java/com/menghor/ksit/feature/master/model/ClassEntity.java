@@ -3,10 +3,14 @@ package com.menghor.ksit.feature.master.model;
 import com.menghor.ksit.enumations.DegreeEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.enumations.YearLevelEnum;
+import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Setter
 @Getter
@@ -30,4 +34,8 @@ public class ClassEntity extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "major_id")
     private MajorEntity major;
+
+    // Students enrolled in this class
+    @OneToMany(mappedBy = "class", cascade = CascadeType.ALL)
+    private List<UserEntity> students = new ArrayList<>();
 }

@@ -1,11 +1,13 @@
 package com.menghor.ksit.feature.master.model;
 
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Setter
@@ -24,5 +26,7 @@ public class DepartmentEntity extends BaseEntity {
     @OneToMany(mappedBy = "department")
     private List<MajorEntity> majors;
 
-
+    // Students enrolled in this class
+    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL)
+    private List<UserEntity> students = new ArrayList<>();
 }
