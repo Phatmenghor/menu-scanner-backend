@@ -28,20 +28,7 @@ public abstract class UserMapper {
                 .username(user.getUsername())
                 .status(user.getStatus())
                 .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .contactNumber(user.getContactNumber());
-
-        // Add student-specific fields
-        userDto.studentId(user.getStudentId())
-                .grade(user.getGrade())
-                .yearOfAdmission(user.getYearOfAdmission());
-
-        // Add staff/admin specific fields
-        userDto.position(user.getPosition())
-                .department(user.getDepartment())
-                .employeeId(user.getEmployeeId());
+                .updatedAt(user.getUpdatedAt());
 
         // Extract all roles
         List<RoleEnum> userRoles = user.getRoles().stream()

@@ -19,18 +19,6 @@ public class UserRegisterDto {
     @Size(min = 8, message = "Password must have at least 8 characters")
     private String password;
 
-    @NotBlank(message = "First name is required")
-    private String firstName;
-
-    @NotBlank(message = "Last name is required")
-    private String lastName;
-
-    // Optional personal details
-    private String contactNumber;
-    private String position;
-    private String department;
-    private String employeeId;
-
     // Multiple roles support
     private List<RoleEnum> roles;
 

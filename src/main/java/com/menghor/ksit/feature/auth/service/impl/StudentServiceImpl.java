@@ -92,12 +92,6 @@ public class StudentServiceImpl implements StudentService {
     private static UserUpdateDto getUserUpdateDto(StudentUpdateDto updateDto) {
         return UserUpdateDto.builder()
                 .username(updateDto.getUsername())
-                .firstName(updateDto.getFirstName())
-                .lastName(updateDto.getLastName())
-                .contactNumber(updateDto.getContactNumber())
-                .studentId(updateDto.getStudentId())
-                .grade(updateDto.getGrade())
-                .yearOfAdmission(updateDto.getYearOfAdmission())
                 .status(updateDto.getStatus())
                 .build();
     }

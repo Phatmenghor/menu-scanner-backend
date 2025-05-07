@@ -22,21 +22,6 @@ public class UserDetailsDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Common personal information
-    private String firstName;
-    private String lastName;
-    private String contactNumber;
-
-    // Staff/Admin/Developer specific fields
-    private String position;
-    private String department;
-    private String employeeId;
-
-    // Student-specific fields
-    private String studentId;
-    private String grade;
-    private Integer yearOfAdmission;
-
     // Helper methods to check user type
     public boolean isStudent() {
         return roles != null && roles.contains(RoleEnum.STUDENT);

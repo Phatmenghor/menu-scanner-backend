@@ -21,19 +21,4 @@ public class UserUpdateDto {
     private List<RoleEnum> roles;
 
     private Status status;
-
-    // Common personal information
-    private String firstName;
-    private String lastName;
-    private String contactNumber;
-
-    // Student-specific information
-    private String studentId;
-    private String grade;
-    private Integer yearOfAdmission;
-
-    // Staff-specific information
-    private String position;
-    private String department;
-    private String employeeId;
 }
