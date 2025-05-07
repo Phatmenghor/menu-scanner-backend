@@ -44,80 +44,37 @@ public class DefaultUserInitializer {
         createUser(
             "developer@ksit.com",
             "developer123",
-            Collections.singletonList(RoleEnum.DEVELOPER),
-            "System", 
-            "Developer",
-            "123456789",
-            null, 
-            null, 
-            null,
-            "Lead Developer", 
-            "IT Department", 
-            "DEV001"
+            Collections.singletonList(RoleEnum.DEVELOPER)
         );
 
         // Create admin user
         createUser(
             "admin@ksit.com",
             "admin123",
-            Collections.singletonList(RoleEnum.ADMIN),
-            "School", 
-            "Administrator",
-            "123456789",
-            null, 
-            null, 
-            null,
-            "Principal", 
-            "Administration", 
-            "ADM001"
+            Collections.singletonList(RoleEnum.ADMIN)
+
         );
 
         // Create a staff user
         createUser(
             "staff@ksit.com",
             "staff123",
-            Collections.singletonList(RoleEnum.STAFF),
-            "John", 
-            "Smith",
-            "123456789",
-            null, 
-            null, 
-            null,
-            "Professor", 
-            "Computer Science", 
-            "STF001"
+            Collections.singletonList(RoleEnum.STAFF)
+
         );
 
         // Create a student user
         createUser(
             "student@ksit.com",
             "student123",
-            Collections.singletonList(RoleEnum.STUDENT),
-            "Jane", 
-            "Doe",
-            "123456789",
-            "STU001", 
-            "Year 1", 
-            2024,
-            null, 
-            null, 
-            null
+            Collections.singletonList(RoleEnum.STUDENT)
         );
         
         // Create a multi-role user (staff + admin)
         createUser(
             "headteacher@ksit.com",
             "headteacher123",
-            Arrays.asList(RoleEnum.STAFF, RoleEnum.ADMIN),
-            "Head", 
-            "Teacher",
-            "123456789",
-            null, 
-            null, 
-            null,
-            "Head Teacher", 
-            "Academic Affairs", 
-            "HT001"
+            Arrays.asList(RoleEnum.STAFF, RoleEnum.ADMIN)
         );
 
         log.info("Default users created successfully");
@@ -126,16 +83,7 @@ public class DefaultUserInitializer {
     private void createUser(
             String email, 
             String password, 
-            List<RoleEnum> roleEnums,
-            String firstName,
-            String lastName,
-            String contactNumber,
-            String studentId,
-            String grade,
-            Integer yearOfAdmission,
-            String position,
-            String department,
-            String employeeId
+            List<RoleEnum> roleEnums
     ) {
         List<Role> roles = roleEnums.stream()
                 .map(roleEnum -> roleRepository.findByName(roleEnum)
@@ -147,21 +95,6 @@ public class DefaultUserInitializer {
         user.setPassword(passwordEncoder.encode(password));
         user.setRoles(roles);
         user.setStatus(Status.ACTIVE);
-        
-        // Set common fields
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        user.setContactNumber(contactNumber);
-        
-        // Set student-specific fields if applicable
-        user.setStudentId(studentId);
-        user.setGrade(grade);
-        user.setYearOfAdmission(yearOfAdmission);
-        
-        // Set staff-specific fields if applicable
-        user.setPosition(position);
-        user.setDepartment(department);
-        user.setEmployeeId(employeeId);
 
         userRepository.save(user);
         log.info("Created default user: {}", email);
