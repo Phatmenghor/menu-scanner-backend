@@ -26,6 +26,7 @@ public class DefaultRoleInitializer {
             roleRepository.save(new Role(RoleEnum.ADMIN));
             roleRepository.save(new Role(RoleEnum.STAFF));
             roleRepository.save(new Role(RoleEnum.STUDENT));
+            roleRepository.save(new Role(RoleEnum.TEACHER));
         }
     }
 }
