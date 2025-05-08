@@ -38,24 +38,6 @@ public class AuthController {
         return new ApiResponse<>("success", "Login successful", authResponse);
     }
 
-    @PostMapping("/register/staff")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
-    public ApiResponse<UserDetailsResponseDto> registerStaff(@Valid @RequestBody StaffRegisterRequestDto registerDto) {
-        log.info("Registering staff user with email: {}", registerDto.getEmail());
-        UserDetailsResponseDto registeredUser = authService.registerStaff(registerDto);
-        log.info("Staff user registered successfully with ID: {}", registeredUser.getId());
-        return new ApiResponse<>("success", "Staff registered successfully", registeredUser);
-    }
-
-    @PostMapping("/register/student")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
-    public ApiResponse<UserDetailsResponseDto> registerStudent(@Valid @RequestBody StudentRegisterRequestDto registerDto) {
-        log.info("Registering student with email: {}", registerDto.getEmail());
-        UserDetailsResponseDto registeredStudent = authService.registerStudent(registerDto);
-        log.info("Student registered successfully with ID: {}", registeredStudent.getId());
-        return new ApiResponse<>("success", "Student registered successfully", registeredStudent);
-    }
-
     @PostMapping("/change-password")
     public ApiResponse<UserDetailsResponseDto> changePassword(@Valid @RequestBody ChangePasswordRequestDto changePasswordDto) {
         log.info("Changing password for current user");

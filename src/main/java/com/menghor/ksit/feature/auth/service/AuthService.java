@@ -15,16 +15,6 @@ public interface AuthService {
     AuthResponseDto login(LoginRequestDto loginRequestDto);
 
     /**
-     * Student registration with enhanced data
-     */
-    UserDetailsResponseDto registerStudent(StudentRegisterRequestDto registerDto);
-
-    /**
-     * Staff/Teacher/Admin registration with enhanced data
-     */
-    UserDetailsResponseDto registerStaff(StaffRegisterRequestDto registerDto);
-
-    /**
      * Change user's password (by user themselves)
      */
     UserDetailsResponseDto changePassword(ChangePasswordRequestDto requestDto);
