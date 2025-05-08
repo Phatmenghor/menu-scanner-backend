@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -31,72 +30,131 @@ public class DefaultUserInitializer {
     @Transactional
     public void initDefaultUsers() {
         log.info("Checking for default users...");
-        
+
         // Skip if users already exist
         if (userRepository.count() > 0) {
             log.info("Users already exist, skipping default user creation");
             return;
         }
-        
+
         log.info("No users found, creating default users");
-        
+
         // Create developer superuser
-        createUser(
-            "developer@ksit.com",
-            "developer123",
-            Collections.singletonList(RoleEnum.DEVELOPER)
-        );
+        createDeveloperUser();
 
         // Create admin user
-        createUser(
-            "admin@ksit.com",
-            "admin123",
-            Collections.singletonList(RoleEnum.ADMIN)
-
-        );
+        createAdminUser();
 
         // Create a staff user
-        createUser(
-            "staff@ksit.com",
-            "staff123",
-            Collections.singletonList(RoleEnum.STAFF)
+        createStaffUser();
 
-        );
+        // Create a teacher user
+        createTeacherUser();
 
         // Create a student user
-        createUser(
-            "student@ksit.com",
-            "student123",
-            Collections.singletonList(RoleEnum.STUDENT)
-        );
-        
+        createStudentUser();
+
         // Create a multi-role user (staff + admin)
-        createUser(
-            "headteacher@ksit.com",
-            "headteacher123",
-            Arrays.asList(RoleEnum.STAFF, RoleEnum.ADMIN)
-        );
+        createMultiRoleUser();
 
         log.info("Default users created successfully");
     }
-    
-    private void createUser(
-            String email, 
-            String password, 
-            List<RoleEnum> roleEnums
-    ) {
-        List<Role> roles = roleEnums.stream()
-                .map(roleEnum -> roleRepository.findByName(roleEnum)
-                        .orElseThrow(() -> new RuntimeException("Role not found: " + roleEnum)))
-                .toList();
 
-        UserEntity user = new UserEntity();
-        user.setUsername(email);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setRoles(roles);
-        user.setStatus(Status.ACTIVE);
+    private void createDeveloperUser() {
+        UserEntity developer = new UserEntity();
+        developer.setUsername("developer@ksit.com");
+        developer.setEmail("developer@ksit.com");
+        developer.setPassword(passwordEncoder.encode("developer123"));
+        developer.setStatus(Status.ACTIVE);
 
-        userRepository.save(user);
-        log.info("Created default user: {}", email);
+        // Set role
+        Role devRole = roleRepository.findByName(RoleEnum.DEVELOPER)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.DEVELOPER));
+        developer.setRoles(Collections.singletonList(devRole));
+
+        userRepository.save(developer);
+        log.info("Created developer user: developer@ksit.com");
+    }
+
+    private void createAdminUser() {
+        UserEntity admin = new UserEntity();
+        admin.setUsername("admin@ksit.com");
+        admin.setEmail("admin@ksit.com");
+        admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setStatus(Status.ACTIVE);
+
+        // Set role
+        Role adminRole = roleRepository.findByName(RoleEnum.ADMIN)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.ADMIN));
+        admin.setRoles(Collections.singletonList(adminRole));
+
+        userRepository.save(admin);
+        log.info("Created admin user: admin@ksit.com");
+    }
+
+    private void createStaffUser() {
+        UserEntity staff = new UserEntity();
+        staff.setUsername("staff@ksit.com");
+        staff.setEmail("staff@ksit.com");
+        staff.setPassword(passwordEncoder.encode("staff123"));
+        staff.setStatus(Status.ACTIVE);
+
+        // Set role
+        Role staffRole = roleRepository.findByName(RoleEnum.STAFF)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.STAFF));
+        staff.setRoles(Collections.singletonList(staffRole));
+
+        userRepository.save(staff);
+        log.info("Created staff user: staff@ksit.com");
+    }
+
+    private void createTeacherUser() {
+        UserEntity teacher = new UserEntity();
+        teacher.setUsername("teacher@ksit.com");
+        teacher.setEmail("teacher@ksit.com");
+        teacher.setPassword(passwordEncoder.encode("teacher123"));
+        teacher.setStatus(Status.ACTIVE);
+
+        // Set role
+        Role teacherRole = roleRepository.findByName(RoleEnum.TEACHER)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.TEACHER));
+        teacher.setRoles(Collections.singletonList(teacherRole));
+
+        userRepository.save(teacher);
+        log.info("Created teacher user: teacher@ksit.com");
+    }
+
+    private void createStudentUser() {
+        UserEntity student = new UserEntity();
+        student.setUsername("student@ksit.com");
+        student.setEmail("student@ksit.com");
+        student.setPassword(passwordEncoder.encode("student123"));
+        student.setStatus(Status.ACTIVE);
+
+        // Set role
+        Role studentRole = roleRepository.findByName(RoleEnum.STUDENT)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.STUDENT));
+        student.setRoles(Collections.singletonList(studentRole));
+
+        userRepository.save(student);
+        log.info("Created student user: student@ksit.com");
+    }
+
+    private void createMultiRoleUser() {
+        UserEntity headTeacher = new UserEntity();
+        headTeacher.setUsername("headteacher@ksit.com");
+        headTeacher.setEmail("headteacher@ksit.com");
+        headTeacher.setPassword(passwordEncoder.encode("headteacher123"));
+        headTeacher.setStatus(Status.ACTIVE);
+
+        // Set multiple roles
+        Role staffRole = roleRepository.findByName(RoleEnum.STAFF)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.STAFF));
+        Role adminRole = roleRepository.findByName(RoleEnum.ADMIN)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.ADMIN));
+        headTeacher.setRoles(Arrays.asList(staffRole, adminRole));
+
+        userRepository.save(headTeacher);
+        log.info("Created multi-role user: headteacher@ksit.com");
     }
 }

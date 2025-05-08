@@ -36,6 +36,6 @@ public class ClassEntity extends BaseEntity {
     private MajorEntity major;
 
     // Students enrolled in this class
-    @OneToMany(mappedBy = "class", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "classes", cascade = CascadeType.ALL)
     private List<UserEntity> students = new ArrayList<>();
 }

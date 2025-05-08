@@ -1,66 +1,73 @@
 package com.menghor.ksit.feature.auth.mapper;
 
 import com.menghor.ksit.enumations.RoleEnum;
-import com.menghor.ksit.feature.auth.dto.request.UserUpdateDto;
+import com.menghor.ksit.feature.auth.dto.request.EnhancedUserUpdateDto;
+import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.UserAllResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsDto;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
+import com.menghor.ksit.feature.master.mapper.ClassMapper;
+import com.menghor.ksit.feature.master.mapper.DepartmentMapper;
 import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
-@Component
+@Mapper(componentModel = "spring", uses = {ClassMapper.class, DepartmentMapper.class})
 public abstract class UserMapper {
 
-    // Convert UserEntity to UserDetailsDto with roles
-    public UserDetailsDto toDto(UserEntity user) {
+    @Autowired
+    protected ClassMapper classMapper;
+
+    @Autowired
+    protected DepartmentMapper departmentMapper;
+
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "studentClass", ignore = true)
+    @Mapping(target = "department", ignore = true)
+    public abstract UserDetailsResponseDto toEnhancedDto(UserEntity user);
+
+    @AfterMapping
+    protected void mapAdditionalFields(UserEntity user, @MappingTarget UserDetailsResponseDto.UserDetailsResponseDtoBuilder userDto) {
         if (user == null) {
-            return null;
+            return;
         }
 
-        UserDetailsDto.UserDetailsDtoBuilder userDto = com.menghor.ksit.feature.auth.dto.resposne.UserDetailsDto.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .status(user.getStatus())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt());
-
-        // Extract all roles
+        // Extract roles
         List<RoleEnum> userRoles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toList());
-
         userDto.roles(userRoles);
 
-        return userDto.build();
+        if (user.isStudent() && user.getClasses() != null) {
+            userDto.studentClass(classMapper.toResponseDto(user.getClasses()));
+        }
+
+        if (user.isOther() && user.getDepartment() != null) {
+            userDto.department(departmentMapper.toResponseDto(user.getDepartment()));
+        }
     }
 
-    // Convert a page of entities to a response DTO
-    public UserAllResponseDto toPageDto(List<UserDetailsDto> content, Page<UserEntity> userPage) {
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    public abstract void updateUserFromDto(EnhancedUserUpdateDto dto, @MappingTarget UserEntity entity);
+
+    @AfterMapping
+    protected void updateConditionalFields(EnhancedUserUpdateDto dto, @MappingTarget UserEntity entity) {
+        // No additional logic needed as conditional updates are handled by NullValuePropertyMappingStrategy.IGNORE
+    }
+
+    public abstract List<UserDetailsResponseDto> toEnhancedDtoList(List<UserEntity> entities);
+
+    public UserAllResponseDto toPageResponse(List<UserDetailsResponseDto> content, Page<UserEntity> page) {
         UserAllResponseDto responseDto = new UserAllResponseDto();
         responseDto.setContent(content);
-        // Add 1 to page number to make it 1-based for clients
-        responseDto.setPageNo(userPage.getNumber() + 1);
-        responseDto.setPageSize(userPage.getSize());
-        responseDto.setTotalElements(userPage.getTotalElements());
-        responseDto.setTotalPages(userPage.getTotalPages());
-        responseDto.setLast(userPage.isLast());
+        responseDto.setPageNo(page.getNumber() + 1);
+        responseDto.setPageSize(page.getSize());
+        responseDto.setTotalElements(page.getTotalElements());
+        responseDto.setTotalPages(page.getTotalPages());
+        responseDto.setLast(page.isLast());
         return responseDto;
-    }
-
-    // Update user entity from DTO, ignoring null values
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    public abstract void updateUserFromDto(UserUpdateDto dto, @MappingTarget UserEntity entity);
-
-    // Convert a list of entities to DTOs
-    public List<UserDetailsDto> toDtoList(List<UserEntity> entities) {
-        return entities.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
     }
 }

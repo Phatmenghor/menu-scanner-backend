@@ -1,6 +1,6 @@
 package com.menghor.ksit.feature.auth.service.impl;
 
-import com.menghor.ksit.feature.auth.models.BlacklistedToken;
+import com.menghor.ksit.feature.auth.models.BlacklistedTokenEntity;
 import com.menghor.ksit.feature.auth.repository.BlacklistedTokenRepository;
 import com.menghor.ksit.feature.auth.security.JWTGenerator;
 import com.menghor.ksit.feature.auth.service.LogoutService;
@@ -50,14 +50,14 @@ public class LogoutServiceImpl implements LogoutService {
             Date expirationDate = claims.getExpiration();
             String username = claims.getSubject();
 
-            BlacklistedToken blacklistedToken = BlacklistedToken.builder()
+            BlacklistedTokenEntity blacklistedTokenEntity = BlacklistedTokenEntity.builder()
                     .token(token)
                     .username(username)
                     .createdAt(LocalDateTime.now())
                     .expirationDate(LocalDateTime.ofInstant(expirationDate.toInstant(), ZoneId.systemDefault()))
                     .build();
 
-            blacklistedTokenRepository.save(blacklistedToken);
+            blacklistedTokenRepository.save(blacklistedTokenEntity);
             SecurityContextHolder.clearContext();
 
             log.info("Logout successful. Token blacklisted for user: {}", username);

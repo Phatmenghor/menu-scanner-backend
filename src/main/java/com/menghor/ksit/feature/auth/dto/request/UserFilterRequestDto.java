@@ -4,11 +4,13 @@ import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
-public class UserFilterDto {
+public class UserFilterRequestDto {
     private String search;
     private Status status;
-    private RoleEnum role;
+    private List<RoleEnum> roles;
     private Integer pageNo = 1;
     private Integer pageSize = 10;
 }

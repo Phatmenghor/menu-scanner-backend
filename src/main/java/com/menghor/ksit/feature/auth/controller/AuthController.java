@@ -1,12 +1,14 @@
 package com.menghor.ksit.feature.auth.controller;
 
-import com.menghor.ksit.enumations.RoleEnum;
+import com.menghor.ksit.constants.SuccessMessages;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
-import com.menghor.ksit.feature.auth.dto.request.UserRegisterDto;
-import com.menghor.ksit.feature.auth.dto.request.StudentRegisterDto;
+import com.menghor.ksit.feature.auth.dto.request.ChangePasswordByAdminRequestDto;
+import com.menghor.ksit.feature.auth.dto.request.ChangePasswordRequestDto;
+import com.menghor.ksit.feature.auth.dto.request.StudentRegisterRequestDto;
+import com.menghor.ksit.feature.auth.dto.request.StaffRegisterRequestDto;
 import com.menghor.ksit.feature.auth.dto.resposne.AuthResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.LoginResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsDto;
+import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsResponseDto;
+import com.menghor.ksit.feature.auth.dto.request.LoginRequestDto;
 import com.menghor.ksit.feature.auth.service.AuthService;
 import com.menghor.ksit.feature.auth.service.LogoutService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,8 +16,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -27,46 +31,44 @@ public class AuthController {
     private final LogoutService logoutService;
 
     @PostMapping("/login")
-    public ApiResponse<AuthResponseDto> login(@Valid @RequestBody LoginResponseDto loginResponseDto) {
-        log.info("Attempting login for username: {}", loginResponseDto.getEmail());
-        AuthResponseDto authResponse = authService.login(loginResponseDto);
-        log.info("Login successful for username: {}", loginResponseDto.getEmail());
+    public ApiResponse<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
+        log.info("Attempting login for username: {}", loginRequestDto.getEmail());
+        AuthResponseDto authResponse = authService.login(loginRequestDto);
+        log.info("Login successful for username: {}", loginRequestDto.getEmail());
         return new ApiResponse<>("success", "Login successful", authResponse);
     }
 
-    @PostMapping("/register")
-    public ApiResponse<UserDetailsDto> registerUsers(@Valid @RequestBody UserRegisterDto registerDto) {
-        log.info("Registering advanced user with email: {}", registerDto.getEmail());
-        UserDetailsDto registeredUser = authService.registerAdvanced(registerDto);
-        log.info("User registered successfully with ID: {}", registeredUser.getId());
-        return new ApiResponse<>("success", "Users registered successfully", registeredUser);
+    @PostMapping("/register/staff")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
+    public ApiResponse<UserDetailsResponseDto> registerStaff(@Valid @RequestBody StaffRegisterRequestDto registerDto) {
+        log.info("Registering staff user with email: {}", registerDto.getEmail());
+        UserDetailsResponseDto registeredUser = authService.registerStaff(registerDto);
+        log.info("Staff user registered successfully with ID: {}", registeredUser.getId());
+        return new ApiResponse<>("success", "Staff registered successfully", registeredUser);
     }
 
     @PostMapping("/register/student")
-    public ApiResponse<UserDetailsDto> registerStudent(@Valid @RequestBody StudentRegisterDto registerDto) {
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
+    public ApiResponse<UserDetailsResponseDto> registerStudent(@Valid @RequestBody StudentRegisterRequestDto registerDto) {
         log.info("Registering student with email: {}", registerDto.getEmail());
-        UserDetailsDto registeredStudent = authService.registerStudent(registerDto);
+        UserDetailsResponseDto registeredStudent = authService.registerStudent(registerDto);
         log.info("Student registered successfully with ID: {}", registeredStudent.getId());
         return new ApiResponse<>("success", "Student registered successfully", registeredStudent);
     }
 
-    @PostMapping("/create/users")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
-    public ApiResponse<UserDetailsDto> createdUser(@Valid @RequestBody UserRegisterDto registerDto) {
-        registerDto.setRole(RoleEnum.STAFF);
-        log.info("Creating staff user with email: {}", registerDto.getEmail());
-        UserDetailsDto registeredStaff = authService.registerAdvanced(registerDto);
-        log.info("Staff user created successfully with ID: {}", registeredStaff.getId());
-        return new ApiResponse<>("success", "Staff registered successfully", registeredStaff);
+    @PostMapping("/change-password")
+    public ApiResponse<UserDetailsResponseDto> changePassword(@Valid @RequestBody ChangePasswordRequestDto changePasswordDto) {
+        log.info("Changing password for current user");
+        UserDetailsResponseDto user = authService.changePassword(changePasswordDto);
+        return new ApiResponse<>(SuccessMessages.SUCCESS, SuccessMessages.PASSWORD_CHANGED_SUCCESSFULLY, user);
     }
 
-    @PostMapping("/create/students")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
-    public ApiResponse<UserDetailsDto> createdStudent(@Valid @RequestBody StudentRegisterDto registerDto) {
-        log.info("Creating student by staff/admin with email: {}", registerDto.getEmail());
-        UserDetailsDto registeredStudent = authService.registerStudent(registerDto);
-        log.info("Student created successfully with ID: {}", registeredStudent.getId());
-        return new ApiResponse<>("success", "Staff registered successfully", registeredStudent);
+    @PostMapping("/change-password-by-admin")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER' , 'STAFF')")
+    public ApiResponse<UserDetailsResponseDto> changePasswordByAdmin(@Valid @RequestBody ChangePasswordByAdminRequestDto changePasswordDto) {
+        log.info("Admin changing password for user ID: {}", changePasswordDto.getId());
+        UserDetailsResponseDto user = authService.changePasswordByAdmin(changePasswordDto);
+        return new ApiResponse<>(SuccessMessages.SUCCESS, SuccessMessages.PASSWORD_CHANGED_SUCCESSFULLY, user);
     }
 
     @PostMapping("/refresh-token")

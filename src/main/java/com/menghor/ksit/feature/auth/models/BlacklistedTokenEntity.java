@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BlacklistedToken extends BaseEntity {
+public class BlacklistedTokenEntity extends BaseEntity {
 
     @Column(unique = true, nullable = false)
     private String token;
