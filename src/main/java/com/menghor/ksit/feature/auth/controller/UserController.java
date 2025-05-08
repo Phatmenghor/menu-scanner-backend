@@ -3,10 +3,10 @@ package com.menghor.ksit.feature.auth.controller;
 import com.menghor.ksit.constants.SuccessMessages;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.auth.dto.request.EnhancedUserUpdateDto;
+import com.menghor.ksit.feature.auth.dto.request.StaffUserFilterRequestDto;
+import com.menghor.ksit.feature.auth.dto.request.StudentUserFilterRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.UserFilterRequestDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserAllResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserStatisticsResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.*;
 import com.menghor.ksit.feature.auth.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +22,9 @@ public class UserController {
 
     private final UserService userService;
 
+    /**
+     * Original endpoint - kept for backward compatibility
+     */
     @PostMapping("/all")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<UserAllResponseDto> getAllUsers(@RequestBody UserFilterRequestDto filterDto) {
@@ -30,6 +33,31 @@ public class UserController {
         return new ApiResponse<>("success", "Users retrieved successfully", users);
     }
 
+    /**
+     * Get all staff users (admin, teacher, developer, staff)
+     */
+    @PostMapping("/staff")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
+    public ApiResponse<StaffUserAllResponseDto> getAllStaffUsers(@RequestBody StaffUserFilterRequestDto filterDto) {
+        log.info("Searching staff users with filter: {}", filterDto);
+        StaffUserAllResponseDto users = userService.getAllStaffUsers(filterDto);
+        return new ApiResponse<>("success", "Staff users retrieved successfully", users);
+    }
+
+    /**
+     * Get all student users
+     */
+    @PostMapping("/students")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
+    public ApiResponse<StudentUserAllResponseDto> getAllStudentUsers(@RequestBody StudentUserFilterRequestDto filterDto) {
+        log.info("Searching student users with filter: {}", filterDto);
+        StudentUserAllResponseDto users = userService.getAllStudentUsers(filterDto);
+        return new ApiResponse<>("success", "Student users retrieved successfully", users);
+    }
+
+    /**
+     * Original endpoint - get user by ID
+     */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<UserDetailsResponseDto> getUserById(@PathVariable Long id) {
@@ -38,6 +66,31 @@ public class UserController {
         return new ApiResponse<>(SuccessMessages.SUCCESS, SuccessMessages.USER_FETCHED_SUCCESSFULLY, user);
     }
 
+    /**
+     * Get staff user by ID
+     */
+    @GetMapping("/staff/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
+    public ApiResponse<StaffUserResponseDto> getStaffUserById(@PathVariable Long id) {
+        log.info("Fetching staff user with ID: {}", id);
+        StaffUserResponseDto user = userService.getStaffUserById(id);
+        return new ApiResponse<>(SuccessMessages.SUCCESS, "Staff user fetched successfully", user);
+    }
+
+    /**
+     * Get student user by ID
+     */
+    @GetMapping("/student/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
+    public ApiResponse<StudentUserResponseDto> getStudentUserById(@PathVariable Long id) {
+        log.info("Fetching student user with ID: {}", id);
+        StudentUserResponseDto user = userService.getStudentUserById(id);
+        return new ApiResponse<>(SuccessMessages.SUCCESS, "Student user fetched successfully", user);
+    }
+
+    /**
+     * Get current user profile
+     */
     @GetMapping("/token")
     public ApiResponse<UserDetailsResponseDto> getCurrentUser() {
         log.info("Fetching current user profile");
@@ -45,6 +98,9 @@ public class UserController {
         return new ApiResponse<>("success", "Current user profile retrieved successfully", user);
     }
 
+    /**
+     * Update user
+     */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
     public ApiResponse<UserDetailsResponseDto> updateUser(@PathVariable Long id, @Valid @RequestBody EnhancedUserUpdateDto updateDto) {
@@ -53,6 +109,9 @@ public class UserController {
         return new ApiResponse<>(SuccessMessages.SUCCESS, SuccessMessages.USER_UPDATED_SUCCESSFULLY, updatedUser);
     }
 
+    /**
+     * Delete/deactivate user
+     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
     public ApiResponse<UserDetailsResponseDto> deleteUser(@PathVariable Long id) {
@@ -61,6 +120,9 @@ public class UserController {
         return new ApiResponse<>("success", "User deactivated successfully", user);
     }
 
+    /**
+     * Get user statistics
+     */
     @GetMapping("/statistics")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
     public ApiResponse<UserStatisticsResponseDto> getUserStatistics() {
@@ -68,5 +130,4 @@ public class UserController {
         UserStatisticsResponseDto statistics = userService.getUserStatistics();
         return new ApiResponse<>("success", "User statistics retrieved successfully", statistics);
     }
-
 }

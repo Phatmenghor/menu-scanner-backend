@@ -2,6 +2,8 @@ package com.menghor.ksit.feature.auth.repository;
 
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.feature.auth.dto.request.StaffUserFilterRequestDto;
+import com.menghor.ksit.feature.auth.dto.request.StudentUserFilterRequestDto;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.master.model.ClassEntity;
@@ -41,13 +43,21 @@ public class UserSpecification {
         };
     }
 
-    // Add this method to UserSpecification class
     public static Specification<UserEntity> hasClassId(Long classId) {
         return (root, query, criteriaBuilder) -> {
             if (classId == null) return criteriaBuilder.conjunction();
 
             Join<UserEntity, ClassEntity> classJoin = root.join("classes", JoinType.LEFT);
             return criteriaBuilder.equal(classJoin.get("id"), classId);
+        };
+    }
+
+    public static Specification<UserEntity> hasDepartmentId(Long departmentId) {
+        return (root, query, criteriaBuilder) -> {
+            if (departmentId == null) return criteriaBuilder.conjunction();
+
+            Join<UserEntity, DepartmentEntity> departmentJoin = root.join("department", JoinType.LEFT);
+            return criteriaBuilder.equal(departmentJoin.get("id"), departmentId);
         };
     }
 
@@ -61,27 +71,27 @@ public class UserSpecification {
         };
     }
 
-    public static Specification<UserEntity> hasDepartment(String departmentName) {
+    public static Specification<UserEntity> isTeacherStaff() {
         return (root, query, criteriaBuilder) -> {
-            if (!StringUtils.hasText(departmentName)) return criteriaBuilder.conjunction();
+            Join<UserEntity, Role> roleJoin = root.join("roles", JoinType.INNER);
 
-            Join<UserEntity, DepartmentEntity> departmentJoin = root.join("department", JoinType.LEFT);
-            return criteriaBuilder.like(
-                    criteriaBuilder.lower(departmentJoin.get("name")),
-                    "%" + departmentName.toLowerCase() + "%"
+            return roleJoin.get("name").in(
+                    List.of(RoleEnum.ADMIN, RoleEnum.TEACHER, RoleEnum.STAFF, RoleEnum.DEVELOPER)
             );
         };
     }
 
-    public static Specification<UserEntity> hasClass(String className) {
+    public static Specification<UserEntity> isStudent() {
         return (root, query, criteriaBuilder) -> {
-            if (!StringUtils.hasText(className)) return criteriaBuilder.conjunction();
+            Join<UserEntity, Role> roleJoin = root.join("roles", JoinType.INNER);
+            return criteriaBuilder.equal(roleJoin.get("name"), RoleEnum.STUDENT);
+        };
+    }
 
-            Join<UserEntity, ClassEntity> classJoin = root.join("classes", JoinType.LEFT);
-            return criteriaBuilder.like(
-                    criteriaBuilder.lower(classJoin.get("code")),
-                    "%" + className.toLowerCase() + "%"
-            );
+    public static Specification<UserEntity> hasPosition(String position) {
+        return (root, query, criteriaBuilder) -> {
+            if (!StringUtils.hasText(position)) return criteriaBuilder.conjunction();
+            return criteriaBuilder.like(criteriaBuilder.lower(root.get("currentPosition")), "%" + position.toLowerCase() + "%");
         };
     }
 
@@ -94,7 +104,6 @@ public class UserSpecification {
         };
     }
 
-    // Combined search across multiple fields
     public static Specification<UserEntity> searchByName(String searchTerm) {
         return (root, query, criteriaBuilder) -> {
             if (!StringUtils.hasText(searchTerm)) return criteriaBuilder.conjunction();
@@ -103,19 +112,20 @@ public class UserSpecification {
 
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("username")), term));
+            predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), term));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("khmerFirstName")), term));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("khmerLastName")), term));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("englishFirstName")), term));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("englishLastName")), term));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("phoneNumber")), term));
-            predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("studentId")), term));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("staffId")), term));
+            predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("nationalId")), term));
 
             return criteriaBuilder.or(predicates.toArray(new Predicate[0]));
         };
     }
 
-    // Then update the createAdvancedSpecification method to include it
+    // Original method - kept for backward compatibility
     public static Specification<UserEntity> createAdvancedSpecification(
             String searchTerm,
             Status status,
@@ -131,11 +141,59 @@ public class UserSpecification {
             spec = spec.and(hasStatus(status));
         }
 
-
         if (roles != null && !roles.isEmpty()) {
             spec = spec.and(hasAnyRole(roles));
         }
 
+        return spec;
+    }
+
+    // Create specification for staff users
+    public static Specification<UserEntity> createStaffSpecification(StaffUserFilterRequestDto filterDto) {
+        Specification<UserEntity> spec = isTeacherStaff();
+
+        if (StringUtils.hasText(filterDto.getSearch())) {
+            spec = spec.and(searchByName(filterDto.getSearch()));
+        }
+
+        if (filterDto.getStatus() != null) {
+            spec = spec.and(hasStatus(filterDto.getStatus()));
+        }
+
+        if (filterDto.getRoles() != null && !filterDto.getRoles().isEmpty()) {
+            spec = spec.and(hasAnyRole(filterDto.getRoles()));
+        }
+
+        if (filterDto.getDepartmentId() != null) {
+            spec = spec.and(hasDepartmentId(filterDto.getDepartmentId()));
+        }
+
+        if (StringUtils.hasText(filterDto.getPosition())) {
+            spec = spec.and(hasPosition(filterDto.getPosition()));
+        }
+
+        return spec;
+    }
+
+    // Create specification for student users
+    public static Specification<UserEntity> createStudentSpecification(StudentUserFilterRequestDto filterDto) {
+        Specification<UserEntity> spec = isStudent();
+
+        if (StringUtils.hasText(filterDto.getSearch())) {
+            spec = spec.and(searchByName(filterDto.getSearch()));
+        }
+
+        if (filterDto.getStatus() != null) {
+            spec = spec.and(hasStatus(filterDto.getStatus()));
+        }
+
+        if (filterDto.getClassId() != null) {
+            spec = spec.and(hasClassId(filterDto.getClassId()));
+        }
+
+        if (filterDto.getAcademicYear() != null) {
+            spec = spec.and(hasAcademicYear(filterDto.getAcademicYear()));
+        }
 
         return spec;
     }
