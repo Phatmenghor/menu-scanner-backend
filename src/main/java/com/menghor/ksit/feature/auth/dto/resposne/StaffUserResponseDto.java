@@ -3,7 +3,7 @@ package com.menghor.ksit.feature.auth.dto.resposne;
 import com.menghor.ksit.enumations.GenderEnum;
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.feature.auth.models.*;
+import com.menghor.ksit.feature.auth.dto.relationship.*;
 import com.menghor.ksit.feature.master.dto.department.response.DepartmentResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -74,38 +74,38 @@ public class StaffUserResponseDto {
     private String affiliatedOrganization;
     private LocalDate federationEstablishmentDate;
     private String wivesSalary;
-    
-    // Teacher Professional History
+
+    // Teacher Professional History - using DTOs instead of entities
     @Builder.Default
-    private List<TeachersProfessionalRankEntity> teachersProfessionalRank = new ArrayList<>();
-    
+    private List<TeachersProfessionalRankDto> teachersProfessionalRank = new ArrayList<>();
+
     // Teacher Work Experience
     @Builder.Default
-    private List<TeacherExperienceEntity> teacherExperience = new ArrayList<>();
-    
+    private List<TeacherExperienceDto> teacherExperience = new ArrayList<>();
+
     // Teacher Praise or Criticism
     @Builder.Default
-    private List<TeacherPraiseOrCriticismEntity> teacherPraiseOrCriticism = new ArrayList<>();
-    
+    private List<TeacherPraiseOrCriticismDto> teacherPraiseOrCriticism = new ArrayList<>();
+
     // Teacher Education
     @Builder.Default
-    private List<TeacherEducationEntity> teacherEducation = new ArrayList<>();
-    
+    private List<TeacherEducationDto> teacherEducation = new ArrayList<>();
+
     // Teacher Vocational Training
     @Builder.Default
-    private List<TeacherVocationalEntity> teacherVocational = new ArrayList<>();
-    
+    private List<TeacherVocationalDto> teacherVocational = new ArrayList<>();
+
     // Teacher Short Courses
     @Builder.Default
-    private List<TeacherShortCourseEntity> teacherShortCourse = new ArrayList<>();
-    
+    private List<TeacherShortCourseDto> teacherShortCourse = new ArrayList<>();
+
     // Teacher Language Skills
     @Builder.Default
-    private List<TeacherLanguageEntity> teacherLanguage = new ArrayList<>();
-    
+    private List<TeacherLanguageDto> teacherLanguage = new ArrayList<>();
+
     // Teacher Family
     @Builder.Default
-    private List<TeacherFamilyEntity> teacherFamily = new ArrayList<>();
+    private List<TeacherFamilyDto> teacherFamily = new ArrayList<>();
 
     // Audit info
     private LocalDateTime createdAt;

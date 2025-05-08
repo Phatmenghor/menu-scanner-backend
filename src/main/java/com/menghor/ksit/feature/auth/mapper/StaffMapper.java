@@ -3,9 +3,6 @@ package com.menghor.ksit.feature.auth.mapper;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 import com.menghor.ksit.feature.auth.models.UserEntity;
-import com.menghor.ksit.feature.master.mapper.DepartmentMapper;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.springframework.data.domain.Page;
 
 import java.util.List;

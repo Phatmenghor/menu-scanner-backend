@@ -13,7 +13,6 @@ import com.menghor.ksit.feature.auth.dto.request.StaffRegisterRequestDto;
 import com.menghor.ksit.feature.auth.dto.resposne.AuthResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsResponseDto;
 import com.menghor.ksit.feature.auth.dto.request.LoginRequestDto;
-import com.menghor.ksit.feature.auth.mapper.UserMapper;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.RoleRepository;
@@ -51,7 +50,6 @@ public class AuthServiceImpl implements AuthService {
     private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JWTGenerator jwtGenerator;
-    private final UserMapper userMapper;
     private final SecurityUtils securityUtils;
 
     @Override

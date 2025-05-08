@@ -2,9 +2,9 @@ package com.menghor.ksit.feature.auth.dto.resposne;
 
 import com.menghor.ksit.enumations.GenderEnum;
 import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.feature.auth.models.StudentParentEntity;
-import com.menghor.ksit.feature.auth.models.StudentSiblingEntity;
-import com.menghor.ksit.feature.auth.models.StudentStudiesHistoryEntity;
+import com.menghor.ksit.feature.auth.dto.relationship.StudentParentDto;
+import com.menghor.ksit.feature.auth.dto.relationship.StudentSiblingDto;
+import com.menghor.ksit.feature.auth.dto.relationship.StudentStudiesHistoryDto;
 import com.menghor.ksit.feature.master.dto.classes.response.ClassResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,18 +47,18 @@ public class StudentUserResponseDto {
     private String memberSiblings;
     private String numberOfSiblings;
     private ClassResponseDto studentClass;
-    
-    // Student Studies History
+
+    // Student Studies History - using DTOs instead of entities
     @Builder.Default
-    private List<StudentStudiesHistoryEntity> studentStudiesHistory = new ArrayList<>();
-    
+    private List<StudentStudiesHistoryDto> studentStudiesHistory = new ArrayList<>();
+
     // Student Parent Information
     @Builder.Default
-    private List<StudentParentEntity> studentParent = new ArrayList<>();
-    
+    private List<StudentParentDto> studentParent = new ArrayList<>();
+
     // Student Siblings
     @Builder.Default
-    private List<StudentSiblingEntity> studentSibling = new ArrayList<>();
+    private List<StudentSiblingDto> studentSibling = new ArrayList<>();
 
     // Audit info
     private LocalDateTime createdAt;

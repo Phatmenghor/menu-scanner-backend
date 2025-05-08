@@ -17,52 +17,63 @@ public class StudentMapperImpl implements StudentMapper {
 
     @Autowired
     private ClassMapper classMapper;
-    
+
+    @Autowired
+    private RelationshipMapper relationshipMapper;
+
     @Override
     public StudentUserResponseDto toStudentUserDto(UserEntity user) {
         if (user == null) {
             return null;
         }
-        
+
         StudentUserResponseDto.StudentUserResponseDtoBuilder dto = StudentUserResponseDto.builder();
-        
+
         // Map basic user properties
         dto.id(user.getId())
-           .username(user.getUsername())
-           .email(user.getEmail())
-           .status(user.getStatus());
-        
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .status(user.getStatus());
+
         // Map personal info
         dto.khmerFirstName(user.getKhmerFirstName())
-           .khmerLastName(user.getKhmerLastName())
-           .englishFirstName(user.getEnglishFirstName())
-           .englishLastName(user.getEnglishLastName())
-           .gender(user.getGender())
-           .dateOfBirth(user.getDateOfBirth())
-           .phoneNumber(user.getPhoneNumber())
-           .currentAddress(user.getCurrentAddress())
-           .nationality(user.getNationality())
-           .ethnicity(user.getEthnicity())
-           .placeOfBirth(user.getPlaceOfBirth());
-        
+                .khmerLastName(user.getKhmerLastName())
+                .englishFirstName(user.getEnglishFirstName())
+                .englishLastName(user.getEnglishLastName())
+                .gender(user.getGender())
+                .dateOfBirth(user.getDateOfBirth())
+                .phoneNumber(user.getPhoneNumber())
+                .currentAddress(user.getCurrentAddress())
+                .nationality(user.getNationality())
+                .ethnicity(user.getEthnicity())
+                .placeOfBirth(user.getPlaceOfBirth());
+
         // Map student-specific fields
         dto.memberSiblings(user.getMemberSiblings())
-           .numberOfSiblings(user.getNumberOfSiblings());
-        
+                .numberOfSiblings(user.getNumberOfSiblings());
+
         // Map class if available
         if (user.getClasses() != null) {
             dto.studentClass(classMapper.toResponseDto(user.getClasses()));
         }
-        
-        // Map related lists
-        dto.studentStudiesHistory(user.getStudentStudiesHistory())
-           .studentParent(user.getStudentParent())
-           .studentSibling(user.getStudentSibling());
-        
+
+        // Use relationship mapper to convert related entities without circular references
+        if (user.getStudentStudiesHistory() != null) {
+            dto.studentStudiesHistory(relationshipMapper.toStudentStudiesHistoryDtoList(user.getStudentStudiesHistory()));
+        }
+
+        if (user.getStudentParent() != null) {
+            dto.studentParent(relationshipMapper.toStudentParentDtoList(user.getStudentParent()));
+        }
+
+        if (user.getStudentSibling() != null) {
+            dto.studentSibling(relationshipMapper.toStudentSiblingDtoList(user.getStudentSibling()));
+        }
+
         // Map audit info
         dto.createdAt(user.getCreatedAt())
-           .updatedAt(user.getUpdatedAt());
-        
+                .updatedAt(user.getUpdatedAt());
+
         return dto.build();
     }
 
@@ -71,10 +82,10 @@ public class StudentMapperImpl implements StudentMapper {
         if (entities == null) {
             return new ArrayList<>();
         }
-        
+
         return entities.stream()
-               .map(this::toStudentUserDto)
-               .collect(Collectors.toList());
+                .map(this::toStudentUserDto)
+                .collect(Collectors.toList());
     }
 
     @Override

@@ -19,90 +19,116 @@ public class StaffMapperImpl implements StaffMapper {
 
     @Autowired
     private DepartmentMapper departmentMapper;
-    
+
+    @Autowired
+    private RelationshipMapper relationshipMapper;
+
     @Override
     public StaffUserResponseDto toStaffUserDto(UserEntity user) {
         if (user == null) {
             return null;
         }
-        
+
         StaffUserResponseDto.StaffUserResponseDtoBuilder dto = StaffUserResponseDto.builder();
-        
+
         // Map basic user properties
         dto.id(user.getId())
-           .username(user.getUsername())
-           .email(user.getEmail())
-           .status(user.getStatus());
-        
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .status(user.getStatus());
+
         // Map roles
         if (user.getRoles() != null) {
             List<RoleEnum> roles = user.getRoles().stream()
-                .map(Role::getName)
-                .collect(Collectors.toList());
+                    .map(Role::getName)
+                    .collect(Collectors.toList());
             dto.roles(roles);
         }
-        
+
         // Map personal info
         dto.khmerFirstName(user.getKhmerFirstName())
-           .khmerLastName(user.getKhmerLastName())
-           .englishFirstName(user.getEnglishFirstName())
-           .englishLastName(user.getEnglishLastName())
-           .gender(user.getGender())
-           .dateOfBirth(user.getDateOfBirth())
-           .phoneNumber(user.getPhoneNumber())
-           .currentAddress(user.getCurrentAddress())
-           .nationality(user.getNationality())
-           .ethnicity(user.getEthnicity())
-           .placeOfBirth(user.getPlaceOfBirth());
-        
+                .khmerLastName(user.getKhmerLastName())
+                .englishFirstName(user.getEnglishFirstName())
+                .englishLastName(user.getEnglishLastName())
+                .gender(user.getGender())
+                .dateOfBirth(user.getDateOfBirth())
+                .phoneNumber(user.getPhoneNumber())
+                .currentAddress(user.getCurrentAddress())
+                .nationality(user.getNationality())
+                .ethnicity(user.getEthnicity())
+                .placeOfBirth(user.getPlaceOfBirth());
+
         // Map staff-specific fields
         dto.staffId(user.getStaffId())
-           .nationalId(user.getNationalId())
-           .identifyNumber(user.getIdentifyNumber())
-           .startWorkDate(user.getStartWorkDate())
-           .currentPositionDate(user.getCurrentPositionDate())
-           .employeeWork(user.getEmployeeWork())
-           .disability(user.getDisability())
-           .payroll_account_number(user.getPayroll_account_number())
-           .cpp_membership_number(user.getCpp_membership_number())
-           .province(user.getProvince())
-           .district(user.getDistrict())
-           .commune(user.getCommune())
-           .village(user.getVillage())
-           .officeName(user.getOfficeName())
-           .currentPosition(user.getCurrentPosition())
-           .decreeFinal(user.getDecreeFinal())
-           .rankAndClass(user.getRankAndClass());
-        
+                .nationalId(user.getNationalId())
+                .identifyNumber(user.getIdentifyNumber())
+                .startWorkDate(user.getStartWorkDate())
+                .currentPositionDate(user.getCurrentPositionDate())
+                .employeeWork(user.getEmployeeWork())
+                .disability(user.getDisability())
+                .payroll_account_number(user.getPayroll_account_number())
+                .cpp_membership_number(user.getCpp_membership_number())
+                .province(user.getProvince())
+                .district(user.getDistrict())
+                .commune(user.getCommune())
+                .village(user.getVillage())
+                .officeName(user.getOfficeName())
+                .currentPosition(user.getCurrentPosition())
+                .decreeFinal(user.getDecreeFinal())
+                .rankAndClass(user.getRankAndClass());
+
         // Map department if available
         if (user.getDepartment() != null) {
             dto.department(departmentMapper.toResponseDto(user.getDepartment()));
         }
-        
+
         // Map work history and family information
         dto.workHistory(user.getWorkHistory())
-           .maritalStatus(user.getMaritalStatus())
-           .mustBe(user.getMustBe())
-           .affiliatedProfession(user.getAffiliatedProfession())
-           .federationName(user.getFederationName())
-           .affiliatedOrganization(user.getAffiliatedOrganization())
-           .federationEstablishmentDate(user.getFederationEstablishmentDate())
-           .wivesSalary(user.getWivesSalary());
-        
-        // Map related lists
-        dto.teachersProfessionalRank(user.getTeachersProfessionalRank())
-           .teacherExperience(user.getTeacherExperience())
-           .teacherPraiseOrCriticism(user.getTeacherPraiseOrCriticism())
-           .teacherEducation(user.getTeacherEducation())
-           .teacherVocational(user.getTeacherVocational())
-           .teacherShortCourse(user.getTeacherShortCourse())
-           .teacherLanguage(user.getTeacherLanguage())
-           .teacherFamily(user.getTeacherFamily());
-        
+                .maritalStatus(user.getMaritalStatus())
+                .mustBe(user.getMustBe())
+                .affiliatedProfession(user.getAffiliatedProfession())
+                .federationName(user.getFederationName())
+                .affiliatedOrganization(user.getAffiliatedOrganization())
+                .federationEstablishmentDate(user.getFederationEstablishmentDate())
+                .wivesSalary(user.getWivesSalary());
+
+        // Use new relationship mapper to convert related entities without circular references
+        if (user.getTeachersProfessionalRank() != null) {
+            dto.teachersProfessionalRank(relationshipMapper.toTeacherRankDtoList(user.getTeachersProfessionalRank()));
+        }
+
+        if (user.getTeacherExperience() != null) {
+            dto.teacherExperience(relationshipMapper.toTeacherExperienceDtoList(user.getTeacherExperience()));
+        }
+
+        if (user.getTeacherPraiseOrCriticism() != null) {
+            dto.teacherPraiseOrCriticism(relationshipMapper.toTeacherPraiseDtoList(user.getTeacherPraiseOrCriticism()));
+        }
+
+        if (user.getTeacherEducation() != null) {
+            dto.teacherEducation(relationshipMapper.toTeacherEducationDtoList(user.getTeacherEducation()));
+        }
+
+        if (user.getTeacherVocational() != null) {
+            dto.teacherVocational(relationshipMapper.toTeacherVocationalDtoList(user.getTeacherVocational()));
+        }
+
+        if (user.getTeacherShortCourse() != null) {
+            dto.teacherShortCourse(relationshipMapper.toTeacherShortCourseDtoList(user.getTeacherShortCourse()));
+        }
+
+        if (user.getTeacherLanguage() != null) {
+            dto.teacherLanguage(relationshipMapper.toTeacherLanguageDtoList(user.getTeacherLanguage()));
+        }
+
+        if (user.getTeacherFamily() != null) {
+            dto.teacherFamily(relationshipMapper.toTeacherFamilyDtoList(user.getTeacherFamily()));
+        }
+
         // Map audit info
         dto.createdAt(user.getCreatedAt())
-           .updatedAt(user.getUpdatedAt());
-        
+                .updatedAt(user.getUpdatedAt());
+
         return dto.build();
     }
 
@@ -111,10 +137,10 @@ public class StaffMapperImpl implements StaffMapper {
         if (entities == null) {
             return new ArrayList<>();
         }
-        
+
         return entities.stream()
-               .map(this::toStaffUserDto)
-               .collect(Collectors.toList());
+                .map(this::toStaffUserDto)
+                .collect(Collectors.toList());
     }
 
     @Override
