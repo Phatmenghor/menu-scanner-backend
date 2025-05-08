@@ -8,7 +8,7 @@ import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.dto.relationship.*;
 import com.menghor.ksit.feature.auth.dto.request.StaffCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StaffUpdateRequestDto;
-import com.menghor.ksit.feature.auth.dto.request.StaffUserFilterRequestDto;
+import com.menghor.ksit.feature.auth.dto.filter.StaffUserFilterRequestDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 import com.menghor.ksit.feature.auth.mapper.StaffMapper;

@@ -2,7 +2,7 @@ package com.menghor.ksit.feature.auth.service;
 
 import com.menghor.ksit.feature.auth.dto.request.StaffCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StaffUpdateRequestDto;
-import com.menghor.ksit.feature.auth.dto.request.StaffUserFilterRequestDto;
+import com.menghor.ksit.feature.auth.dto.filter.StaffUserFilterRequestDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 

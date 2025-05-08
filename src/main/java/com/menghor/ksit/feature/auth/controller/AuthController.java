@@ -4,13 +4,16 @@ import com.menghor.ksit.constants.SuccessMessages;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.auth.dto.request.ChangePasswordByAdminRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.ChangePasswordRequestDto;
-import com.menghor.ksit.feature.auth.dto.request.StudentRegisterRequestDto;
-import com.menghor.ksit.feature.auth.dto.request.StaffRegisterRequestDto;
 import com.menghor.ksit.feature.auth.dto.resposne.AuthResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.UserDetailsResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.dto.request.LoginRequestDto;
+import com.menghor.ksit.feature.auth.mapper.StaffMapper;
+import com.menghor.ksit.feature.auth.mapper.StudentMapper;
+import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.service.AuthService;
 import com.menghor.ksit.feature.auth.service.LogoutService;
+import com.menghor.ksit.utils.database.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,9 @@ public class AuthController {
 
     private final AuthService authService;
     private final LogoutService logoutService;
+    private final SecurityUtils securityUtils;
+    private final StudentMapper studentMapper;
+    private final StaffMapper staffMapper;
 
     @PostMapping("/login")
     public ApiResponse<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
@@ -38,19 +44,52 @@ public class AuthController {
         return new ApiResponse<>("success", "Login successful", authResponse);
     }
 
-    @PostMapping("/change-password")
-    public ApiResponse<UserDetailsResponseDto> changePassword(@Valid @RequestBody ChangePasswordRequestDto changePasswordDto) {
-        log.info("Changing password for current user");
-        UserDetailsResponseDto user = authService.changePassword(changePasswordDto);
+    @PostMapping("/staff/change-password")
+    public ApiResponse<StaffUserResponseDto> changePasswordStaff(@Valid @RequestBody ChangePasswordRequestDto changePasswordDto) {
+        log.info("Changing password for user staff");
+        StaffUserResponseDto user = authService.changePasswordStaff(changePasswordDto);
         return new ApiResponse<>(SuccessMessages.SUCCESS, SuccessMessages.PASSWORD_CHANGED_SUCCESSFULLY, user);
     }
 
-    @PostMapping("/change-password-by-admin")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER' , 'STAFF')")
-    public ApiResponse<UserDetailsResponseDto> changePasswordByAdmin(@Valid @RequestBody ChangePasswordByAdminRequestDto changePasswordDto) {
-        log.info("Admin changing password for user ID: {}", changePasswordDto.getId());
-        UserDetailsResponseDto user = authService.changePasswordByAdmin(changePasswordDto);
+    @PostMapping("/student/change-password-student")
+    public ApiResponse<StudentUserResponseDto> changePassword(@Valid @RequestBody ChangePasswordRequestDto changePasswordDto) {
+        log.info("Changing password for current student user");
+        StudentUserResponseDto user = authService.changePasswordStudent(changePasswordDto);
         return new ApiResponse<>(SuccessMessages.SUCCESS, SuccessMessages.PASSWORD_CHANGED_SUCCESSFULLY, user);
+    }
+
+    @PostMapping("/staff/change-password-by-admin")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER' , 'STAFF')")
+    public ApiResponse<StaffUserResponseDto> changePasswordStaffByAdmin(@Valid @RequestBody ChangePasswordByAdminRequestDto changePasswordDto) {
+        log.info("Admin changing password for user ID: {}", changePasswordDto.getId());
+        StaffUserResponseDto user = authService.changePasswordStaffByAdmin(changePasswordDto);
+        return new ApiResponse<>(SuccessMessages.SUCCESS, SuccessMessages.PASSWORD_CHANGED_SUCCESSFULLY, user);
+    }
+
+    @PostMapping("/student/change-password-by-admin")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER' , 'STAFF')")
+    public ApiResponse<StudentUserResponseDto> changePasswordStudentByAdmin(@Valid @RequestBody ChangePasswordByAdminRequestDto changePasswordDto) {
+        log.info("Admin changing password for user student ID: {}", changePasswordDto.getId());
+        StudentUserResponseDto user = authService.changePasswordStudentByAdmin(changePasswordDto);
+        return new ApiResponse<>(SuccessMessages.SUCCESS, SuccessMessages.PASSWORD_CHANGED_SUCCESSFULLY, user);
+    }
+
+    @PostMapping("/student/token")
+    public ApiResponse<StudentUserResponseDto> getStudentByToken() {
+        log.info("get user student by token");
+        final UserEntity currentEntity = securityUtils.getCurrentUser();
+        StudentUserResponseDto user = studentMapper.toStudentUserDto(currentEntity);
+        log.info("get user student by token successfully");
+        return new ApiResponse<>(SuccessMessages.SUCCESS, "User student get by token response successfully", user);
+    }
+
+    @PostMapping("/staff/token")
+    public ApiResponse<StaffUserResponseDto> getStaffByToken() {
+        log.info("get user staff by token");
+        final UserEntity currentEntity = securityUtils.getCurrentUser();
+        StaffUserResponseDto user = staffMapper.toStaffUserDto(currentEntity);
+        log.info("get user staff by token successfully");
+        return new ApiResponse<>(SuccessMessages.SUCCESS, "User staff get by token response successfully", user);
     }
 
     @PostMapping("/refresh-token")

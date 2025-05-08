@@ -10,9 +10,10 @@ import com.menghor.ksit.feature.auth.dto.relationship.StudentSiblingDto;
 import com.menghor.ksit.feature.auth.dto.relationship.StudentStudiesHistoryDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentUpdateRequestDto;
-import com.menghor.ksit.feature.auth.dto.request.StudentUserFilterRequestDto;
+import com.menghor.ksit.feature.auth.dto.filter.StudentUserFilterRequestDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
+import com.menghor.ksit.feature.auth.mapper.StaffMapper;
 import com.menghor.ksit.feature.auth.mapper.StudentMapper;
 import com.menghor.ksit.feature.auth.models.*;
 import com.menghor.ksit.feature.auth.repository.RoleRepository;
@@ -47,6 +48,7 @@ public class StudentServiceImpl implements StudentService {
     private final ClassRepository classRepository;
     private final PasswordEncoder passwordEncoder;
     private final StudentMapper studentMapper;
+    private final StaffMapper staffMapper;
 
     @Override
     @Transactional

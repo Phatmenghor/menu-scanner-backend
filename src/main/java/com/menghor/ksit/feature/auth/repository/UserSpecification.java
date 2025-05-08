@@ -2,8 +2,8 @@ package com.menghor.ksit.feature.auth.repository;
 
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.feature.auth.dto.request.StaffUserFilterRequestDto;
-import com.menghor.ksit.feature.auth.dto.request.StudentUserFilterRequestDto;
+import com.menghor.ksit.feature.auth.dto.filter.StaffUserFilterRequestDto;
+import com.menghor.ksit.feature.auth.dto.filter.StudentUserFilterRequestDto;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.master.model.ClassEntity;

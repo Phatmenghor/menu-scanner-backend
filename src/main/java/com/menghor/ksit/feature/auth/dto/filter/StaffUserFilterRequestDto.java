@@ -1,4 +1,4 @@
-package com.menghor.ksit.feature.auth.dto.request;
+package com.menghor.ksit.feature.auth.dto.filter;
 
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
