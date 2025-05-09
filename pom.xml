@@ -146,6 +146,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>ks_it</finalName>
 	</build>
 
 </project>
