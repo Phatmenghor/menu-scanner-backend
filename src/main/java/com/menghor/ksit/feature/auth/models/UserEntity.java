@@ -80,9 +80,9 @@ public class UserEntity extends BaseEntity {
     //    teacher , student
     private String placeOfBirth; // ទីកន្លែងកំណើត
     //    teacher
-    private String payroll_account_number; // លេខគណនីបៀវត្ស
+    private String payrollAccountNumber; // លេខគណនីបៀវត្ស
     //    teacher
-    private String cpp_membership_number; // លេខសមាជិកបសបខ
+    private String cppMembershipNumber; // លេខសមាជិកបសបខ
 
     //    teacher
     private LocalDate startWorkDate;  // ថ្ងៃខែឆ្នាំចូលបម្រើការងារ
@@ -111,9 +111,9 @@ public class UserEntity extends BaseEntity {
     //    teacher
     private String rankAndClass; // ឋាននន្តរស័ក្តិ និងថ្នាក់
     //    teacher
-    private String reference_note; // យោង
+    private String referenceNote; // យោង
     //    teacher
-    private String serial_number; // លេខរៀង
+    private String serialNumber; // លេខរៀង
     //    teacher
     private LocalDate lastSalaryIncrementDate; // ថ្ងៃខែឡើងការប្រាក់ចុងក្រោយ
     //    teacher

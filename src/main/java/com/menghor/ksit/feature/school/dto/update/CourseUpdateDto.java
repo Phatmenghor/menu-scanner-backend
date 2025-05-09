@@ -1,15 +1,12 @@
-package com.menghor.ksit.feature.school.dto.request;
+package com.menghor.ksit.feature.school.dto.update;
 
 import com.menghor.ksit.enumations.Status;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class CourseRequestDto {
-
-    @NotBlank(message = "Course code is required")
+public class CourseUpdateDto {
     private String code;
-
     private String nameKH;
     private String nameEn;
     private Integer credit;
@@ -20,7 +17,7 @@ public class CourseRequestDto {
     private String description;
     private String purpose;
     private String expectedOutcome;
-    private Status status = Status.ACTIVE;
+    private Status status;
     private Long departmentId;
     private Long subjectId;
     private Long teacherId;

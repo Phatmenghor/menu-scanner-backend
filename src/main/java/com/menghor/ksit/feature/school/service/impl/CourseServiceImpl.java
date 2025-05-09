@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.school.service.impl;
 
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
@@ -8,6 +9,7 @@ import com.menghor.ksit.feature.school.dto.filter.CourseFilterDto;
 import com.menghor.ksit.feature.school.dto.request.CourseRequestDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseListDto;
+import com.menghor.ksit.feature.school.dto.update.CourseUpdateDto;
 import com.menghor.ksit.feature.school.mapper.CourseMapper;
 import com.menghor.ksit.feature.school.model.CourseEntity;
 import com.menghor.ksit.feature.school.repository.CourseRepository;
@@ -50,6 +52,9 @@ public class CourseServiceImpl implements CourseService {
                 courseRequestDto.getSubjectId(),
                 courseRequestDto.getTeacherId());
 
+        // Validate all IDs before proceeding
+        validateCourseRequestIds(courseRequestDto);
+
         CourseEntity course = courseMapper.toEntity(courseRequestDto);
 
         // Set department
@@ -60,7 +65,7 @@ public class CourseServiceImpl implements CourseService {
         SubjectEntity subject = findSubjectById(courseRequestDto.getSubjectId());
         course.setSubject(subject);
 
-        // Set teacher if provided
+        // Set teacher if provided (optional)
         if (courseRequestDto.getTeacherId() != null) {
             UserEntity teacher = findTeacherById(courseRequestDto.getTeacherId());
             course.setUser(teacher);
@@ -84,7 +89,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
-    public CourseResponseDto updateById(Long id, CourseRequestDto courseRequestDto) {
+    public CourseResponseDto updateById(Long id, CourseUpdateDto courseRequestDto) {
         log.info("Updating course with ID: {}", id);
 
         // Find the existing course
@@ -95,16 +100,25 @@ public class CourseServiceImpl implements CourseService {
 
         // Handle relationships separately if provided
         if (courseRequestDto.getDepartmentId() != null) {
+            if (!departmentRepository.existsById(courseRequestDto.getDepartmentId())) {
+                throw new NotFoundException("Department not found with ID: " + courseRequestDto.getDepartmentId());
+            }
             DepartmentEntity department = findDepartmentById(courseRequestDto.getDepartmentId());
             existingCourse.setDepartment(department);
         }
 
         if (courseRequestDto.getSubjectId() != null) {
+            if (!subjectRepository.existsById(courseRequestDto.getSubjectId())) {
+                throw new NotFoundException("Subject not found with ID: " + courseRequestDto.getSubjectId());
+            }
             SubjectEntity subject = findSubjectById(courseRequestDto.getSubjectId());
             existingCourse.setSubject(subject);
         }
 
         if (courseRequestDto.getTeacherId() != null) {
+            if (!userRepository.existsById(courseRequestDto.getTeacherId())) {
+                throw new NotFoundException("Teacher not found with ID: " + courseRequestDto.getTeacherId());
+            }
             UserEntity teacher = findTeacherById(courseRequestDto.getTeacherId());
             existingCourse.setUser(teacher);
         }
@@ -221,5 +235,35 @@ public class CourseServiceImpl implements CourseService {
                     log.error("Teacher not found with ID: {}", id);
                     return new NotFoundException("Teacher id " + id + " not found. Please try again.");
                 });
+    }
+
+    // First, validate all IDs before proceeding with any database operations
+    private void validateCourseRequestIds(CourseRequestDto courseRequestDto) {
+        // Check department ID
+        if (courseRequestDto.getDepartmentId() == null) {
+            throw new BadRequestException("Department ID is required");
+        }
+
+        if (!departmentRepository.existsById(courseRequestDto.getDepartmentId())) {
+            throw new NotFoundException("Department not found with ID: " + courseRequestDto.getDepartmentId());
+        }
+
+        // Check subject ID
+        if (courseRequestDto.getSubjectId() == null) {
+            throw new BadRequestException("Subject ID is required");
+        }
+
+        if (!subjectRepository.existsById(courseRequestDto.getSubjectId())) {
+            throw new NotFoundException("Subject not found with ID: " + courseRequestDto.getSubjectId());
+        }
+
+        // Check department ID
+        if (courseRequestDto.getTeacherId() == null) {
+            throw new BadRequestException("Teacher ID is required");
+        }
+
+        if (!userRepository.existsById(courseRequestDto.getTeacherId())) {
+            throw new NotFoundException("Teacher not found with ID: " + courseRequestDto.getTeacherId());
+        }
     }
 }

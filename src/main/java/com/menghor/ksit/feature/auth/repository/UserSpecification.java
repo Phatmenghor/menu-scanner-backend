@@ -168,10 +168,6 @@ public class UserSpecification {
             spec = spec.and(hasDepartmentId(filterDto.getDepartmentId()));
         }
 
-        if (StringUtils.hasText(filterDto.getPosition())) {
-            spec = spec.and(hasPosition(filterDto.getPosition()));
-        }
-
         return spec;
     }
 

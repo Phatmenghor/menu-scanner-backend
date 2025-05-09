@@ -6,6 +6,7 @@ import com.menghor.ksit.feature.master.mapper.SubjectMapper;
 import com.menghor.ksit.feature.school.dto.request.CourseRequestDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseListDto;
+import com.menghor.ksit.feature.school.dto.update.CourseUpdateDto;
 import com.menghor.ksit.feature.school.model.CourseEntity;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import org.mapstruct.*;
@@ -45,7 +46,7 @@ public interface CourseMapper {
     @Mapping(target = "department", ignore = true)
     @Mapping(target = "subject", ignore = true)
     @Mapping(target = "user", ignore = true)
-    void updateEntityFromDto(CourseRequestDto dto, @MappingTarget CourseEntity entity);
+    void updateEntityFromDto(CourseUpdateDto dto, @MappingTarget CourseEntity entity);
 
     @Mapping(target = "departmentName", source = "department.name")
     @Mapping(target = "subjectName", source = "subject.name")

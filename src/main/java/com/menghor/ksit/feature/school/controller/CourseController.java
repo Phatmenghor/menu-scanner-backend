@@ -5,6 +5,7 @@ import com.menghor.ksit.feature.school.dto.filter.CourseFilterDto;
 import com.menghor.ksit.feature.school.dto.request.CourseRequestDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseListDto;
+import com.menghor.ksit.feature.school.dto.update.CourseUpdateDto;
 import com.menghor.ksit.feature.school.service.CourseService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
@@ -45,7 +46,7 @@ public class CourseController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
-    public ApiResponse<CourseResponseDto> updateCourse(@PathVariable Long id, @Valid @RequestBody CourseRequestDto courseRequestDto) {
+    public ApiResponse<CourseResponseDto> updateCourse(@PathVariable Long id, @Valid @RequestBody CourseUpdateDto courseRequestDto) {
         log.info("REST request to update course with ID {}: {}", id, courseRequestDto);
         CourseResponseDto courseResponseDto = courseService.updateById(id, courseRequestDto);
         return new ApiResponse<>(

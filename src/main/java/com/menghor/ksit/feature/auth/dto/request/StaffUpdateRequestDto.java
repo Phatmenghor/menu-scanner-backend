@@ -46,8 +46,8 @@ public class StaffUpdateRequestDto {
     private LocalDate currentPositionDate;
     private String employeeWork;
     private String disability;
-    private String payroll_account_number;
-    private String cpp_membership_number;
+    private String payrollAccountNumber;
+    private String cppMembershipNumber;
     private String province;
     private String district;
     private String commune;

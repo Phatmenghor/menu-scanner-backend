@@ -85,8 +85,8 @@ public class StaffServiceImpl implements StaffService {
         staff.setCurrentPositionDate(requestDto.getCurrentPositionDate());
         staff.setEmployeeWork(requestDto.getEmployeeWork());
         staff.setDisability(requestDto.getDisability());
-        staff.setPayroll_account_number(requestDto.getPayroll_account_number());
-        staff.setCpp_membership_number(requestDto.getCpp_membership_number());
+        staff.setPayrollAccountNumber(requestDto.getPayrollAccountNumber());
+        staff.setCppMembershipNumber(requestDto.getCppMembershipNumber());
         staff.setProvince(requestDto.getProvince());
         staff.setDistrict(requestDto.getDistrict());
         staff.setCommune(requestDto.getCommune());
@@ -360,8 +360,8 @@ public class StaffServiceImpl implements StaffService {
         if (updateDto.getCurrentPositionDate() != null) staff.setCurrentPositionDate(updateDto.getCurrentPositionDate());
         if (updateDto.getEmployeeWork() != null) staff.setEmployeeWork(updateDto.getEmployeeWork());
         if (updateDto.getDisability() != null) staff.setDisability(updateDto.getDisability());
-        if (updateDto.getPayroll_account_number() != null) staff.setPayroll_account_number(updateDto.getPayroll_account_number());
-        if (updateDto.getCpp_membership_number() != null) staff.setCpp_membership_number(updateDto.getCpp_membership_number());
+        if (updateDto.getPayrollAccountNumber() != null) staff.setPayrollAccountNumber(updateDto.getPayrollAccountNumber());
+        if (updateDto.getCppMembershipNumber() != null) staff.setCppMembershipNumber(updateDto.getCppMembershipNumber());
         if (updateDto.getProvince() != null) staff.setProvince(updateDto.getProvince());
         if (updateDto.getDistrict() != null) staff.setDistrict(updateDto.getDistrict());
         if (updateDto.getCommune() != null) staff.setCommune(updateDto.getCommune());

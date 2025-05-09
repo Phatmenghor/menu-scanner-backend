@@ -15,7 +15,6 @@ public class StaffUserFilterRequestDto {
     private Status status;
     private List<RoleEnum> roles;
     private Long departmentId;
-    private String position;
     private Integer pageNo = 1;
     private Integer pageSize = 10;
 }

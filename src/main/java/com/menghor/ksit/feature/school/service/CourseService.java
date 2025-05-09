@@ -4,6 +4,7 @@ import com.menghor.ksit.feature.school.dto.filter.CourseFilterDto;
 import com.menghor.ksit.feature.school.dto.request.CourseRequestDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseListDto;
+import com.menghor.ksit.feature.school.dto.update.CourseUpdateDto;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 
 public interface CourseService {
@@ -12,7 +13,7 @@ public interface CourseService {
 
     CourseResponseDto getCourseById(Long id);
 
-    CourseResponseDto updateById(Long id, CourseRequestDto courseRequestDto);
+    CourseResponseDto updateById(Long id, CourseUpdateDto courseRequestDto);
 
     CourseResponseDto deleteById(Long id);
 
