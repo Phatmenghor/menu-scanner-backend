@@ -8,8 +8,12 @@ import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 public interface RoomService {
 
     RoomResponseDto createRoom(RoomRequestDto roomRequest);
+
     RoomResponseDto getRoomById(Long id);
+
     RoomResponseDto updateRoomById(RoomRequestDto roomRequest, Long id);
+
     RoomResponseDto deleteRoomById(Long id);
+
     CustomPaginationResponseDto<RoomResponseDto> getAllRoom(RoomFilterDto filterDto);
 }

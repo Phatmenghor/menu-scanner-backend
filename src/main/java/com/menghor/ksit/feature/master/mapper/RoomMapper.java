@@ -15,8 +15,6 @@ import java.util.stream.Collectors;
 public interface RoomMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
     RoomEntity toEntity (RoomRequestDto roomRequestDto);
 
     @Mapping(target = "id", source = "id")
