@@ -28,6 +28,6 @@ public class SemesterEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private SemesterEnum semester;
 
-    @OneToMany(mappedBy = "semesterEnum", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "semester", cascade = CascadeType.ALL)
     private List<ScheduleEntity> schedules = new ArrayList<>();
 }

@@ -9,7 +9,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
 
 @Setter
 @Getter
@@ -19,7 +18,6 @@ public class ScheduleEntity extends BaseEntity {
 
     private String startTime;
     private String endTime;
-    private Integer academyYear;
 
     @Enumerated(EnumType.STRING)
     private Status status;
