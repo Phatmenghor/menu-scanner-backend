@@ -26,7 +26,7 @@ public class StaffController {
      * Register a new staff member
      */
     @PostMapping("/register")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StaffUserResponseDto> registerStaff(@Valid @RequestBody StaffCreateRequestDto requestDto) {
         log.info("Registering staff user with email: {}", requestDto.getEmail());
         StaffUserResponseDto registeredUser = staffService.registerStaff(requestDto);
@@ -60,7 +60,7 @@ public class StaffController {
      * Update staff user
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StaffUserResponseDto> updateStaffUser(@PathVariable Long id, @Valid @RequestBody StaffUpdateRequestDto updateDto) {
         log.info("Updating staff user with ID: {}", id);
         StaffUserResponseDto updatedUser = staffService.updateStaffUser(id, updateDto);
@@ -71,7 +71,7 @@ public class StaffController {
      * Delete/deactivate staff user
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StaffUserResponseDto> deleteStaffUser(@PathVariable Long id) {
         log.info("Deleting/deactivating staff user with ID: {}", id);
         StaffUserResponseDto user = staffService.deleteStaffUser(id);

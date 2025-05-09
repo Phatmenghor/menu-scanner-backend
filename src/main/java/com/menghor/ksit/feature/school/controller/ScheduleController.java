@@ -36,6 +36,7 @@ public class ScheduleController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<ScheduleResponseDto> getScheduleById(@PathVariable Long id) {
         log.info("REST request to get schedule by ID: {}", id);
         ScheduleResponseDto responseDto = scheduleService.getScheduleById(id);
@@ -46,7 +47,7 @@ public class ScheduleController {
         );
     }
 
-    @PutMapping("/{id}")
+    @PostMapping("/updateById/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<ScheduleResponseDto> updateSchedule(@PathVariable Long id, @Valid @RequestBody ScheduleUpdateDto updateDto) {
         log.info("REST request to update schedule with ID {}: {}", id, updateDto);
@@ -59,7 +60,7 @@ public class ScheduleController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<ScheduleResponseDto> deleteSchedule(@PathVariable Long id) {
         log.info("REST request to delete schedule with ID: {}", id);
         ScheduleResponseDto responseDto = scheduleService.deleteSchedule(id);
@@ -70,7 +71,8 @@ public class ScheduleController {
         );
     }
 
-    @PostMapping("/search")
+    @PostMapping("/all")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<CustomPaginationResponseDto<ScheduleResponseListDto>> getAllSchedules(@RequestBody ScheduleFilterDto filterDto) {
         log.info("REST request to search schedules with filter: {}", filterDto);
         CustomPaginationResponseDto<ScheduleResponseListDto> responseDto = scheduleService.getAllSchedules(filterDto);

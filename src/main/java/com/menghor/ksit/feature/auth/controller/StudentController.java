@@ -77,22 +77,4 @@ public class StudentController {
         StudentUserResponseDto user = studentService.deleteStudentUser(id);
         return new ApiResponse<>("success", "Student user deactivated successfully", user);
     }
-    
-    /**
-     * Get student users by class ID
-     */
-    @GetMapping("/class/{classId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
-    public ApiResponse<StudentUserAllResponseDto> getStudentsByClass(@PathVariable Long classId, 
-                                                                     @RequestParam(defaultValue = "1") Integer pageNo, 
-                                                                     @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("Fetching students for class with ID: {}", classId);
-        StudentUserFilterRequestDto filterDto = new StudentUserFilterRequestDto();
-        filterDto.setClassId(classId);
-        filterDto.setPageNo(pageNo);
-        filterDto.setPageSize(pageSize);
-        
-        StudentUserAllResponseDto students = studentService.getAllStudentUsers(filterDto);
-        return new ApiResponse<>("success", "Students for class retrieved successfully", students);
-    }
 }

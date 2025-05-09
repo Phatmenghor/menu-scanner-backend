@@ -10,6 +10,7 @@ import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
@@ -20,8 +21,11 @@ public class SemesterController {
     private final SemesterService semesterService;
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<SemesterResponseDto> create(@Valid @RequestBody SemesterRequestDto semesterRequestDto) {
+        log.info("Received request to create new semester: {}", semesterRequestDto);
         SemesterResponseDto semesterResponseDto = semesterService.createSemester(semesterRequestDto);
+        log.info("Semester created successfully with ID: {}", semesterResponseDto.getId());
         return new ApiResponse<>(
                 "Success",
                 "SemesterEnum created successfully...!",
@@ -29,19 +33,25 @@ public class SemesterController {
         );
     }
 
-    @PostMapping("/getSemesterById/{id}")
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<SemesterResponseDto> getSemesterById(@PathVariable Long id) {
+        log.info("Received request to get semester by ID: {}", id);
         SemesterResponseDto semesterResponseDto = semesterService.getSemesterById(id);
+        log.info("Successfully retrieved semester with ID: {}", id);
         return new ApiResponse<>(
                 "Success",
-                "Get semester by id "+ id + " successfully...!",
+                "Get semester by id " + id + " successfully...!",
                 semesterResponseDto
         );
     }
 
     @PostMapping("/updateSemesterById/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<SemesterResponseDto> updateSemesterById(@PathVariable Long id, @Valid @RequestBody SemesterUpdateDto semesterRequestDto) {
+        log.info("Received request to update semester with ID: {}, update data: {}", id, semesterRequestDto);
         SemesterResponseDto semesterResponseDto = semesterService.updateSemesterById(id, semesterRequestDto);
+        log.info("Successfully updated semester with ID: {}", id);
         return new ApiResponse<>(
                 "Success",
                 "Update semester by id " + id + " successfully...!",
@@ -49,9 +59,12 @@ public class SemesterController {
         );
     }
 
-    @DeleteMapping("/deleteSemesterById/{id}")
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<SemesterResponseDto> deleteSemesterById(@PathVariable Long id) {
+        log.info("Received request to delete semester with ID: {}", id);
         SemesterResponseDto semesterResponseDto = semesterService.deleteSemesterById(id);
+        log.info("Successfully deleted semester with ID: {}", id);
         return new ApiResponse<>(
                 "Success",
                 "Delete semester by id " + id + " successfully...!",
@@ -59,9 +72,12 @@ public class SemesterController {
         );
     }
 
-    @PostMapping("/getAllSemesters")
+    @PostMapping("/all")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<CustomPaginationResponseDto<SemesterResponseDto>> getAllSemesters(@RequestBody SemesterFilterDto semesterFilterDto) {
+        log.info("Received request to fetch all semesters with filter: {}", semesterFilterDto);
         CustomPaginationResponseDto<SemesterResponseDto> paginationResponseDto = semesterService.getAllSemesters(semesterFilterDto);
+        log.info("Successfully fetched {} semesters", paginationResponseDto.getTotalPages());
         return new ApiResponse<>(
                 "Success",
                 "All semesters fetched successfully...!",

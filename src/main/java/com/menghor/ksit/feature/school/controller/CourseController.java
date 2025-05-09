@@ -34,6 +34,7 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<CourseResponseDto> getCourseById(@PathVariable Long id) {
         log.info("REST request to get course by ID: {}", id);
         CourseResponseDto courseResponseDto = courseService.getCourseById(id);
@@ -44,7 +45,7 @@ public class CourseController {
         );
     }
 
-    @PutMapping("/{id}")
+    @PostMapping("/updateById/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<CourseResponseDto> updateCourse(@PathVariable Long id, @Valid @RequestBody CourseUpdateDto courseRequestDto) {
         log.info("REST request to update course with ID {}: {}", id, courseRequestDto);
@@ -57,7 +58,7 @@ public class CourseController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<CourseResponseDto> deleteCourse(@PathVariable Long id) {
         log.info("REST request to delete course with ID: {}", id);
         CourseResponseDto courseResponseDto = courseService.deleteById(id);
@@ -68,7 +69,8 @@ public class CourseController {
         );
     }
 
-    @PostMapping("/search")
+    @PostMapping("/all")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<CustomPaginationResponseDto<CourseResponseListDto>> getAllCourses(@RequestBody CourseFilterDto filterDto) {
         log.info("REST request to search courses with filter: {}", filterDto);
         CustomPaginationResponseDto<CourseResponseListDto> responseDto = courseService.getAllCourses(filterDto);

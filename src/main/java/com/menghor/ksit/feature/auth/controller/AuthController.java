@@ -75,6 +75,7 @@ public class AuthController {
     }
 
     @PostMapping("/student/token")
+    @PreAuthorize("hasAnyAuthority('STUDENT')")
     public ApiResponse<StudentUserResponseDto> getStudentByToken() {
         log.info("get user student by token");
         final UserEntity currentEntity = securityUtils.getCurrentUser();
@@ -84,6 +85,7 @@ public class AuthController {
     }
 
     @PostMapping("/staff/token")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StaffUserResponseDto> getStaffByToken() {
         log.info("get user staff by token");
         final UserEntity currentEntity = securityUtils.getCurrentUser();
