@@ -1,7 +1,7 @@
 package com.menghor.ksit.feature.master.model;
 
 import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.feature.course.model.CourseEntity;
+import com.menghor.ksit.feature.school.model.CourseEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;

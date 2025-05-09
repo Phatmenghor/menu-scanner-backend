@@ -1,9 +1,10 @@
 package com.menghor.ksit.feature.master.controller;
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
-import com.menghor.ksit.feature.master.dto.semester.request.SemesterFilterDto;
-import com.menghor.ksit.feature.master.dto.semester.request.SemesterRequestDto;
-import com.menghor.ksit.feature.master.dto.semester.response.SemesterResponseDto;
+import com.menghor.ksit.feature.master.dto.filter.SemesterFilterDto;
+import com.menghor.ksit.feature.master.dto.request.SemesterRequestDto;
+import com.menghor.ksit.feature.master.dto.response.SemesterResponseDto;
+import com.menghor.ksit.feature.master.dto.update.SemesterUpdateDto;
 import com.menghor.ksit.feature.master.service.SemesterService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
@@ -39,7 +40,7 @@ public class SemesterController {
     }
 
     @PostMapping("/updateSemesterById/{id}")
-    public ApiResponse<SemesterResponseDto> updateSemesterById(@PathVariable Long id, @Valid @RequestBody SemesterRequestDto semesterRequestDto) {
+    public ApiResponse<SemesterResponseDto> updateSemesterById(@PathVariable Long id, @Valid @RequestBody SemesterUpdateDto semesterRequestDto) {
         SemesterResponseDto semesterResponseDto = semesterService.updateSemesterById(id, semesterRequestDto);
         return new ApiResponse<>(
                 "Success",

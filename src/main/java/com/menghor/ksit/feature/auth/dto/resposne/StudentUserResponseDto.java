@@ -5,7 +5,7 @@ import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.dto.relationship.StudentParentDto;
 import com.menghor.ksit.feature.auth.dto.relationship.StudentSiblingDto;
 import com.menghor.ksit.feature.auth.dto.relationship.StudentStudiesHistoryDto;
-import com.menghor.ksit.feature.master.dto.classes.response.ClassResponseDto;
+import com.menghor.ksit.feature.master.dto.response.ClassResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -2,9 +2,10 @@ package com.menghor.ksit.feature.master.service.impl;
 
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
-import com.menghor.ksit.feature.master.dto.department.request.DepartmentFilter;
-import com.menghor.ksit.feature.master.dto.department.request.DepartmentRequestDto;
-import com.menghor.ksit.feature.master.dto.department.response.DepartmentResponseDto;
+import com.menghor.ksit.feature.master.dto.filter.DepartmentFilter;
+import com.menghor.ksit.feature.master.dto.request.DepartmentRequestDto;
+import com.menghor.ksit.feature.master.dto.response.DepartmentResponseDto;
+import com.menghor.ksit.feature.master.dto.update.DepartmentUpdateDto;
 import com.menghor.ksit.feature.master.mapper.DepartmentMapper;
 import com.menghor.ksit.feature.master.model.DepartmentEntity;
 import com.menghor.ksit.feature.master.repository.DepartmentRepository;
@@ -12,10 +13,10 @@ import com.menghor.ksit.feature.master.service.DepartmentService;
 import com.menghor.ksit.feature.master.specification.DepartmentSpecification;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -29,83 +30,107 @@ public class DepartmentServiceImpl implements DepartmentService {
     private final DepartmentMapper departmentMapper;
 
     @Override
+    @Transactional
     public DepartmentResponseDto createDepartment(DepartmentRequestDto departmentRequestDto) {
+        log.info("Creating new department with code: {}, name: {}",
+                departmentRequestDto.getCode(), departmentRequestDto.getName());
+
         DepartmentEntity department = departmentMapper.toEntity(departmentRequestDto);
+        DepartmentEntity savedDepartment = departmentRepository.save(department);
 
-        DepartmentEntity departmentSave = departmentRepository.save(department);
-        return departmentMapper.toResponseDto(departmentSave);
-
+        log.info("Department created successfully with ID: {}", savedDepartment.getId());
+        return departmentMapper.toResponseDto(savedDepartment);
     }
 
     @Override
     public DepartmentResponseDto getDepartmentById(Long id) {
-        DepartmentEntity department = departmentRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Department id " + id + " not found. Please try again."));
+        log.info("Fetching department by ID: {}", id);
 
+        DepartmentEntity department = findDepartmentById(id);
+
+        log.info("Retrieved department with ID: {}", id);
         return departmentMapper.toResponseDto(department);
     }
 
     @Override
-    public DepartmentResponseDto updateDepartmentById(DepartmentRequestDto departmentRequestDto, Long id) {
-        DepartmentEntity department = departmentRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Department id " + id + " not found. Please try again."));
+    @Transactional
+    public DepartmentResponseDto updateDepartmentById(DepartmentUpdateDto departmentRequestDto, Long id) {
+        log.info("Updating department with ID: {}", id);
 
-        department.setName(departmentRequestDto.getName());
-        department.setCode(departmentRequestDto.getCode());
-        department.setUrl_logo(departmentRequestDto.getUrl_logo());
-        department.setStatus(departmentRequestDto.getStatus());
+        // Find the existing entity
+        DepartmentEntity existingDepartment = findDepartmentById(id);
 
-        departmentRepository.save(department);
-        return departmentMapper.toResponseDto(department);
+        // Use MapStruct to update only non-null fields
+        departmentMapper.updateEntityFromDto(departmentRequestDto, existingDepartment);
+
+        // Save the updated entity
+        DepartmentEntity updatedDepartment = departmentRepository.save(existingDepartment);
+        log.info("Department updated successfully with ID: {}", id);
+
+        return departmentMapper.toResponseDto(updatedDepartment);
     }
 
     @Override
+    @Transactional
     public DepartmentResponseDto deleteDepartmentById(Long id) {
-        DepartmentEntity department = departmentRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Department id " + id + " not found. Please try again."));
+        log.info("Deleting department with ID: {}", id);
+
+        DepartmentEntity department = findDepartmentById(id);
 
         departmentRepository.delete(department);
+        log.info("Department deleted successfully with ID: {}", id);
+
         return departmentMapper.toResponseDto(department);
     }
 
     @Override
-    public CustomPaginationResponseDto<DepartmentResponseDto> getAllDepartments(DepartmentFilter departmentFilter) {
-        return getDepartmentWithSpecification(departmentFilter, DepartmentSpecification::combine);
-    }
+    public CustomPaginationResponseDto<DepartmentResponseDto> getAllDepartments(DepartmentFilter filterDto) {
+        log.info("Fetching all departments with filter: {}", filterDto);
 
-    private CustomPaginationResponseDto<DepartmentResponseDto> getDepartmentWithSpecification(
-            DepartmentFilter filterDto,
-            SpecificationCreator specificationCreator
-    ) {
-        // Set default pagination
-        if (filterDto.getPageNo() == null) filterDto.setPageNo(1);
-        if (filterDto.getPageSize() == null) filterDto.setPageSize(10);
+        // Validate and prepare pagination using PaginationUtils
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
 
-        PaginationUtils.validatePagination(filterDto.getPageNo(), filterDto.getPageSize());
-
-        int pageNo = filterDto.getPageNo() - 1;
-        int pageSize = filterDto.getPageSize();
-        Pageable pageable = PageRequest.of(pageNo, pageSize);
-
-        Specification<DepartmentEntity> spec = specificationCreator.createSpecification(
+        // Create specification from filter criteria
+        Specification<DepartmentEntity> spec = DepartmentSpecification.combine(
                 filterDto.getSearch(),
                 filterDto.getStatus()
         );
 
+        // Execute query with specification and pagination
         Page<DepartmentEntity> departmentPage = departmentRepository.findAll(spec, pageable);
 
-        // Optional status correction
-        departmentPage.getContent().forEach(room -> {
-            if (room.getStatus() == null) {
-                room.setStatus(Status.ACTIVE);
-                departmentRepository.save(room);
+        // Apply status correction for any null statuses
+        departmentPage.getContent().forEach(dept -> {
+            if (dept.getStatus() == null) {
+                log.debug("Correcting null status to ACTIVE for department ID: {}", dept.getId());
+                dept.setStatus(Status.ACTIVE);
+                departmentRepository.save(dept);
             }
         });
 
-        return departmentMapper.toDepartmentAllResponseDto(departmentPage);
+        // Map to response DTO
+        CustomPaginationResponseDto<DepartmentResponseDto> response = departmentMapper.toDepartmentAllResponseDto(departmentPage);
+        log.info("Retrieved {} departments (page {}/{})",
+                response.getContent().size(),
+                response.getPageNo(),
+                response.getTotalPages());
+
+        return response;
     }
 
-    private interface SpecificationCreator {
-        Specification<DepartmentEntity> createSpecification(String name, Status status);
+    /**
+     * Helper method to find a department by ID or throw NotFoundException
+     */
+    private DepartmentEntity findDepartmentById(Long id) {
+        return departmentRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Department not found with ID: {}", id);
+                    return new NotFoundException("Department id " + id + " not found. Please try again.");
+                });
     }
 }

@@ -2,10 +2,11 @@ package com.menghor.ksit.feature.master.controller;
 
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
-import com.menghor.ksit.feature.master.dto.major.request.MajorFilterDto;
-import com.menghor.ksit.feature.master.dto.major.request.MajorRequestDto;
-import com.menghor.ksit.feature.master.dto.major.response.MajorResponseDto;
-import com.menghor.ksit.feature.master.dto.major.response.MajorResponseListDto;
+import com.menghor.ksit.feature.master.dto.filter.MajorFilterDto;
+import com.menghor.ksit.feature.master.dto.request.MajorRequestDto;
+import com.menghor.ksit.feature.master.dto.response.MajorResponseDto;
+import com.menghor.ksit.feature.master.dto.response.MajorResponseListDto;
+import com.menghor.ksit.feature.master.dto.update.MajorUpdateDto;
 import com.menghor.ksit.feature.master.service.MajorService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
@@ -41,7 +42,7 @@ public class MajorController {
     }
 
     @PostMapping("/updateById/{id}")
-    public ApiResponse<MajorResponseDto> updateMajorById(@PathVariable Long id, @Valid @RequestBody MajorRequestDto majorRequestDto) {
+    public ApiResponse<MajorResponseDto> updateMajorById(@PathVariable Long id, @Valid @RequestBody MajorUpdateDto majorRequestDto) {
         MajorResponseDto majorResponseDto = majorService.updateMajorById(id, majorRequestDto);
         return new ApiResponse<>(
                 "Success",

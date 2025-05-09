@@ -2,10 +2,11 @@ package com.menghor.ksit.feature.master.controller;
 
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
-import com.menghor.ksit.feature.master.dto.classes.request.ClassFilterDto;
-import com.menghor.ksit.feature.master.dto.classes.request.ClassRequestDto;
-import com.menghor.ksit.feature.master.dto.classes.response.ClassResponseDto;
-import com.menghor.ksit.feature.master.dto.classes.response.ClassResponseListDto;
+import com.menghor.ksit.feature.master.dto.filter.ClassFilterDto;
+import com.menghor.ksit.feature.master.dto.request.ClassRequestDto;
+import com.menghor.ksit.feature.master.dto.response.ClassResponseDto;
+import com.menghor.ksit.feature.master.dto.response.ClassResponseListDto;
+import com.menghor.ksit.feature.master.dto.update.ClassUpdateDto;
 import com.menghor.ksit.feature.master.service.ClassService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
@@ -41,7 +42,7 @@ public class ClassController {
     }
 
     @PostMapping("/updateById/{id}")
-    public ApiResponse<ClassResponseDto> updateById(@PathVariable Long id, @Valid @RequestBody ClassRequestDto classRequestDto) {
+    public ApiResponse<ClassResponseDto> updateById(@PathVariable Long id, @Valid @RequestBody ClassUpdateDto classRequestDto) {
         ClassResponseDto classResponseDto = classService.updateClassById(id, classRequestDto);
         return new ApiResponse<>(
                 "Success",

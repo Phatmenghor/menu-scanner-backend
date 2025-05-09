@@ -2,9 +2,10 @@ package com.menghor.ksit.feature.master.service.impl;
 
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
-import com.menghor.ksit.feature.master.dto.room.request.RoomFilterDto;
-import com.menghor.ksit.feature.master.dto.room.request.RoomRequestDto;
-import com.menghor.ksit.feature.master.dto.room.response.RoomResponseDto;
+import com.menghor.ksit.feature.master.dto.filter.RoomFilterDto;
+import com.menghor.ksit.feature.master.dto.request.RoomRequestDto;
+import com.menghor.ksit.feature.master.dto.response.RoomResponseDto;
+import com.menghor.ksit.feature.master.dto.update.RoomUpdateDto;
 import com.menghor.ksit.feature.master.mapper.RoomMapper;
 import com.menghor.ksit.feature.master.model.RoomEntity;
 import com.menghor.ksit.feature.master.repository.RoomRepository;
@@ -12,10 +13,10 @@ import com.menghor.ksit.feature.master.service.RoomService;
 import com.menghor.ksit.feature.master.specification.RoomSpecification;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -29,83 +30,106 @@ public class RoomServiceImpl implements RoomService {
     private final RoomMapper roomMapper;
 
     @Override
+    @Transactional
     public RoomResponseDto createRoom(RoomRequestDto roomRequest) {
-        RoomEntity room = roomMapper.toEntity(roomRequest);
-        log.info("Creating room: {}", room);
+        log.info("Creating new room with name: {}", roomRequest.getName());
 
-        RoomEntity roomSave = roomRepository.save(room);
-        return roomMapper.toResponseDto(roomSave);
+        RoomEntity room = roomMapper.toEntity(roomRequest);
+        RoomEntity savedRoom = roomRepository.save(room);
+
+        log.info("Room created successfully with ID: {}", savedRoom.getId());
+        return roomMapper.toResponseDto(savedRoom);
     }
 
+    @Override
     public RoomResponseDto getRoomById(Long id) {
-        log.info("Getting room by id: {}", id);
-        RoomEntity room = roomRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Room id " + id + " not found. Please try again."));
+        log.info("Fetching room by ID: {}", id);
 
+        RoomEntity room = findRoomById(id);
+
+        log.info("Retrieved room with ID: {}", id);
         return roomMapper.toResponseDto(room);
     }
 
-    public RoomResponseDto updateRoomById(RoomRequestDto roomRequest, Long id) {
-        log.info("Updating room by id: {}", id);
-        RoomEntity room = roomRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Room id " + id + " not found. Please try again."));
+    @Override
+    @Transactional
+    public RoomResponseDto updateRoomById(RoomUpdateDto roomRequest, Long id) {
+        log.info("Updating room with ID: {}", id);
 
-        room.setName(roomRequest.getName());
-        room.setStatus(roomRequest.getStatus());
+        // Find the existing entity
+        RoomEntity existingRoom = findRoomById(id);
 
-        RoomEntity roomUpdate = roomRepository.save(room);
-        return roomMapper.toResponseDto(roomUpdate);
+        // Use MapStruct to update only non-null fields
+        roomMapper.updateEntityFromDto(roomRequest, existingRoom);
+
+        // Save the updated entity
+        RoomEntity updatedRoom = roomRepository.save(existingRoom);
+        log.info("Room updated successfully with ID: {}", id);
+
+        return roomMapper.toResponseDto(updatedRoom);
     }
 
+    @Override
+    @Transactional
     public RoomResponseDto deleteRoomById(Long id) {
-        log.info("Deleting room by id: {}", id);
-        RoomEntity room = roomRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Room id " + id + " not found. Please try again."));
+        log.info("Deleting room with ID: {}", id);
+
+        RoomEntity room = findRoomById(id);
 
         roomRepository.delete(room);
+        log.info("Room deleted successfully with ID: {}", id);
+
         return roomMapper.toResponseDto(room);
     }
 
-    // Get all room
+    @Override
     public CustomPaginationResponseDto<RoomResponseDto> getAllRoom(RoomFilterDto filterDto) {
-        log.info("Getting all user rooms {}", filterDto);
-        return getRoomWithSpecification(filterDto, RoomSpecification::combine);
-    }
+        log.info("Fetching all rooms with filter: {}", filterDto);
 
-    private CustomPaginationResponseDto<RoomResponseDto> getRoomWithSpecification(
-            RoomFilterDto filterDto,
-            SpecificationCreator specificationCreator
-    ) {
-        // Set default pagination
-        if (filterDto.getPageNo() == null) filterDto.setPageNo(1);
-        if (filterDto.getPageSize() == null) filterDto.setPageSize(10);
+        // Validate and prepare pagination using PaginationUtils
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
 
-        PaginationUtils.validatePagination(filterDto.getPageNo(), filterDto.getPageSize());
-
-        int pageNo = filterDto.getPageNo() - 1;
-        int pageSize = filterDto.getPageSize();
-        Pageable pageable = PageRequest.of(pageNo, pageSize);
-
-        Specification<RoomEntity> spec = specificationCreator.createSpecification(
+        // Create specification from filter criteria
+        Specification<RoomEntity> spec = RoomSpecification.combine(
                 filterDto.getSearch(),
                 filterDto.getStatus()
         );
 
+        // Execute query with specification and pagination
         Page<RoomEntity> roomPage = roomRepository.findAll(spec, pageable);
 
-        // Optional status correction
+        // Apply status correction for any null statuses
         roomPage.getContent().forEach(room -> {
             if (room.getStatus() == null) {
+                log.debug("Correcting null status to ACTIVE for room ID: {}", room.getId());
                 room.setStatus(Status.ACTIVE);
                 roomRepository.save(room);
             }
         });
 
-        return roomMapper.toRoomAllResponseDto(roomPage);
+        // Map to response DTO
+        CustomPaginationResponseDto<RoomResponseDto> response = roomMapper.toRoomAllResponseDto(roomPage);
+        log.info("Retrieved {} rooms (page {}/{})",
+                response.getContent().size(),
+                response.getPageNo(),
+                response.getTotalPages());
+
+        return response;
     }
 
-    @FunctionalInterface
-    private interface SpecificationCreator {
-        Specification<RoomEntity> createSpecification(String name, Status status);
+    /**
+     * Helper method to find a room by ID or throw NotFoundException
+     */
+    private RoomEntity findRoomById(Long id) {
+        return roomRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Room not found with ID: {}", id);
+                    return new NotFoundException("Room id " + id + " not found. Please try again.");
+                });
     }
 }

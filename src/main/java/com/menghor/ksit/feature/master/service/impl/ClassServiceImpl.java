@@ -2,10 +2,11 @@ package com.menghor.ksit.feature.master.service.impl;
 
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
-import com.menghor.ksit.feature.master.dto.classes.request.ClassFilterDto;
-import com.menghor.ksit.feature.master.dto.classes.request.ClassRequestDto;
-import com.menghor.ksit.feature.master.dto.classes.response.ClassResponseDto;
-import com.menghor.ksit.feature.master.dto.classes.response.ClassResponseListDto;
+import com.menghor.ksit.feature.master.dto.filter.ClassFilterDto;
+import com.menghor.ksit.feature.master.dto.request.ClassRequestDto;
+import com.menghor.ksit.feature.master.dto.response.ClassResponseDto;
+import com.menghor.ksit.feature.master.dto.response.ClassResponseListDto;
+import com.menghor.ksit.feature.master.dto.update.ClassUpdateDto;
 import com.menghor.ksit.feature.master.mapper.ClassMapper;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.master.model.MajorEntity;
@@ -15,10 +16,10 @@ import com.menghor.ksit.feature.master.service.ClassService;
 import com.menghor.ksit.feature.master.specification.ClassSpecification;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -32,92 +33,130 @@ public class ClassServiceImpl implements ClassService {
     private final ClassMapper classMapper;
 
     @Override
+    @Transactional
     public ClassResponseDto createClass(ClassRequestDto classRequestDto) {
+        log.info("Creating new class with code: {}, majorId: {}, academyYear: {}",
+                classRequestDto.getCode(), classRequestDto.getMajorId(), classRequestDto.getAcademyYear());
+
         ClassEntity classEntity = classMapper.toEntity(classRequestDto);
 
-        MajorEntity major = majorRepository.findById(classRequestDto.getMajorId())
-                .orElseThrow(()-> new NotFoundException("Major id " + classRequestDto.getMajorId() + " not found"));
-
+        MajorEntity major = findMajorById(classRequestDto.getMajorId());
         classEntity.setMajor(major);
-        ClassEntity classSave =  classRepository.save(classEntity);
-        return classMapper.toResponseDto(classSave);
+
+        ClassEntity savedClass = classRepository.save(classEntity);
+        log.info("Class created successfully with ID: {}", savedClass.getId());
+
+        return classMapper.toResponseDto(savedClass);
     }
 
     @Override
     public ClassResponseDto getClassById(Long id) {
-        ClassEntity classEntity = classRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Class id " + id + " not found. Please try again."));
+        log.info("Fetching class by ID: {}", id);
 
+        ClassEntity classEntity = findClassById(id);
+
+        log.info("Retrieved class with ID: {}", id);
         return classMapper.toResponseDto(classEntity);
     }
 
     @Override
-    public ClassResponseDto updateClassById(Long id, ClassRequestDto classRequestDto) {
-        ClassEntity classEntity = classRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Class id " + id + " not found. Please try again."));
+    @Transactional
+    public ClassResponseDto updateClassById(Long id, ClassUpdateDto classRequestDto) {
+        log.info("Updating class with ID: {}", id);
 
-        MajorEntity major = majorRepository.findById(classRequestDto.getMajorId())
-                .orElseThrow(()-> new NotFoundException("Major id " + classRequestDto.getMajorId() + " not found"));
+        // Find the existing entity
+        ClassEntity existingClass = findClassById(id);
 
-        classEntity.setCode(classRequestDto.getCode());
-        classEntity.setDegree(classRequestDto.getDegree());
-        classEntity.setYearLevel(classRequestDto.getYearLevel());
-        classEntity.setAcademyYear(classRequestDto.getAcademyYear());
-        classEntity.setStatus(classRequestDto.getStatus());
-        classEntity.setMajor(major);
-        ClassEntity classSave = classRepository.save(classEntity);
+        // Use MapStruct to update only non-null fields
+        classMapper.updateEntityFromDto(classRequestDto, existingClass);
 
-        return classMapper.toResponseDto(classSave);
+        // Handle major relationship separately if provided
+        if (classRequestDto.getMajorId() != null) {
+            MajorEntity major = findMajorById(classRequestDto.getMajorId());
+            existingClass.setMajor(major);
+        }
+
+        // Save the updated entity
+        ClassEntity updatedClass = classRepository.save(existingClass);
+        log.info("Class updated successfully with ID: {}", id);
+
+        return classMapper.toResponseDto(updatedClass);
     }
 
     @Override
+    @Transactional
     public ClassResponseDto deleteClassById(Long id) {
-        ClassEntity classEntity = classRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Class id " + id + " not found. Please try again."));
+        log.info("Deleting class with ID: {}", id);
+
+        ClassEntity classEntity = findClassById(id);
 
         classRepository.delete(classEntity);
+        log.info("Class deleted successfully with ID: {}", id);
+
         return classMapper.toResponseDto(classEntity);
     }
 
     @Override
     public CustomPaginationResponseDto<ClassResponseListDto> getAllClasses(ClassFilterDto filterDto) {
-        return getClassWithSpecification(filterDto, ClassSpecification::combine);
-    }
+        log.info("Fetching all classes with filter: {}", filterDto);
 
-    private CustomPaginationResponseDto<ClassResponseListDto> getClassWithSpecification(
-            ClassFilterDto filterDto,
-            SpecificationCreator specificationCreator
-    ) {
-        // Set default pagination
-        if (filterDto.getPageNo() == null) filterDto.setPageNo(1);
-        if (filterDto.getPageSize() == null) filterDto.setPageSize(10);
+        // Validate and prepare pagination using PaginationUtils
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
 
-        PaginationUtils.validatePagination(filterDto.getPageNo(), filterDto.getPageSize());
-
-        int pageNo = filterDto.getPageNo() - 1;
-        int pageSize = filterDto.getPageSize();
-        Pageable pageable = PageRequest.of(pageNo, pageSize);
-
-        Specification<ClassEntity> spec = specificationCreator.createSpecification(
+        // Create specification from filter criteria
+        Specification<ClassEntity> spec = ClassSpecification.combine(
                 filterDto.getSearch(),
                 filterDto.getAcademyYear(),
                 filterDto.getStatus()
         );
 
+        // Execute query with specification and pagination
         Page<ClassEntity> classPage = classRepository.findAll(spec, pageable);
 
-        // Optional status correction
-        classPage.getContent().forEach(room -> {
-            if (room.getStatus() == null) {
-                room.setStatus(Status.ACTIVE);
-                classRepository.save(room);
+        // Apply status correction for any null statuses
+        classPage.getContent().forEach(cls -> {
+            if (cls.getStatus() == null) {
+                log.debug("Correcting null status to ACTIVE for class ID: {}", cls.getId());
+                cls.setStatus(Status.ACTIVE);
+                classRepository.save(cls);
             }
         });
 
-        return classMapper.toClassAllResponseDto(classPage);
+        // Map to response DTO
+        CustomPaginationResponseDto<ClassResponseListDto> response = classMapper.toClassAllResponseDto(classPage);
+        log.info("Retrieved {} classes (page {}/{})",
+                response.getContent().size(),
+                response.getPageNo(),
+                response.getTotalPages());
+
+        return response;
     }
 
-    private interface SpecificationCreator {
-        Specification<ClassEntity> createSpecification(String name, Integer academyYear, Status status);
+    /**
+     * Helper method to find a class by ID or throw NotFoundException
+     */
+    private ClassEntity findClassById(Long id) {
+        return classRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Class not found with ID: {}", id);
+                    return new NotFoundException("Class id " + id + " not found. Please try again.");
+                });
+    }
+
+    /**
+     * Helper method to find a major by ID or throw NotFoundException
+     */
+    private MajorEntity findMajorById(Long id) {
+        return majorRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Major not found with ID: {}", id);
+                    return new NotFoundException("Major id " + id + " not found");
+                });
     }
 }
+

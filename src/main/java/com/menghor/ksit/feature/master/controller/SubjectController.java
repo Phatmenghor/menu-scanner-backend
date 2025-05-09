@@ -1,17 +1,15 @@
 package com.menghor.ksit.feature.master.controller;
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
-import com.menghor.ksit.feature.master.dto.subject.request.SubjectFilterDto;
-import com.menghor.ksit.feature.master.dto.subject.request.SubjectRequestDto;
-import com.menghor.ksit.feature.master.dto.subject.response.SubjectResponseDto;
+import com.menghor.ksit.feature.master.dto.filter.SubjectFilterDto;
+import com.menghor.ksit.feature.master.dto.request.SubjectRequestDto;
+import com.menghor.ksit.feature.master.dto.response.SubjectResponseDto;
 import com.menghor.ksit.feature.master.service.SubjectService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @RestController

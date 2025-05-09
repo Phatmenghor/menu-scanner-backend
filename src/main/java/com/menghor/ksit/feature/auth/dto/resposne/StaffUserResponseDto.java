@@ -4,7 +4,7 @@ import com.menghor.ksit.enumations.GenderEnum;
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.dto.relationship.*;
-import com.menghor.ksit.feature.master.dto.department.response.DepartmentResponseDto;
+import com.menghor.ksit.feature.master.dto.response.DepartmentResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -61,7 +61,6 @@ public class StaffUserResponseDto {
     private String currentPosition;
     private String decreeFinal;
     private String rankAndClass;
-    private DepartmentResponseDto department;
 
     // Work History
     private String workHistory;

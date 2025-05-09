@@ -1,9 +1,10 @@
 package com.menghor.ksit.feature.master.controller;
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
-import com.menghor.ksit.feature.master.dto.room.request.RoomFilterDto;
-import com.menghor.ksit.feature.master.dto.room.request.RoomRequestDto;
-import com.menghor.ksit.feature.master.dto.room.response.RoomResponseDto;
+import com.menghor.ksit.feature.master.dto.filter.RoomFilterDto;
+import com.menghor.ksit.feature.master.dto.request.RoomRequestDto;
+import com.menghor.ksit.feature.master.dto.response.RoomResponseDto;
+import com.menghor.ksit.feature.master.dto.update.RoomUpdateDto;
 import com.menghor.ksit.feature.master.service.RoomService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
@@ -39,7 +40,7 @@ public class RoomController {
     }
 
     @PostMapping("/updateById/{id}")
-    public ApiResponse<RoomResponseDto> updateById(@Valid @RequestBody RoomRequestDto roomRequest, @PathVariable Long id) {
+    public ApiResponse<RoomResponseDto> updateById(@Valid @RequestBody RoomUpdateDto roomRequest, @PathVariable Long id) {
         RoomResponseDto roomResponseDto = roomService.updateRoomById(roomRequest, id);
         return new ApiResponse<>(
                 "Success",

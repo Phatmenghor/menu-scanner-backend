@@ -77,10 +77,6 @@ public class StaffMapperImpl implements StaffMapper {
                 .decreeFinal(user.getDecreeFinal())
                 .rankAndClass(user.getRankAndClass());
 
-        // Map department if available
-        if (user.getDepartment() != null) {
-            dto.department(departmentMapper.toResponseDto(user.getDepartment()));
-        }
 
         // Map work history and family information
         dto.workHistory(user.getWorkHistory())

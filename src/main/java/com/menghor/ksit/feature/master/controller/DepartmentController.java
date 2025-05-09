@@ -1,9 +1,10 @@
 package com.menghor.ksit.feature.master.controller;
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
-import com.menghor.ksit.feature.master.dto.department.request.DepartmentFilter;
-import com.menghor.ksit.feature.master.dto.department.request.DepartmentRequestDto;
-import com.menghor.ksit.feature.master.dto.department.response.DepartmentResponseDto;
+import com.menghor.ksit.feature.master.dto.filter.DepartmentFilter;
+import com.menghor.ksit.feature.master.dto.request.DepartmentRequestDto;
+import com.menghor.ksit.feature.master.dto.response.DepartmentResponseDto;
+import com.menghor.ksit.feature.master.dto.update.DepartmentUpdateDto;
 import com.menghor.ksit.feature.master.service.DepartmentService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
@@ -39,7 +40,7 @@ public class DepartmentController {
     }
 
     @PostMapping("/updateById/{id}")
-    public ApiResponse<DepartmentResponseDto> updateById(@Valid @RequestBody DepartmentRequestDto departmentRequestDto, @PathVariable Long id) {
+    public ApiResponse<DepartmentResponseDto> updateById(@Valid @RequestBody DepartmentUpdateDto departmentRequestDto, @PathVariable Long id) {
         DepartmentResponseDto department = departmentService.updateDepartmentById(departmentRequestDto, id);
         return new ApiResponse<>(
                 "Success",
