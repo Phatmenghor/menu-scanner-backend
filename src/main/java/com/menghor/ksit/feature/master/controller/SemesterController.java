@@ -24,7 +24,7 @@ public class SemesterController {
         SemesterResponseDto semesterResponseDto = semesterService.createSemester(semesterRequestDto);
         return new ApiResponse<>(
                 "Success",
-                "Semester created successfully...!",
+                "SemesterEnum created successfully...!",
                 semesterResponseDto
         );
     }

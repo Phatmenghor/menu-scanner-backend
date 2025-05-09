@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.master.dto.update;
 
+import com.menghor.ksit.enumations.SemesterEnum;
 import com.menghor.ksit.enumations.Status;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
@@ -12,7 +13,6 @@ import java.time.LocalDate;
 
 @Data
 public class SemesterUpdateDto {
-    private String name;
 
     @Schema(example = "")
     private LocalDate startDate;
@@ -24,6 +24,8 @@ public class SemesterUpdateDto {
     @Max(value = 9999, message = "Must be 4 digits")
     @Schema(example = "0000")
     private Integer academyYear;
+
+    private SemesterEnum semester;
 
     private Status status = Status.ACTIVE;
 }

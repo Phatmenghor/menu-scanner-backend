@@ -31,13 +31,13 @@ public class SemesterServiceImpl implements SemesterService {
     @Override
     @Transactional
     public SemesterResponseDto createSemester(SemesterRequestDto semesterRequestDto) {
-        log.info("Creating new semester with name: {}, academyYear: {}",
-                semesterRequestDto.getName(), semesterRequestDto.getAcademyYear());
+        log.info("Creating new semester with semester: {}, academyYear: {}",
+                semesterRequestDto.getSemester(), semesterRequestDto.getAcademyYear());
 
         SemesterEntity semester = semesterMapper.toEntity(semesterRequestDto);
         SemesterEntity savedSemester = semesterRepository.save(semester);
 
-        log.info("Semester created successfully with ID: {}", savedSemester.getId());
+        log.info("SemesterEnum created successfully with ID: {}", savedSemester.getId());
         return semesterMapper.toResponseDto(savedSemester);
     }
 
@@ -64,7 +64,7 @@ public class SemesterServiceImpl implements SemesterService {
 
         // Save the updated entity
         SemesterEntity updatedSemester = semesterRepository.save(existingSemester);
-        log.info("Semester updated successfully with ID: {}", id);
+        log.info("SemesterEnum updated successfully with ID: {}", id);
 
         return semesterMapper.toResponseDto(updatedSemester);
     }
@@ -77,7 +77,7 @@ public class SemesterServiceImpl implements SemesterService {
         SemesterEntity semester = findSemesterById(id);
 
         semesterRepository.delete(semester);
-        log.info("Semester deleted successfully with ID: {}", id);
+        log.info("SemesterEnum deleted successfully with ID: {}", id);
 
         return semesterMapper.toResponseDto(semester);
     }
@@ -129,8 +129,8 @@ public class SemesterServiceImpl implements SemesterService {
     private SemesterEntity findSemesterById(Long id) {
         return semesterRepository.findById(id)
                 .orElseThrow(() -> {
-                    log.error("Semester not found with ID: {}", id);
-                    return new NotFoundException("Semester id " + id + " not found. Please try again.");
+                    log.error("SemesterEnum not found with ID: {}", id);
+                    return new NotFoundException("SemesterEnum id " + id + " not found. Please try again.");
                 });
     }
 }

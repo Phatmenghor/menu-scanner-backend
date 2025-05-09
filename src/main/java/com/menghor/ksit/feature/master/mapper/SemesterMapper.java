@@ -23,11 +23,11 @@ public interface SemesterMapper {
     SemesterEntity toEntity(SemesterRequestDto requestDto);
 
     @Mapping(target = "id", source = "id")
-    @Mapping(target = "name", source = "name")
     @Mapping(target = "startDate", source = "startDate")
     @Mapping(target = "endDate", source = "endDate")
     @Mapping(target = "academyYear", source = "academyYear")
     @Mapping(target = "status", source = "status")
+    @Mapping(target = "semester", source = "semester")
     SemesterResponseDto toResponseDto(SemesterEntity entity);
 
     // New method for updating an existing entity with non-null values from DTO

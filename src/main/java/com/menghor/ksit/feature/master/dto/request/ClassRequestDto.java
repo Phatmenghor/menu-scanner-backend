@@ -19,7 +19,7 @@ public class ClassRequestDto {
     @NotNull(message = "Major id is required in classes")
     private Long majorId;
 
-    @NotNull(message = "Semester academy year is required")
+    @NotNull(message = "SemesterEnum academy year is required")
     @Min(value = 1000, message = "Must be 4 digits")
     @Max(value = 9999, message = "Must be 4 digits")
     @Schema(example = "0000")
