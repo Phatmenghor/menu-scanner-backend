@@ -41,7 +41,7 @@ public class SemesterServiceImpl implements SemesterService {
     @Override
     public SemesterResponseDto getSemesterById(Long id) {
         SemesterEntity semester = semesterRepository.findById(id)
-                .orElseThrow(()-> new NotFoundException("Semester " + id + " not found. Please try again."));
+                .orElseThrow(()-> new NotFoundException("Semester id " + id + " not found. Please try again."));
 
         return semesterMapper.toResponseDto(semester);
     }
@@ -49,7 +49,7 @@ public class SemesterServiceImpl implements SemesterService {
     @Override
     public SemesterResponseDto updateSemesterById(Long id, SemesterRequestDto semesterRequestDto) {
         SemesterEntity semester = semesterRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Semester " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Semester id " + id + " not found. Please try again."));
 
         semester.setName(semesterRequestDto.getName());
         semester.setStartDate(semesterRequestDto.getStartDate());
@@ -64,7 +64,7 @@ public class SemesterServiceImpl implements SemesterService {
     @Override
     public SemesterResponseDto deleteSemesterById(Long id) {
         SemesterEntity semester = semesterRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Semester " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Semester id " + id + " not found. Please try again."));
 
         semesterRepository.delete(semester);
         return semesterMapper.toResponseDto(semester);

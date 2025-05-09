@@ -3,6 +3,7 @@ package com.menghor.ksit.feature.auth.models;
 import com.menghor.ksit.enumations.GenderEnum;
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.feature.course.model.CourseEntity;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.master.model.DepartmentEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
@@ -229,6 +230,10 @@ public class UserEntity extends BaseEntity {
     // សមាជិកគ្រួសារ
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentSiblingEntity> studentSibling = new ArrayList<>();
+
+    // course : teacher name
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CourseEntity> courses = new ArrayList<>();
 
     /**
      * Check if user has a specific role

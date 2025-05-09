@@ -40,7 +40,7 @@ public class RoomServiceImpl implements RoomService {
     public RoomResponseDto getRoomById(Long id) {
         log.info("Getting room by id: {}", id);
         RoomEntity room = roomRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Room " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Room id " + id + " not found. Please try again."));
 
         return roomMapper.toResponseDto(room);
     }
@@ -48,7 +48,7 @@ public class RoomServiceImpl implements RoomService {
     public RoomResponseDto updateRoomById(RoomRequestDto roomRequest, Long id) {
         log.info("Updating room by id: {}", id);
         RoomEntity room = roomRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Room " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Room id " + id + " not found. Please try again."));
 
         room.setName(roomRequest.getName());
         room.setStatus(roomRequest.getStatus());
@@ -60,7 +60,7 @@ public class RoomServiceImpl implements RoomService {
     public RoomResponseDto deleteRoomById(Long id) {
         log.info("Deleting room by id: {}", id);
         RoomEntity room = roomRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Room " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Room id " + id + " not found. Please try again."));
 
         roomRepository.delete(room);
         return roomMapper.toResponseDto(room);

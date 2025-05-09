@@ -25,7 +25,7 @@ public class MajorEntity extends BaseEntity {
     @JoinColumn(name = "department_id")
     private DepartmentEntity department;
 
-    @OneToMany(mappedBy = "major")
+    @OneToMany(mappedBy = "major", cascade = CascadeType.ALL)
     private List<ClassEntity> classes;
 
 }

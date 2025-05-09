@@ -41,7 +41,7 @@ public class SubjectServiceImpl implements SubjectService {
     @Override
     public SubjectResponseDto getSubjectById(Long id) {
         SubjectEntity subject= subjectRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Subject " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Subject id " + id + " not found. Please try again."));
 
         return subjectMapper.toResponseDto(subject);
     }
@@ -49,7 +49,7 @@ public class SubjectServiceImpl implements SubjectService {
     @Override
     public SubjectResponseDto updateSubjectById(SubjectRequestDto subjectRequestDto, Long id) {
         SubjectEntity subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Subject " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Subject id " + id + " not found. Please try again."));
 
         subject.setName(subjectRequestDto.getName());
         subject.setStatus(subjectRequestDto.getStatus());
@@ -61,7 +61,7 @@ public class SubjectServiceImpl implements SubjectService {
     @Override
     public SubjectResponseDto deleteSubjectById(Long id) {
         SubjectEntity subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Subject " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Subject id " + id + " not found. Please try again."));
 
         subjectRepository.delete(subject);
         return subjectMapper.toResponseDto(subject);

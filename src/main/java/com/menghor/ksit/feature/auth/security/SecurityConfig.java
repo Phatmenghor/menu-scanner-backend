@@ -65,6 +65,7 @@ public class SecurityConfig {
                                 "/api/v1/semesters/**",
                                 "/api/v1/majors/**",
                                 "/api/v1/classes/**",
+                                "/api/v1/courses/**",
 
                                 // Static resources
                                 "/favicon.ico",

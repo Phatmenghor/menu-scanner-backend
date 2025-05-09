@@ -40,7 +40,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     public DepartmentResponseDto getDepartmentById(Long id) {
         DepartmentEntity department = departmentRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Department " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Department id " + id + " not found. Please try again."));
 
         return departmentMapper.toResponseDto(department);
     }
@@ -48,7 +48,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     public DepartmentResponseDto updateDepartmentById(DepartmentRequestDto departmentRequestDto, Long id) {
         DepartmentEntity department = departmentRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Department " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Department id " + id + " not found. Please try again."));
 
         department.setName(departmentRequestDto.getName());
         department.setCode(departmentRequestDto.getCode());
@@ -62,7 +62,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     public DepartmentResponseDto deleteDepartmentById(Long id) {
         DepartmentEntity department = departmentRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Department " + id + " not found. Please try again."));
+                .orElseThrow(() -> new NotFoundException("Department id " + id + " not found. Please try again."));
 
         departmentRepository.delete(department);
         return departmentMapper.toResponseDto(department);

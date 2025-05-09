@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.master.model;
 
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.models.UserEntity;
+import com.menghor.ksit.feature.course.model.CourseEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -23,10 +24,13 @@ public class DepartmentEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    @OneToMany(mappedBy = "department")
+    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL)
     private List<MajorEntity> majors;
 
     // Students enrolled in this class
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL)
     private List<UserEntity> students = new ArrayList<>();
+
+    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL)
+    private List<CourseEntity> courses = new ArrayList<>();
 }

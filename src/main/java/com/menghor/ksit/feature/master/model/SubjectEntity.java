@@ -1,13 +1,13 @@
 package com.menghor.ksit.feature.master.model;
 
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.feature.course.model.CourseEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Setter
 @Getter
@@ -19,4 +19,7 @@ public class SubjectEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private Status status;
+
+    @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL)
+    private List<CourseEntity> courses;
 }
