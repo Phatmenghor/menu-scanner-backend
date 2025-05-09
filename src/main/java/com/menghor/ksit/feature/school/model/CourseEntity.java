@@ -9,6 +9,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Setter
 @Getter
 @Entity
@@ -40,6 +43,9 @@ public class CourseEntity extends BaseEntity {
     private SubjectEntity subject;
 
     @ManyToOne
-    @JoinColumn(name = "teacher_id")
+    @JoinColumn(name = "user_id")
     private UserEntity user;
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
+    private List<ScheduleEntity> schedules = new ArrayList<>();
 }

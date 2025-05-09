@@ -112,7 +112,8 @@ public class ClassServiceImpl implements ClassService {
         Specification<ClassEntity> spec = ClassSpecification.combine(
                 filterDto.getSearch(),
                 filterDto.getAcademyYear(),
-                filterDto.getStatus()
+                filterDto.getStatus(),
+                filterDto.getMajorId()
         );
 
         // Execute query with specification and pagination

@@ -14,8 +14,8 @@ public class MajorSpecification {
         return (root, query, criteriaBuilder) -> {
             if (!StringUtils.hasText(name)) return criteriaBuilder.conjunction();
             return criteriaBuilder.like(
-                criteriaBuilder.lower(root.get("name")),
-                "%" + name.toLowerCase() + "%"
+                    criteriaBuilder.lower(root.get("name")),
+                    "%" + name.toLowerCase() + "%"
             );
         };
     }
@@ -27,8 +27,8 @@ public class MajorSpecification {
         return (root, query, criteriaBuilder) -> {
             if (!StringUtils.hasText(code)) return criteriaBuilder.conjunction();
             return criteriaBuilder.like(
-                criteriaBuilder.lower(root.get("code")),
-                "%" + code.toLowerCase() + "%"
+                    criteriaBuilder.lower(root.get("code")),
+                    "%" + code.toLowerCase() + "%"
             );
         };
     }
@@ -42,7 +42,17 @@ public class MajorSpecification {
             return criteriaBuilder.equal(root.get("status"), status);
         };
     }
-    
+
+    /**
+     * Filter majors by department ID
+     */
+    public static Specification<MajorEntity> hasDepartmentId(Long departmentId) {
+        return (root, query, criteriaBuilder) -> {
+            if (departmentId == null) return criteriaBuilder.conjunction();
+            return criteriaBuilder.equal(root.get("department").get("id"), departmentId);
+        };
+    }
+
     /**
      * Combined search across name and code fields
      */
@@ -52,16 +62,16 @@ public class MajorSpecification {
 
             String term = "%" + searchTerm.toLowerCase() + "%";
             return criteriaBuilder.or(
-                criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), term),
-                criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), term)
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), term),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), term)
             );
         };
     }
-    
+
     /**
      * Specification for all majors with filtering
      */
-    public static Specification<MajorEntity> combine(String searchTerm, Status status) {
+    public static Specification<MajorEntity> combine(String searchTerm, Status status, Long departmentId) {
         Specification<MajorEntity> spec = Specification.where(null);
 
         if (StringUtils.hasText(searchTerm)) {
@@ -70,6 +80,10 @@ public class MajorSpecification {
 
         if (status != null) {
             spec = spec.and(hasStatus(status));
+        }
+
+        if (departmentId != null) {
+            spec = spec.and(hasDepartmentId(departmentId));
         }
 
         return spec;

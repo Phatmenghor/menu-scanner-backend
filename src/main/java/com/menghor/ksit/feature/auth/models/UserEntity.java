@@ -6,6 +6,7 @@ import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.school.model.CourseEntity;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.master.model.DepartmentEntity;
+import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -234,6 +235,10 @@ public class UserEntity extends BaseEntity {
     // course : teacher name
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CourseEntity> courses = new ArrayList<>();
+
+    // schedule : teacher
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ScheduleEntity> schedule = new ArrayList<>();
 
     /**
      * Check if user has a specific role

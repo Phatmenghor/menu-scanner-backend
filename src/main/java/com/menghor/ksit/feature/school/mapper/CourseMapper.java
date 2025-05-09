@@ -35,7 +35,7 @@ public interface CourseMapper {
 
     @Mapping(target = "department", source = "department")
     @Mapping(target = "subject", source = "subject")
-    @Mapping(target = "teacher", source = "user")
+    @Mapping(target = "user", source = "user")
     CourseResponseDto toResponseDto(CourseEntity courseEntity);
 
     // Method for updating an existing entity with non-null values from DTO

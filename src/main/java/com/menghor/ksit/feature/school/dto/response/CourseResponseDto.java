@@ -24,5 +24,5 @@ public class CourseResponseDto {
 
     private DepartmentResponseDto department;
     private SubjectResponseDto subject;
-    private StaffUserResponseDto teacher;
+    private StaffUserResponseDto user;
 }

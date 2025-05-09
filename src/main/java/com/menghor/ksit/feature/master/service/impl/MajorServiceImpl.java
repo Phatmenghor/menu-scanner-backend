@@ -111,7 +111,8 @@ public class MajorServiceImpl implements MajorService {
         // Create specification from filter criteria
         Specification<MajorEntity> spec = MajorSpecification.combine(
                 filterDto.getSearch(),
-                filterDto.getStatus()
+                filterDto.getStatus(),
+                filterDto.getDepartmentId()
         );
 
         // Execute query with specification and pagination

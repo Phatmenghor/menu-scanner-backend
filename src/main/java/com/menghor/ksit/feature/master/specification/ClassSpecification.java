@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.master.specification;
 
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.master.model.ClassEntity;
+import com.menghor.ksit.feature.master.model.MajorEntity;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
@@ -28,6 +29,17 @@ public class ClassSpecification {
         };
     }
 
+    /**
+     * Filter class by Major ID
+     */
+    public static Specification<ClassEntity> hasMajorId(Long majorId) {
+        return (root, query, criteriaBuilder) -> {
+            if (majorId == null) return criteriaBuilder.conjunction();
+            return criteriaBuilder.equal(root.get("major").get("id"), majorId);
+        };
+    }
+
+
     // Combined search across code field
     public static Specification<ClassEntity> search(String searchTerm) {
         return (root, query, criteriaBuilder) -> {
@@ -39,7 +51,7 @@ public class ClassSpecification {
     }
     
     // Specification for combining all filters
-    public static Specification<ClassEntity> combine(String searchTerm, Integer academyYear, Status status) {
+    public static Specification<ClassEntity> combine(String searchTerm, Integer academyYear, Status status,Long majorId) {
         Specification<ClassEntity> spec = Specification.where(null);
 
         if (StringUtils.hasText(searchTerm)) {
@@ -52,6 +64,10 @@ public class ClassSpecification {
 
         if (status != null) {
             spec = spec.and(hasStatus(status));
+        }
+
+        if (majorId != null) {
+            spec = spec.and(hasMajorId(majorId));
         }
 
         return spec;

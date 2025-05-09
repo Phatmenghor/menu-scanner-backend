@@ -4,6 +4,7 @@ import com.menghor.ksit.enumations.DegreeEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.enumations.YearLevelEnum;
 import com.menghor.ksit.feature.auth.models.UserEntity;
+import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -38,4 +39,7 @@ public class ClassEntity extends BaseEntity {
     // Students enrolled in this class
     @OneToMany(mappedBy = "classes", cascade = CascadeType.ALL)
     private List<UserEntity> students = new ArrayList<>();
+
+    @OneToMany(mappedBy = "classes", cascade = CascadeType.ALL)
+    private List<ScheduleEntity> schedule = new ArrayList<>();
 }

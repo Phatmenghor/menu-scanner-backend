@@ -3,6 +3,7 @@ package com.menghor.ksit.feature.master.model;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.school.model.CourseEntity;
+import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;

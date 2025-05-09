@@ -7,6 +7,7 @@ import lombok.Data;
 public class ClassFilterDto {
     private String search;
     private Integer academyYear;
+    private Long majorId;
     private Status status;
     private Integer pageNo = 1;
     private Integer pageSize = 10;
