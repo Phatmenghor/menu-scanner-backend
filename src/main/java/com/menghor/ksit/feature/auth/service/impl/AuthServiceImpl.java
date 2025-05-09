@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.auth.service.impl;
 
 import com.menghor.ksit.constants.ErrorMessages;
+import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
@@ -12,6 +13,7 @@ import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.dto.request.LoginRequestDto;
 import com.menghor.ksit.feature.auth.mapper.StaffMapper;
 import com.menghor.ksit.feature.auth.mapper.StudentMapper;
+import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.auth.security.JWTGenerator;
@@ -27,6 +29,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -53,9 +57,27 @@ public class AuthServiceImpl implements AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtGenerator.generateToken(authentication);
 
+        // Get the authenticated user to include their info in the response
+        UserEntity user = userRepository.findByUsername(loginRequestDto.getEmail())
+                .orElseThrow(() -> new NotFoundException(
+                        String.format(ErrorMessages.EMAIL_NOT_FOUND, loginRequestDto.getEmail())));
+
+        // Extract roles
+        List<RoleEnum> roles = user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toList());
+
         log.info("Login successful for email: {}", loginRequestDto.getEmail());
 
-        return new AuthResponseDto(token);
+        // Use builder to create response with user information
+        return AuthResponseDto.builder()
+                .accessToken(token)
+                .tokenType("Bearer ")
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .roles(roles)
+                .build();
     }
 
 
@@ -74,8 +96,22 @@ public class AuthServiceImpl implements AuthService {
                     username, null, Collections.emptyList());
             String newToken = jwtGenerator.generateToken(authentication);
 
+            // Extract roles
+            List<RoleEnum> roles = userEntity.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toList());
+
             log.info("Token refreshed successfully for user: {}", username);
-            return new AuthResponseDto(newToken);
+
+            // Use builder to create response with user information
+            return AuthResponseDto.builder()
+                    .accessToken(newToken)
+                    .tokenType("Bearer ")
+                    .userId(userEntity.getId())
+                    .username(userEntity.getUsername())
+                    .email(userEntity.getEmail())
+                    .roles(roles)
+                    .build();
         } catch (Exception e) {
             log.error("Token refresh failed", e);
             throw new BadRequestException("Token refresh failed: " + e.getMessage());
