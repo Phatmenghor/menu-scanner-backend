@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.master.model;
 
+import com.menghor.ksit.enumations.Semester;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
@@ -17,13 +18,16 @@ import java.util.List;
 @Table(name = "semester")
 public class SemesterEntity extends BaseEntity {
 
-    private String name;
+    private String semesterCode;
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer academyYear;
 
     @Enumerated(EnumType.STRING)
     private Status status;
+
+    @Enumerated(EnumType.STRING)
+    private Semester semester;
 
     @OneToMany(mappedBy = "semester", cascade = CascadeType.ALL)
     private List<ScheduleEntity> schedules = new ArrayList<>();
