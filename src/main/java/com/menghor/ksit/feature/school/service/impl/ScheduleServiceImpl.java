@@ -167,6 +167,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                 filterDto.getRoomId(),
                 filterDto.getTeacherId(),
                 filterDto.getAcademyYear(),
+                filterDto.getSemester(),
                 filterDto.getStatus()
         );
 

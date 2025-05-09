@@ -1,9 +1,11 @@
 package com.menghor.ksit.feature.school.specification;
 
+import com.menghor.ksit.enumations.SemesterEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.master.model.RoomEntity;
+import com.menghor.ksit.feature.master.model.SemesterEntity;
 import com.menghor.ksit.feature.school.model.CourseEntity;
 import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import jakarta.persistence.criteria.Join;
@@ -48,12 +50,26 @@ public class ScheduleSpecification {
     }
 
     /**
-     * Filter schedules by academy year
+     * Filter schedules by semester's academyYear
      */
-    public static Specification<ScheduleEntity> hasAcademyYear(Integer academyYear) {
+    public static Specification<ScheduleEntity> hasSemesterAcademyYear(Integer academyYear) {
         return (root, query, criteriaBuilder) -> {
             if (academyYear == null) return criteriaBuilder.conjunction();
-            return criteriaBuilder.equal(root.get("academyYear"), academyYear);
+
+            Join<ScheduleEntity, SemesterEntity> semesterJoin = root.join("semester", JoinType.INNER);
+            return criteriaBuilder.equal(semesterJoin.get("academyYear"), academyYear);
+        };
+    }
+
+    /**
+     * Filter schedules by semester type
+     */
+    public static Specification<ScheduleEntity> hasSemesterType(SemesterEnum semester) {
+        return (root, query, criteriaBuilder) -> {
+            if (semester == null) return criteriaBuilder.conjunction();
+
+            Join<ScheduleEntity, SemesterEntity> semesterJoin = root.join("semester", JoinType.INNER);
+            return criteriaBuilder.equal(semesterJoin.get("semester"), semester);
         };
     }
 
@@ -128,6 +144,7 @@ public class ScheduleSpecification {
             Long roomId,
             Long teacherId,
             Integer academyYear,
+            SemesterEnum semester,
             Status status) {
 
         Specification<ScheduleEntity> spec = Specification.where(null);
@@ -149,7 +166,11 @@ public class ScheduleSpecification {
         }
 
         if (academyYear != null) {
-            spec = spec.and(hasAcademyYear(academyYear));
+            spec = spec.and(hasSemesterAcademyYear(academyYear));
+        }
+
+        if (semester != null) {
+            spec = spec.and(hasSemesterType(semester));
         }
 
         if (status != null) {
