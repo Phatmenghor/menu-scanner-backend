@@ -36,7 +36,7 @@ public class DefaultUserInitializer implements CommandLineRunner {
             return;
         }
         log.info("No users found, creating default users");
-//        createDeveloperUser();
+        createDeveloperUser();
         createAdminUser();
         createStaffUser();
         createTeacherUser();

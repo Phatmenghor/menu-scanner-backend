@@ -17,12 +17,12 @@ spring:
           use_jdbc_metadata_defaults: false
 
   datasource:
-#    url: jdbc:postgresql://localhost:5433/ks_it_school
-#    username: postgres
-#    password: Hour1819
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: jdbc:postgresql://143.198.93.97:5434/ks_it_school
+    username: menghor
+    password: Hour1819
+#    url: ${SPRING_DATASOURCE_URL}
+#    username: ${SPRING_DATASOURCE_USERNAME}
+#    password: ${SPRING_DATASOURCE_PASSWORD}
 
     driver-class-name: org.postgresql.Driver
     hikari:
