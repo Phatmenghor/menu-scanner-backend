@@ -56,16 +56,8 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
 
                                 // Authentication endpoints
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/register/student",
-                                "/api/v1/auth/refresh-token",
-                                "/api/v1/rooms/**",
-                                "/api/v1/subjects/**",
-                                "/api/v1/departments/**",
-                                "/api/v1/semesters/**",
-                                "/api/v1/majors/**",
-                                "/api/v1/classes/**",
-                                "/api/v1/courses/**",
+                                "/api/v1/auth/**",
+
 
                                 // Static resources
                                 "/favicon.ico",

@@ -6,13 +6,13 @@ import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.RoleRepository;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,43 +20,28 @@ import java.util.Collections;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DefaultUserInitializer {
+@Order(2) // Run after DefaultRoleInitializer
+public class DefaultUserInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @EventListener(ContextRefreshedEvent.class)
+    @Override
     @Transactional
-    public void initDefaultUsers() {
+    public void run(String... args) {
         log.info("Checking for default users...");
-
-        // Skip if users already exist
         if (userRepository.count() > 0) {
             log.info("Users already exist, skipping default user creation");
             return;
         }
-
         log.info("No users found, creating default users");
-
-        // Create developer superuser
-        createDeveloperUser();
-
-        // Create admin user
+//        createDeveloperUser();
         createAdminUser();
-
-        // Create a staff user
         createStaffUser();
-
-        // Create a teacher user
         createTeacherUser();
-
-        // Create a student user
         createStudentUser();
-
-        // Create a multi-role user (staff + admin)
         createMultiRoleUser();
-
         log.info("Default users created successfully");
     }
 
@@ -67,7 +52,6 @@ public class DefaultUserInitializer {
         developer.setPassword(passwordEncoder.encode("developer123"));
         developer.setStatus(Status.ACTIVE);
 
-        // Set role
         Role devRole = roleRepository.findByName(RoleEnum.DEVELOPER)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.DEVELOPER));
         developer.setRoles(Collections.singletonList(devRole));
@@ -83,7 +67,6 @@ public class DefaultUserInitializer {
         admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setStatus(Status.ACTIVE);
 
-        // Set role
         Role adminRole = roleRepository.findByName(RoleEnum.ADMIN)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.ADMIN));
         admin.setRoles(Collections.singletonList(adminRole));
@@ -99,7 +82,6 @@ public class DefaultUserInitializer {
         staff.setPassword(passwordEncoder.encode("staff123"));
         staff.setStatus(Status.ACTIVE);
 
-        // Set role
         Role staffRole = roleRepository.findByName(RoleEnum.STAFF)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.STAFF));
         staff.setRoles(Collections.singletonList(staffRole));
@@ -115,7 +97,6 @@ public class DefaultUserInitializer {
         teacher.setPassword(passwordEncoder.encode("teacher123"));
         teacher.setStatus(Status.ACTIVE);
 
-        // Set role
         Role teacherRole = roleRepository.findByName(RoleEnum.TEACHER)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.TEACHER));
         teacher.setRoles(Collections.singletonList(teacherRole));
@@ -131,7 +112,6 @@ public class DefaultUserInitializer {
         student.setPassword(passwordEncoder.encode("student123"));
         student.setStatus(Status.ACTIVE);
 
-        // Set role
         Role studentRole = roleRepository.findByName(RoleEnum.STUDENT)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.STUDENT));
         student.setRoles(Collections.singletonList(studentRole));
@@ -147,7 +127,6 @@ public class DefaultUserInitializer {
         headTeacher.setPassword(passwordEncoder.encode("headteacher123"));
         headTeacher.setStatus(Status.ACTIVE);
 
-        // Set multiple roles
         Role staffRole = roleRepository.findByName(RoleEnum.STAFF)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.STAFF));
         Role adminRole = roleRepository.findByName(RoleEnum.ADMIN)

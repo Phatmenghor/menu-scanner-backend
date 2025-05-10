@@ -2,33 +2,40 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.2.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
+
 	<groupId>com.menghor</groupId>
 	<artifactId>ks-it</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ks-it</name>
-	<description>project for school-management</description>
+	<description>Project for school-management</description>
 	<url/>
+
 	<licenses>
 		<license/>
 	</licenses>
+
 	<developers>
 		<developer/>
 	</developers>
+
 	<scm>
 		<connection/>
 		<developerConnection/>
 		<tag/>
 		<url/>
 	</scm>
+
 	<properties>
 		<java.version>17</java.version>
 	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -107,7 +114,6 @@
 			<artifactId>springdoc-openapi-starter-common</artifactId>
 			<version>2.4.0</version>
 		</dependency>
-
 	</dependencies>
 
 	<build>
@@ -146,7 +152,6 @@
 				</configuration>
 			</plugin>
 		</plugins>
-		<finalName>ks_it</finalName>
+		<finalName>school_ksit</finalName>
 	</build>
-
 </project>
