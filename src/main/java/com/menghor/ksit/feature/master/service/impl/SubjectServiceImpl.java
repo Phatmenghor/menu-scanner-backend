@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.master.service.impl;
 
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.exceptoins.error.DuplicateNameException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.master.dto.filter.SubjectFilterDto;
 import com.menghor.ksit.feature.master.dto.request.SubjectRequestDto;
@@ -15,6 +16,7 @@ import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -30,14 +32,27 @@ public class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional
-    public SubjectResponseDto createSubject(SubjectRequestDto subjectRequestDto) {
-        log.info("Creating new subject with name: {}", subjectRequestDto.getName());
+    public SubjectResponseDto createSubject(SubjectRequestDto subjectRequest) {
+        log.info("Creating new subject with name: {}", subjectRequest.getName());
 
-        SubjectEntity subject = subjectMapper.toEntity(subjectRequestDto);
-        SubjectEntity savedSubject = subjectRepository.save(subject);
+        try {
+            SubjectEntity subject = subjectMapper.toEntity(subjectRequest);
+            SubjectEntity savedSubject = subjectRepository.save(subject);
 
-        log.info("Subject created successfully with ID: {}", savedSubject.getId());
-        return subjectMapper.toResponseDto(savedSubject);
+            log.info("Subject created successfully with ID: {}", savedSubject.getId());
+            return subjectMapper.toResponseDto(savedSubject);
+        } catch (DataIntegrityViolationException e) {
+            // Handle database constraint violations
+            log.error("Database constraint violation when creating subject: {}", e.getMessage());
+
+            // Check if it's a unique constraint violation on the name
+            if (e.getMessage() != null && e.getMessage().contains("uk_subject_name")) {
+                throw new DuplicateNameException("Subject with name '" + subjectRequest.getName() + "' already exists");
+            }
+
+            // Rethrow other database integrity issues
+            throw e;
+        }
     }
 
     @Override
@@ -55,17 +70,30 @@ public class SubjectServiceImpl implements SubjectService {
     public SubjectResponseDto updateSubjectById(SubjectRequestDto subjectRequestDto, Long id) {
         log.info("Updating subject with ID: {}", id);
 
-        // Find the existing entity
-        SubjectEntity existingSubject = findSubjectById(id);
+        try {
+            // Find the existing entity
+            SubjectEntity existingSubject = findSubjectById(id);
 
-        // Use MapStruct to update only non-null fields
-        subjectMapper.updateEntityFromDto(subjectRequestDto, existingSubject);
+            // Use MapStruct to update only non-null fields
+            subjectMapper.updateEntityFromDto(subjectRequestDto, existingSubject);
 
-        // Save the updated entity
-        SubjectEntity updatedSubject = subjectRepository.save(existingSubject);
-        log.info("Subject updated successfully with ID: {}", id);
+            // Save the updated entity
+            SubjectEntity updatedSubject = subjectRepository.save(existingSubject);
+            log.info("Subject updated successfully with ID: {}", id);
 
-        return subjectMapper.toResponseDto(updatedSubject);
+            return subjectMapper.toResponseDto(updatedSubject);
+        } catch (DataIntegrityViolationException e) {
+            // Handle database constraint violations
+            log.error("Database constraint violation when updating subject: {}", e.getMessage());
+
+            // Check if it's a unique constraint violation on the name
+            if (e.getMessage() != null && e.getMessage().contains("uk_subject_name")) {
+                throw new DuplicateNameException("Subject with name '" + subjectRequestDto.getName() + "' already exists");
+            }
+
+            // Rethrow other database integrity issues
+            throw e;
+        }
     }
 
     @Override

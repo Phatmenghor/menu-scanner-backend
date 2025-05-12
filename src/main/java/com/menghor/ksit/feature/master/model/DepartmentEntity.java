@@ -15,11 +15,21 @@ import java.util.List;
 @Setter
 @Getter
 @Entity
-@Table(name = "departments")
+@Table(
+        name = "departments",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_department_code", columnNames = "code"),
+                @UniqueConstraint(name = "uk_department_name", columnNames = "name")
+        }
+)
 public class DepartmentEntity extends BaseEntity {
 
+    @Column(name = "code", nullable = false, unique = true)
     private String code;
+
+    @Column(name = "name", nullable = false, unique = true)
     private String name;
+
     private String urlLogo;
 
     @Enumerated(EnumType.STRING)

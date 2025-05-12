@@ -12,9 +12,15 @@ import java.util.List;
 @Setter
 @Getter
 @Entity
-@Table(name = "majors")
+@Table(
+        name = "majors",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_major_code", columnNames = "code")
+        }
+)
 public class MajorEntity extends BaseEntity {
 
+    @Column(name = "code", nullable = false, unique = true)
     private String code;
     private String name;
 

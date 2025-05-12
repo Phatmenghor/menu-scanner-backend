@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.master.service.impl;
 
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.exceptoins.error.DuplicateNameException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.master.dto.filter.DepartmentFilter;
 import com.menghor.ksit.feature.master.dto.request.DepartmentRequestDto;
@@ -16,6 +17,7 @@ import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,11 +37,30 @@ public class DepartmentServiceImpl implements DepartmentService {
         log.info("Creating new department with code: {}, name: {}",
                 departmentRequestDto.getCode(), departmentRequestDto.getName());
 
-        DepartmentEntity department = departmentMapper.toEntity(departmentRequestDto);
-        DepartmentEntity savedDepartment = departmentRepository.save(department);
+        try {
+            DepartmentEntity department = departmentMapper.toEntity(departmentRequestDto);
+            DepartmentEntity savedDepartment = departmentRepository.save(department);
 
-        log.info("Department created successfully with ID: {}", savedDepartment.getId());
-        return departmentMapper.toResponseDto(savedDepartment);
+            log.info("Department created successfully with ID: {}", savedDepartment.getId());
+            return departmentMapper.toResponseDto(savedDepartment);
+
+        } catch (DataIntegrityViolationException e) {
+            // Handle database constraint violations
+            log.error("Database constraint violation when creating department: {}", e.getMessage());
+
+            // Check if it's a unique constraint violation on the code
+            if (e.getMessage() != null && e.getMessage().contains("uk_department_code")) {
+                throw new DuplicateNameException("Department with code '" + departmentRequestDto.getCode() + "' already exists");
+            }
+
+            // Check if it's a unique constraint violation on the name
+            if (e.getMessage() != null && e.getMessage().contains("uk_department_name")) {
+                throw new DuplicateNameException("Department with name '" + departmentRequestDto.getName() + "' already exists");
+            }
+
+            // Rethrow other database integrity issues
+            throw e;
+        }
     }
 
     @Override
@@ -57,17 +78,36 @@ public class DepartmentServiceImpl implements DepartmentService {
     public DepartmentResponseDto updateDepartmentById(DepartmentUpdateDto departmentRequestDto, Long id) {
         log.info("Updating department with ID: {}", id);
 
-        // Find the existing entity
-        DepartmentEntity existingDepartment = findDepartmentById(id);
+        try {
+            // Find the existing entity
+            DepartmentEntity existingDepartment = findDepartmentById(id);
 
-        // Use MapStruct to update only non-null fields
-        departmentMapper.updateEntityFromDto(departmentRequestDto, existingDepartment);
+            // Use MapStruct to update only non-null fields
+            departmentMapper.updateEntityFromDto(departmentRequestDto, existingDepartment);
 
-        // Save the updated entity
-        DepartmentEntity updatedDepartment = departmentRepository.save(existingDepartment);
-        log.info("Department updated successfully with ID: {}", id);
+            // Save the updated entity
+            DepartmentEntity updatedDepartment = departmentRepository.save(existingDepartment);
+            log.info("Department updated successfully with ID: {}", id);
 
-        return departmentMapper.toResponseDto(updatedDepartment);
+            return departmentMapper.toResponseDto(updatedDepartment);
+
+        } catch (DataIntegrityViolationException e) {
+            // Handle database constraint violations
+            log.error("Database constraint violation when updating department: {}", e.getMessage());
+
+            // Check if it's a unique constraint violation on the code
+            if (e.getMessage() != null && e.getMessage().contains("uk_department_code")) {
+                throw new DuplicateNameException("Department with code '" + departmentRequestDto.getCode() + "' already exists");
+            }
+
+            // Check if it's a unique constraint violation on the name
+            if (e.getMessage() != null && e.getMessage().contains("uk_department_name")) {
+                throw new DuplicateNameException("Department with name '" + departmentRequestDto.getName() + "' already exists");
+            }
+
+            // Rethrow other database integrity issues
+            throw e;
+        }
     }
 
     @Override

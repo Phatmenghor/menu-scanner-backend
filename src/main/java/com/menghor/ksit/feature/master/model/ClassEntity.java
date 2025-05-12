@@ -16,9 +16,15 @@ import java.util.List;
 @Setter
 @Getter
 @Entity
-@Table(name = "classes")
+@Table(
+        name = "classes",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_class_code", columnNames = "code")
+        }
+)
 public class ClassEntity extends BaseEntity {
 
+    @Column(name = "code", nullable = false, unique = true)
     private String code;
 
     @Enumerated(EnumType.STRING)

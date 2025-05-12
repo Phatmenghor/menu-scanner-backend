@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.master.service.impl;
 
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.exceptoins.error.DuplicateNameException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.master.dto.filter.RoomFilterDto;
 import com.menghor.ksit.feature.master.dto.request.RoomRequestDto;
@@ -16,6 +17,7 @@ import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -34,11 +36,24 @@ public class RoomServiceImpl implements RoomService {
     public RoomResponseDto createRoom(RoomRequestDto roomRequest) {
         log.info("Creating new room with name: {}", roomRequest.getName());
 
-        RoomEntity room = roomMapper.toEntity(roomRequest);
-        RoomEntity savedRoom = roomRepository.save(room);
+        try {
+            RoomEntity room = roomMapper.toEntity(roomRequest);
+            RoomEntity savedRoom = roomRepository.save(room);
 
-        log.info("Room created successfully with ID: {}", savedRoom.getId());
-        return roomMapper.toResponseDto(savedRoom);
+            log.info("Room created successfully with ID: {}", savedRoom.getId());
+            return roomMapper.toResponseDto(savedRoom);
+        } catch (DataIntegrityViolationException e) {
+            // Handle database constraint violations
+            log.error("Database constraint violation when creating room: {}", e.getMessage());
+
+            // Check if it's a unique constraint violation on the name
+            if (e.getMessage() != null && e.getMessage().contains("uk_room_name")) {
+                throw new DuplicateNameException("Room with name '" + roomRequest.getName() + "' already exists");
+            }
+
+            // Rethrow other database integrity issues
+            throw e;
+        }
     }
 
     @Override
@@ -56,17 +71,30 @@ public class RoomServiceImpl implements RoomService {
     public RoomResponseDto updateRoomById(RoomUpdateDto roomRequest, Long id) {
         log.info("Updating room with ID: {}", id);
 
-        // Find the existing entity
-        RoomEntity existingRoom = findRoomById(id);
+        try {
+            // Find the existing entity
+            RoomEntity existingRoom = findRoomById(id);
 
-        // Use MapStruct to update only non-null fields
-        roomMapper.updateEntityFromDto(roomRequest, existingRoom);
+            // Use MapStruct to update only non-null fields
+            roomMapper.updateEntityFromDto(roomRequest, existingRoom);
 
-        // Save the updated entity
-        RoomEntity updatedRoom = roomRepository.save(existingRoom);
-        log.info("Room updated successfully with ID: {}", id);
+            // Save the updated entity
+            RoomEntity updatedRoom = roomRepository.save(existingRoom);
+            log.info("Room updated successfully with ID: {}", id);
 
-        return roomMapper.toResponseDto(updatedRoom);
+            return roomMapper.toResponseDto(updatedRoom);
+        } catch (DataIntegrityViolationException e) {
+            // Handle database constraint violations
+            log.error("Database constraint violation when updating room: {}", e.getMessage());
+
+            // Check if it's a unique constraint violation on the name
+            if (e.getMessage() != null && e.getMessage().contains("uk_room_name")) {
+                throw new DuplicateNameException("Room with name '" + roomRequest.getName() + "' already exists");
+            }
+
+            // Rethrow other database integrity issues
+            throw e;
+        }
     }
 
     @Override

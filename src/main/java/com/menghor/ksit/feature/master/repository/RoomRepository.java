@@ -12,6 +12,9 @@ import java.util.Optional;
 
 @Repository
 public interface RoomRepository extends JpaRepository<RoomEntity, Long>, JpaSpecificationExecutor<RoomEntity> {
+    // Check if a room with the given name exists (case insensitive)
+    boolean existsByNameIgnoreCase(String name);
 
-    Optional<RoomEntity> findByName(String name);
+    // Check if a room with the given name exists excluding a specific ID (for updates)
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
 }

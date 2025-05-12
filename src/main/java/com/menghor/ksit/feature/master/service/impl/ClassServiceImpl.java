@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.master.service.impl;
 
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.exceptoins.error.DuplicateNameException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.master.dto.filter.ClassFilterDto;
 import com.menghor.ksit.feature.master.dto.request.ClassRequestDto;
@@ -19,6 +20,7 @@ import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -38,15 +40,28 @@ public class ClassServiceImpl implements ClassService {
         log.info("Creating new class with code: {}, majorId: {}, academyYear: {}",
                 classRequestDto.getCode(), classRequestDto.getMajorId(), classRequestDto.getAcademyYear());
 
-        ClassEntity classEntity = classMapper.toEntity(classRequestDto);
+        try {
+            ClassEntity classEntity = classMapper.toEntity(classRequestDto);
 
-        MajorEntity major = findMajorById(classRequestDto.getMajorId());
-        classEntity.setMajor(major);
+            MajorEntity major = findMajorById(classRequestDto.getMajorId());
+            classEntity.setMajor(major);
 
-        ClassEntity savedClass = classRepository.save(classEntity);
-        log.info("Class created successfully with ID: {}", savedClass.getId());
+            ClassEntity savedClass = classRepository.save(classEntity);
+            log.info("Class created successfully with ID: {}", savedClass.getId());
 
-        return classMapper.toResponseDto(savedClass);
+            return classMapper.toResponseDto(savedClass);
+        } catch (DataIntegrityViolationException e) {
+            // Handle database constraint violations
+            log.error("Database constraint violation when creating class: {}", e.getMessage());
+
+            // Check if it's a unique constraint violation on the code
+            if (e.getMessage() != null && e.getMessage().contains("uk_class_code")) {
+                throw new DuplicateNameException("Class with code '" + classRequestDto.getCode() + "' already exists");
+            }
+
+            // Rethrow other database integrity issues
+            throw e;
+        }
     }
 
     @Override
@@ -64,23 +79,36 @@ public class ClassServiceImpl implements ClassService {
     public ClassResponseDto updateClassById(Long id, ClassUpdateDto classRequestDto) {
         log.info("Updating class with ID: {}", id);
 
-        // Find the existing entity
-        ClassEntity existingClass = findClassById(id);
+        try {
+            // Find the existing entity
+            ClassEntity existingClass = findClassById(id);
 
-        // Use MapStruct to update only non-null fields
-        classMapper.updateEntityFromDto(classRequestDto, existingClass);
+            // Use MapStruct to update only non-null fields
+            classMapper.updateEntityFromDto(classRequestDto, existingClass);
 
-        // Handle major relationship separately if provided
-        if (classRequestDto.getMajorId() != null) {
-            MajorEntity major = findMajorById(classRequestDto.getMajorId());
-            existingClass.setMajor(major);
+            // Handle major relationship separately if provided
+            if (classRequestDto.getMajorId() != null) {
+                MajorEntity major = findMajorById(classRequestDto.getMajorId());
+                existingClass.setMajor(major);
+            }
+
+            // Save the updated entity
+            ClassEntity updatedClass = classRepository.save(existingClass);
+            log.info("Class updated successfully with ID: {}", id);
+
+            return classMapper.toResponseDto(updatedClass);
+        } catch (DataIntegrityViolationException e) {
+            // Handle database constraint violations
+            log.error("Database constraint violation when updating class: {}", e.getMessage());
+
+            // Check if it's a unique constraint violation on the code
+            if (e.getMessage() != null && e.getMessage().contains("uk_class_code")) {
+                throw new DuplicateNameException("Class with code '" + classRequestDto.getCode() + "' already exists");
+            }
+
+            // Rethrow other database integrity issues
+            throw e;
         }
-
-        // Save the updated entity
-        ClassEntity updatedClass = classRepository.save(existingClass);
-        log.info("Class updated successfully with ID: {}", id);
-
-        return classMapper.toResponseDto(updatedClass);
     }
 
     @Override

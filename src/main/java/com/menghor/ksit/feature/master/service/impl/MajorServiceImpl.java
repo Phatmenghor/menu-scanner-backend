@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.master.service.impl;
 
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.exceptoins.error.DuplicateNameException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.master.dto.filter.MajorFilterDto;
 import com.menghor.ksit.feature.master.dto.request.MajorRequestDto;
@@ -18,6 +19,7 @@ import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -38,15 +40,28 @@ public class MajorServiceImpl implements MajorService {
         log.info("Creating new major with code: {}, name: {}, departmentId: {}",
                 majorRequestDto.getCode(), majorRequestDto.getName(), majorRequestDto.getDepartmentId());
 
-        MajorEntity major = majorMapper.toEntity(majorRequestDto);
+        try {
+            MajorEntity major = majorMapper.toEntity(majorRequestDto);
 
-        DepartmentEntity department = findDepartmentById(majorRequestDto.getDepartmentId());
-        major.setDepartment(department);
+            DepartmentEntity department = findDepartmentById(majorRequestDto.getDepartmentId());
+            major.setDepartment(department);
 
-        MajorEntity savedMajor = majorRepository.save(major);
-        log.info("Major created successfully with ID: {}", savedMajor.getId());
+            MajorEntity savedMajor = majorRepository.save(major);
+            log.info("Major created successfully with ID: {}", savedMajor.getId());
 
-        return majorMapper.toResponseDto(savedMajor);
+            return majorMapper.toResponseDto(savedMajor);
+        } catch (DataIntegrityViolationException e) {
+            // Handle database constraint violations
+            log.error("Database constraint violation when creating major: {}", e.getMessage());
+
+            // Check if it's a unique constraint violation on the code
+            if (e.getMessage() != null && e.getMessage().contains("uk_major_code")) {
+                throw new DuplicateNameException("Major with code '" + majorRequestDto.getCode() + "' already exists");
+            }
+
+            // Rethrow other database integrity issues
+            throw e;
+        }
     }
 
     @Override
@@ -64,23 +79,36 @@ public class MajorServiceImpl implements MajorService {
     public MajorResponseDto updateMajorById(Long id, MajorUpdateDto majorRequestDto) {
         log.info("Updating major with ID: {}", id);
 
-        // Find the existing entity
-        MajorEntity existingMajor = findMajorById(id);
+        try {
+            // Find the existing entity
+            MajorEntity existingMajor = findMajorById(id);
 
-        // Use MapStruct to update only non-null fields
-        majorMapper.updateEntityFromDto(majorRequestDto, existingMajor);
+            // Use MapStruct to update only non-null fields
+            majorMapper.updateEntityFromDto(majorRequestDto, existingMajor);
 
-        // Handle department separately if provided
-        if (majorRequestDto.getDepartmentId() != null) {
-            DepartmentEntity department = findDepartmentById(majorRequestDto.getDepartmentId());
-            existingMajor.setDepartment(department);
+            // Handle department separately if provided
+            if (majorRequestDto.getDepartmentId() != null) {
+                DepartmentEntity department = findDepartmentById(majorRequestDto.getDepartmentId());
+                existingMajor.setDepartment(department);
+            }
+
+            // Save the updated entity
+            MajorEntity updatedMajor = majorRepository.save(existingMajor);
+            log.info("Major updated successfully with ID: {}", id);
+
+            return majorMapper.toResponseDto(updatedMajor);
+        } catch (DataIntegrityViolationException e) {
+            // Handle database constraint violations
+            log.error("Database constraint violation when updating major: {}", e.getMessage());
+
+            // Check if it's a unique constraint violation on the code
+            if (e.getMessage() != null && e.getMessage().contains("uk_major_code")) {
+                throw new DuplicateNameException("Major with code '" + majorRequestDto.getCode() + "' already exists");
+            }
+
+            // Rethrow other database integrity issues
+            throw e;
         }
-
-        // Save the updated entity
-        MajorEntity updatedMajor = majorRepository.save(existingMajor);
-        log.info("Major updated successfully with ID: {}", id);
-
-        return majorMapper.toResponseDto(updatedMajor);
     }
 
     @Override
