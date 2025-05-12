@@ -41,6 +41,7 @@ public class UserEntity extends BaseEntity {
     //    teacher , student
     private String password; // Password
     //    teacher
+    @Column(unique = true)
     private String identifyNumber; // National ID or other identification number
 
     //    teacher
