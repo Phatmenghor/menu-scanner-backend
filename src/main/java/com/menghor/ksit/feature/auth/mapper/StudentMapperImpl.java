@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.auth.mapper;
 
+import com.menghor.ksit.feature.auth.dto.resposne.StudentResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.models.UserEntity;
@@ -76,6 +77,33 @@ public class StudentMapperImpl implements StudentMapper {
 
         return dto.build();
     }
+
+    @Override
+    public StudentResponseDto toStudentBatchDto(UserEntity user, String plainTextPassword) {
+        if (user == null) {
+            return null;
+        }
+
+        StudentResponseDto responseDto = new StudentResponseDto();
+
+        // Set only the required fields
+        responseDto.setId(user.getId());
+        responseDto.setUsername(user.getUsername());
+        responseDto.setIdentifyNumber(user.getIdentifyNumber());
+        responseDto.setPassword(plainTextPassword);
+
+         responseDto.setPassword(plainTextPassword);
+
+        // Set class code if class is available
+        if (user.getClasses() != null) {
+            responseDto.setClassCode(user.getClasses().getCode());
+        }
+
+        responseDto.setCreatedAt(user.getCreatedAt());
+
+        return responseDto;
+    }
+
 
     @Override
     public List<StudentUserResponseDto> toStudentUserDtoList(List<UserEntity> entities) {

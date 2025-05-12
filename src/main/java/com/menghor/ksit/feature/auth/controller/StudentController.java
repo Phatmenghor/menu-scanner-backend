@@ -6,6 +6,7 @@ import com.menghor.ksit.feature.auth.dto.request.StudentBatchCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentUpdateRequestDto;
 import com.menghor.ksit.feature.auth.dto.filter.StudentUserFilterRequestDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StudentResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.service.StudentService;
@@ -42,9 +43,9 @@ public class StudentController {
      */
     @PostMapping("/register/batch")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
-    public ApiResponse<List<StudentUserResponseDto>> registerStudentBatch(@Valid @RequestBody StudentBatchCreateRequestDto requestDto) {
+    public ApiResponse<List<StudentResponseDto>> registerStudentBatch(@Valid @RequestBody StudentBatchCreateRequestDto requestDto) {
         log.info("Batch registering {} students for class ID: {}", requestDto.getQuantity(), requestDto.getClassId());
-        List<StudentUserResponseDto> registeredStudents = studentService.batchRegisterStudents(requestDto);
+        List<StudentResponseDto> registeredStudents = studentService.batchRegisterStudents(requestDto);
         log.info("Successfully batch registered {} students", registeredStudents.size());
         return new ApiResponse<>("success",
                 String.format("Successfully registered %d students", registeredStudents.size()),

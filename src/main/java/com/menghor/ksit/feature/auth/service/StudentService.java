@@ -4,6 +4,7 @@ import com.menghor.ksit.feature.auth.dto.request.StudentBatchCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentUpdateRequestDto;
 import com.menghor.ksit.feature.auth.dto.filter.StudentUserFilterRequestDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StudentResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 
@@ -30,7 +31,7 @@ public interface StudentService {
     StudentUserResponseDto getStudentUserById(Long id);
 
 
-    List<StudentUserResponseDto> batchRegisterStudents(StudentBatchCreateRequestDto batchRequest);
+    List<StudentResponseDto> batchRegisterStudents(StudentBatchCreateRequestDto batchRequest);
 
     /**
      * Update student user with detailed information

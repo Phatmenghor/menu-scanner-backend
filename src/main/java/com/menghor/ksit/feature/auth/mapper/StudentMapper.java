@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.auth.mapper;
 
+import com.menghor.ksit.feature.auth.dto.resposne.StudentResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.models.UserEntity;
@@ -20,6 +21,9 @@ public interface StudentMapper {
      * Convert UserEntity to StudentUserResponseDto
      */
     StudentUserResponseDto toStudentUserDto(UserEntity user);
+
+
+    StudentResponseDto toStudentBatchDto(UserEntity user, String plainTextPassword);
 
     /**
      * Convert list of UserEntity to list of StudentUserResponseDto

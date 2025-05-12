@@ -12,6 +12,7 @@ import com.menghor.ksit.feature.auth.dto.request.StudentBatchCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentUpdateRequestDto;
 import com.menghor.ksit.feature.auth.dto.filter.StudentUserFilterRequestDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StudentResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.mapper.StaffMapper;
@@ -181,7 +182,7 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional
-    public List<StudentUserResponseDto> batchRegisterStudents(StudentBatchCreateRequestDto batchRequest) {
+    public List<StudentResponseDto> batchRegisterStudents(StudentBatchCreateRequestDto batchRequest) {
         log.info("Batch registering {} students for class ID: {}", batchRequest.getQuantity(), batchRequest.getClassId());
 
         // Check if class exists
@@ -206,34 +207,16 @@ public class StudentServiceImpl implements StudentService {
                         }
 
                         // Generate password
-                        String password = identifierGenerator.generateRandomPassword();
+                        String plainTextPassword = identifierGenerator.generateRandomPassword();
 
                         // Create student entity
                         UserEntity student = new UserEntity();
 
                         // Set username from identifyNumber
                         student.setUsername(identifyNumber);
-                        student.setPassword(passwordEncoder.encode(password));
+                        student.setPassword(passwordEncoder.encode(plainTextPassword));
                         student.setStatus(batchRequest.getStatus() != null ? batchRequest.getStatus() : Status.ACTIVE);
-                        student.setEmail(batchRequest.getEmail());
                         student.setIdentifyNumber(identifyNumber);
-
-                        // Set batch common fields if provided
-                        student.setKhmerFirstName(batchRequest.getKhmerFirstName());
-                        student.setKhmerLastName(batchRequest.getKhmerLastName());
-                        student.setEnglishFirstName(batchRequest.getEnglishFirstName());
-                        student.setEnglishLastName(batchRequest.getEnglishLastName());
-                        student.setGender(batchRequest.getGender());
-                        student.setDateOfBirth(batchRequest.getDateOfBirth());
-                        student.setPhoneNumber(batchRequest.getPhoneNumber());
-                        student.setCurrentAddress(batchRequest.getCurrentAddress());
-                        student.setNationality(batchRequest.getNationality());
-                        student.setEthnicity(batchRequest.getEthnicity());
-                        student.setPlaceOfBirth(batchRequest.getPlaceOfBirth());
-
-                        // Set student-specific fields
-                        student.setMemberSiblings(batchRequest.getMemberSiblings());
-                        student.setNumberOfSiblings(batchRequest.getNumberOfSiblings());
 
                         // Set class
                         student.setClasses(classEntity);
@@ -244,11 +227,11 @@ public class StudentServiceImpl implements StudentService {
                         // Save student
                         UserEntity savedStudent = userRepository.save(student);
 
-                        log.info("Batch created student #{} with ID: {}, username: {}, identifyNumber: {}, password: {}",
+                        log.info("Batch created student #{} with ID: {}, username: {}, identifyNumber: {}",
                                 (i + 1), savedStudent.getId(), savedStudent.getUsername(),
-                                savedStudent.getIdentifyNumber(), password);
+                                savedStudent.getIdentifyNumber());
 
-                        return studentMapper.toStudentUserDto(savedStudent);
+                        return studentMapper.toStudentBatchDto(savedStudent,plainTextPassword);
                     } catch (Exception e) {
                         log.error("Error creating batch student #{}: {}", (i + 1), e.getMessage());
                         throw new BadRequestException("Error creating batch student #" + (i + 1) + ": " + e.getMessage());
