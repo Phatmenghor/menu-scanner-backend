@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.master.repository;
 
+import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.master.model.RoomEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,9 +13,6 @@ import java.util.Optional;
 
 @Repository
 public interface RoomRepository extends JpaRepository<RoomEntity, Long>, JpaSpecificationExecutor<RoomEntity> {
-    // Check if a room with the given name exists (case insensitive)
-    boolean existsByNameIgnoreCase(String name);
-
-    // Check if a room with the given name exists excluding a specific ID (for updates)
-    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+    boolean existsByNameAndStatus(String name, Status status);
+    boolean existsByNameAndStatusAndIdNot(String name, Status status, Long id);
 }

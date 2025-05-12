@@ -8,4 +8,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DepartmentRepository extends JpaRepository<DepartmentEntity, Long>, JpaSpecificationExecutor<DepartmentEntity> {
+        boolean existsByCode(String code);
+        boolean existsByName(String name);
+        boolean existsByCodeAndIdNot(String code, Long id);
+        boolean existsByNameAndIdNot(String name, Long id);
 }

@@ -17,7 +17,6 @@ import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -36,24 +35,34 @@ public class RoomServiceImpl implements RoomService {
     public RoomResponseDto createRoom(RoomRequestDto roomRequest) {
         log.info("Creating new room with name: {}", roomRequest.getName());
 
-        try {
-            RoomEntity room = roomMapper.toEntity(roomRequest);
-            RoomEntity savedRoom = roomRepository.save(room);
+        // Determine the status (default to ACTIVE if not specified)
+        Status status = roomRequest.getStatus() != null ?
+                roomRequest.getStatus() : Status.ACTIVE;
 
-            log.info("Room created successfully with ID: {}", savedRoom.getId());
-            return roomMapper.toResponseDto(savedRoom);
-        } catch (DataIntegrityViolationException e) {
-            // Handle database constraint violations
-            log.error("Database constraint violation when creating room: {}", e.getMessage());
+        // Only check for duplicates if this room will be ACTIVE
+        if (status == Status.ACTIVE) {
+            // Check if an ACTIVE room with the same name already exists
+            boolean activeRoomExists = roomRepository.existsByNameAndStatus(
+                    roomRequest.getName(), Status.ACTIVE);
 
-            // Check if it's a unique constraint violation on the name
-            if (e.getMessage() != null && e.getMessage().contains("uk_room_name")) {
-                throw new DuplicateNameException("Room with name '" + roomRequest.getName() + "' already exists");
+            if (activeRoomExists) {
+                throw new DuplicateNameException("Room with name '" +
+                        roomRequest.getName() + "' already exists");
             }
-
-            // Rethrow other database integrity issues
-            throw e;
         }
+
+        // Proceed with room creation
+        RoomEntity room = roomMapper.toEntity(roomRequest);
+
+        // Ensure status is set if it wasn't specified
+        if (room.getStatus() == null) {
+            room.setStatus(Status.ACTIVE);
+        }
+
+        RoomEntity savedRoom = roomRepository.save(room);
+        log.info("Room created successfully with ID: {}", savedRoom.getId());
+
+        return roomMapper.toResponseDto(savedRoom);
     }
 
     @Override
@@ -71,30 +80,49 @@ public class RoomServiceImpl implements RoomService {
     public RoomResponseDto updateRoomById(RoomUpdateDto roomRequest, Long id) {
         log.info("Updating room with ID: {}", id);
 
-        try {
-            // Find the existing entity
-            RoomEntity existingRoom = findRoomById(id);
+        // Find the existing entity
+        RoomEntity existingRoom = findRoomById(id);
 
-            // Use MapStruct to update only non-null fields
-            roomMapper.updateEntityFromDto(roomRequest, existingRoom);
+        // Determine what the status will be after the update
+        Status newStatus = roomRequest.getStatus() != null ?
+                roomRequest.getStatus() : existingRoom.getStatus();
 
-            // Save the updated entity
-            RoomEntity updatedRoom = roomRepository.save(existingRoom);
-            log.info("Room updated successfully with ID: {}", id);
+        // If the new status will be ACTIVE and name is changing, check for duplicates
+        if (newStatus == Status.ACTIVE &&
+                roomRequest.getName() != null &&
+                !roomRequest.getName().equals(existingRoom.getName())) {
 
-            return roomMapper.toResponseDto(updatedRoom);
-        } catch (DataIntegrityViolationException e) {
-            // Handle database constraint violations
-            log.error("Database constraint violation when updating room: {}", e.getMessage());
+            boolean activeRoomExists = roomRepository.existsByNameAndStatus(
+                    roomRequest.getName(), Status.ACTIVE);
 
-            // Check if it's a unique constraint violation on the name
-            if (e.getMessage() != null && e.getMessage().contains("uk_room_name")) {
-                throw new DuplicateNameException("Room with name '" + roomRequest.getName() + "' already exists");
+            if (activeRoomExists) {
+                throw new DuplicateNameException("Room with name '" +
+                        roomRequest.getName() + "' already exists");
             }
-
-            // Rethrow other database integrity issues
-            throw e;
         }
+
+        // If the status is changing to ACTIVE (from non-ACTIVE) and the name isn't changing,
+        // we still need to check if another ACTIVE room with the same name exists
+        if (newStatus == Status.ACTIVE &&
+                existingRoom.getStatus() != Status.ACTIVE) {
+
+            boolean activeRoomWithSameNameExists = roomRepository.existsByNameAndStatusAndIdNot(
+                    existingRoom.getName(), Status.ACTIVE, id);
+
+            if (activeRoomWithSameNameExists) {
+                throw new DuplicateNameException("Room with name '" +
+                        existingRoom.getName() + "' already exists");
+            }
+        }
+
+        // Proceed with update
+        roomMapper.updateEntityFromDto(roomRequest, existingRoom);
+
+        // Save the updated entity
+        RoomEntity updatedRoom = roomRepository.save(existingRoom);
+        log.info("Room updated successfully with ID: {}", id);
+
+        return roomMapper.toResponseDto(updatedRoom);
     }
 
     @Override
@@ -103,8 +131,9 @@ public class RoomServiceImpl implements RoomService {
         log.info("Deleting room with ID: {}", id);
 
         RoomEntity room = findRoomById(id);
+        room.setStatus(Status.DELETED);
 
-        roomRepository.delete(room);
+        room = roomRepository.save(room);
         log.info("Room deleted successfully with ID: {}", id);
 
         return roomMapper.toResponseDto(room);

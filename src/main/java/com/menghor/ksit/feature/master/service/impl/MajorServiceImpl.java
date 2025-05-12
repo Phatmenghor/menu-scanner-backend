@@ -17,14 +17,13 @@ import com.menghor.ksit.feature.master.service.MajorService;
 import com.menghor.ksit.feature.master.specification.MajorSpecification;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -40,75 +39,106 @@ public class MajorServiceImpl implements MajorService {
         log.info("Creating new major with code: {}, name: {}, departmentId: {}",
                 majorRequestDto.getCode(), majorRequestDto.getName(), majorRequestDto.getDepartmentId());
 
-        try {
-            MajorEntity major = majorMapper.toEntity(majorRequestDto);
+        // Determine the status (default to ACTIVE if not specified)
+        Status status = majorRequestDto.getStatus() != null ?
+                majorRequestDto.getStatus() : Status.ACTIVE;
 
-            DepartmentEntity department = findDepartmentById(majorRequestDto.getDepartmentId());
-            major.setDepartment(department);
+        // Only check for duplicates if this major will be ACTIVE
+        if (status == Status.ACTIVE) {
+            // Check if an ACTIVE major with the same code already exists
+            boolean activeMajorExists = majorRepository.existsByCodeAndStatus(
+                    majorRequestDto.getCode(), Status.ACTIVE);
 
-            MajorEntity savedMajor = majorRepository.save(major);
-            log.info("Major created successfully with ID: {}", savedMajor.getId());
-
-            return majorMapper.toResponseDto(savedMajor);
-        } catch (DataIntegrityViolationException e) {
-            // Handle database constraint violations
-            log.error("Database constraint violation when creating major: {}", e.getMessage());
-
-            // Check if it's a unique constraint violation on the code
-            if (e.getMessage() != null && e.getMessage().contains("uk_major_code")) {
-                throw new DuplicateNameException("Major with code '" + majorRequestDto.getCode() + "' already exists");
+            if (activeMajorExists) {
+                throw new DuplicateNameException("Major with code '" +
+                        majorRequestDto.getCode() + "' already exists");
             }
-
-            // Rethrow other database integrity issues
-            throw e;
         }
+
+        // Proceed with major creation
+        MajorEntity majorEntity = majorMapper.toEntity(majorRequestDto);
+
+        // Ensure status is set if it wasn't specified
+        if (majorEntity.getStatus() == null) {
+            majorEntity.setStatus(Status.ACTIVE);
+        }
+
+        // Find and set the department
+        if (majorRequestDto.getDepartmentId() != null) {
+            DepartmentEntity department = findDepartmentById(majorRequestDto.getDepartmentId());
+            majorEntity.setDepartment(department);
+        }
+
+        MajorEntity savedMajor = majorRepository.save(majorEntity);
+        log.info("Major created successfully with ID: {}", savedMajor.getId());
+
+        return majorMapper.toResponseDto(savedMajor);
     }
 
     @Override
     public MajorResponseDto getMajorById(Long id) {
         log.info("Fetching major by ID: {}", id);
 
-        MajorEntity major = findMajorById(id);
+        MajorEntity majorEntity = findMajorById(id);
 
         log.info("Retrieved major with ID: {}", id);
-        return majorMapper.toResponseDto(major);
+        return majorMapper.toResponseDto(majorEntity);
     }
 
     @Override
     @Transactional
-    public MajorResponseDto updateMajorById(Long id, MajorUpdateDto majorRequestDto) {
+    public MajorResponseDto updateMajorById(Long id, MajorUpdateDto majorUpdateDto) {
         log.info("Updating major with ID: {}", id);
 
-        try {
-            // Find the existing entity
-            MajorEntity existingMajor = findMajorById(id);
+        // Find the existing entity
+        MajorEntity existingMajor = findMajorById(id);
 
-            // Use MapStruct to update only non-null fields
-            majorMapper.updateEntityFromDto(majorRequestDto, existingMajor);
+        // Determine what the status will be after the update
+        Status newStatus = majorUpdateDto.getStatus() != null ?
+                majorUpdateDto.getStatus() : existingMajor.getStatus();
 
-            // Handle department separately if provided
-            if (majorRequestDto.getDepartmentId() != null) {
-                DepartmentEntity department = findDepartmentById(majorRequestDto.getDepartmentId());
-                existingMajor.setDepartment(department);
+        // If the new status will be ACTIVE and code is changing, check for duplicates
+        if (newStatus == Status.ACTIVE &&
+                majorUpdateDto.getCode() != null &&
+                !majorUpdateDto.getCode().equals(existingMajor.getCode())) {
+
+            boolean activeMajorExists = majorRepository.existsByCodeAndStatus(
+                    majorUpdateDto.getCode(), Status.ACTIVE);
+
+            if (activeMajorExists) {
+                throw new DuplicateNameException("Major with code '" +
+                        majorUpdateDto.getCode() + "' already exists");
             }
-
-            // Save the updated entity
-            MajorEntity updatedMajor = majorRepository.save(existingMajor);
-            log.info("Major updated successfully with ID: {}", id);
-
-            return majorMapper.toResponseDto(updatedMajor);
-        } catch (DataIntegrityViolationException e) {
-            // Handle database constraint violations
-            log.error("Database constraint violation when updating major: {}", e.getMessage());
-
-            // Check if it's a unique constraint violation on the code
-            if (e.getMessage() != null && e.getMessage().contains("uk_major_code")) {
-                throw new DuplicateNameException("Major with code '" + majorRequestDto.getCode() + "' already exists");
-            }
-
-            // Rethrow other database integrity issues
-            throw e;
         }
+
+        // If the status is changing to ACTIVE (from non-ACTIVE) and the code isn't changing,
+        // we still need to check if another ACTIVE major with the same code exists
+        if (newStatus == Status.ACTIVE &&
+                existingMajor.getStatus() != Status.ACTIVE) {
+
+            boolean activeMajorWithSameCodeExists = majorRepository.existsByCodeAndStatusAndIdNot(
+                    existingMajor.getCode(), Status.ACTIVE, id);
+
+            if (activeMajorWithSameCodeExists) {
+                throw new DuplicateNameException("Major with code '" +
+                        existingMajor.getCode() + "' already exists");
+            }
+        }
+
+        // Use MapStruct to update only non-null fields
+        majorMapper.updateEntityFromDto(majorUpdateDto, existingMajor);
+
+        // Handle department relationship separately if provided
+        if (majorUpdateDto.getDepartmentId() != null) {
+            DepartmentEntity department = findDepartmentById(majorUpdateDto.getDepartmentId());
+            existingMajor.setDepartment(department);
+        }
+
+        // Save the updated entity
+        MajorEntity updatedMajor = majorRepository.save(existingMajor);
+        log.info("Major updated successfully with ID: {}", id);
+
+        return majorMapper.toResponseDto(updatedMajor);
     }
 
     @Override
@@ -116,12 +146,13 @@ public class MajorServiceImpl implements MajorService {
     public MajorResponseDto deleteMajorById(Long id) {
         log.info("Deleting major with ID: {}", id);
 
-        MajorEntity major = findMajorById(id);
+        MajorEntity majorEntity = findMajorById(id);
+        majorEntity.setStatus(Status.DELETED);
 
-        majorRepository.delete(major);
+        majorEntity = majorRepository.save(majorEntity);
         log.info("Major deleted successfully with ID: {}", id);
 
-        return majorMapper.toResponseDto(major);
+        return majorMapper.toResponseDto(majorEntity);
     }
 
     @Override

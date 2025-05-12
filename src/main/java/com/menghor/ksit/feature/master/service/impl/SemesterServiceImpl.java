@@ -75,8 +75,9 @@ public class SemesterServiceImpl implements SemesterService {
         log.info("Deleting semester with ID: {}", id);
 
         SemesterEntity semester = findSemesterById(id);
+        semester.setStatus(Status.DELETED);
 
-        semesterRepository.delete(semester);
+        semester = semesterRepository.save(semester);
         log.info("SemesterEnum deleted successfully with ID: {}", id);
 
         return semesterMapper.toResponseDto(semester);

@@ -37,30 +37,30 @@ public class DepartmentServiceImpl implements DepartmentService {
         log.info("Creating new department with code: {}, name: {}",
                 departmentRequestDto.getCode(), departmentRequestDto.getName());
 
-        try {
-            DepartmentEntity department = departmentMapper.toEntity(departmentRequestDto);
-            DepartmentEntity savedDepartment = departmentRepository.save(department);
-
-            log.info("Department created successfully with ID: {}", savedDepartment.getId());
-            return departmentMapper.toResponseDto(savedDepartment);
-
-        } catch (DataIntegrityViolationException e) {
-            // Handle database constraint violations
-            log.error("Database constraint violation when creating department: {}", e.getMessage());
-
-            // Check if it's a unique constraint violation on the code
-            if (e.getMessage() != null && e.getMessage().contains("uk_department_code")) {
-                throw new DuplicateNameException("Department with code '" + departmentRequestDto.getCode() + "' already exists");
-            }
-
-            // Check if it's a unique constraint violation on the name
-            if (e.getMessage() != null && e.getMessage().contains("uk_department_name")) {
-                throw new DuplicateNameException("Department with name '" + departmentRequestDto.getName() + "' already exists");
-            }
-
-            // Rethrow other database integrity issues
-            throw e;
+        // Check for existing department with same code
+        if (departmentRepository.existsByCode(departmentRequestDto.getCode())) {
+            throw new DuplicateNameException("Department with code '" +
+                    departmentRequestDto.getCode() + "' already exists");
         }
+
+        // Check for existing department with same name
+        if (departmentRepository.existsByName(departmentRequestDto.getName())) {
+            throw new DuplicateNameException("Department with name '" +
+                    departmentRequestDto.getName() + "' already exists");
+        }
+
+        // Proceed with department creation
+        DepartmentEntity department = departmentMapper.toEntity(departmentRequestDto);
+
+        // Ensure status is set if it wasn't specified
+        if (department.getStatus() == null) {
+            department.setStatus(Status.ACTIVE);
+        }
+
+        DepartmentEntity savedDepartment = departmentRepository.save(department);
+
+        log.info("Department created successfully with ID: {}", savedDepartment.getId());
+        return departmentMapper.toResponseDto(savedDepartment);
     }
 
     @Override
@@ -78,36 +78,35 @@ public class DepartmentServiceImpl implements DepartmentService {
     public DepartmentResponseDto updateDepartmentById(DepartmentUpdateDto departmentRequestDto, Long id) {
         log.info("Updating department with ID: {}", id);
 
-        try {
-            // Find the existing entity
-            DepartmentEntity existingDepartment = findDepartmentById(id);
+        // Find the existing entity
+        DepartmentEntity existingDepartment = findDepartmentById(id);
 
-            // Use MapStruct to update only non-null fields
-            departmentMapper.updateEntityFromDto(departmentRequestDto, existingDepartment);
+        // Check for code conflict only if code is being changed
+        if (departmentRequestDto.getCode() != null &&
+                !departmentRequestDto.getCode().equals(existingDepartment.getCode()) &&
+                departmentRepository.existsByCodeAndIdNot(departmentRequestDto.getCode(), id)) {
 
-            // Save the updated entity
-            DepartmentEntity updatedDepartment = departmentRepository.save(existingDepartment);
-            log.info("Department updated successfully with ID: {}", id);
-
-            return departmentMapper.toResponseDto(updatedDepartment);
-
-        } catch (DataIntegrityViolationException e) {
-            // Handle database constraint violations
-            log.error("Database constraint violation when updating department: {}", e.getMessage());
-
-            // Check if it's a unique constraint violation on the code
-            if (e.getMessage() != null && e.getMessage().contains("uk_department_code")) {
-                throw new DuplicateNameException("Department with code '" + departmentRequestDto.getCode() + "' already exists");
-            }
-
-            // Check if it's a unique constraint violation on the name
-            if (e.getMessage() != null && e.getMessage().contains("uk_department_name")) {
-                throw new DuplicateNameException("Department with name '" + departmentRequestDto.getName() + "' already exists");
-            }
-
-            // Rethrow other database integrity issues
-            throw e;
+            throw new DuplicateNameException("Department with code '" +
+                    departmentRequestDto.getCode() + "' already exists");
         }
+
+        // Check for name conflict only if name is being changed
+        if (departmentRequestDto.getName() != null &&
+                !departmentRequestDto.getName().equals(existingDepartment.getName()) &&
+                departmentRepository.existsByNameAndIdNot(departmentRequestDto.getName(), id)) {
+
+            throw new DuplicateNameException("Department with name '" +
+                    departmentRequestDto.getName() + "' already exists");
+        }
+
+        // Use MapStruct to update only non-null fields
+        departmentMapper.updateEntityFromDto(departmentRequestDto, existingDepartment);
+
+        // Save the updated entity
+        DepartmentEntity updatedDepartment = departmentRepository.save(existingDepartment);
+        log.info("Department updated successfully with ID: {}", id);
+
+        return departmentMapper.toResponseDto(updatedDepartment);
     }
 
     @Override
@@ -117,9 +116,11 @@ public class DepartmentServiceImpl implements DepartmentService {
 
         DepartmentEntity department = findDepartmentById(id);
 
-        departmentRepository.delete(department);
-        log.info("Department deleted successfully with ID: {}", id);
+        department.setStatus(Status.DELETED);
 
+        department= departmentRepository.save(department);
+
+        log.info("Department deleted successfully with ID: {}", id);
         return departmentMapper.toResponseDto(department);
     }
 

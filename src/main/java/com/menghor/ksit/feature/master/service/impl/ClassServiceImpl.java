@@ -40,29 +40,39 @@ public class ClassServiceImpl implements ClassService {
         log.info("Creating new class with code: {}, majorId: {}, academyYear: {}",
                 classRequestDto.getCode(), classRequestDto.getMajorId(), classRequestDto.getAcademyYear());
 
-        try {
-            ClassEntity classEntity = classMapper.toEntity(classRequestDto);
+        // Determine the status (default to ACTIVE if not specified)
+        Status status = classRequestDto.getStatus() != null ?
+                classRequestDto.getStatus() : Status.ACTIVE;
 
-            MajorEntity major = findMajorById(classRequestDto.getMajorId());
-            classEntity.setMajor(major);
+        // Only check for duplicates if this class will be ACTIVE
+        if (status == Status.ACTIVE) {
+            // Check if an ACTIVE class with the same code already exists
+            boolean activeClassExists = classRepository.existsByCodeAndStatus(
+                    classRequestDto.getCode(), Status.ACTIVE);
 
-            ClassEntity savedClass = classRepository.save(classEntity);
-            log.info("Class created successfully with ID: {}", savedClass.getId());
-
-            return classMapper.toResponseDto(savedClass);
-        } catch (DataIntegrityViolationException e) {
-            // Handle database constraint violations
-            log.error("Database constraint violation when creating class: {}", e.getMessage());
-
-            // Check if it's a unique constraint violation on the code
-            if (e.getMessage() != null && e.getMessage().contains("uk_class_code")) {
-                throw new DuplicateNameException("Class with code '" + classRequestDto.getCode() + "' already exists");
+            if (activeClassExists) {
+                throw new DuplicateNameException("Class with code '" +
+                        classRequestDto.getCode() + "' already exists");
             }
-
-            // Rethrow other database integrity issues
-            throw e;
         }
+
+        // Proceed with class creation
+        ClassEntity classEntity = classMapper.toEntity(classRequestDto);
+
+        // Ensure status is set if it wasn't specified
+        if (classEntity.getStatus() == null) {
+            classEntity.setStatus(Status.ACTIVE);
+        }
+
+        MajorEntity major = findMajorById(classRequestDto.getMajorId());
+        classEntity.setMajor(major);
+
+        ClassEntity savedClass = classRepository.save(classEntity);
+        log.info("Class created successfully with ID: {}", savedClass.getId());
+
+        return classMapper.toResponseDto(savedClass);
     }
+
 
     @Override
     public ClassResponseDto getClassById(Long id) {
@@ -76,39 +86,58 @@ public class ClassServiceImpl implements ClassService {
 
     @Override
     @Transactional
-    public ClassResponseDto updateClassById(Long id, ClassUpdateDto classRequestDto) {
+    public ClassResponseDto updateClassById(Long id, ClassUpdateDto classUpdateDto) {
         log.info("Updating class with ID: {}", id);
 
-        try {
-            // Find the existing entity
-            ClassEntity existingClass = findClassById(id);
+        // Find the existing entity
+        ClassEntity existingClass = findClassById(id);
 
-            // Use MapStruct to update only non-null fields
-            classMapper.updateEntityFromDto(classRequestDto, existingClass);
+        // Determine what the status will be after the update
+        Status newStatus = classUpdateDto.getStatus() != null ?
+                classUpdateDto.getStatus() : existingClass.getStatus();
 
-            // Handle major relationship separately if provided
-            if (classRequestDto.getMajorId() != null) {
-                MajorEntity major = findMajorById(classRequestDto.getMajorId());
-                existingClass.setMajor(major);
+        // If the new status will be ACTIVE and code is changing, check for duplicates
+        if (newStatus == Status.ACTIVE &&
+                classUpdateDto.getCode() != null &&
+                !classUpdateDto.getCode().equals(existingClass.getCode())) {
+
+            boolean activeClassExists = classRepository.existsByCodeAndStatus(
+                    classUpdateDto.getCode(), Status.ACTIVE);
+
+            if (activeClassExists) {
+                throw new DuplicateNameException("Another ACTIVE class with code '" +
+                        classUpdateDto.getCode() + "' already exists");
             }
-
-            // Save the updated entity
-            ClassEntity updatedClass = classRepository.save(existingClass);
-            log.info("Class updated successfully with ID: {}", id);
-
-            return classMapper.toResponseDto(updatedClass);
-        } catch (DataIntegrityViolationException e) {
-            // Handle database constraint violations
-            log.error("Database constraint violation when updating class: {}", e.getMessage());
-
-            // Check if it's a unique constraint violation on the code
-            if (e.getMessage() != null && e.getMessage().contains("uk_class_code")) {
-                throw new DuplicateNameException("Class with code '" + classRequestDto.getCode() + "' already exists");
-            }
-
-            // Rethrow other database integrity issues
-            throw e;
         }
+
+        // If the status is changing to ACTIVE (from non-ACTIVE) and the code isn't changing,
+        // we still need to check if another ACTIVE class with the same code exists
+        if (newStatus == Status.ACTIVE &&
+                existingClass.getStatus() != Status.ACTIVE) {
+
+            boolean activeClassWithSameCodeExists = classRepository.existsByCodeAndStatusAndIdNot(
+                    existingClass.getCode(), Status.ACTIVE, id);
+
+            if (activeClassWithSameCodeExists) {
+                throw new DuplicateNameException("Class with code '" +
+                        existingClass.getCode() + "' already exists");
+            }
+        }
+
+        // Proceed with update
+        classMapper.updateEntityFromDto(classUpdateDto, existingClass);
+
+        // Handle major relationship separately if provided
+        if (classUpdateDto.getMajorId() != null) {
+            MajorEntity major = findMajorById(classUpdateDto.getMajorId());
+            existingClass.setMajor(major);
+        }
+
+        // Save the updated entity
+        ClassEntity updatedClass = classRepository.save(existingClass);
+        log.info("Class updated successfully with ID: {}", id);
+
+        return classMapper.toResponseDto(updatedClass);
     }
 
     @Override
@@ -118,9 +147,15 @@ public class ClassServiceImpl implements ClassService {
 
         ClassEntity classEntity = findClassById(id);
 
+        // Instead of deleting, update status to DELETED
+        classEntity.setStatus(Status.DELETED);
+
+        classEntity = classRepository.save(classEntity);
+        log.info("Class marked as DELETED successfully with ID: {}", id);
+
+
         classRepository.delete(classEntity);
         log.info("Class deleted successfully with ID: {}", id);
-
         return classMapper.toResponseDto(classEntity);
     }
 

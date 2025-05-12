@@ -6,7 +6,6 @@ import lombok.Data;
 
 @Data
 public class RoomUpdateDto {
-    @NotBlank(message = "Room name is required")
     private String name;
     private Status status = Status.ACTIVE;
 }

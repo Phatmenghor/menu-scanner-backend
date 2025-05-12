@@ -12,15 +12,10 @@ import java.util.List;
 @Setter
 @Getter
 @Entity
-@Table(
-        name = "subjects",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_subject_name", columnNames = "name")
-        }
-)
+@Table(name = "subjects") // Remove uniqueConstraints
 public class SubjectEntity extends BaseEntity {
 
-    @Column(name = "name", nullable = false, unique = true)
+    @Column(name = "name", nullable = false) // Remove unique=true
     private String name;
 
     @Enumerated(EnumType.STRING)
