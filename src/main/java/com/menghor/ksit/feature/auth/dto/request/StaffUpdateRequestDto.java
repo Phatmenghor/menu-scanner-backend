@@ -19,9 +19,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StaffUpdateRequestDto {
-    @Email(message = "Email should be valid")
-    private String email;
 
+    private String email;
     // Multiple roles support
     private List<RoleEnum> roles;
 

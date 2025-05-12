@@ -1,10 +1,13 @@
 package com.menghor.ksit.feature.auth.service;
 
+import com.menghor.ksit.feature.auth.dto.request.StudentBatchCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentUpdateRequestDto;
 import com.menghor.ksit.feature.auth.dto.filter.StudentUserFilterRequestDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
+
+import java.util.List;
 
 /**
  * Service interface for student user management
@@ -25,6 +28,9 @@ public interface StudentService {
      * Get student user by ID with detailed information
      */
     StudentUserResponseDto getStudentUserById(Long id);
+
+
+    List<StudentUserResponseDto> batchRegisterStudents(StudentBatchCreateRequestDto batchRequest);
 
     /**
      * Update student user with detailed information

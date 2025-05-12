@@ -28,9 +28,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -245,16 +243,8 @@ public class StudentServiceImpl implements StudentService {
     public StudentUserAllResponseDto getAllStudentUsers(StudentUserFilterRequestDto filterDto) {
         log.info("Searching student users with filter: {}", filterDto);
 
-        // Set default pagination values if null
-        if (filterDto.getPageNo() == null) filterDto.setPageNo(1);
-        if (filterDto.getPageSize() == null) filterDto.setPageSize(10);
-
         // Validate pagination parameters
         PaginationUtils.validatePagination(filterDto.getPageNo(), filterDto.getPageSize());
-
-        // Create pageable object with sorting
-        int pageNo = filterDto.getPageNo() - 1; // Convert to 0-based
-        int pageSize = filterDto.getPageSize();
 
         // Add sorting by creation date in descending order (newest to oldest)
         Pageable pageable = PaginationUtils.createPageable(
@@ -317,14 +307,8 @@ public class StudentServiceImpl implements StudentService {
             throw new BadRequestException("User with ID " + id + " is not a student");
         }
 
-        // Check if email is changing and if it conflicts
-        if (updateDto.getEmail() != null && !updateDto.getEmail().equals(student.getEmail())) {
-            if (userRepository.existsByUsername(updateDto.getEmail())) {
-                throw new DuplicateNameException("Email is already in use");
-            }
-        }
-
         // Update personal info
+        if (updateDto.getEmail() != null) student.setEmail(updateDto.getEmail());
         if (updateDto.getKhmerFirstName() != null) student.setKhmerFirstName(updateDto.getKhmerFirstName());
         if (updateDto.getKhmerLastName() != null) student.setKhmerLastName(updateDto.getKhmerLastName());
         if (updateDto.getEnglishFirstName() != null) student.setEnglishFirstName(updateDto.getEnglishFirstName());
@@ -455,4 +439,14 @@ public class StudentServiceImpl implements StudentService {
 
         // Verify user is a student
         if (!user.isStudent()) {
-            throw new BadRequest}
+            throw new BadRequestException("User with ID " + id + " is not a student");
+        }
+
+        // Instead of hard delete, deactivate the user
+        user.setStatus(Status.INACTIVE);
+        UserEntity deactivatedUser = userRepository.save(user);
+
+        log.info("Student user with ID {} deactivated successfully", id);
+        return studentMapper.toStudentUserDto(deactivatedUser);
+    }
+}

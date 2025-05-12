@@ -23,16 +23,14 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StudentCreateRequestDto {
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email should be valid")
-    private String email;
-
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must have at least 6 characters")
     private String password;
 
-    // Username will be optional and can be auto-generated if not provided
+    @NotBlank(message = "Email is required")
     private String username;
+
+    private String email;
 
     // Personal info
     private String khmerFirstName;

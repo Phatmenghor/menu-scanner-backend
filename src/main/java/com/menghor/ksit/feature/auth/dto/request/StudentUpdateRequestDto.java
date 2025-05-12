@@ -6,6 +6,7 @@ import com.menghor.ksit.feature.auth.dto.relationship.StudentParentDto;
 import com.menghor.ksit.feature.auth.dto.relationship.StudentSiblingDto;
 import com.menghor.ksit.feature.auth.dto.relationship.StudentStudiesHistoryDto;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,10 +21,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StudentUpdateRequestDto {
-    @Email(message = "Email should be valid")
-    private String email;
 
-    // Personal info
+    private String email;
     private String khmerFirstName;
     private String khmerLastName;
     private String englishFirstName;
