@@ -30,6 +30,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,10 +57,17 @@ public class StaffServiceImpl implements StaffService {
             throw new DuplicateNameException("Email is already in use");
         }
 
+        // Check if identifyNumber already exists (if provided)
+        if (StringUtils.hasText(requestDto.getIdentifyNumber()) &&
+                userRepository.existsByIdentifyNumber(requestDto.getIdentifyNumber())) {
+            log.warn("Attempt to register with duplicate identifyNumber: {}", requestDto.getIdentifyNumber());
+            throw new DuplicateNameException("Staff ID number '" + requestDto.getIdentifyNumber() + "' is already in use. Please use a different ID number.");
+        }
+
         UserEntity staff = new UserEntity();
 
         // Set common fields
-        staff.setUsername(requestDto.getEmail());
+        staff.setUsername(requestDto.getUsername());
         staff.setPassword(passwordEncoder.encode(requestDto.getPassword()));
         staff.setStatus(requestDto.getStatus() != null ? requestDto.getStatus() : Status.ACTIVE);
         staff.setEmail(requestDto.getEmail());
@@ -327,19 +335,30 @@ public class StaffServiceImpl implements StaffService {
             throw new BadRequestException("User with ID " + id + " is a student, not a staff user");
         }
 
-        // Check if email is changing and if it conflicts
-        if (updateDto.getEmail() != null && !updateDto.getEmail().equals(staff.getUsername()) && 
+        // Check for email uniqueness if changing email
+        if (updateDto.getUsername() != null && !updateDto.getUsername().equals(staff.getUsername()) &&
+                userRepository.existsByUsernameAndIdNot(updateDto.getEmail(), id)) {
+            log.warn("Attempt to update with duplicate username: {}", updateDto.getEmail());
+            throw new DuplicateNameException("Username '" + updateDto.getUsername() + "' is already in use as a username.");
+        }
+
+        // Check for email uniqueness if changing email
+        if (updateDto.getEmail() != null && !updateDto.getEmail().equals(staff.getEmail()) &&
                 userRepository.existsByUsername(updateDto.getEmail())) {
-            throw new DuplicateNameException("Email is already in use");
+            log.warn("Attempt to update with duplicate email: {}", updateDto.getEmail());
+            throw new DuplicateNameException("Email '" + updateDto.getEmail() + "' is already in use as a username.");
+        }
+
+        // Check for identifyNumber uniqueness if changing identifyNumber
+        if (updateDto.getIdentifyNumber() != null && !updateDto.getIdentifyNumber().equals(staff.getIdentifyNumber()) &&
+                userRepository.existsByIdentifyNumber(updateDto.getIdentifyNumber())) {
+            log.warn("Attempt to update with duplicate identifyNumber: {}", updateDto.getIdentifyNumber());
+            throw new DuplicateNameException("Staff ID number '" + updateDto.getIdentifyNumber() + "' is already in use. Please use a different ID number.");
         }
 
         // Update basic fields if provided
-        if (updateDto.getEmail() != null) {
-            staff.setUsername(updateDto.getEmail());
-            staff.setEmail(updateDto.getEmail());
-        }
-
-        // Update personal information
+        if (updateDto.getUsername() != null) staff.setUsername(updateDto.getUsername());
+        if (updateDto.getEmail() != null) staff.setEmail(updateDto.getEmail());
         if (updateDto.getKhmerFirstName() != null) staff.setKhmerFirstName(updateDto.getKhmerFirstName());
         if (updateDto.getKhmerLastName() != null) staff.setKhmerLastName(updateDto.getKhmerLastName());
         if (updateDto.getEnglishFirstName() != null) staff.setEnglishFirstName(updateDto.getEnglishFirstName());

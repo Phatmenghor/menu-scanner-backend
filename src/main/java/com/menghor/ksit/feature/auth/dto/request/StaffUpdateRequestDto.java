@@ -20,6 +20,8 @@ import java.util.List;
 @NoArgsConstructor
 public class StaffUpdateRequestDto {
 
+    private String username;
+
     private String email;
     // Multiple roles support
     private List<RoleEnum> roles;

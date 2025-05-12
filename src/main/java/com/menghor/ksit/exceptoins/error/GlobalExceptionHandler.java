@@ -95,7 +95,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorObject, HttpStatus.BAD_REQUEST);
     }
 
-    // Handle duplicate name exception
     @ExceptionHandler(DuplicateNameException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateNameException(
             DuplicateNameException ex, WebRequest request) {
@@ -104,10 +103,11 @@ public class GlobalExceptionHandler {
 
         ErrorResponse errorResponse = new ErrorResponse(
                 "error",              // status
-                ex.getMessage(),      // message (e.g., "Name already exists")
+                ex.getMessage(),      // message (e.g., "Username already exists")
                 HttpStatus.CONFLICT.value(), // status code (409)
                 path                  // path
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
+
 }

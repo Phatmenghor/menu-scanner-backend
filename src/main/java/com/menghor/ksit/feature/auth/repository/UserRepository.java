@@ -48,6 +48,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpec
     @Query("SELECT u FROM UserEntity u WHERE u.identifyNumber LIKE :pattern")
     List<UserEntity> findByIdentifyNumberLike(@Param("pattern") String pattern);
 
+    boolean existsByUsernameAndIdNot(String username, Long id);
+
+    boolean existsByIdentifyNumberAndIdNot(String identifyNumber, Long id);
+
     /**
      * Check if identifyNumber exists
      */

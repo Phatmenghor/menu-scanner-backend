@@ -71,6 +71,18 @@ public class StudentServiceImpl implements StudentService {
         // Check if username already exists
         if (userRepository.existsByUsername(username)) {
             log.warn("Attempt to register with duplicate username: {}", username);
+            throw new DuplicateNameException("Username '" + username + "' is already in use. Please try a different username.");
+        }
+
+        // Check if identifyNumber already exists
+        if (userRepository.existsByIdentifyNumber(identifyNumber)) {
+            log.warn("Attempt to register with duplicate identifyNumber: {}", identifyNumber);
+            throw new DuplicateNameException("Student ID number '" + identifyNumber + "' is already in use. Please contact an administrator.");
+        }
+
+        // Check if username already exists
+        if (userRepository.existsByUsername(username)) {
+            log.warn("Attempt to register with duplicate username: {}", username);
             throw new DuplicateNameException("Username is already in use");
         }
 
@@ -186,6 +198,12 @@ public class StudentServiceImpl implements StudentService {
                     try {
                         // Generate identifier
                         String identifyNumber = identifierGenerator.generateStudentIdentifier(batchRequest.getClassId());
+
+                        // Check if identifyNumber already exists
+                        if (userRepository.existsByIdentifyNumber(identifyNumber)) {
+                            log.warn("Skipping batch student creation - duplicate identifyNumber: {}", identifyNumber);
+                            throw new DuplicateNameException("Student ID '" + identifyNumber + "' is already in use. Skipping this student creation.");
+                        }
 
                         // Generate password
                         String password = identifierGenerator.generateRandomPassword();
@@ -305,6 +323,14 @@ public class StudentServiceImpl implements StudentService {
         // Verify user is a student
         if (!student.isStudent()) {
             throw new BadRequestException("User with ID " + id + " is not a student");
+        }
+
+        // If changing email, check if it would conflict with any existing username
+        if (updateDto.getEmail() != null && !updateDto.getEmail().equals(student.getEmail())) {
+            if (userRepository.existsByUsername(updateDto.getEmail())) {
+                log.warn("Cannot update - email would conflict with existing username: {}", updateDto.getEmail());
+                throw new DuplicateNameException("Email '" + updateDto.getEmail() + "' is already registered as a username. Please use a different email.");
+            }
         }
 
         // Update personal info

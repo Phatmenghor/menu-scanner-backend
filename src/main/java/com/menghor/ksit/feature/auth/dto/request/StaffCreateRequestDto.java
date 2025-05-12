@@ -21,13 +21,14 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StaffCreateRequestDto {
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email should be valid")
-    private String email;
+    @NotBlank(message = "Username is required")
+    private String username;
 
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must have at least 6 characters")
     private String password;
+
+    private String email;
 
     // Multiple roles support
     private List<RoleEnum> roles;
