@@ -37,16 +37,29 @@ public class DepartmentServiceImpl implements DepartmentService {
         log.info("Creating new department with code: {}, name: {}",
                 departmentRequestDto.getCode(), departmentRequestDto.getName());
 
-        // Check for existing department with same code
-        if (departmentRepository.existsByCode(departmentRequestDto.getCode())) {
-            throw new DuplicateNameException("Department with code '" +
-                    departmentRequestDto.getCode() + "' already exists");
-        }
+        // Determine the status (default to ACTIVE if not specified)
+        Status status = departmentRequestDto.getStatus() != null ?
+                departmentRequestDto.getStatus() : Status.ACTIVE;
 
-        // Check for existing department with same name
-        if (departmentRepository.existsByName(departmentRequestDto.getName())) {
-            throw new DuplicateNameException("Department with name '" +
-                    departmentRequestDto.getName() + "' already exists");
+        // Only check for duplicates if this department will be ACTIVE
+        if (status == Status.ACTIVE) {
+            // Check if an ACTIVE department with the same code already exists
+            boolean activeDeptWithSameCodeExists = departmentRepository.existsByCodeAndStatus(
+                    departmentRequestDto.getCode(), Status.ACTIVE);
+
+            if (activeDeptWithSameCodeExists) {
+                throw new DuplicateNameException("Department with code '" +
+                        departmentRequestDto.getCode() + "' already exists");
+            }
+
+            // Check if an ACTIVE department with the same name already exists
+            boolean activeDeptWithSameNameExists = departmentRepository.existsByNameAndStatus(
+                    departmentRequestDto.getName(), Status.ACTIVE);
+
+            if (activeDeptWithSameNameExists) {
+                throw new DuplicateNameException("Department with name '" +
+                        departmentRequestDto.getName() + "' already exists");
+            }
         }
 
         // Proceed with department creation
@@ -81,22 +94,58 @@ public class DepartmentServiceImpl implements DepartmentService {
         // Find the existing entity
         DepartmentEntity existingDepartment = findDepartmentById(id);
 
-        // Check for code conflict only if code is being changed
-        if (departmentRequestDto.getCode() != null &&
-                !departmentRequestDto.getCode().equals(existingDepartment.getCode()) &&
-                departmentRepository.existsByCodeAndIdNot(departmentRequestDto.getCode(), id)) {
+        // Determine what the status will be after the update
+        Status newStatus = departmentRequestDto.getStatus() != null ?
+                departmentRequestDto.getStatus() : existingDepartment.getStatus();
 
-            throw new DuplicateNameException("Department with code '" +
-                    departmentRequestDto.getCode() + "' already exists");
-        }
+        // If updating to ACTIVE status, check for duplicates
+        if (newStatus == Status.ACTIVE) {
+            // Check for code conflict only if code is being changed
+            if (departmentRequestDto.getCode() != null &&
+                    !departmentRequestDto.getCode().equals(existingDepartment.getCode())) {
 
-        // Check for name conflict only if name is being changed
-        if (departmentRequestDto.getName() != null &&
-                !departmentRequestDto.getName().equals(existingDepartment.getName()) &&
-                departmentRepository.existsByNameAndIdNot(departmentRequestDto.getName(), id)) {
+                boolean activeDeptWithSameCodeExists = departmentRepository.existsByCodeAndStatusAndIdNot(
+                        departmentRequestDto.getCode(), Status.ACTIVE, id);
 
-            throw new DuplicateNameException("Department with name '" +
-                    departmentRequestDto.getName() + "' already exists");
+                if (activeDeptWithSameCodeExists) {
+                    throw new DuplicateNameException("Department with code '" +
+                            departmentRequestDto.getCode() + "' already exists");
+                }
+            }
+
+            // Check for name conflict only if name is being changed
+            if (departmentRequestDto.getName() != null &&
+                    !departmentRequestDto.getName().equals(existingDepartment.getName())) {
+
+                boolean activeDeptWithSameNameExists = departmentRepository.existsByNameAndStatusAndIdNot(
+                        departmentRequestDto.getName(), Status.ACTIVE, id);
+
+                if (activeDeptWithSameNameExists) {
+                    throw new DuplicateNameException("Department with name '" +
+                            departmentRequestDto.getName() + "' already exists");
+                }
+            }
+
+            // If status changing from non-ACTIVE to ACTIVE, check if another ACTIVE dept with same code/name exists
+            if (existingDepartment.getStatus() != Status.ACTIVE) {
+                // Check for active department with same code
+                boolean activeDeptWithSameCodeExists = departmentRepository.existsByCodeAndStatusAndIdNot(
+                        existingDepartment.getCode(), Status.ACTIVE, id);
+
+                if (activeDeptWithSameCodeExists) {
+                    throw new DuplicateNameException("Department with code '" +
+                            existingDepartment.getCode() + "' already exists");
+                }
+
+                // Check for active department with same name
+                boolean activeDeptWithSameNameExists = departmentRepository.existsByNameAndStatusAndIdNot(
+                        existingDepartment.getName(), Status.ACTIVE, id);
+
+                if (activeDeptWithSameNameExists) {
+                    throw new DuplicateNameException("Department with name '" +
+                            existingDepartment.getName() + "' already exists");
+                }
+            }
         }
 
         // Use MapStruct to update only non-null fields
@@ -115,7 +164,6 @@ public class DepartmentServiceImpl implements DepartmentService {
         log.info("Deleting department with ID: {}", id);
 
         DepartmentEntity department = findDepartmentById(id);
-
         department.setStatus(Status.DELETED);
 
         department= departmentRepository.save(department);

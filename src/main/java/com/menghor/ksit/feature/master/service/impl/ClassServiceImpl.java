@@ -147,15 +147,12 @@ public class ClassServiceImpl implements ClassService {
 
         ClassEntity classEntity = findClassById(id);
 
-        // Instead of deleting, update status to DELETED
+        // Set status to DELETED (soft delete)
         classEntity.setStatus(Status.DELETED);
 
         classEntity = classRepository.save(classEntity);
         log.info("Class marked as DELETED successfully with ID: {}", id);
 
-
-        classRepository.delete(classEntity);
-        log.info("Class deleted successfully with ID: {}", id);
         return classMapper.toResponseDto(classEntity);
     }
 
