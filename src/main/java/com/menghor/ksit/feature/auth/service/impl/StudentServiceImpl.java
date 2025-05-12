@@ -8,6 +8,7 @@ import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.dto.relationship.StudentParentDto;
 import com.menghor.ksit.feature.auth.dto.relationship.StudentSiblingDto;
 import com.menghor.ksit.feature.auth.dto.relationship.StudentStudiesHistoryDto;
+import com.menghor.ksit.feature.auth.dto.request.StudentBatchCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentUpdateRequestDto;
 import com.menghor.ksit.feature.auth.dto.filter.StudentUserFilterRequestDto;
@@ -37,6 +38,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -49,25 +52,38 @@ public class StudentServiceImpl implements StudentService {
     private final PasswordEncoder passwordEncoder;
     private final StudentMapper studentMapper;
     private final StaffMapper staffMapper;
+    private final StudentIdentifierGenerator identifierGenerator;
 
     @Override
     @Transactional
     public StudentUserResponseDto registerStudent(StudentCreateRequestDto requestDto) {
         log.info("Registering new student with email: {}", requestDto.getEmail());
-        
+
+        // Generate student identifier based on class code
+        String identifyNumber = identifierGenerator.generateStudentIdentifier(requestDto.getClassId());
+        log.info("Generated identifyNumber: {}", identifyNumber);
+
+        // Set username to identifyNumber if not provided
+        String username = requestDto.getUsername();
+        if (username == null || username.isEmpty()) {
+            username = identifyNumber;
+            log.info("Using identifyNumber as username: {}", username);
+        }
+
         // Check if username already exists
-        if (userRepository.existsByUsername(requestDto.getEmail())) {
-            log.warn("Attempt to register with duplicate email: {}", requestDto.getEmail());
-            throw new DuplicateNameException("Email is already in use");
+        if (userRepository.existsByUsername(username)) {
+            log.warn("Attempt to register with duplicate username: {}", username);
+            throw new DuplicateNameException("Username is already in use");
         }
 
         UserEntity student = new UserEntity();
 
         // Set common fields
-        student.setUsername(requestDto.getEmail());
+        student.setUsername(username);
         student.setPassword(passwordEncoder.encode(requestDto.getPassword()));
         student.setStatus(requestDto.getStatus() != null ? requestDto.getStatus() : Status.ACTIVE);
         student.setEmail(requestDto.getEmail());
+        student.setIdentifyNumber(identifyNumber);
 
         // Set personal information
         student.setKhmerFirstName(requestDto.getKhmerFirstName());
@@ -87,17 +103,15 @@ public class StudentServiceImpl implements StudentService {
         student.setNumberOfSiblings(requestDto.getNumberOfSiblings());
 
         // Assign to class if provided
-        if (requestDto.getClassId() != null) {
-            ClassEntity classEntity = classRepository.findById(requestDto.getClassId())
-                    .orElseThrow(() -> new BadRequestException("Class not found with ID: " + requestDto.getClassId()));
-            student.setClasses(classEntity);
-        }
+        ClassEntity classEntity = classRepository.findById(requestDto.getClassId())
+                .orElseThrow(() -> new BadRequestException("Class not found with ID: " + requestDto.getClassId()));
+        student.setClasses(classEntity);
 
         // Set STUDENT role
         Role studentRole = roleRepository.findByName(RoleEnum.STUDENT)
                 .orElseThrow(() -> new BadRequestException("Student role not found"));
         student.setRoles(Collections.singletonList(studentRole));
-        
+
         // Handle student studies history
         if (requestDto.getStudentStudiesHistories() != null && !requestDto.getStudentStudiesHistories().isEmpty()) {
             List<StudentStudiesHistoryEntity> historyEntities = new ArrayList<>();
@@ -115,7 +129,7 @@ public class StudentServiceImpl implements StudentService {
             }
             student.setStudentStudiesHistory(historyEntities);
         }
-        
+
         // Handle student parent information
         if (requestDto.getStudentParents() != null && !requestDto.getStudentParents().isEmpty()) {
             List<StudentParentEntity> parentEntities = new ArrayList<>();
@@ -132,7 +146,7 @@ public class StudentServiceImpl implements StudentService {
             }
             student.setStudentParent(parentEntities);
         }
-        
+
         // Handle student siblings
         if (requestDto.getStudentSiblings() != null && !requestDto.getStudentSiblings().isEmpty()) {
             List<StudentSiblingEntity> siblingEntities = new ArrayList<>();
@@ -149,14 +163,87 @@ public class StudentServiceImpl implements StudentService {
         }
 
         UserEntity savedStudent = userRepository.save(student);
-        log.info("Student registered successfully with ID: {}", savedStudent.getId());
+        log.info("Student registered successfully with ID: {}, username: {}, identifyNumber: {}",
+                savedStudent.getId(), savedStudent.getUsername(), savedStudent.getIdentifyNumber());
 
         return studentMapper.toStudentUserDto(savedStudent);
     }
 
     @Override
+    @Transactional
+    public List<StudentUserResponseDto> batchRegisterStudents(StudentBatchCreateRequestDto batchRequest) {
+        log.info("Batch registering {} students for class ID: {}", batchRequest.getQuantity(), batchRequest.getClassId());
+
+        // Check if class exists
+        ClassEntity classEntity = classRepository.findById(batchRequest.getClassId())
+                .orElseThrow(() -> new BadRequestException("Class not found with ID: " + batchRequest.getClassId()));
+
+        // Get the STUDENT role
+        Role studentRole = roleRepository.findByName(RoleEnum.STUDENT)
+                .orElseThrow(() -> new BadRequestException("Student role not found"));
+
+        // Create students
+        return IntStream.range(0, batchRequest.getQuantity())
+                .mapToObj(i -> {
+                    try {
+                        // Generate identifier
+                        String identifyNumber = identifierGenerator.generateStudentIdentifier(batchRequest.getClassId());
+
+                        // Generate password
+                        String password = identifierGenerator.generateRandomPassword();
+
+                        // Create student entity
+                        UserEntity student = new UserEntity();
+
+                        // Set username from identifyNumber
+                        student.setUsername(identifyNumber);
+                        student.setPassword(passwordEncoder.encode(password));
+                        student.setStatus(batchRequest.getStatus() != null ? batchRequest.getStatus() : Status.ACTIVE);
+                        student.setEmail(batchRequest.getEmail());
+                        student.setIdentifyNumber(identifyNumber);
+
+                        // Set batch common fields if provided
+                        student.setKhmerFirstName(batchRequest.getKhmerFirstName());
+                        student.setKhmerLastName(batchRequest.getKhmerLastName());
+                        student.setEnglishFirstName(batchRequest.getEnglishFirstName());
+                        student.setEnglishLastName(batchRequest.getEnglishLastName());
+                        student.setGender(batchRequest.getGender());
+                        student.setDateOfBirth(batchRequest.getDateOfBirth());
+                        student.setPhoneNumber(batchRequest.getPhoneNumber());
+                        student.setCurrentAddress(batchRequest.getCurrentAddress());
+                        student.setNationality(batchRequest.getNationality());
+                        student.setEthnicity(batchRequest.getEthnicity());
+                        student.setPlaceOfBirth(batchRequest.getPlaceOfBirth());
+
+                        // Set student-specific fields
+                        student.setMemberSiblings(batchRequest.getMemberSiblings());
+                        student.setNumberOfSiblings(batchRequest.getNumberOfSiblings());
+
+                        // Set class
+                        student.setClasses(classEntity);
+
+                        // Set role
+                        student.setRoles(Collections.singletonList(studentRole));
+
+                        // Save student
+                        UserEntity savedStudent = userRepository.save(student);
+
+                        log.info("Batch created student #{} with ID: {}, username: {}, identifyNumber: {}, password: {}",
+                                (i + 1), savedStudent.getId(), savedStudent.getUsername(),
+                                savedStudent.getIdentifyNumber(), password);
+
+                        return studentMapper.toStudentUserDto(savedStudent);
+                    } catch (Exception e) {
+                        log.error("Error creating batch student #{}: {}", (i + 1), e.getMessage());
+                        throw new BadRequestException("Error creating batch student #" + (i + 1) + ": " + e.getMessage());
+                    }
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public StudentUserAllResponseDto getAllStudentUsers(StudentUserFilterRequestDto filterDto) {
-        log.info("Fetching all student users with filter: {}", filterDto);
+        log.info("Searching student users with filter: {}", filterDto);
 
         // Set default pagination values if null
         if (filterDto.getPageNo() == null) filterDto.setPageNo(1);
@@ -170,7 +257,12 @@ public class StudentServiceImpl implements StudentService {
         int pageSize = filterDto.getPageSize();
 
         // Add sorting by creation date in descending order (newest to oldest)
-        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
 
         // Build specification for filtering
         Specification<UserEntity> specification = UserSpecification.createStudentSpecification(filterDto);
@@ -187,7 +279,7 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public StudentUserResponseDto getStudentUserById(Long id) {
-        log.info("Fetching student user by ID: {}", id);
+        log.info("Fetching student user with ID: {}", id);
 
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> {
@@ -226,18 +318,13 @@ public class StudentServiceImpl implements StudentService {
         }
 
         // Check if email is changing and if it conflicts
-        if (updateDto.getEmail() != null && !updateDto.getEmail().equals(student.getUsername()) && 
-                userRepository.existsByUsername(updateDto.getEmail())) {
-            throw new DuplicateNameException("Email is already in use");
+        if (updateDto.getEmail() != null && !updateDto.getEmail().equals(student.getEmail())) {
+            if (userRepository.existsByUsername(updateDto.getEmail())) {
+                throw new DuplicateNameException("Email is already in use");
+            }
         }
 
-        // Update basic fields if provided
-        if (updateDto.getEmail() != null) {
-            student.setUsername(updateDto.getEmail());
-            student.setEmail(updateDto.getEmail());
-        }
-
-        // Update personal information
+        // Update personal info
         if (updateDto.getKhmerFirstName() != null) student.setKhmerFirstName(updateDto.getKhmerFirstName());
         if (updateDto.getKhmerLastName() != null) student.setKhmerLastName(updateDto.getKhmerLastName());
         if (updateDto.getEnglishFirstName() != null) student.setEnglishFirstName(updateDto.getEnglishFirstName());
@@ -260,19 +347,19 @@ public class StudentServiceImpl implements StudentService {
                     .orElseThrow(() -> new BadRequestException("Class not found with ID: " + updateDto.getClassId()));
             student.setClasses(classEntity);
         }
-        
+
         // Update status if provided
         if (updateDto.getStatus() != null) {
             student.setStatus(updateDto.getStatus());
         }
-        
+
         // Handle student studies history
         if (updateDto.getStudentStudiesHistories() != null) {
             student.getStudentStudiesHistory().clear();
-            
+
             for (StudentStudiesHistoryDto dto : updateDto.getStudentStudiesHistories()) {
                 StudentStudiesHistoryEntity entity;
-                
+
                 if (dto.getId() != null) {
                     entity = student.getStudentStudiesHistory().stream()
                             .filter(e -> e.getId().equals(dto.getId()))
@@ -281,7 +368,7 @@ public class StudentServiceImpl implements StudentService {
                 } else {
                     entity = new StudentStudiesHistoryEntity();
                 }
-                
+
                 entity.setTypeStudies(dto.getTypeStudies());
                 entity.setSchoolName(dto.getSchoolName());
                 entity.setLocation(dto.getLocation());
@@ -290,18 +377,18 @@ public class StudentServiceImpl implements StudentService {
                 entity.setObtainedCertificate(dto.getObtainedCertificate());
                 entity.setOverallGrade(dto.getOverallGrade());
                 entity.setUser(student);
-                
+
                 student.getStudentStudiesHistory().add(entity);
             }
         }
-        
+
         // Handle student parent information
         if (updateDto.getStudentParents() != null) {
             student.getStudentParent().clear();
-            
+
             for (StudentParentDto dto : updateDto.getStudentParents()) {
                 StudentParentEntity entity;
-                
+
                 if (dto.getId() != null) {
                     entity = student.getStudentParent().stream()
                             .filter(e -> e.getId().equals(dto.getId()))
@@ -310,7 +397,7 @@ public class StudentServiceImpl implements StudentService {
                 } else {
                     entity = new StudentParentEntity();
                 }
-                
+
                 entity.setName(dto.getName());
                 entity.setPhone(dto.getPhone());
                 entity.setJob(dto.getJob());
@@ -318,18 +405,18 @@ public class StudentServiceImpl implements StudentService {
                 entity.setAge(dto.getAge());
                 entity.setParentType(dto.getParentType());
                 entity.setUser(student);
-                
+
                 student.getStudentParent().add(entity);
             }
         }
-        
+
         // Handle student siblings
         if (updateDto.getStudentSiblings() != null) {
             student.getStudentSibling().clear();
-            
+
             for (StudentSiblingDto dto : updateDto.getStudentSiblings()) {
                 StudentSiblingEntity entity;
-                
+
                 if (dto.getId() != null) {
                     entity = student.getStudentSibling().stream()
                             .filter(e -> e.getId().equals(dto.getId()))
@@ -338,13 +425,13 @@ public class StudentServiceImpl implements StudentService {
                 } else {
                     entity = new StudentSiblingEntity();
                 }
-                
+
                 entity.setName(dto.getName());
                 entity.setGender(dto.getGender());
                 entity.setDateOfBirth(dto.getDateOfBirth());
                 entity.setOccupation(dto.getOccupation());
                 entity.setUser(student);
-                
+
                 student.getStudentSibling().add(entity);
             }
         }
@@ -368,14 +455,4 @@ public class StudentServiceImpl implements StudentService {
 
         // Verify user is a student
         if (!user.isStudent()) {
-            throw new BadRequestException("User with ID " + id + " is not a student");
-        }
-
-        // Instead of hard delete, deactivate the user
-        user.setStatus(Status.INACTIVE);
-        UserEntity deactivatedUser = userRepository.save(user);
-
-        log.info("Student user with ID {} deactivated successfully", id);
-        return studentMapper.toStudentUserDto(deactivatedUser);
-    }
-}
+            throw new BadRequest}

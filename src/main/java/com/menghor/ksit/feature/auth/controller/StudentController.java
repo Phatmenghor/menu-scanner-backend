@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.auth.controller;
 
 import com.menghor.ksit.constants.SuccessMessages;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
+import com.menghor.ksit.feature.auth.dto.request.StudentBatchCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StudentUpdateRequestDto;
 import com.menghor.ksit.feature.auth.dto.filter.StudentUserFilterRequestDto;
@@ -13,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/students")
@@ -32,6 +35,20 @@ public class StudentController {
         StudentUserResponseDto registeredStudent = studentService.registerStudent(requestDto);
         log.info("Student registered successfully with ID: {}", registeredStudent.getId());
         return new ApiResponse<>("success", "Student registered successfully", registeredStudent);
+    }
+
+    /**
+     * Register multiple students in a batch
+     */
+    @PostMapping("/register/batch")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
+    public ApiResponse<List<StudentUserResponseDto>> registerStudentBatch(@Valid @RequestBody StudentBatchCreateRequestDto requestDto) {
+        log.info("Batch registering {} students for class ID: {}", requestDto.getQuantity(), requestDto.getClassId());
+        List<StudentUserResponseDto> registeredStudents = studentService.batchRegisterStudents(requestDto);
+        log.info("Successfully batch registered {} students", registeredStudents.size());
+        return new ApiResponse<>("success",
+                String.format("Successfully registered %d students", registeredStudents.size()),
+                registeredStudents);
     }
 
     /**

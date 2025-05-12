@@ -40,4 +40,16 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpec
 
     @Query("SELECT COUNT(u) FROM UserEntity u JOIN u.roles r WHERE r.name = :roleName")
     Long countByRole(@Param("roleName") RoleEnum roleName);
+
+    /**
+     * Find users by identifyNumber pattern (for generating sequential identifiers)
+     * Used for finding the highest sequence number for a given class prefix
+     */
+    @Query("SELECT u FROM UserEntity u WHERE u.identifyNumber LIKE :pattern")
+    List<UserEntity> findByIdentifyNumberLike(@Param("pattern") String pattern);
+
+    /**
+     * Check if identifyNumber exists
+     */
+    boolean existsByIdentifyNumber(String identifyNumber);
 }

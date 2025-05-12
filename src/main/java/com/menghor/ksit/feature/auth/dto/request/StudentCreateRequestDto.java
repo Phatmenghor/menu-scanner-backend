@@ -7,6 +7,7 @@ import com.menghor.ksit.feature.auth.dto.relationship.StudentSiblingDto;
 import com.menghor.ksit.feature.auth.dto.relationship.StudentStudiesHistoryDto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +31,9 @@ public class StudentCreateRequestDto {
     @Size(min = 6, message = "Password must have at least 6 characters")
     private String password;
 
+    // Username will be optional and can be auto-generated if not provided
+    private String username;
+
     // Personal info
     private String khmerFirstName;
     private String khmerLastName;
@@ -46,15 +50,17 @@ public class StudentCreateRequestDto {
     // Student-specific fields
     private String memberSiblings;
     private String numberOfSiblings;
+
+    @NotNull(message = "Class ID is required")
     private Long classId;
-    
+
     // Related entities
     @Builder.Default
     private List<StudentStudiesHistoryDto> studentStudiesHistories = new ArrayList<>();
-    
+
     @Builder.Default
     private List<StudentParentDto> studentParents = new ArrayList<>();
-    
+
     @Builder.Default
     private List<StudentSiblingDto> studentSiblings = new ArrayList<>();
 
