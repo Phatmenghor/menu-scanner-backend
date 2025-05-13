@@ -1,4 +1,4 @@
-package com.menghor.ksit.feature.setting.dto.service.impl;
+package com.menghor.ksit.feature.setting.service.impl;
 
 import com.menghor.ksit.enumations.PositionType;
 import com.menghor.ksit.enumations.RoleEnum;
@@ -12,7 +12,7 @@ import com.menghor.ksit.feature.setting.dto.request.*;
 import com.menghor.ksit.feature.setting.dto.response.MenuItemDto;
 import com.menghor.ksit.feature.setting.dto.response.UserMenuAccessDto;
 import com.menghor.ksit.feature.setting.dto.response.UserMenuDto;
-import com.menghor.ksit.feature.setting.dto.service.MenuService;
+import com.menghor.ksit.feature.setting.service.MenuService;
 import com.menghor.ksit.feature.setting.mapper.MenuMapper;
 import com.menghor.ksit.feature.setting.models.MenuItem;
 import com.menghor.ksit.feature.setting.models.UserMenuAccess;

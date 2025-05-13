@@ -6,13 +6,11 @@ import com.menghor.ksit.feature.setting.dto.request.*;
 import com.menghor.ksit.feature.setting.dto.response.MenuItemDto;
 import com.menghor.ksit.feature.setting.dto.response.UserMenuAccessDto;
 import com.menghor.ksit.feature.setting.dto.response.UserMenuDto;
-import com.menghor.ksit.feature.setting.dto.service.MenuService;
+import com.menghor.ksit.feature.setting.service.MenuService;
 import com.menghor.ksit.utils.database.SecurityUtils;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

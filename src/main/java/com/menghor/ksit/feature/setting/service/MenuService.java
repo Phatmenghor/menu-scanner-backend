@@ -1,4 +1,4 @@
-package com.menghor.ksit.feature.setting.dto.service;
+package com.menghor.ksit.feature.setting.service;
 
 import com.menghor.ksit.feature.setting.dto.request.*;
 import com.menghor.ksit.feature.setting.dto.response.MenuItemDto;

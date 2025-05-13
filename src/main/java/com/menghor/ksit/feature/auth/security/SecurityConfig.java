@@ -57,6 +57,7 @@ public class SecurityConfig {
 
                                 // Authentication endpoints
                                 "/api/v1/auth/**",
+                                "/api/images/**",
 
 
                                 // Static resources
