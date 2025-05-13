@@ -2,7 +2,6 @@ package com.menghor.ksit.feature.master.mapper;
 
 import com.menghor.ksit.feature.master.dto.request.MajorRequestDto;
 import com.menghor.ksit.feature.master.dto.response.MajorResponseDto;
-import com.menghor.ksit.feature.master.dto.response.MajorResponseListDto;
 import com.menghor.ksit.feature.master.dto.update.MajorUpdateDto;
 import com.menghor.ksit.feature.master.model.MajorEntity;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
@@ -42,15 +41,13 @@ public interface MajorMapper {
     @Mapping(target = "classes", ignore = true)
     void updateEntityFromDto(MajorUpdateDto dto, @MappingTarget MajorEntity entity);
 
-    @Mapping(target = "departmentName", source = "department.name")
-    MajorResponseListDto toList(MajorEntity majorEntity);
 
-    default List<MajorResponseListDto> toResponseDtoList(List<MajorEntity> entities) {
-        return entities.stream().map(this::toList).collect(Collectors.toList());
+    default List<MajorResponseDto> toResponseDtoList(List<MajorEntity> entities) {
+        return entities.stream().map(this::toResponseDto).collect(Collectors.toList());
     }
 
-    default CustomPaginationResponseDto<MajorResponseListDto> toMajorAllResponseDto(Page<MajorEntity> majorPage) {
-        List<MajorResponseListDto> content = toResponseDtoList(majorPage.getContent());
+    default CustomPaginationResponseDto<MajorResponseDto> toMajorAllResponseDto(Page<MajorEntity> majorPage) {
+        List<MajorResponseDto> content = toResponseDtoList(majorPage.getContent());
 
         return new CustomPaginationResponseDto<>(
                 content,

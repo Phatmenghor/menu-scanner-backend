@@ -4,7 +4,6 @@ import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.master.dto.filter.ClassFilterDto;
 import com.menghor.ksit.feature.master.dto.request.ClassRequestDto;
 import com.menghor.ksit.feature.master.dto.response.ClassResponseDto;
-import com.menghor.ksit.feature.master.dto.response.ClassResponseListDto;
 import com.menghor.ksit.feature.master.dto.update.ClassUpdateDto;
 import com.menghor.ksit.feature.master.service.ClassService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
@@ -75,9 +74,9 @@ public class ClassController {
 
     @PostMapping("/all")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
-    public ApiResponse<CustomPaginationResponseDto<ClassResponseListDto>> getAllClasses(@RequestBody ClassFilterDto filterDto) {
+    public ApiResponse<CustomPaginationResponseDto<ClassResponseDto>> getAllClasses(@RequestBody ClassFilterDto filterDto) {
         log.info("Received request to fetch all classes with filter: {}", filterDto);
-        CustomPaginationResponseDto<ClassResponseListDto> classResponseList = classService.getAllClasses(filterDto);
+        CustomPaginationResponseDto<ClassResponseDto> classResponseList = classService.getAllClasses(filterDto);
         log.info("Successfully fetched {} classes", classResponseList.getTotalPages());
         return new ApiResponse<>(
                 "Success",

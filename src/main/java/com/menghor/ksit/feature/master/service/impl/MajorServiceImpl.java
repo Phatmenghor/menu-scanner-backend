@@ -6,7 +6,6 @@ import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.master.dto.filter.MajorFilterDto;
 import com.menghor.ksit.feature.master.dto.request.MajorRequestDto;
 import com.menghor.ksit.feature.master.dto.response.MajorResponseDto;
-import com.menghor.ksit.feature.master.dto.response.MajorResponseListDto;
 import com.menghor.ksit.feature.master.dto.update.MajorUpdateDto;
 import com.menghor.ksit.feature.master.mapper.MajorMapper;
 import com.menghor.ksit.feature.master.model.DepartmentEntity;
@@ -156,7 +155,7 @@ public class MajorServiceImpl implements MajorService {
     }
 
     @Override
-    public CustomPaginationResponseDto<MajorResponseListDto> getAllMajors(MajorFilterDto filterDto) {
+    public CustomPaginationResponseDto<MajorResponseDto> getAllMajors(MajorFilterDto filterDto) {
         log.info("Fetching all majors with filter: {}", filterDto);
 
         // Validate and prepare pagination using PaginationUtils
@@ -187,7 +186,7 @@ public class MajorServiceImpl implements MajorService {
         });
 
         // Map to response DTO
-        CustomPaginationResponseDto<MajorResponseListDto> response = majorMapper.toMajorAllResponseDto(majorPage);
+        CustomPaginationResponseDto<MajorResponseDto> response = majorMapper.toMajorAllResponseDto(majorPage);
         log.info("Retrieved {} majors (page {}/{})",
                 response.getContent().size(),
                 response.getPageNo(),

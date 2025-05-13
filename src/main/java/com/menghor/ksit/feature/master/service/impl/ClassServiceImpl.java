@@ -6,7 +6,6 @@ import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.master.dto.filter.ClassFilterDto;
 import com.menghor.ksit.feature.master.dto.request.ClassRequestDto;
 import com.menghor.ksit.feature.master.dto.response.ClassResponseDto;
-import com.menghor.ksit.feature.master.dto.response.ClassResponseListDto;
 import com.menghor.ksit.feature.master.dto.update.ClassUpdateDto;
 import com.menghor.ksit.feature.master.mapper.ClassMapper;
 import com.menghor.ksit.feature.master.model.ClassEntity;
@@ -20,7 +19,6 @@ import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -157,7 +155,7 @@ public class ClassServiceImpl implements ClassService {
     }
 
     @Override
-    public CustomPaginationResponseDto<ClassResponseListDto> getAllClasses(ClassFilterDto filterDto) {
+    public CustomPaginationResponseDto<ClassResponseDto> getAllClasses(ClassFilterDto filterDto) {
         log.info("Fetching all classes with filter: {}", filterDto);
 
         // Validate and prepare pagination using PaginationUtils
@@ -179,17 +177,8 @@ public class ClassServiceImpl implements ClassService {
         // Execute query with specification and pagination
         Page<ClassEntity> classPage = classRepository.findAll(spec, pageable);
 
-        // Apply status correction for any null statuses
-        classPage.getContent().forEach(cls -> {
-            if (cls.getStatus() == null) {
-                log.debug("Correcting null status to ACTIVE for class ID: {}", cls.getId());
-                cls.setStatus(Status.ACTIVE);
-                classRepository.save(cls);
-            }
-        });
-
         // Map to response DTO
-        CustomPaginationResponseDto<ClassResponseListDto> response = classMapper.toClassAllResponseDto(classPage);
+        CustomPaginationResponseDto<ClassResponseDto> response = classMapper.toClassAllResponseDto(classPage);
         log.info("Retrieved {} classes (page {}/{})",
                 response.getContent().size(),
                 response.getPageNo(),

@@ -2,7 +2,6 @@ package com.menghor.ksit.feature.master.mapper;
 
 import com.menghor.ksit.feature.master.dto.request.ClassRequestDto;
 import com.menghor.ksit.feature.master.dto.response.ClassResponseDto;
-import com.menghor.ksit.feature.master.dto.response.ClassResponseListDto;
 import com.menghor.ksit.feature.master.dto.update.ClassUpdateDto;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
@@ -45,15 +44,12 @@ public interface ClassMapper {
     @Mapping(target = "students", ignore = true)
     void updateEntityFromDto(ClassUpdateDto dto, @MappingTarget ClassEntity entity);
 
-    @Mapping(target = "majorName", source = "major.name")
-    ClassResponseListDto toList(ClassEntity classEntity);
-
-    default List<ClassResponseListDto> toResponseDtoList(List<ClassEntity> entities) {
-        return entities.stream().map(this::toList).collect(Collectors.toList());
+    default List<ClassResponseDto> toResponseDtoList(List<ClassEntity> entities) {
+        return entities.stream().map(this::toResponseDto).collect(Collectors.toList());
     }
 
-    default CustomPaginationResponseDto<ClassResponseListDto> toClassAllResponseDto(Page<ClassEntity> classPage) {
-        List<ClassResponseListDto> content = toResponseDtoList(classPage.getContent());
+    default CustomPaginationResponseDto<ClassResponseDto> toClassAllResponseDto(Page<ClassEntity> classPage) {
+        List<ClassResponseDto> content = toResponseDtoList(classPage.getContent());
 
         return new CustomPaginationResponseDto<>(
                 content,

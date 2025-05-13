@@ -5,7 +5,6 @@ import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.master.dto.filter.MajorFilterDto;
 import com.menghor.ksit.feature.master.dto.request.MajorRequestDto;
 import com.menghor.ksit.feature.master.dto.response.MajorResponseDto;
-import com.menghor.ksit.feature.master.dto.response.MajorResponseListDto;
 import com.menghor.ksit.feature.master.dto.update.MajorUpdateDto;
 import com.menghor.ksit.feature.master.service.MajorService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
@@ -76,9 +75,9 @@ public class MajorController {
 
     @PostMapping("/all")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
-    public ApiResponse<CustomPaginationResponseDto<MajorResponseListDto>> getAllMajors(@RequestBody MajorFilterDto filterDto) {
+    public ApiResponse<CustomPaginationResponseDto<MajorResponseDto>> getAllMajors(@RequestBody MajorFilterDto filterDto) {
         log.info("Received request to fetch all majors with filter: {}", filterDto);
-        CustomPaginationResponseDto<MajorResponseListDto> majorResponseDto = majorService.getAllMajors(filterDto);
+        CustomPaginationResponseDto<MajorResponseDto> majorResponseDto = majorService.getAllMajors(filterDto);
         log.info("Successfully fetched {} majors", majorResponseDto.getTotalPages());
         return new ApiResponse<>(
                 "Success",

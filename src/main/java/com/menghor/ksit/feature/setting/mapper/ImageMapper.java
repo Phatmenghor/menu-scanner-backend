@@ -17,7 +17,7 @@ public interface ImageMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(source = "base64Data", target = "data")
+    @Mapping(source = "base64", target = "data")
     ImageEntity toEntity(ImageUploadRequest request);
 
     // Custom implementation for toDto to include imageUrl
