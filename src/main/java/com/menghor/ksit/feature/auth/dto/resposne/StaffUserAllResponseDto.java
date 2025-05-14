@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class StaffUserAllResponseDto {
-    private List<StaffUserResponseDto> content;
+    private List<StaffUserListResponseDto> content;
     private int pageNo;
     private int pageSize;
     private long totalElements;

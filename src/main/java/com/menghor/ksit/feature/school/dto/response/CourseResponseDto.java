@@ -1,10 +1,13 @@
 package com.menghor.ksit.feature.school.dto.response;
 
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.feature.auth.dto.resposne.StaffUserListResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 import com.menghor.ksit.feature.master.dto.response.DepartmentResponseDto;
 import com.menghor.ksit.feature.master.dto.response.SubjectResponseDto;
 import lombok.Data;
+
+import java.time.LocalDateTime;
 
 @Data
 public class CourseResponseDto {
@@ -24,5 +27,6 @@ public class CourseResponseDto {
 
     private DepartmentResponseDto department;
     private SubjectResponseDto subject;
-    private StaffUserResponseDto user;
+    private StaffUserListResponseDto user;
+    private LocalDateTime createdAt;
 }

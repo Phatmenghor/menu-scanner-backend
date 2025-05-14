@@ -5,15 +5,11 @@ import com.menghor.ksit.feature.master.mapper.DepartmentMapper;
 import com.menghor.ksit.feature.master.mapper.SubjectMapper;
 import com.menghor.ksit.feature.school.dto.request.CourseRequestDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseDto;
-import com.menghor.ksit.feature.school.dto.response.CourseResponseListDto;
 import com.menghor.ksit.feature.school.dto.update.CourseUpdateDto;
 import com.menghor.ksit.feature.school.model.CourseEntity;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import org.mapstruct.*;
 import org.springframework.data.domain.Page;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,37 +44,13 @@ public interface CourseMapper {
     @Mapping(target = "user", ignore = true)
     void updateEntityFromDto(CourseUpdateDto dto, @MappingTarget CourseEntity entity);
 
-    @Mapping(target = "departmentName", source = "department.name")
-    @Mapping(target = "subjectName", source = "subject.name")
-    @Mapping(target = "teacherName", expression = "java(getTeacherName(courseEntity))")
-    CourseResponseListDto toList(CourseEntity courseEntity);
 
-    default String getTeacherName(CourseEntity courseEntity) {
-        if (courseEntity.getUser() == null) {
-            return null;
-        }
-
-        // Combine names based on available data
-        String firstName = courseEntity.getUser().getEnglishFirstName();
-        String lastName = courseEntity.getUser().getEnglishLastName();
-
-        if (firstName != null && lastName != null) {
-            return firstName + " " + lastName;
-        } else if (firstName != null) {
-            return firstName;
-        } else if (lastName != null) {
-            return lastName;
-        } else {
-            return courseEntity.getUser().getUsername(); // Fallback to username
-        }
+    default List<CourseResponseDto> toResponseDtoList(List<CourseEntity> entities) {
+        return entities.stream().map(this::toResponseDto).collect(Collectors.toList());
     }
 
-    default List<CourseResponseListDto> toResponseDtoList(List<CourseEntity> entities) {
-        return entities.stream().map(this::toList).collect(Collectors.toList());
-    }
-
-    default CustomPaginationResponseDto<CourseResponseListDto> toCourseAllResponseDto(Page<CourseEntity> coursePage) {
-        List<CourseResponseListDto> content = toResponseDtoList(coursePage.getContent());
+    default CustomPaginationResponseDto<CourseResponseDto> toCourseAllResponseDto(Page<CourseEntity> coursePage) {
+        List<CourseResponseDto> content = toResponseDtoList(coursePage.getContent());
 
         return new CustomPaginationResponseDto<>(
                 content,

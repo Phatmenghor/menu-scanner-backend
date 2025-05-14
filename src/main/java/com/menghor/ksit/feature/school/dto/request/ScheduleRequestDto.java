@@ -1,21 +1,27 @@
 package com.menghor.ksit.feature.school.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.Status;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 @Data
 public class ScheduleRequestDto {
-    @NotBlank(message = "Start time is required")
-    private String startTime;
+    @NotNull(message = "Start time is required")
+    @Schema(type = "string", pattern = "HH:mm", example = "08:00")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
+    private LocalTime startTime;
     
-    @NotBlank(message = "End time is required")
-    private String endTime;
-    
-    @NotNull(message = "Academy year is required")
-    private Integer academyYear;
+    @NotNull(message = "End time is required")
+    @Schema(type = "string", pattern = "HH:mm", example = "10:00")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
+    private LocalTime endTime;
     
     @NotNull(message = "Day of week is required")
     private DayOfWeek day;

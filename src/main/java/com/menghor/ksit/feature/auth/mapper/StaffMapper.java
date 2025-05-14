@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.auth.mapper;
 
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserAllResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StaffUserListResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import org.springframework.data.domain.Page;
@@ -19,12 +20,17 @@ public interface StaffMapper {
     StaffUserResponseDto toStaffUserDto(UserEntity user);
 
     /**
+     * Convert UserEntity to StaffUserResponseDto
+     */
+    StaffUserListResponseDto toStaffUserMapDto(UserEntity user);
+
+    /**
      * Convert list of UserEntity to list of StaffUserResponseDto
      */
-    List<StaffUserResponseDto> toStaffUserDtoList(List<UserEntity> entities);
+    List<StaffUserListResponseDto> toStaffUserDtoList(List<UserEntity> entities);
 
     /**
      * Convert Page of UserEntity to StaffUserAllResponseDto
      */
-    StaffUserAllResponseDto toStaffPageResponse(List<StaffUserResponseDto> content, Page<UserEntity> page);
+    StaffUserAllResponseDto toStaffPageResponse(List<StaffUserListResponseDto> content, Page<UserEntity> page);
 }

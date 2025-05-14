@@ -10,6 +10,7 @@ import com.menghor.ksit.feature.auth.dto.request.StaffCreateRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.StaffUpdateRequestDto;
 import com.menghor.ksit.feature.auth.dto.filter.StaffUserFilterRequestDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserAllResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StaffUserListResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 import com.menghor.ksit.feature.auth.mapper.StaffMapper;
 import com.menghor.ksit.feature.auth.models.*;
@@ -24,9 +25,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -268,19 +267,13 @@ public class StaffServiceImpl implements StaffService {
     public StaffUserAllResponseDto getAllStaffUsers(StaffUserFilterRequestDto filterDto) {
         log.info("Fetching all staff users with filter: {}", filterDto);
 
-        // Set default pagination values if null
-        if (filterDto.getPageNo() == null) filterDto.setPageNo(1);
-        if (filterDto.getPageSize() == null) filterDto.setPageSize(10);
-
-        // Validate pagination parameters
-        PaginationUtils.validatePagination(filterDto.getPageNo(), filterDto.getPageSize());
-
-        // Create pageable object with sorting
-        int pageNo = filterDto.getPageNo() - 1; // Convert to 0-based
-        int pageSize = filterDto.getPageSize();
-
-        // Add sorting by creation date in descending order (newest to oldest)
-        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        // Validate and prepare pagination using PaginationUtils
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
 
         // Build specification for filtering
         Specification<UserEntity> specification = UserSpecification.createStaffSpecification(filterDto);
@@ -289,7 +282,7 @@ public class StaffServiceImpl implements StaffService {
         Page<UserEntity> userPage = userRepository.findAll(specification, pageable);
 
         // Convert to response DTOs
-        List<StaffUserResponseDto> userDtos = staffMapper.toStaffUserDtoList(userPage.getContent());
+        List<StaffUserListResponseDto> userDtos = staffMapper.toStaffUserDtoList(userPage.getContent());
 
         // Create and return paginated response
         return staffMapper.toStaffPageResponse(userDtos, userPage);

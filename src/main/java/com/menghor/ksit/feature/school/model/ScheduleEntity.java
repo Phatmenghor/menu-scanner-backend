@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.school.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.models.UserEntity;
@@ -9,6 +10,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalTime;
+
 
 @Setter
 @Getter
@@ -16,8 +19,9 @@ import lombok.Setter;
 @Table(name = "schedule")
 public class ScheduleEntity extends BaseEntity {
 
-    private String startTime;
-    private String endTime;
+    private LocalTime startTime;
+
+    private LocalTime endTime;
 
     @Enumerated(EnumType.STRING)
     private Status status;

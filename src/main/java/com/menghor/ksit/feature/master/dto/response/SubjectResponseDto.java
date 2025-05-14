@@ -11,5 +11,4 @@ public class SubjectResponseDto {
     private String name;
     private Status status;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

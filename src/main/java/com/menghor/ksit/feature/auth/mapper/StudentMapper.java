@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.auth.mapper;
 
 import com.menghor.ksit.feature.auth.dto.resposne.StudentResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StudentUserListResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.master.mapper.ClassMapper;
@@ -17,21 +18,13 @@ import java.util.List;
  */
 public interface StudentMapper {
 
-    /**
-     * Convert UserEntity to StudentUserResponseDto
-     */
     StudentUserResponseDto toStudentUserDto(UserEntity user);
 
+    StudentUserListResponseDto toStudentListUserDto(UserEntity user);
 
     StudentResponseDto toStudentBatchDto(UserEntity user, String plainTextPassword);
 
-    /**
-     * Convert list of UserEntity to list of StudentUserResponseDto
-     */
-    List<StudentUserResponseDto> toStudentUserDtoList(List<UserEntity> entities);
+    List<StudentUserListResponseDto> toStudentUserDtoList(List<UserEntity> entities);
 
-    /**
-     * Convert Page of UserEntity to StudentUserAllResponseDto
-     */
-    StudentUserAllResponseDto toStudentPageResponse(List<StudentUserResponseDto> content, Page<UserEntity> page);
+    StudentUserAllResponseDto toStudentPageResponse(List<StudentUserListResponseDto> content, Page<UserEntity> page);
 }

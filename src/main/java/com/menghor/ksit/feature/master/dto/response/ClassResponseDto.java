@@ -17,5 +17,4 @@ public class ClassResponseDto {
     private Status status;
     private MajorResponseDto major;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.auth.mapper;
 
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserAllResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StaffUserListResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
@@ -121,26 +122,63 @@ public class StaffMapperImpl implements StaffMapper {
             dto.teacherFamily(relationshipMapper.toTeacherFamilyDtoList(user.getTeacherFamily()));
         }
 
-        // Map audit info
-        dto.createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt());
+        return dto.build();
+    }
+
+    @Override
+    public StaffUserListResponseDto toStaffUserMapDto(UserEntity user) {
+        if (user == null) {
+            return null;
+        }
+
+        StaffUserListResponseDto.StaffUserListResponseDtoBuilder dto = StaffUserListResponseDto.builder();
+
+        // Map basic user properties
+        dto.id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .status(user.getStatus());
+
+        // Map roles
+        if (user.getRoles() != null) {
+            List<RoleEnum> roles = user.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toList());
+            dto.roles(roles);
+        }
+
+        // Map personal info
+        dto.khmerFirstName(user.getKhmerFirstName())
+                .khmerLastName(user.getKhmerLastName())
+                .englishFirstName(user.getEnglishFirstName())
+                .englishLastName(user.getEnglishLastName())
+                .gender(user.getGender())
+                .dateOfBirth(user.getDateOfBirth())
+                .phoneNumber(user.getPhoneNumber())
+                .identifyNumber(user.getIdentifyNumber())
+                .staffId(user.getStaffId());
+
+        // Format creation date if needed
+        if (user.getCreatedAt() != null) {
+            dto.createdAt(user.getCreatedAt().toString());
+        }
 
         return dto.build();
     }
 
     @Override
-    public List<StaffUserResponseDto> toStaffUserDtoList(List<UserEntity> entities) {
+    public List<StaffUserListResponseDto> toStaffUserDtoList(List<UserEntity> entities) {
         if (entities == null) {
             return new ArrayList<>();
         }
 
         return entities.stream()
-                .map(this::toStaffUserDto)
+                .map(this::toStaffUserMapDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public StaffUserAllResponseDto toStaffPageResponse(List<StaffUserResponseDto> content, Page<UserEntity> page) {
+    public StaffUserAllResponseDto toStaffPageResponse(List<StaffUserListResponseDto> content, Page<UserEntity> page) {
         StaffUserAllResponseDto responseDto = new StaffUserAllResponseDto();
         responseDto.setContent(content);
         responseDto.setPageNo(page.getNumber() + 1);

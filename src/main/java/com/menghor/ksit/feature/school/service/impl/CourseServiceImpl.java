@@ -1,6 +1,5 @@
 package com.menghor.ksit.feature.school.service.impl;
 
-import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.models.UserEntity;
@@ -8,7 +7,6 @@ import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.school.dto.filter.CourseFilterDto;
 import com.menghor.ksit.feature.school.dto.request.CourseRequestDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseDto;
-import com.menghor.ksit.feature.school.dto.response.CourseResponseListDto;
 import com.menghor.ksit.feature.school.dto.update.CourseUpdateDto;
 import com.menghor.ksit.feature.school.mapper.CourseMapper;
 import com.menghor.ksit.feature.school.model.CourseEntity;
@@ -143,14 +141,16 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public CustomPaginationResponseDto<CourseResponseListDto> getAllCourses(CourseFilterDto filterDto) {
+    public CustomPaginationResponseDto<CourseResponseDto> getAllCourses(CourseFilterDto filterDto) {
         log.info("Fetching all courses with filter: {}", filterDto);
 
         // Validate and prepare pagination using PaginationUtils
         // Always sort by createdAt DESC by default
         Pageable pageable = PaginationUtils.createPageable(
                 filterDto.getPageNo(),
-                filterDto.getPageSize()
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
         );
 
         // Create specification from filter criteria
@@ -174,17 +174,8 @@ public class CourseServiceImpl implements CourseService {
         // Execute query with specification and pagination
         Page<CourseEntity> coursePage = courseRepository.findAll(spec, pageable);
 
-        // Apply status correction for any null statuses
-        coursePage.getContent().forEach(course -> {
-            if (course.getStatus() == null) {
-                log.debug("Correcting null status to ACTIVE for course ID: {}", course.getId());
-                course.setStatus(Status.ACTIVE);
-                courseRepository.save(course);
-            }
-        });
-
         // Map to response DTO
-        CustomPaginationResponseDto<CourseResponseListDto> response = courseMapper.toCourseAllResponseDto(coursePage);
+        CustomPaginationResponseDto<CourseResponseDto> response = courseMapper.toCourseAllResponseDto(coursePage);
         log.info("Retrieved {} courses (page {}/{})",
                 response.getContent().size(),
                 response.getPageNo(),

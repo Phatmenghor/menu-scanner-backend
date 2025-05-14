@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.auth.mapper;
 
 import com.menghor.ksit.feature.auth.dto.resposne.StudentResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StudentUserListResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.master.mapper.ClassMapper;
@@ -71,9 +72,31 @@ public class StudentMapperImpl implements StudentMapper {
             dto.studentSibling(relationshipMapper.toStudentSiblingDtoList(user.getStudentSibling()));
         }
 
-        // Map audit info
-        dto.createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt());
+        return dto.build();
+    }
+
+    @Override
+    public StudentUserListResponseDto toStudentListUserDto(UserEntity user) {
+        if (user == null) {
+            return null;
+        }
+
+        StudentUserListResponseDto.StudentUserListResponseDtoBuilder dto = StudentUserListResponseDto.builder();
+
+        // Map basic user properties
+        dto.id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .status(user.getStatus());
+
+        // Map personal info
+        dto.khmerFirstName(user.getKhmerFirstName())
+                .khmerLastName(user.getKhmerLastName())
+                .englishFirstName(user.getEnglishFirstName())
+                .englishLastName(user.getEnglishLastName())
+                .gender(user.getGender())
+                .dateOfBirth(user.getDateOfBirth())
+                .phoneNumber(user.getPhoneNumber());
 
         return dto.build();
     }
@@ -106,18 +129,18 @@ public class StudentMapperImpl implements StudentMapper {
 
 
     @Override
-    public List<StudentUserResponseDto> toStudentUserDtoList(List<UserEntity> entities) {
+    public List<StudentUserListResponseDto> toStudentUserDtoList(List<UserEntity> entities) {
         if (entities == null) {
             return new ArrayList<>();
         }
 
         return entities.stream()
-                .map(this::toStudentUserDto)
+                .map(this::toStudentListUserDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public StudentUserAllResponseDto toStudentPageResponse(List<StudentUserResponseDto> content, Page<UserEntity> page) {
+    public StudentUserAllResponseDto toStudentPageResponse(List<StudentUserListResponseDto> content, Page<UserEntity> page) {
         StudentUserAllResponseDto responseDto = new StudentUserAllResponseDto();
         responseDto.setContent(content);
         responseDto.setPageNo(page.getNumber() + 1);

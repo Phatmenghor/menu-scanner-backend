@@ -14,6 +14,7 @@ import com.menghor.ksit.feature.auth.dto.request.StudentUpdateRequestDto;
 import com.menghor.ksit.feature.auth.dto.filter.StudentUserFilterRequestDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StudentUserListResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.mapper.StaffMapper;
 import com.menghor.ksit.feature.auth.mapper.StudentMapper;
@@ -262,7 +263,7 @@ public class StudentServiceImpl implements StudentService {
         Page<UserEntity> userPage = userRepository.findAll(specification, pageable);
 
         // Convert to response DTOs
-        List<StudentUserResponseDto> userDtos = studentMapper.toStudentUserDtoList(userPage.getContent());
+        List<StudentUserListResponseDto> userDtos = studentMapper.toStudentUserDtoList(userPage.getContent());
 
         // Create and return paginated response
         return studentMapper.toStudentPageResponse(userDtos, userPage);

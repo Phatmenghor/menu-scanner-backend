@@ -108,5 +108,4 @@ public class StaffUserResponseDto {
 
     // Audit info
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

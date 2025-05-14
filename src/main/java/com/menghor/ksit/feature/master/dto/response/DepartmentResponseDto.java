@@ -13,5 +13,4 @@ public class DepartmentResponseDto {
     private String urlLogo;
     private Status status;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

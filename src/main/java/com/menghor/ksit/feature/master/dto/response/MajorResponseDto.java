@@ -13,5 +13,4 @@ public class MajorResponseDto {
     private Status status;
     private DepartmentResponseDto department;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

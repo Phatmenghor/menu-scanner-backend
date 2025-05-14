@@ -26,7 +26,6 @@ public class StaffController {
      * Register a new staff member
      */
     @PostMapping("/register")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StaffUserResponseDto> registerStaff(@Valid @RequestBody StaffCreateRequestDto requestDto) {
         log.info("Registering staff user with email: {}", requestDto.getEmail());
         StaffUserResponseDto registeredUser = staffService.registerStaff(requestDto);
@@ -38,7 +37,6 @@ public class StaffController {
      * Get all staff users with filtering
      */
     @PostMapping("/all")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StaffUserAllResponseDto> getAllStaffUsers(@RequestBody StaffUserFilterRequestDto filterDto) {
         log.info("Searching staff users with filter: {}", filterDto);
         StaffUserAllResponseDto users = staffService.getAllStaffUsers(filterDto);
@@ -49,11 +47,10 @@ public class StaffController {
      * Get staff user by ID
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StaffUserResponseDto> getStaffUserById(@PathVariable Long id) {
         log.info("Fetching staff user with ID: {}", id);
         StaffUserResponseDto user = staffService.getStaffUserById(id);
-        return new ApiResponse<>(SuccessMessages.SUCCESS, "Staff user fetched successfully", user);
+        return new ApiResponse<>("success", "Staff user fetched successfully", user);
     }
 
     /**
@@ -64,7 +61,7 @@ public class StaffController {
     public ApiResponse<StaffUserResponseDto> updateStaffUser(@PathVariable Long id, @Valid @RequestBody StaffUpdateRequestDto updateDto) {
         log.info("Updating staff user with ID: {}", id);
         StaffUserResponseDto updatedUser = staffService.updateStaffUser(id, updateDto);
-        return new ApiResponse<>(SuccessMessages.SUCCESS, "Staff user updated successfully", updatedUser);
+        return new ApiResponse<>("success", "Staff user updated successfully", updatedUser);
     }
 
     /**

@@ -174,15 +174,6 @@ public class ScheduleServiceImpl implements ScheduleService {
         // Execute query with specification and pagination
         Page<ScheduleEntity> schedulePage = scheduleRepository.findAll(spec, pageable);
 
-        // Apply status correction for any null statuses
-        schedulePage.getContent().forEach(schedule -> {
-            if (schedule.getStatus() == null) {
-                log.debug("Correcting null status to ACTIVE for schedule ID: {}", schedule.getId());
-                schedule.setStatus(Status.ACTIVE);
-                scheduleRepository.save(schedule);
-            }
-        });
-
         // Map to response DTO
         CustomPaginationResponseDto<ScheduleResponseListDto> response = scheduleMapper.toScheduleAllResponseDto(schedulePage);
         log.info("Retrieved {} schedules (page {}/{})",

@@ -11,10 +11,8 @@ import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/schedules")
@@ -24,7 +22,6 @@ public class ScheduleController {
     private final ScheduleService scheduleService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<ScheduleResponseDto> createSchedule(@Valid @RequestBody ScheduleRequestDto requestDto) {
         log.info("REST request to create schedule: {}", requestDto);
         ScheduleResponseDto responseDto = scheduleService.createSchedule(requestDto);
@@ -36,7 +33,6 @@ public class ScheduleController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<ScheduleResponseDto> getScheduleById(@PathVariable Long id) {
         log.info("REST request to get schedule by ID: {}", id);
         ScheduleResponseDto responseDto = scheduleService.getScheduleById(id);
@@ -48,7 +44,6 @@ public class ScheduleController {
     }
 
     @PostMapping("/updateById/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<ScheduleResponseDto> updateSchedule(@PathVariable Long id, @Valid @RequestBody ScheduleUpdateDto updateDto) {
         log.info("REST request to update schedule with ID {}: {}", id, updateDto);
         ScheduleResponseDto responseDto = scheduleService.updateSchedule(id, updateDto);
@@ -60,7 +55,6 @@ public class ScheduleController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<ScheduleResponseDto> deleteSchedule(@PathVariable Long id) {
         log.info("REST request to delete schedule with ID: {}", id);
         ScheduleResponseDto responseDto = scheduleService.deleteSchedule(id);
@@ -72,7 +66,6 @@ public class ScheduleController {
     }
 
     @PostMapping("/all")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<CustomPaginationResponseDto<ScheduleResponseListDto>> getAllSchedules(@RequestBody ScheduleFilterDto filterDto) {
         log.info("REST request to search schedules with filter: {}", filterDto);
         CustomPaginationResponseDto<ScheduleResponseListDto> responseDto = scheduleService.getAllSchedules(filterDto);
@@ -80,17 +73,6 @@ public class ScheduleController {
                 "success",
                 "Schedules retrieved successfully",
                 responseDto
-        );
-    }
-
-    @GetMapping("/class/{classId}")
-    public ApiResponse<List<ScheduleResponseDto>> getSchedulesByClassId(@PathVariable Long classId) {
-        log.info("REST request to get schedules for class ID: {}", classId);
-        List<ScheduleResponseDto> schedules = scheduleService.getSchedulesByClassId(classId);
-        return new ApiResponse<>(
-                "success",
-                "Class schedules retrieved successfully",
-                schedules
         );
     }
 }

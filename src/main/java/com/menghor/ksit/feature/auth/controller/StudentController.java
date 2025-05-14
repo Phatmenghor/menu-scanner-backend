@@ -30,7 +30,6 @@ public class StudentController {
      * Register a new student
      */
     @PostMapping("/register")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StudentUserResponseDto> registerStudent(@Valid @RequestBody StudentCreateRequestDto requestDto) {
         log.info("Registering student with email: {}", requestDto.getEmail());
         StudentUserResponseDto registeredStudent = studentService.registerStudent(requestDto);
@@ -42,7 +41,6 @@ public class StudentController {
      * Register multiple students in a batch
      */
     @PostMapping("/register/batch")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<List<StudentResponseDto>> registerStudentBatch(@Valid @RequestBody StudentBatchCreateRequestDto requestDto) {
         log.info("Batch registering {} students for class ID: {}", requestDto.getQuantity(), requestDto.getClassId());
         List<StudentResponseDto> registeredStudents = studentService.batchRegisterStudents(requestDto);
@@ -56,7 +54,6 @@ public class StudentController {
      * Get all student users with filtering
      */
     @PostMapping("/all")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StudentUserAllResponseDto> getAllStudentUsers(@RequestBody StudentUserFilterRequestDto filterDto) {
         log.info("Searching student users with filter: {}", filterDto);
         StudentUserAllResponseDto users = studentService.getAllStudentUsers(filterDto);
@@ -67,29 +64,26 @@ public class StudentController {
      * Get student user by ID
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StudentUserResponseDto> getStudentUserById(@PathVariable Long id) {
         log.info("Fetching student user with ID: {}", id);
         StudentUserResponseDto user = studentService.getStudentUserById(id);
-        return new ApiResponse<>(SuccessMessages.SUCCESS, "Student user fetched successfully", user);
+        return new ApiResponse<>("'success'", "Student user fetched successfully", user);
     }
 
     /**
      * Update student user
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StudentUserResponseDto> updateStudentUser(@PathVariable Long id, @Valid @RequestBody StudentUpdateRequestDto updateDto) {
         log.info("Updating student user with ID: {}", id);
         StudentUserResponseDto updatedUser = studentService.updateStudentUser(id, updateDto);
-        return new ApiResponse<>(SuccessMessages.SUCCESS, "Student user updated successfully", updatedUser);
+        return new ApiResponse<>("'success'", "Student user updated successfully", updatedUser);
     }
 
     /**
      * Delete/deactivate student user
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<StudentUserResponseDto> deleteStudentUser(@PathVariable Long id) {
         log.info("Deleting/deactivating student user with ID: {}", id);
         StudentUserResponseDto user = studentService.deleteStudentUser(id);

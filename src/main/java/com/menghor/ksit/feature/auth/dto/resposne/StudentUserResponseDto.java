@@ -62,5 +62,4 @@ public class StudentUserResponseDto {
 
     // Audit info
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

@@ -40,6 +40,14 @@ public interface ScheduleMapper {
     @Mapping(target = "semester", source = "semester")
     ScheduleResponseDto toResponseDto(ScheduleEntity entity);
 
+    // New mapper for list response with IDs instead of full objects
+    @Mapping(target = "classId", source = "classes.id")
+    @Mapping(target = "courseId", source = "course.id")
+    @Mapping(target = "roomId", source = "room.id")
+    @Mapping(target = "teacher", source = "user")
+    @Mapping(target = "semesterId", source = "semester.id")
+    ScheduleResponseListDto toResponseListDto(ScheduleEntity entity);
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -51,35 +59,11 @@ public interface ScheduleMapper {
     @Mapping(target = "semester", ignore = true)
     void updateEntityFromDto(ScheduleUpdateDto dto, @MappingTarget ScheduleEntity entity);
 
-    @Mapping(target = "className", source = "classes.code")
-    @Mapping(target = "teacherName", expression = "java(getTeacherName(scheduleEntity))")
-    @Mapping(target = "courseName", source = "course.nameEn")
-    @Mapping(target = "roomName", source = "room.name")
-    @Mapping(target = "semesterName", source = "semester.semester")
-    ScheduleResponseListDto toList(ScheduleEntity scheduleEntity);
-
-    default String getTeacherName(ScheduleEntity scheduleEntity) {
-        if (scheduleEntity.getUser() == null) {
-            return null;
-        }
-
-        String firstName = scheduleEntity.getUser().getEnglishFirstName();
-        String lastName = scheduleEntity.getUser().getEnglishLastName();
-
-        if (firstName != null && lastName != null) {
-            return firstName + " " + lastName;
-        } else if (firstName != null) {
-            return firstName;
-        } else if (lastName != null) {
-            return lastName;
-        } else {
-            return scheduleEntity.getUser().getUsername();
-        }
-    }
 
     default List<ScheduleResponseListDto> toResponseDtoList(List<ScheduleEntity> entities) {
-        return entities.stream().map(this::toList).collect(Collectors.toList());
+        return entities.stream().map(this::toResponseListDto).collect(Collectors.toList());
     }
+
 
     default CustomPaginationResponseDto<ScheduleResponseListDto> toScheduleAllResponseDto(Page<ScheduleEntity> page) {
         List<ScheduleResponseListDto> content = toResponseDtoList(page.getContent());
