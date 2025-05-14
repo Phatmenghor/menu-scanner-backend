@@ -34,10 +34,5 @@ public interface ScheduleService {
     /**
      * Get all schedules with filtering
      */
-    CustomPaginationResponseDto<ScheduleResponseListDto> getAllSchedules(ScheduleFilterDto filterDto);
-
-    /**
-     * Get schedules by class ID
-     */
-    List<ScheduleResponseDto> getSchedulesByClassId(Long classId);
+    CustomPaginationResponseDto<ScheduleResponseDto> getAllSchedules(ScheduleFilterDto filterDto);
 }

@@ -60,13 +60,13 @@ public interface ScheduleMapper {
     void updateEntityFromDto(ScheduleUpdateDto dto, @MappingTarget ScheduleEntity entity);
 
 
-    default List<ScheduleResponseListDto> toResponseDtoList(List<ScheduleEntity> entities) {
-        return entities.stream().map(this::toResponseListDto).collect(Collectors.toList());
+    default List<ScheduleResponseDto> toResponseDtoList(List<ScheduleEntity> entities) {
+        return entities.stream().map(this::toResponseDto).collect(Collectors.toList());
     }
 
 
-    default CustomPaginationResponseDto<ScheduleResponseListDto> toScheduleAllResponseDto(Page<ScheduleEntity> page) {
-        List<ScheduleResponseListDto> content = toResponseDtoList(page.getContent());
+    default CustomPaginationResponseDto<ScheduleResponseDto> toScheduleAllResponseDto(Page<ScheduleEntity> page) {
+        List<ScheduleResponseDto> content = toResponseDtoList(page.getContent());
 
         return new CustomPaginationResponseDto<>(
                 content,

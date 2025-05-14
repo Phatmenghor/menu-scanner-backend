@@ -20,9 +20,9 @@ spring:
 #    url: jdbc:postgresql://143.198.93.97:5434/ks_it_school
 #    username: menghor
 #    password: Hour1819
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://143.198.93.97:5434/ks_it_school}
+    username: ${SPRING_DATASOURCE_USERNAME:menghor}
+    password: ${SPRING_DATASOURCE_PASSWORD:Hour1819}
 
     driver-class-name: org.postgresql.Driver
     hikari:

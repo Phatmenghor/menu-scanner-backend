@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.school.specification;
 
+import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.SemesterEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.models.UserEntity;
@@ -14,6 +15,9 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,6 +87,42 @@ public class ScheduleSpecification {
         };
     }
 
+    public static Specification<ScheduleEntity> hasDayOfWeek(DayOfWeek dayOfWeek) {
+        return (root, query, criteriaBuilder) -> {
+            if (dayOfWeek == null) return criteriaBuilder.conjunction();
+            return criteriaBuilder.equal(root.get("day"), dayOfWeek);
+        };
+    }
+
+    /**
+     * Helper method to try parsing a time string in various formats
+     */
+    private static LocalTime parseTimeIfPossible(String timeString) {
+        if (timeString == null || timeString.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            // Try standard format HH:mm
+            return LocalTime.parse(timeString);
+        } catch (DateTimeParseException e1) {
+            try {
+                // Try with formatter for more flexibility
+                return LocalTime.parse(timeString, DateTimeFormatter.ofPattern("H:mm"));
+            } catch (DateTimeParseException e2) {
+                try {
+                    // Try with just hours
+                    if (timeString.matches("\\d{1,2}")) {
+                        return LocalTime.of(Integer.parseInt(timeString), 0);
+                    }
+                    return null;
+                } catch (Exception e3) {
+                    return null;
+                }
+            }
+        }
+    }
+
     /**
      * Search schedules by any searchable field
      */
@@ -90,14 +130,38 @@ public class ScheduleSpecification {
         return (root, query, criteriaBuilder) -> {
             if (!StringUtils.hasText(searchTerm)) return criteriaBuilder.conjunction();
 
+            // Make the query distinct to avoid duplicate results with multiple joins
+            query.distinct(true);
+
             String term = "%" + searchTerm.toLowerCase() + "%";
             List<Predicate> predicates = new ArrayList<>();
 
-            // Search in schedule fields
-            predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("startTime")), term));
-            predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("endTime")), term));
+            // Try to parse the search term as a time
+            LocalTime searchTime = parseTimeIfPossible(searchTerm);
+            if (searchTime != null) {
+                // CORRECT: Use equality comparison for time fields
+                predicates.add(criteriaBuilder.equal(root.get("startTime"), searchTime));
+                predicates.add(criteriaBuilder.equal(root.get("endTime"), searchTime));
 
-            // Search in class name
+                // You could also add other time comparison options
+                // For example, find times close to the search time (within 30 minutes)
+                LocalTime thirtyMinsBefore = searchTime.minusMinutes(30);
+                LocalTime thirtyMinsAfter = searchTime.plusMinutes(30);
+
+                predicates.add(criteriaBuilder.between(
+                        root.get("startTime"),
+                        thirtyMinsBefore,
+                        thirtyMinsAfter
+                ));
+
+                predicates.add(criteriaBuilder.between(
+                        root.get("endTime"),
+                        thirtyMinsBefore,
+                        thirtyMinsAfter
+                ));
+            }
+
+            // Search in class code
             try {
                 Join<ScheduleEntity, ClassEntity> classJoin = root.join("classes", JoinType.LEFT);
                 predicates.add(criteriaBuilder.like(criteriaBuilder.lower(classJoin.get("code")), term));
@@ -131,6 +195,10 @@ public class ScheduleSpecification {
                 // Join failed, ignore this part
             }
 
+            // WRONG APPROACH - THIS CAUSES THE ERROR:
+            // predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("startTime")), term));
+            // predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("endTime")), term));
+
             return criteriaBuilder.or(predicates.toArray(new Predicate[0]));
         };
     }
@@ -145,7 +213,8 @@ public class ScheduleSpecification {
             Long teacherId,
             Integer academyYear,
             SemesterEnum semester,
-            Status status) {
+            Status status,
+            DayOfWeek dayOfWeek) {
 
         Specification<ScheduleEntity> spec = Specification.where(null);
 
@@ -175,6 +244,10 @@ public class ScheduleSpecification {
 
         if (status != null) {
             spec = spec.and(hasStatus(status));
+        }
+
+        if (dayOfWeek != null) {
+            spec = spec.and(hasDayOfWeek(dayOfWeek));
         }
 
         return spec;

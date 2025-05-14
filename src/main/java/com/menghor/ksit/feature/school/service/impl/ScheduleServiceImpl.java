@@ -149,7 +149,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
-    public CustomPaginationResponseDto<ScheduleResponseListDto> getAllSchedules(ScheduleFilterDto filterDto) {
+    public CustomPaginationResponseDto<ScheduleResponseDto> getAllSchedules(ScheduleFilterDto filterDto) {
         log.info("Fetching all schedules with filter: {}", filterDto);
 
         // Validate and prepare pagination
@@ -168,36 +168,21 @@ public class ScheduleServiceImpl implements ScheduleService {
                 filterDto.getTeacherId(),
                 filterDto.getAcademyYear(),
                 filterDto.getSemester(),
-                filterDto.getStatus()
+                filterDto.getStatus(),
+                filterDto.getDayOfWeek()
         );
 
         // Execute query with specification and pagination
         Page<ScheduleEntity> schedulePage = scheduleRepository.findAll(spec, pageable);
 
         // Map to response DTO
-        CustomPaginationResponseDto<ScheduleResponseListDto> response = scheduleMapper.toScheduleAllResponseDto(schedulePage);
+        CustomPaginationResponseDto<ScheduleResponseDto> response = scheduleMapper.toScheduleAllResponseDto(schedulePage);
         log.info("Retrieved {} schedules (page {}/{})",
                 response.getContent().size(),
                 response.getPageNo(),
                 response.getTotalPages());
 
         return response;
-    }
-
-    @Override
-    public List<ScheduleResponseDto> getSchedulesByClassId(Long classId) {
-        log.info("Fetching schedules for class ID: {}", classId);
-
-        // Check if class exists
-        findClassById(classId);
-
-        List<ScheduleEntity> schedules = scheduleRepository.findByClassesId(classId);
-        
-        log.info("Retrieved {} schedules for class ID: {}", schedules.size(), classId);
-        
-        return schedules.stream()
-                .map(scheduleMapper::toResponseDto)
-                .collect(Collectors.toList());
     }
 
     /**

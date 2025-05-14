@@ -20,7 +20,7 @@ import java.util.Collections;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@Order(2) // Run after DefaultRoleInitializer
+@Order(1) // Run after DefaultRoleInitializer
 public class DefaultUserInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;

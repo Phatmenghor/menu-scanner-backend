@@ -5,6 +5,7 @@ import com.menghor.ksit.feature.master.mapper.DepartmentMapper;
 import com.menghor.ksit.feature.master.mapper.SubjectMapper;
 import com.menghor.ksit.feature.school.dto.request.CourseRequestDto;
 import com.menghor.ksit.feature.school.dto.response.CourseResponseDto;
+import com.menghor.ksit.feature.school.dto.response.CourseResponseMapWithScheduleDto;
 import com.menghor.ksit.feature.school.dto.update.CourseUpdateDto;
 import com.menghor.ksit.feature.school.model.CourseEntity;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
@@ -33,6 +34,10 @@ public interface CourseMapper {
     @Mapping(target = "subject", source = "subject")
     @Mapping(target = "user", source = "user")
     CourseResponseDto toResponseDto(CourseEntity courseEntity);
+
+    @Mapping(target = "department", source = "department")
+    @Mapping(target = "subject", source = "subject")
+    CourseResponseMapWithScheduleDto toResponseWithScheduleDto(CourseEntity courseEntity);
 
     // Method for updating an existing entity with non-null values from DTO
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

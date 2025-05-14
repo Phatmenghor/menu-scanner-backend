@@ -25,7 +25,7 @@ public class ScheduleResponseDto {
     private Status status;
     private ClassResponseDto classes;
     private StaffUserListResponseDto teacher;
-    private CourseResponseDto course;
+    private CourseResponseMapWithScheduleDto course;
     private RoomResponseDto room;
     private SemesterResponseDto semester;
     private LocalDateTime createdAt;

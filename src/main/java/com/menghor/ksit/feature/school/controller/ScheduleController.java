@@ -66,9 +66,9 @@ public class ScheduleController {
     }
 
     @PostMapping("/all")
-    public ApiResponse<CustomPaginationResponseDto<ScheduleResponseListDto>> getAllSchedules(@RequestBody ScheduleFilterDto filterDto) {
+    public ApiResponse<CustomPaginationResponseDto<ScheduleResponseDto>> getAllSchedules(@RequestBody ScheduleFilterDto filterDto) {
         log.info("REST request to search schedules with filter: {}", filterDto);
-        CustomPaginationResponseDto<ScheduleResponseListDto> responseDto = scheduleService.getAllSchedules(filterDto);
+        CustomPaginationResponseDto<ScheduleResponseDto> responseDto = scheduleService.getAllSchedules(filterDto);
         return new ApiResponse<>(
                 "success",
                 "Schedules retrieved successfully",
