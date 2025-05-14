@@ -5,9 +5,12 @@ import com.menghor.ksit.feature.master.dto.response.SemesterResponseDto;
 import com.menghor.ksit.feature.master.dto.update.SemesterUpdateDto;
 import com.menghor.ksit.feature.master.model.SemesterEntity;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
+import com.menghor.ksit.enumations.SemesterType;
+import com.menghor.ksit.enumations.Status;
 import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,9 +31,27 @@ public interface SemesterMapper {
     @Mapping(target = "academyYear", source = "academyYear")
     @Mapping(target = "status", source = "status")
     @Mapping(target = "semester", source = "semester")
+    @Mapping(target = "semesterType", ignore = true) // We'll set this in the afterMapping method
     SemesterResponseDto toResponseDto(SemesterEntity entity);
 
-    // New method for updating an existing entity with non-null values from DTO
+    // After mapping method to calculate and set the semesterType based on date comparison
+    @AfterMapping
+    default void setSemesterType(@MappingTarget SemesterResponseDto responseDto, SemesterEntity entity) {
+        // Get current date
+        LocalDate currentDate = LocalDate.now();
+
+        // Set semesterType based on date comparison
+        if (currentDate.isBefore(entity.getStartDate())) {
+            responseDto.setSemesterType(SemesterType.PROGRESS);
+        } else if (currentDate.isAfter(entity.getEndDate())) {
+            responseDto.setSemesterType(SemesterType.DONE);
+        } else {
+            // Current date is between start and end dates
+            responseDto.setSemesterType(SemesterType.PROCESSING);
+        }
+    }
+
+    // Method for updating an existing entity with non-null values from DTO
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
