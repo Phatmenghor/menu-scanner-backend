@@ -28,13 +28,25 @@ public class SemesterSpecification {
         };
     }
 
-    // Combined search across name field
+    // Combined search across academyYear and semester fields
     public static Specification<SemesterEntity> search(String searchTerm) {
         return (root, query, criteriaBuilder) -> {
             if (!StringUtils.hasText(searchTerm)) return criteriaBuilder.conjunction();
 
             String term = "%" + searchTerm.toLowerCase() + "%";
-            return criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), term);
+
+            return criteriaBuilder.or(
+                    // Search by academyYear (converted to string for LIKE comparison)
+                    criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("academyYear").as(String.class)),
+                            term
+                    ),
+                    // Search by semester enum value (string representation)
+                    criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("semester").as(String.class)),
+                            term
+                    )
+            );
         };
     }
     

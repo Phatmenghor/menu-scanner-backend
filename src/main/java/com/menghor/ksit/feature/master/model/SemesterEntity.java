@@ -20,6 +20,7 @@ public class SemesterEntity extends BaseEntity {
 
     private LocalDate startDate;
     private LocalDate endDate;
+
     private Integer academyYear;
 
     @Enumerated(EnumType.STRING)
