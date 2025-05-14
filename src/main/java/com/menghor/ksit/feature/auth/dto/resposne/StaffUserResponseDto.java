@@ -61,6 +61,7 @@ public class StaffUserResponseDto {
     private String currentPosition;
     private String decreeFinal;
     private String rankAndClass;
+    private DepartmentResponseDto department;
 
     // Work History
     private String workHistory;

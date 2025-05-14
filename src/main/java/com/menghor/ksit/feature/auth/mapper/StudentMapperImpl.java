@@ -89,6 +89,11 @@ public class StudentMapperImpl implements StudentMapper {
                 .email(user.getEmail())
                 .status(user.getStatus());
 
+        // Map class if available
+        if (user.getClasses() != null) {
+            dto.studentClass(classMapper.toResponseDto(user.getClasses()));
+        }
+
         // Map personal info
         dto.khmerFirstName(user.getKhmerFirstName())
                 .khmerLastName(user.getKhmerLastName())
@@ -96,7 +101,8 @@ public class StudentMapperImpl implements StudentMapper {
                 .englishLastName(user.getEnglishLastName())
                 .gender(user.getGender())
                 .dateOfBirth(user.getDateOfBirth())
-                .phoneNumber(user.getPhoneNumber());
+                .phoneNumber(user.getPhoneNumber())
+                .createdAt(user.getCreatedAt().toString());
 
         return dto.build();
     }

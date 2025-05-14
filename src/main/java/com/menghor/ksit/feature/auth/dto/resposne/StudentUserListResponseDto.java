@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Response DTO for users with STUDENT role
@@ -26,10 +27,12 @@ public class StudentUserListResponseDto {
 
     // Common personal info
     private String khmerFirstName;
+    private ClassResponseDto studentClass;
     private String khmerLastName;
     private String englishFirstName;
     private String englishLastName;
     private GenderEnum gender;
     private LocalDate dateOfBirth;
     private String phoneNumber;
+    private String createdAt;
 }

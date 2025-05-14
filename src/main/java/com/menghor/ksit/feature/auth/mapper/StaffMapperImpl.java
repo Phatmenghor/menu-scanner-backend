@@ -147,6 +147,11 @@ public class StaffMapperImpl implements StaffMapper {
             dto.roles(roles);
         }
 
+        // Map department
+        if (user.getDepartment() != null) {
+            dto.department(departmentMapper.toResponseDto(user.getDepartment()));
+        }
+
         // Map personal info
         dto.khmerFirstName(user.getKhmerFirstName())
                 .khmerLastName(user.getKhmerLastName())
@@ -156,11 +161,12 @@ public class StaffMapperImpl implements StaffMapper {
                 .dateOfBirth(user.getDateOfBirth())
                 .phoneNumber(user.getPhoneNumber())
                 .identifyNumber(user.getIdentifyNumber())
-                .staffId(user.getStaffId());
+                .staffId(user.getStaffId())
+                .createdAt(user.getCreatedAt().toString());
 
-        // Format creation date if needed
-        if (user.getCreatedAt() != null) {
-            dto.createdAt(user.getCreatedAt().toString());
+        // Map department
+        if (user.getDepartment() != null) {
+            dto.department(departmentMapper.toResponseDto(user.getDepartment()));
         }
 
         return dto.build();
@@ -171,6 +177,7 @@ public class StaffMapperImpl implements StaffMapper {
         if (entities == null) {
             return new ArrayList<>();
         }
+
 
         return entities.stream()
                 .map(this::toStaffUserMapDto)

@@ -3,6 +3,7 @@ package com.menghor.ksit.feature.auth.dto.resposne;
 import com.menghor.ksit.enumations.GenderEnum;
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.feature.master.dto.response.DepartmentResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +22,7 @@ public class StaffUserListResponseDto {
     private String email;
     private List<RoleEnum> roles;
     private Status status;
-
+    private DepartmentResponseDto department;
     // Common personal info
     private String khmerFirstName;
     private String khmerLastName;
