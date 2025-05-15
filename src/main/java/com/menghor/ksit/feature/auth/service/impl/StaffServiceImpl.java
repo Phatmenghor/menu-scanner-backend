@@ -84,6 +84,24 @@ public class StaffServiceImpl implements StaffService {
         staff.setEthnicity(requestDto.getEthnicity());
         staff.setPlaceOfBirth(requestDto.getPlaceOfBirth());
 
+        staff.setTaughtEnglish(requestDto.getTaughtEnglish());
+        staff.setThreeLevelClass(requestDto.getThreeLevelClass());
+        staff.setReferenceNote(requestDto.getReferenceNote());
+        staff.setTechnicalTeamLeader(requestDto.getTechnicalTeamLeader());
+        staff.setAssistInTeaching(requestDto.getAssistInTeaching());
+        staff.setSerialNumber(requestDto.getSerialNumber());
+        staff.setTwoLevelClass(requestDto.getTwoLevelClass());
+        staff.setClassResponsibility(requestDto.getClassResponsibility());
+        staff.setLastSalaryIncrementDate(requestDto.getLastSalaryIncrementDate());
+        staff.setTeachAcrossSchools(requestDto.getTeachAcrossSchools());
+        staff.setOvertimeHours(requestDto.getOvertimeHours());
+        staff.setIssuedDate(requestDto.getIssuedDate());
+        staff.setSuitableClass(requestDto.getSuitableClass());
+        staff.setBilingual(requestDto.getBilingual());
+        staff.setAcademicYearTaught(requestDto.getAcademicYearTaught());
+        staff.setWorkHistory(requestDto.getWorkHistory());
+
+
         // Set staff-specific fields
         staff.setStaffId(requestDto.getStaffId());
         staff.setNationalId(requestDto.getNationalId());
@@ -104,7 +122,6 @@ public class StaffServiceImpl implements StaffService {
         staff.setRankAndClass(requestDto.getRankAndClass());
         
         // Set work history and family information
-        staff.setWorkHistory(requestDto.getWorkHistory());
         staff.setMaritalStatus(requestDto.getMaritalStatus());
         staff.setMustBe(requestDto.getMustBe());
         staff.setAffiliatedProfession(requestDto.getAffiliatedProfession());
@@ -349,6 +366,23 @@ public class StaffServiceImpl implements StaffService {
             throw new DuplicateNameException("Staff ID number '" + updateDto.getIdentifyNumber() + "' is already in use. Please use a different ID number.");
         }
 
+        if(updateDto.getTaughtEnglish() != null) staff.setTaughtEnglish(updateDto.getTaughtEnglish());
+        if(updateDto.getThreeLevelClass() != null) staff.setThreeLevelClass(updateDto.getThreeLevelClass());
+        if(updateDto.getReferenceNote() != null) staff.setReferenceNote(updateDto.getReferenceNote());
+        if(updateDto.getTechnicalTeamLeader() != null) staff.setTechnicalTeamLeader(updateDto.getTechnicalTeamLeader());
+        if(updateDto.getAssistInTeaching() != null) staff.setAssistInTeaching(updateDto.getAssistInTeaching());
+        if(updateDto.getSerialNumber() != null) staff.setSerialNumber(updateDto.getSerialNumber());
+        if(updateDto.getTwoLevelClass() != null) staff.setTwoLevelClass(updateDto.getTwoLevelClass());
+        if(updateDto.getClassResponsibility() != null) staff.setClassResponsibility(updateDto.getClassResponsibility());
+        if(updateDto.getLastSalaryIncrementDate() != null) staff.setLastSalaryIncrementDate(updateDto.getLastSalaryIncrementDate());
+        if(updateDto.getTeachAcrossSchools() != null) staff.setTeachAcrossSchools(updateDto.getTeachAcrossSchools());
+        if(updateDto.getOvertimeHours() != null) staff.setOvertimeHours(updateDto.getOvertimeHours());
+        if(updateDto.getIssuedDate() != null) staff.setIssuedDate(updateDto.getIssuedDate());
+        if(updateDto.getSuitableClass() != null) staff.setSuitableClass(updateDto.getSuitableClass());
+        if(updateDto.getBilingual() != null) staff.setBilingual(updateDto.getBilingual());
+        if(updateDto.getAcademicYearTaught() != null) staff.setAcademicYearTaught(updateDto.getAcademicYearTaught());
+        if(updateDto.getWorkHistory() != null) staff.setWorkHistory(updateDto.getWorkHistory());
+
         // Update basic fields if provided
         if (updateDto.getUsername() != null) staff.setUsername(updateDto.getUsername());
         if (updateDto.getEmail() != null) staff.setEmail(updateDto.getEmail());
@@ -384,7 +418,6 @@ public class StaffServiceImpl implements StaffService {
         if (updateDto.getRankAndClass() != null) staff.setRankAndClass(updateDto.getRankAndClass());
 
         // Update work history and family information
-        if (updateDto.getWorkHistory() != null) staff.setWorkHistory(updateDto.getWorkHistory());
         if (updateDto.getMaritalStatus() != null) staff.setMaritalStatus(updateDto.getMaritalStatus());
         if (updateDto.getMustBe() != null) staff.setMustBe(updateDto.getMustBe());
         if (updateDto.getAffiliatedProfession() != null) staff.setAffiliatedProfession(updateDto.getAffiliatedProfession());

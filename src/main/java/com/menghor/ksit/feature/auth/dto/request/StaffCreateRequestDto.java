@@ -65,10 +65,25 @@ public class StaffCreateRequestDto {
     private String decreeFinal;
     private String rankAndClass;
     private Long departmentId;
-    
-    // Work History
+
+    private String taughtEnglish;
+    private String threeLevelClass;
+    private String referenceNote;
+    private String technicalTeamLeader;
+    private String assistInTeaching;
+    private String serialNumber;
+    private String twoLevelClass;
+    private String classResponsibility;
+    private LocalDate lastSalaryIncrementDate;
+    private String teachAcrossSchools;
+    private String overtimeHours;
+    private LocalDate issuedDate;
+    private String suitableClass;
+    private String bilingual;
+    private String academicYearTaught;
     private String workHistory;
-    
+
+
     // Family Information
     private String maritalStatus;
     private String mustBe;
