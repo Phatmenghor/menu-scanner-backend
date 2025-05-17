@@ -1,4 +1,4 @@
-package com.menghor.ksit.controllers;
+package com.menghor.ksit.feature.setting.controller;
 
 import com.menghor.ksit.enumations.*;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
