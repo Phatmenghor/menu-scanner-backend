@@ -55,7 +55,7 @@ public class AttendanceSessionController {
     @PostMapping("/generate")
     public ResponseEntity<AttendanceSessionDto> generateSession(@RequestBody AttendanceSessionRequest request) {
         UserEntity currentUser = securityUtils.getCurrentUser();
-        return ResponseEntity.ok(sessionService.generateAttendanceSession(request, currentUser.getId()));
+        return ResponseEntity.ok(sessionService.generateAttendanceSession(request, 4L));
     }
     
     @PostMapping("/qr/{sessionId}")
