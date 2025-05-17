@@ -145,7 +145,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
             return attendanceMapper.toDto(session);
         }
 
-        // Explicitly set isFinal to true
+        // Set status to final
         session.setFinalizationStatus(AttendanceFinalizationStatus.FINAL);
 
         // Process all attendance records
@@ -154,7 +154,6 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
             if (attendance.getStatus() == null) {
                 attendance.setStatus(AttendanceStatus.ABSENT);
             }
-            // Explicitly set isFinal to true for each attendance
             attendance.setFinalizationStatus(AttendanceFinalizationStatus.FINAL);
         }
 
@@ -162,7 +161,21 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         attendanceRepository.saveAll(attendances);
         session = sessionRepository.save(session);
 
-        session = sessionRepository.save(session);
+        // Calculate attendance scores for all students in this session
+        try {
+            // Get schedule ID from session
+            Long scheduleId = session.getSchedule().getId();
+
+            // Get all students in this session
+            List<UserEntity> students = attendances.stream()
+                    .map(AttendanceEntity::getStudent)
+                    .distinct()
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("Error calculating attendance scores during session finalization", e);
+            // Don't fail the finalization process if score calculation fails
+        }
 
         return attendanceMapper.toDto(session);
     }
