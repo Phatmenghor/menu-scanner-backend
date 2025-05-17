@@ -19,9 +19,7 @@ import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.mapper.StaffMapper;
 import com.menghor.ksit.feature.auth.mapper.StudentMapper;
 import com.menghor.ksit.feature.auth.models.*;
-import com.menghor.ksit.feature.auth.repository.RoleRepository;
-import com.menghor.ksit.feature.auth.repository.UserRepository;
-import com.menghor.ksit.feature.auth.repository.UserSpecification;
+import com.menghor.ksit.feature.auth.repository.*;
 import com.menghor.ksit.feature.auth.service.StudentService;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.master.repository.ClassRepository;
@@ -38,6 +36,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -53,6 +52,11 @@ public class StudentServiceImpl implements StudentService {
     private final StudentMapper studentMapper;
     private final StaffMapper staffMapper;
     private final StudentIdentifierGenerator identifierGenerator;
+
+    // Child entity repositories
+    private final StudentStudiesHistoryRepository studentStudiesHistoryRepository;
+    private final StudentParentRepository studentParentRepository;
+    private final StudentSiblingRepository studentSiblingRepository;
 
     @Override
     @Transactional
@@ -80,12 +84,6 @@ public class StudentServiceImpl implements StudentService {
         if (userRepository.existsByIdentifyNumber(identifyNumber)) {
             log.warn("Attempt to register with duplicate identifyNumber: {}", identifyNumber);
             throw new DuplicateNameException("Student ID number '" + identifyNumber + "' is already in use. Please contact an administrator.");
-        }
-
-        // Check if username already exists
-        if (userRepository.existsByUsername(username)) {
-            log.warn("Attempt to register with duplicate username: {}", username);
-            throw new DuplicateNameException("Username is already in use");
         }
 
         UserEntity student = new UserEntity();
@@ -124,9 +122,16 @@ public class StudentServiceImpl implements StudentService {
                 .orElseThrow(() -> new BadRequestException("Student role not found"));
         student.setRoles(Collections.singletonList(studentRole));
 
+        // Initialize collections
+        student.setStudentStudiesHistory(new ArrayList<>());
+        student.setStudentParent(new ArrayList<>());
+        student.setStudentSibling(new ArrayList<>());
+
+        // Save the student first to get the ID
+        UserEntity savedStudent = userRepository.save(student);
+
         // Handle student studies history
         if (requestDto.getStudentStudiesHistories() != null && !requestDto.getStudentStudiesHistories().isEmpty()) {
-            List<StudentStudiesHistoryEntity> historyEntities = new ArrayList<>();
             for (StudentStudiesHistoryDto dto : requestDto.getStudentStudiesHistories()) {
                 StudentStudiesHistoryEntity entity = new StudentStudiesHistoryEntity();
                 entity.setTypeStudies(dto.getTypeStudies());
@@ -136,15 +141,13 @@ public class StudentServiceImpl implements StudentService {
                 entity.setEndYear(dto.getEndYear());
                 entity.setObtainedCertificate(dto.getObtainedCertificate());
                 entity.setOverallGrade(dto.getOverallGrade());
-                entity.setUser(student);
-                historyEntities.add(entity);
+                entity.setUser(savedStudent);
+                studentStudiesHistoryRepository.save(entity);
             }
-            student.setStudentStudiesHistory(historyEntities);
         }
 
         // Handle student parent information
         if (requestDto.getStudentParents() != null && !requestDto.getStudentParents().isEmpty()) {
-            List<StudentParentEntity> parentEntities = new ArrayList<>();
             for (StudentParentDto dto : requestDto.getStudentParents()) {
                 StudentParentEntity entity = new StudentParentEntity();
                 entity.setName(dto.getName());
@@ -153,32 +156,31 @@ public class StudentServiceImpl implements StudentService {
                 entity.setAddress(dto.getAddress());
                 entity.setAge(dto.getAge());
                 entity.setParentType(dto.getParentType());
-                entity.setUser(student);
-                parentEntities.add(entity);
+                entity.setUser(savedStudent);
+                studentParentRepository.save(entity);
             }
-            student.setStudentParent(parentEntities);
         }
 
         // Handle student siblings
         if (requestDto.getStudentSiblings() != null && !requestDto.getStudentSiblings().isEmpty()) {
-            List<StudentSiblingEntity> siblingEntities = new ArrayList<>();
             for (StudentSiblingDto dto : requestDto.getStudentSiblings()) {
                 StudentSiblingEntity entity = new StudentSiblingEntity();
                 entity.setName(dto.getName());
                 entity.setGender(dto.getGender());
                 entity.setDateOfBirth(dto.getDateOfBirth());
                 entity.setOccupation(dto.getOccupation());
-                entity.setUser(student);
-                siblingEntities.add(entity);
+                entity.setPhoneNumber(dto.getPhoneNumber());
+                entity.setUser(savedStudent);
+                studentSiblingRepository.save(entity);
             }
-            student.setStudentSibling(siblingEntities);
         }
 
-        UserEntity savedStudent = userRepository.save(student);
+        // Fetch the student with all relationships
+        UserEntity refreshedStudent = userRepository.findById(savedStudent.getId()).orElseThrow();
         log.info("Student registered successfully with ID: {}, username: {}, identifyNumber: {}",
-                savedStudent.getId(), savedStudent.getUsername(), savedStudent.getIdentifyNumber());
+                refreshedStudent.getId(), refreshedStudent.getUsername(), refreshedStudent.getIdentifyNumber());
 
-        return studentMapper.toStudentUserDto(savedStudent);
+        return studentMapper.toStudentUserDto(refreshedStudent);
     }
 
     @Override
@@ -232,7 +234,7 @@ public class StudentServiceImpl implements StudentService {
                                 (i + 1), savedStudent.getId(), savedStudent.getUsername(),
                                 savedStudent.getIdentifyNumber());
 
-                        return studentMapper.toStudentBatchDto(savedStudent,plainTextPassword);
+                        return studentMapper.toStudentBatchDto(savedStudent, plainTextPassword);
                     } catch (Exception e) {
                         log.error("Error creating batch student #{}: {}", (i + 1), e.getMessage());
                         throw new BadRequestException("Error creating batch student #" + (i + 1) + ": " + e.getMessage());
@@ -317,7 +319,7 @@ public class StudentServiceImpl implements StudentService {
             }
         }
 
-        // Update personal info
+        // Update personal info - only update fields that are provided
         if (updateDto.getEmail() != null) student.setEmail(updateDto.getEmail());
         if (updateDto.getKhmerFirstName() != null) student.setKhmerFirstName(updateDto.getKhmerFirstName());
         if (updateDto.getKhmerLastName() != null) student.setKhmerLastName(updateDto.getKhmerLastName());
@@ -347,90 +349,98 @@ public class StudentServiceImpl implements StudentService {
             student.setStatus(updateDto.getStatus());
         }
 
-        // Handle student studies history
-        if (updateDto.getStudentStudiesHistories() != null) {
-            student.getStudentStudiesHistory().clear();
+        // Save the main entity first
+        UserEntity savedStudent = userRepository.save(student);
 
+        // Handle student studies history without clearing collection
+        if (updateDto.getStudentStudiesHistories() != null) {
             for (StudentStudiesHistoryDto dto : updateDto.getStudentStudiesHistories()) {
                 StudentStudiesHistoryEntity entity;
 
                 if (dto.getId() != null) {
-                    entity = student.getStudentStudiesHistory().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new StudentStudiesHistoryEntity());
+                    Optional<StudentStudiesHistoryEntity> existingEntity = studentStudiesHistoryRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new StudentStudiesHistoryEntity();
+                    }
                 } else {
                     entity = new StudentStudiesHistoryEntity();
                 }
 
-                entity.setTypeStudies(dto.getTypeStudies());
-                entity.setSchoolName(dto.getSchoolName());
-                entity.setLocation(dto.getLocation());
-                entity.setFromYear(dto.getFromYear());
-                entity.setEndYear(dto.getEndYear());
-                entity.setObtainedCertificate(dto.getObtainedCertificate());
-                entity.setOverallGrade(dto.getOverallGrade());
-                entity.setUser(student);
+                // Only update fields that are provided (non-null)
+                if (dto.getTypeStudies() != null) entity.setTypeStudies(dto.getTypeStudies());
+                if (dto.getSchoolName() != null) entity.setSchoolName(dto.getSchoolName());
+                if (dto.getLocation() != null) entity.setLocation(dto.getLocation());
+                if (dto.getFromYear() != null) entity.setFromYear(dto.getFromYear());
+                if (dto.getEndYear() != null) entity.setEndYear(dto.getEndYear());
+                if (dto.getObtainedCertificate() != null) entity.setObtainedCertificate(dto.getObtainedCertificate());
+                if (dto.getOverallGrade() != null) entity.setOverallGrade(dto.getOverallGrade());
 
-                student.getStudentStudiesHistory().add(entity);
+                entity.setUser(savedStudent);
+                studentStudiesHistoryRepository.save(entity);
             }
         }
 
-        // Handle student parent information
+        // Handle student parent information without clearing collection
         if (updateDto.getStudentParents() != null) {
-            student.getStudentParent().clear();
-
             for (StudentParentDto dto : updateDto.getStudentParents()) {
                 StudentParentEntity entity;
 
                 if (dto.getId() != null) {
-                    entity = student.getStudentParent().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new StudentParentEntity());
+                    Optional<StudentParentEntity> existingEntity = studentParentRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new StudentParentEntity();
+                    }
                 } else {
                     entity = new StudentParentEntity();
                 }
 
-                entity.setName(dto.getName());
-                entity.setPhone(dto.getPhone());
-                entity.setJob(dto.getJob());
-                entity.setAddress(dto.getAddress());
-                entity.setAge(dto.getAge());
-                entity.setParentType(dto.getParentType());
-                entity.setUser(student);
+                // Only update fields that are provided (non-null)
+                if (dto.getName() != null) entity.setName(dto.getName());
+                if (dto.getPhone() != null) entity.setPhone(dto.getPhone());
+                if (dto.getJob() != null) entity.setJob(dto.getJob());
+                if (dto.getAddress() != null) entity.setAddress(dto.getAddress());
+                if (dto.getAge() != null) entity.setAge(dto.getAge());
+                if (dto.getParentType() != null) entity.setParentType(dto.getParentType());
 
-                student.getStudentParent().add(entity);
+                entity.setUser(savedStudent);
+                studentParentRepository.save(entity);
             }
         }
 
-        // Handle student siblings
+        // Handle student siblings without clearing collection
         if (updateDto.getStudentSiblings() != null) {
-            student.getStudentSibling().clear();
-
             for (StudentSiblingDto dto : updateDto.getStudentSiblings()) {
                 StudentSiblingEntity entity;
 
                 if (dto.getId() != null) {
-                    entity = student.getStudentSibling().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new StudentSiblingEntity());
+                    Optional<StudentSiblingEntity> existingEntity = studentSiblingRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new StudentSiblingEntity();
+                    }
                 } else {
                     entity = new StudentSiblingEntity();
                 }
 
-                entity.setName(dto.getName());
-                entity.setGender(dto.getGender());
-                entity.setDateOfBirth(dto.getDateOfBirth());
-                entity.setOccupation(dto.getOccupation());
-                entity.setUser(student);
+                // Only update fields that are provided (non-null)
+                if (dto.getName() != null) entity.setName(dto.getName());
+                if (dto.getGender() != null) entity.setGender(dto.getGender());
+                if (dto.getDateOfBirth() != null) entity.setDateOfBirth(dto.getDateOfBirth());
+                if (dto.getOccupation() != null) entity.setOccupation(dto.getOccupation());
+                if (dto.getPhoneNumber() != null) entity.setPhoneNumber(dto.getPhoneNumber());
 
-                student.getStudentSibling().add(entity);
+                entity.setUser(savedStudent);
+                studentSiblingRepository.save(entity);
             }
         }
 
-        UserEntity updatedStudent = userRepository.save(student);
+        // Fetch the student with all updated relationships
+        UserEntity updatedStudent = userRepository.findById(savedStudent.getId()).orElseThrow();
         log.info("Student user with ID {} updated successfully", id);
 
         return studentMapper.toStudentUserDto(updatedStudent);

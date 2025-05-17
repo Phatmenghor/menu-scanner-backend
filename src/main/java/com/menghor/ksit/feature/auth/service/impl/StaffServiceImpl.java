@@ -14,9 +14,7 @@ import com.menghor.ksit.feature.auth.dto.resposne.StaffUserListResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 import com.menghor.ksit.feature.auth.mapper.StaffMapper;
 import com.menghor.ksit.feature.auth.models.*;
-import com.menghor.ksit.feature.auth.repository.RoleRepository;
-import com.menghor.ksit.feature.auth.repository.UserRepository;
-import com.menghor.ksit.feature.auth.repository.UserSpecification;
+import com.menghor.ksit.feature.auth.repository.*;
 import com.menghor.ksit.feature.auth.service.StaffService;
 import com.menghor.ksit.feature.master.model.DepartmentEntity;
 import com.menghor.ksit.feature.master.repository.DepartmentRepository;
@@ -33,6 +31,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -45,11 +44,21 @@ public class StaffServiceImpl implements StaffService {
     private final PasswordEncoder passwordEncoder;
     private final StaffMapper staffMapper;
 
+    // Required repositories for handling child entities
+    private final TeachersProfessionalRankRepository teachersProfessionalRankRepository;
+    private final TeacherExperienceRepository teacherExperienceRepository;
+    private final TeacherPraiseOrCriticismRepository teacherPraiseOrCriticismRepository;
+    private final TeacherEducationRepository teacherEducationRepository;
+    private final TeacherVocationalRepository teacherVocationalRepository;
+    private final TeacherShortCourseRepository teacherShortCourseRepository;
+    private final TeacherLanguageRepository teacherLanguageRepository;
+    private final TeacherFamilyRepository teacherFamilyRepository;
+
     @Override
     @Transactional
     public StaffUserResponseDto registerStaff(StaffCreateRequestDto requestDto) {
         log.info("Registering new staff user with email: {}", requestDto.getEmail());
-        
+
         // Check if username already exists
         if (userRepository.existsByUsername(requestDto.getEmail())) {
             log.warn("Attempt to register with duplicate email: {}", requestDto.getEmail());
@@ -120,7 +129,7 @@ public class StaffServiceImpl implements StaffService {
         staff.setCurrentPosition(requestDto.getCurrentPosition());
         staff.setDecreeFinal(requestDto.getDecreeFinal());
         staff.setRankAndClass(requestDto.getRankAndClass());
-        
+
         // Set work history and family information
         staff.setMaritalStatus(requestDto.getMaritalStatus());
         staff.setMustBe(requestDto.getMustBe());
@@ -151,68 +160,73 @@ public class StaffServiceImpl implements StaffService {
             roles.add(defaultRole);
         }
         staff.setRoles(roles);
-        
+
+        // For creation, initialize collections
+        staff.setTeachersProfessionalRank(new ArrayList<>());
+        staff.setTeacherExperience(new ArrayList<>());
+        staff.setTeacherPraiseOrCriticism(new ArrayList<>());
+        staff.setTeacherEducation(new ArrayList<>());
+        staff.setTeacherVocational(new ArrayList<>());
+        staff.setTeacherShortCourse(new ArrayList<>());
+        staff.setTeacherLanguage(new ArrayList<>());
+        staff.setTeacherFamily(new ArrayList<>());
+
+        // Save the user first to get the ID
+        UserEntity savedStaff = userRepository.save(staff);
+
         // Handle related entity lists
         if (requestDto.getTeachersProfessionalRanks() != null && !requestDto.getTeachersProfessionalRanks().isEmpty()) {
-            List<TeachersProfessionalRankEntity> rankEntities = new ArrayList<>();
             for (TeachersProfessionalRankDto dto : requestDto.getTeachersProfessionalRanks()) {
                 TeachersProfessionalRankEntity entity = new TeachersProfessionalRankEntity();
                 entity.setTypeOfProfessionalRank(dto.getTypeOfProfessionalRank());
                 entity.setDescription(dto.getDescription());
                 entity.setAnnouncementNumber(dto.getAnnouncementNumber());
                 entity.setDateAccepted(dto.getDateAccepted());
-                entity.setUser(staff);
-                rankEntities.add(entity);
+                entity.setUser(savedStaff);
+                teachersProfessionalRankRepository.save(entity);
             }
-            staff.setTeachersProfessionalRank(rankEntities);
         }
-        
+
         // Handle teacher experience entries
         if (requestDto.getTeacherExperiences() != null && !requestDto.getTeacherExperiences().isEmpty()) {
-            List<TeacherExperienceEntity> experienceEntities = new ArrayList<>();
             for (TeacherExperienceDto dto : requestDto.getTeacherExperiences()) {
                 TeacherExperienceEntity entity = new TeacherExperienceEntity();
                 entity.setContinuousEmployment(dto.getContinuousEmployment());
                 entity.setWorkPlace(dto.getWorkPlace());
                 entity.setStartDate(dto.getStartDate());
                 entity.setEndDate(dto.getEndDate());
-                entity.setUser(staff);
-                experienceEntities.add(entity);
+                entity.setUser(savedStaff);
+                teacherExperienceRepository.save(entity);
             }
-            staff.setTeacherExperience(experienceEntities);
         }
-        
+
         // Handle praise/criticism entries
         if (requestDto.getTeacherPraiseOrCriticisms() != null && !requestDto.getTeacherPraiseOrCriticisms().isEmpty()) {
-            List<TeacherPraiseOrCriticismEntity> praiseEntities = new ArrayList<>();
             for (TeacherPraiseOrCriticismDto dto : requestDto.getTeacherPraiseOrCriticisms()) {
                 TeacherPraiseOrCriticismEntity entity = new TeacherPraiseOrCriticismEntity();
                 entity.setTypePraiseOrCriticism(dto.getTypePraiseOrCriticism());
                 entity.setGiveBy(dto.getGiveBy());
                 entity.setDateAccepted(dto.getDateAccepted());
-                entity.setUser(staff);
-                praiseEntities.add(entity);
+                entity.setUser(savedStaff);
+                teacherPraiseOrCriticismRepository.save(entity);
             }
-            staff.setTeacherPraiseOrCriticism(praiseEntities);
         }
-        
+
         // Handle education entries
         if (requestDto.getTeacherEducations() != null && !requestDto.getTeacherEducations().isEmpty()) {
-            List<TeacherEducationEntity> educationEntities = new ArrayList<>();
             for (TeacherEducationDto dto : requestDto.getTeacherEducations()) {
                 TeacherEducationEntity entity = new TeacherEducationEntity();
                 entity.setCulturalLevel(dto.getCulturalLevel());
                 entity.setSkillName(dto.getSkillName());
                 entity.setDateAccepted(dto.getDateAccepted());
-                entity.setUser(staff);
-                educationEntities.add(entity);
+                entity.setCountry(dto.getCountry());
+                entity.setUser(savedStaff);
+                teacherEducationRepository.save(entity);
             }
-            staff.setTeacherEducation(educationEntities);
         }
-        
+
         // Handle vocational entries
         if (requestDto.getTeacherVocationals() != null && !requestDto.getTeacherVocationals().isEmpty()) {
-            List<TeacherVocationalEntity> vocationalEntities = new ArrayList<>();
             for (TeacherVocationalDto dto : requestDto.getTeacherVocationals()) {
                 TeacherVocationalEntity entity = new TeacherVocationalEntity();
                 entity.setCulturalLevel(dto.getCulturalLevel());
@@ -220,15 +234,13 @@ public class StaffServiceImpl implements StaffService {
                 entity.setSkillTwo(dto.getSkillTwo());
                 entity.setTrainingSystem(dto.getTrainingSystem());
                 entity.setDateAccepted(dto.getDateAccepted());
-                entity.setUser(staff);
-                vocationalEntities.add(entity);
+                entity.setUser(savedStaff);
+                teacherVocationalRepository.save(entity);
             }
-            staff.setTeacherVocational(vocationalEntities);
         }
-        
+
         // Handle short course entries
         if (requestDto.getTeacherShortCourses() != null && !requestDto.getTeacherShortCourses().isEmpty()) {
-            List<TeacherShortCourseEntity> courseEntities = new ArrayList<>();
             for (TeacherShortCourseDto dto : requestDto.getTeacherShortCourses()) {
                 TeacherShortCourseEntity entity = new TeacherShortCourseEntity();
                 entity.setSkill(dto.getSkill());
@@ -238,46 +250,42 @@ public class StaffServiceImpl implements StaffService {
                 entity.setDuration(dto.getDuration());
                 entity.setPreparedBy(dto.getPreparedBy());
                 entity.setSupportBy(dto.getSupportBy());
-                entity.setUser(staff);
-                courseEntities.add(entity);
+                entity.setUser(savedStaff);
+                teacherShortCourseRepository.save(entity);
             }
-            staff.setTeacherShortCourse(courseEntities);
         }
-        
+
         // Handle language entries
         if (requestDto.getTeacherLanguages() != null && !requestDto.getTeacherLanguages().isEmpty()) {
-            List<TeacherLanguageEntity> languageEntities = new ArrayList<>();
             for (TeacherLanguageDto dto : requestDto.getTeacherLanguages()) {
                 TeacherLanguageEntity entity = new TeacherLanguageEntity();
                 entity.setLanguage(dto.getLanguage());
                 entity.setReading(dto.getReading());
                 entity.setWriting(dto.getWriting());
                 entity.setSpeaking(dto.getSpeaking());
-                entity.setUser(staff);
-                languageEntities.add(entity);
+                entity.setUser(savedStaff);
+                teacherLanguageRepository.save(entity);
             }
-            staff.setTeacherLanguage(languageEntities);
         }
-        
+
         // Handle family entries
         if (requestDto.getTeacherFamilies() != null && !requestDto.getTeacherFamilies().isEmpty()) {
-            List<TeacherFamilyEntity> familyEntities = new ArrayList<>();
             for (TeacherFamilyDto dto : requestDto.getTeacherFamilies()) {
                 TeacherFamilyEntity entity = new TeacherFamilyEntity();
                 entity.setNameChild(dto.getNameChild());
                 entity.setGender(dto.getGender());
                 entity.setDateOfBirth(dto.getDateOfBirth());
                 entity.setWorking(dto.getWorking());
-                entity.setUser(staff);
-                familyEntities.add(entity);
+                entity.setUser(savedStaff);
+                teacherFamilyRepository.save(entity);
             }
-            staff.setTeacherFamily(familyEntities);
         }
 
-        UserEntity savedStaff = userRepository.save(staff);
-        log.info("Staff user registered successfully with ID: {}", savedStaff.getId());
+        // Fetch the complete user with all relationships
+        UserEntity refreshedStaff = userRepository.findById(savedStaff.getId()).orElseThrow();
+        log.info("Staff user registered successfully with ID: {}", refreshedStaff.getId());
 
-        return staffMapper.toStaffUserDto(savedStaff);
+        return staffMapper.toStaffUserDto(refreshedStaff);
     }
 
     @Override
@@ -425,14 +433,14 @@ public class StaffServiceImpl implements StaffService {
         if (updateDto.getAffiliatedOrganization() != null) staff.setAffiliatedOrganization(updateDto.getAffiliatedOrganization());
         if (updateDto.getFederationEstablishmentDate() != null) staff.setFederationEstablishmentDate(updateDto.getFederationEstablishmentDate());
         if (updateDto.getWivesSalary() != null) staff.setWivesSalary(updateDto.getWivesSalary());
-        
+
         // Update department if provided
         if (updateDto.getDepartmentId() != null) {
             DepartmentEntity department = departmentRepository.findById(updateDto.getDepartmentId())
                     .orElseThrow(() -> new BadRequestException("Department not found with ID: " + updateDto.getDepartmentId()));
             staff.setDepartment(department);
         }
-        
+
         // Update roles if provided
         if (updateDto.getRoles() != null && !updateDto.getRoles().isEmpty()) {
             List<Role> roles = new ArrayList<>();
@@ -443,230 +451,240 @@ public class StaffServiceImpl implements StaffService {
             }
             staff.setRoles(roles);
         }
-        
+
         // Update status if provided
         if (updateDto.getStatus() != null) {
             staff.setStatus(updateDto.getStatus());
         }
-        
+
         // Handle related entity lists - Each list needs to handle updates, additions, and removals
-        
+
+        // Save the main entity first to ensure it exists
+        UserEntity savedStaff = userRepository.save(staff);
+
         // TeachersProfessionalRank management
         if (updateDto.getTeachersProfessionalRanks() != null) {
-            // Clear existing records and add new ones
-            staff.getTeachersProfessionalRank().clear();
-            
             for (TeachersProfessionalRankDto dto : updateDto.getTeachersProfessionalRanks()) {
                 TeachersProfessionalRankEntity entity;
-                
+
                 // If ID exists, try to find existing entity
                 if (dto.getId() != null) {
-                    // Look for the entity in the existing set
-                    entity = staff.getTeachersProfessionalRank().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new TeachersProfessionalRankEntity());
+                    // Find entity by ID
+                    Optional<TeachersProfessionalRankEntity> existingEntity = teachersProfessionalRankRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new TeachersProfessionalRankEntity();
+                    }
                 } else {
                     entity = new TeachersProfessionalRankEntity();
                 }
-                
-                // Update entity fields
-                entity.setTypeOfProfessionalRank(dto.getTypeOfProfessionalRank());
-                entity.setDescription(dto.getDescription());
-                entity.setAnnouncementNumber(dto.getAnnouncementNumber());
-                entity.setDateAccepted(dto.getDateAccepted());
-                entity.setUser(staff);
-                
-                staff.getTeachersProfessionalRank().add(entity);
-            }
-        }
-        
-        // TeacherExperience management
-        if (updateDto.getTeacherExperiences() != null) {
-            // Clear existing records and add new ones
-            staff.getTeacherExperience().clear();
-            
-            for (TeacherExperienceDto dto : updateDto.getTeacherExperiences()) {
-                TeacherExperienceEntity entity;
-                
-                if (dto.getId() != null) {
-                    entity = staff.getTeacherExperience().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new TeacherExperienceEntity());
-                } else {
-                    entity = new TeacherExperienceEntity();
-                }
-                
-                entity.setContinuousEmployment(dto.getContinuousEmployment());
-                entity.setWorkPlace(dto.getWorkPlace());
-                entity.setStartDate(dto.getStartDate());
-                entity.setEndDate(dto.getEndDate());
-                entity.setUser(staff);
-                
-                staff.getTeacherExperience().add(entity);
-            }
-        }
-        
-        // TeacherPraiseOrCriticism management
-        if (updateDto.getTeacherPraiseOrCriticisms() != null) {
-            staff.getTeacherPraiseOrCriticism().clear();
-            
-            for (TeacherPraiseOrCriticismDto dto : updateDto.getTeacherPraiseOrCriticisms()) {
-                TeacherPraiseOrCriticismEntity entity;
-                
-                if (dto.getId() != null) {
-                    entity = staff.getTeacherPraiseOrCriticism().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new TeacherPraiseOrCriticismEntity());
-                } else {
-                    entity = new TeacherPraiseOrCriticismEntity();
-                }
-                
-                entity.setTypePraiseOrCriticism(dto.getTypePraiseOrCriticism());
-                entity.setGiveBy(dto.getGiveBy());
-                entity.setDateAccepted(dto.getDateAccepted());
-                entity.setUser(staff);
-                
-                staff.getTeacherPraiseOrCriticism().add(entity);
-            }
-        }
-        
-        // TeacherEducation management
-        if (updateDto.getTeacherEducations() != null) {
-            staff.getTeacherEducation().clear();
-            
-            for (TeacherEducationDto dto : updateDto.getTeacherEducations()) {
-                TeacherEducationEntity entity;
-                
-                if (dto.getId() != null) {
-                    entity = staff.getTeacherEducation().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new TeacherEducationEntity());
-                } else {
-                    entity = new TeacherEducationEntity();
-                }
-                
-                entity.setCulturalLevel(dto.getCulturalLevel());
-                entity.setSkillName(dto.getSkillName());
-                entity.setDateAccepted(dto.getDateAccepted());
-                entity.setUser(staff);
-                
-                staff.getTeacherEducation().add(entity);
-            }
-        }
-        
-        // TeacherVocational management
-        if (updateDto.getTeacherVocationals() != null) {
-            staff.getTeacherVocational().clear();
-            
-            for (TeacherVocationalDto dto : updateDto.getTeacherVocationals()) {
-                TeacherVocationalEntity entity;
-                
-                if (dto.getId() != null) {
-                    entity = staff.getTeacherVocational().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new TeacherVocationalEntity());
-                } else {
-                    entity = new TeacherVocationalEntity();
-                }
-                
-                entity.setCulturalLevel(dto.getCulturalLevel());
-                entity.setSkillOne(dto.getSkillOne());
-                entity.setSkillTwo(dto.getSkillTwo());
-                entity.setTrainingSystem(dto.getTrainingSystem());
-                entity.setDateAccepted(dto.getDateAccepted());
-                entity.setUser(staff);
-                
-                staff.getTeacherVocational().add(entity);
-            }
-        }
-        
-        // TeacherShortCourse management
-        if (updateDto.getTeacherShortCourses() != null) {
-            staff.getTeacherShortCourse().clear();
-            
-            for (TeacherShortCourseDto dto : updateDto.getTeacherShortCourses()) {
-                TeacherShortCourseEntity entity;
-                
-                if (dto.getId() != null) {
-                    entity = staff.getTeacherShortCourse().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new TeacherShortCourseEntity());
-                } else {
-                    entity = new TeacherShortCourseEntity();
-                }
-                
-                entity.setSkill(dto.getSkill());
-                entity.setSkillName(dto.getSkillName());
-                entity.setStartDate(dto.getStartDate());
-                entity.setEndDate(dto.getEndDate());
-                entity.setDuration(dto.getDuration());
-                entity.setPreparedBy(dto.getPreparedBy());
-                entity.setSupportBy(dto.getSupportBy());
-                entity.setUser(staff);
-                
-                staff.getTeacherShortCourse().add(entity);
-            }
-        }
-        
-        // TeacherLanguage management
-        if (updateDto.getTeacherLanguages() != null) {
-            staff.getTeacherLanguage().clear();
-            
-            for (TeacherLanguageDto dto : updateDto.getTeacherLanguages()) {
-                TeacherLanguageEntity entity;
-                
-                if (dto.getId() != null) {
-                    entity = staff.getTeacherLanguage().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new TeacherLanguageEntity());
-                } else {
-                    entity = new TeacherLanguageEntity();
-                }
-                
-                entity.setLanguage(dto.getLanguage());
-                entity.setReading(dto.getReading());
-                entity.setWriting(dto.getWriting());
-                entity.setSpeaking(dto.getSpeaking());
-                entity.setUser(staff);
-                
-                staff.getTeacherLanguage().add(entity);
-            }
-        }
-        
-        // TeacherFamily management
-        if (updateDto.getTeacherFamilies() != null) {
-            staff.getTeacherFamily().clear();
-            
-            for (TeacherFamilyDto dto : updateDto.getTeacherFamilies()) {
-                TeacherFamilyEntity entity;
-                
-                if (dto.getId() != null) {
-                    entity = staff.getTeacherFamily().stream()
-                            .filter(e -> e.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(new TeacherFamilyEntity());
-                } else {
-                    entity = new TeacherFamilyEntity();
-                }
-                
-                entity.setNameChild(dto.getNameChild());
-                entity.setGender(dto.getGender());
-                entity.setDateOfBirth(dto.getDateOfBirth());
-                entity.setWorking(dto.getWorking());
-                entity.setUser(staff);
-                
-                staff.getTeacherFamily().add(entity);
+
+                // Update entity fields with null checks
+                if (dto.getTypeOfProfessionalRank() != null) entity.setTypeOfProfessionalRank(dto.getTypeOfProfessionalRank());
+                if (dto.getDescription() != null) entity.setDescription(dto.getDescription());
+                if (dto.getAnnouncementNumber() != null) entity.setAnnouncementNumber(dto.getAnnouncementNumber());
+                if (dto.getDateAccepted() != null) entity.setDateAccepted(dto.getDateAccepted());
+                entity.setUser(savedStaff); // Always set the parent reference
+
+                teachersProfessionalRankRepository.save(entity);
             }
         }
 
-        UserEntity updatedStaff = userRepository.save(staff);
+        // TeacherExperience management
+        if (updateDto.getTeacherExperiences() != null) {
+            for (TeacherExperienceDto dto : updateDto.getTeacherExperiences()) {
+                TeacherExperienceEntity entity;
+
+                if (dto.getId() != null) {
+                    Optional<TeacherExperienceEntity> existingEntity = teacherExperienceRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new TeacherExperienceEntity();
+                    }
+                } else {
+                    entity = new TeacherExperienceEntity();
+                }
+
+                // Update with null checks
+                if (dto.getContinuousEmployment() != null) entity.setContinuousEmployment(dto.getContinuousEmployment());
+                if (dto.getWorkPlace() != null) entity.setWorkPlace(dto.getWorkPlace());
+                if (dto.getStartDate() != null) entity.setStartDate(dto.getStartDate());
+                if (dto.getEndDate() != null) entity.setEndDate(dto.getEndDate());
+                entity.setUser(savedStaff);
+
+                teacherExperienceRepository.save(entity);
+            }
+        }
+
+        // TeacherPraiseOrCriticism management
+        if (updateDto.getTeacherPraiseOrCriticisms() != null) {
+            for (TeacherPraiseOrCriticismDto dto : updateDto.getTeacherPraiseOrCriticisms()) {
+                TeacherPraiseOrCriticismEntity entity;
+
+                if (dto.getId() != null) {
+                    Optional<TeacherPraiseOrCriticismEntity> existingEntity = teacherPraiseOrCriticismRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new TeacherPraiseOrCriticismEntity();
+                    }
+                } else {
+                    entity = new TeacherPraiseOrCriticismEntity();
+                }
+
+                // Update with null checks
+                if (dto.getTypePraiseOrCriticism() != null) entity.setTypePraiseOrCriticism(dto.getTypePraiseOrCriticism());
+                if (dto.getGiveBy() != null) entity.setGiveBy(dto.getGiveBy());
+                if (dto.getDateAccepted() != null) entity.setDateAccepted(dto.getDateAccepted());
+                entity.setUser(savedStaff);
+
+                teacherPraiseOrCriticismRepository.save(entity);
+            }
+        }
+
+        // TeacherEducation management
+        if (updateDto.getTeacherEducations() != null) {
+            for (TeacherEducationDto dto : updateDto.getTeacherEducations()) {
+                TeacherEducationEntity entity;
+
+                if (dto.getId() != null) {
+                    Optional<TeacherEducationEntity> existingEntity = teacherEducationRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new TeacherEducationEntity();
+                    }
+                } else {
+                    entity = new TeacherEducationEntity();
+                }
+
+                // Update with null checks
+                if (dto.getCulturalLevel() != null) entity.setCulturalLevel(dto.getCulturalLevel());
+                if (dto.getSkillName() != null) entity.setSkillName(dto.getSkillName());
+                if (dto.getDateAccepted() != null) entity.setDateAccepted(dto.getDateAccepted());
+                if (dto.getCountry() != null) entity.setCountry(dto.getCountry());
+                entity.setUser(savedStaff);
+
+                teacherEducationRepository.save(entity);
+            }
+        }
+
+        // TeacherVocational management
+        if (updateDto.getTeacherVocationals() != null) {
+            for (TeacherVocationalDto dto : updateDto.getTeacherVocationals()) {
+                TeacherVocationalEntity entity;
+
+                if (dto.getId() != null) {
+                    Optional<TeacherVocationalEntity> existingEntity = teacherVocationalRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new TeacherVocationalEntity();
+                    }
+                } else {
+                    entity = new TeacherVocationalEntity();
+                }
+
+                // Update with null checks
+                if (dto.getCulturalLevel() != null) entity.setCulturalLevel(dto.getCulturalLevel());
+                if (dto.getSkillOne() != null) entity.setSkillOne(dto.getSkillOne());
+                if (dto.getSkillTwo() != null) entity.setSkillTwo(dto.getSkillTwo());
+                if (dto.getTrainingSystem() != null) entity.setTrainingSystem(dto.getTrainingSystem());
+                if (dto.getDateAccepted() != null) entity.setDateAccepted(dto.getDateAccepted());
+                entity.setUser(savedStaff);
+
+                teacherVocationalRepository.save(entity);
+            }
+        }
+
+        // TeacherShortCourse management
+        if (updateDto.getTeacherShortCourses() != null) {
+            for (TeacherShortCourseDto dto : updateDto.getTeacherShortCourses()) {
+                TeacherShortCourseEntity entity;
+
+                if (dto.getId() != null) {
+                    Optional<TeacherShortCourseEntity> existingEntity = teacherShortCourseRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new TeacherShortCourseEntity();
+                    }
+                } else {
+                    entity = new TeacherShortCourseEntity();
+                }
+
+                // Update with null checks
+                if (dto.getSkill() != null) entity.setSkill(dto.getSkill());
+                if (dto.getSkillName() != null) entity.setSkillName(dto.getSkillName());
+                if (dto.getStartDate() != null) entity.setStartDate(dto.getStartDate());
+                if (dto.getEndDate() != null) entity.setEndDate(dto.getEndDate());
+                if (dto.getDuration() != null) entity.setDuration(dto.getDuration());
+                if (dto.getPreparedBy() != null) entity.setPreparedBy(dto.getPreparedBy());
+                if (dto.getSupportBy() != null) entity.setSupportBy(dto.getSupportBy());
+                entity.setUser(savedStaff);
+
+                teacherShortCourseRepository.save(entity);
+            }
+        }
+
+        // TeacherLanguage management
+        if (updateDto.getTeacherLanguages() != null) {
+            for (TeacherLanguageDto dto : updateDto.getTeacherLanguages()) {
+                TeacherLanguageEntity entity;
+
+                if (dto.getId() != null) {
+                    Optional<TeacherLanguageEntity> existingEntity = teacherLanguageRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new TeacherLanguageEntity();
+                    }
+                } else {
+                    entity = new TeacherLanguageEntity();
+                }
+
+                // Update with null checks
+                if (dto.getLanguage() != null) entity.setLanguage(dto.getLanguage());
+                if (dto.getReading() != null) entity.setReading(dto.getReading());
+                if (dto.getWriting() != null) entity.setWriting(dto.getWriting());
+                if (dto.getSpeaking() != null) entity.setSpeaking(dto.getSpeaking());
+                entity.setUser(savedStaff);
+
+                teacherLanguageRepository.save(entity);
+            }
+        }
+
+        // TeacherFamily management
+        if (updateDto.getTeacherFamilies() != null) {
+            for (TeacherFamilyDto dto : updateDto.getTeacherFamilies()) {
+                TeacherFamilyEntity entity;
+
+                if (dto.getId() != null) {
+                    Optional<TeacherFamilyEntity> existingEntity = teacherFamilyRepository.findById(dto.getId());
+                    if (existingEntity.isPresent()) {
+                        entity = existingEntity.get();
+                    } else {
+                        entity = new TeacherFamilyEntity();
+                    }
+                } else {
+                    entity = new TeacherFamilyEntity();
+                }
+
+                // Update with null checks
+                if (dto.getNameChild() != null) entity.setNameChild(dto.getNameChild());
+                if (dto.getGender() != null) entity.setGender(dto.getGender());
+                if (dto.getDateOfBirth() != null) entity.setDateOfBirth(dto.getDateOfBirth());
+                if (dto.getWorking() != null) entity.setWorking(dto.getWorking());
+                entity.setUser(savedStaff);
+
+                teacherFamilyRepository.save(entity);
+            }
+        }
+
+        // Refresh the entity to get all updated relationships
+        UserEntity updatedStaff = userRepository.findById(savedStaff.getId()).orElseThrow();
         log.info("Staff user with ID {} updated successfully", id);
 
         return staffMapper.toStaffUserDto(updatedStaff);

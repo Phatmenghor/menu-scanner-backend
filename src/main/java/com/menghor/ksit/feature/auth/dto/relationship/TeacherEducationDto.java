@@ -16,4 +16,5 @@ public class TeacherEducationDto {
     private String culturalLevel; // កម្រិតវប្បធម៌
     private String skillName; // ឈ្មោះជំនាញ
     private LocalDate dateAccepted; // កាលបរិច្ឆេទទទួល
+    private String country; // ប្រទេស
 }

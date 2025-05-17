@@ -18,4 +18,5 @@ public class StudentSiblingDto {
     private GenderEnum gender; // ភេទ
     private LocalDate dateOfBirth; // ថ្ងៃខែឆ្នាំកំណើត
     private String occupation; // មុខរបរ
+    private String phoneNumber; // លេខទូរស័ព្ទ
 }
