@@ -2,8 +2,6 @@ package com.menghor.ksit.feature.attendance.service.impl;
 
 import com.menghor.ksit.enumations.AttendanceStatus;
 import com.menghor.ksit.feature.attendance.dto.response.AttendanceScoreDto;
-import com.menghor.ksit.feature.attendance.dto.response.CourseAttendanceDto;
-import com.menghor.ksit.feature.attendance.dto.response.StudentAttendanceReportDto;
 import com.menghor.ksit.feature.attendance.models.AttendanceEntity;
 import com.menghor.ksit.feature.attendance.repository.AttendanceRepository;
 import com.menghor.ksit.feature.attendance.repository.AttendanceSessionRepository;
@@ -11,7 +9,6 @@ import com.menghor.ksit.feature.attendance.service.AttendanceScoreService;
 import com.menghor.ksit.feature.attendance.specification.AttendanceSpecification;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
-import com.menghor.ksit.feature.master.model.SemesterEntity;
 import com.menghor.ksit.feature.master.repository.SemesterRepository;
 import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.feature.school.repository.ScheduleRepository;
@@ -36,7 +33,7 @@ public class AttendanceScoreServiceImpl implements AttendanceScoreService {
 
     @Override
     public List<AttendanceScoreDto> calculateForClass(Long classId, Long scheduleId) {
-        return calculateClassScores(classId, scheduleId, null, null);
+        return calculateClassScores(classId, scheduleId);
     }
 
     private AttendanceScoreDto calculateSingleStudentScore(Long studentId, Long scheduleId,
@@ -96,8 +93,7 @@ public class AttendanceScoreServiceImpl implements AttendanceScoreService {
                 .build();
     }
 
-    private List<AttendanceScoreDto> calculateClassScores(Long classId, Long scheduleId,
-                                                          LocalDateTime startDate, LocalDateTime endDate) {
+    private List<AttendanceScoreDto> calculateClassScores(Long classId, Long scheduleId) {
         // Get all students in the class
         List<UserEntity> allUsers = userRepository.findAll();
         List<UserEntity> students = allUsers.stream()
@@ -105,7 +101,7 @@ public class AttendanceScoreServiceImpl implements AttendanceScoreService {
                 .toList();
 
         return students.stream()
-                .map(student -> calculateSingleStudentScore(student.getId(), scheduleId, startDate, endDate))
+                .map(student -> calculateSingleStudentScore(student.getId(), scheduleId, null, null))
                 .collect(Collectors.toList());
     }
 }

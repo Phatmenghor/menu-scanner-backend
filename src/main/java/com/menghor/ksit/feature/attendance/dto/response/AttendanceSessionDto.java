@@ -1,5 +1,7 @@
 package com.menghor.ksit.feature.attendance.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.menghor.ksit.enumations.AttendanceFinalizationStatus;
 import com.menghor.ksit.enumations.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +20,7 @@ public class AttendanceSessionDto {
     private LocalDateTime sessionDate;
     private String qrCode;
     private LocalDateTime qrExpiryTime;
-    private boolean isFinal;
+    private AttendanceFinalizationStatus finalizationStatus;
     private Status status;
     private Long scheduleId;
     private String courseName;
