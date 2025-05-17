@@ -50,14 +50,12 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
     }
 
     @Override
-    public Page<AttendanceSessionDto> findAll(Long teacherId, Long scheduleId, Long classId, Long courseId,
-                                              Boolean isFinal, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+    public Page<AttendanceSessionDto> findAll(Long teacherId, Long scheduleId, Long classId,
+                                              Boolean isFinal, Pageable pageable) {
         Specification<AttendanceSessionEntity> spec = Specification.where(AttendanceSessionSpecification.hasTeacherId(teacherId))
                 .and(AttendanceSessionSpecification.hasScheduleId(scheduleId))
                 .and(AttendanceSessionSpecification.hasClassId(classId))
-                .and(AttendanceSessionSpecification.hasCourseId(courseId))
-                .and(AttendanceSessionSpecification.isFinal(isFinal))
-                .and(AttendanceSessionSpecification.sessionDateBetween(startDate, endDate));
+                .and(AttendanceSessionSpecification.isFinal(isFinal));
 
         return sessionRepository.findAll(spec, pageable)
                 .map(attendanceMapper::toDto);
@@ -128,17 +126,17 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
     public QrResponse generateQrCode(Long sessionId) {
         AttendanceSessionEntity session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new EntityNotFoundException("Attendance session not found with id: " + sessionId));
-        
+
         if (session.isFinal()) {
             throw new IllegalStateException("Cannot generate QR code for finalized session");
         }
-        
+
         // If QR code has expired, generate a new one
         if (LocalDateTime.now().isAfter(session.getQrExpiryTime())) {
             session.generateQrCode();
             sessionRepository.save(session);
         }
-        
+
         return QrResponse.builder()
                 .qrCode(session.getQrCode())
                 .expiryTime(session.getQrExpiryTime().toString())
@@ -151,33 +149,33 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         // Find session by QR code
         AttendanceSessionEntity session = sessionRepository.findByQrCode(request.getQrCode())
                 .orElseThrow(() -> new EntityNotFoundException("Invalid or expired QR code"));
-        
+
         // Check if QR code has expired
         if (LocalDateTime.now().isAfter(session.getQrExpiryTime())) {
             throw new IllegalStateException("QR code has expired");
         }
-        
+
         // Check if session is finalized
         if (session.isFinal()) {
             throw new IllegalStateException("Attendance session is already finalized");
         }
-        
+
         // Find student's attendance record
         AttendanceEntity attendance = attendanceRepository
                 .findByAttendanceSessionIdAndStudentId(session.getId(), request.getStudentId())
                 .orElseThrow(() -> new EntityNotFoundException("Student not found in this attendance session"));
-        
+
         // Mark as present
         attendance.setStatus(AttendanceStatus.PRESENT);
-        
+
         // Check if student is late (more than 10 minutes after session start)
         if (LocalDateTime.now().isAfter(session.getSessionDate().plusMinutes(10))) {
             attendance.setAttendanceType(AttendanceType.LATE);
         }
-        
+
         attendance.setRecordedTime(LocalDateTime.now());
         attendanceRepository.save(attendance);
-        
+
         return attendanceMapper.toDto(session);
     }
 

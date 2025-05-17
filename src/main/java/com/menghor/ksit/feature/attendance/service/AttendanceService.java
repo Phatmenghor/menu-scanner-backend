@@ -13,13 +13,11 @@ public interface AttendanceService {
     AttendanceDto findById(Long id);
     
     Page<AttendanceDto> findAll(Long studentId, Long sessionId, AttendanceStatus status,
-                                LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
+                                 Pageable pageable);
     
     List<AttendanceDto> findBySessionId(Long sessionId);
     
     AttendanceDto updateAttendance(AttendanceUpdateRequest request);
-    
-    Double calculateAttendanceScore(Long studentId, Long scheduleId);
-    
+
     Double calculateAttendanceScore(Long studentId, Long scheduleId, LocalDateTime startDate, LocalDateTime endDate);
 }

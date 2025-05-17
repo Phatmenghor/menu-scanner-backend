@@ -38,11 +38,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public Page<AttendanceDto> findAll(Long studentId, Long sessionId, AttendanceStatus status,
-                                       LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+                                       Pageable pageable) {
         Specification<AttendanceEntity> spec = Specification.where(AttendanceSpecification.hasStudentId(studentId))
                 .and(AttendanceSpecification.hasSessionId(sessionId))
-                .and(AttendanceSpecification.hasStatus(status))
-                .and(AttendanceSpecification.recordedBetween(startDate, endDate));
+                .and(AttendanceSpecification.hasStatus(status));
 
         return attendanceRepository.findAll(spec, pageable)
                 .map(attendanceMapper::toDto);
@@ -75,10 +74,6 @@ public class AttendanceServiceImpl implements AttendanceService {
         return attendanceMapper.toDto(attendanceRepository.save(attendance));
     }
 
-    @Override
-    public Double calculateAttendanceScore(Long studentId, Long scheduleId) {
-        return calculateAttendanceScore(studentId, scheduleId, null, null);
-    }
 
     @Override
     public Double calculateAttendanceScore(Long studentId, Long scheduleId, LocalDateTime startDate, LocalDateTime endDate) {

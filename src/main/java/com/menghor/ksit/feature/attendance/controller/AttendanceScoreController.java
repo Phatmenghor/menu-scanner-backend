@@ -21,49 +21,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AttendanceScoreController {
     private final AttendanceScoreService scoreService;
-    
-    @GetMapping("/student")
-    public ResponseEntity<AttendanceScoreDto> calculateForStudent(
-            @RequestParam Long studentId,
-            @RequestParam Long scheduleId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-        
-        if (startDate != null && endDate != null) {
-            return ResponseEntity.ok(scoreService.calculateForStudent(studentId, scheduleId, startDate, endDate));
-        } else {
-            return ResponseEntity.ok(scoreService.calculateForStudent(studentId, scheduleId));
-        }
-    }
-    
+
     @GetMapping("/class")
     public ResponseEntity<List<AttendanceScoreDto>> calculateForClass(
             @RequestParam Long classId,
-            @RequestParam Long scheduleId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-        
-        if (startDate != null && endDate != null) {
-            return ResponseEntity.ok(scoreService.calculateForClass(classId, scheduleId, startDate, endDate));
-        } else {
-            return ResponseEntity.ok(scoreService.calculateForClass(classId, scheduleId));
-        }
+            @RequestParam Long scheduleId) {
+
+        return ResponseEntity.ok(scoreService.calculateForClass(classId, scheduleId));
+
     }
-    
-    @GetMapping("/course")
-    public ResponseEntity<Page<AttendanceScoreDto>> calculateForCourse(
-            @RequestParam Long courseId,
-            @RequestParam Long semesterId,
-            Pageable pageable) {
-        
-        return ResponseEntity.ok(scoreService.calculateForCourse(courseId, semesterId, pageable));
-    }
-    
-    @GetMapping("/student-report")
-    public ResponseEntity<StudentAttendanceReportDto> getStudentReport(
-            @RequestParam Long studentId,
-            @RequestParam Long semesterId) {
-        
-        return ResponseEntity.ok(scoreService.getStudentAttendanceReport(studentId, semesterId));
-    }
+
 }

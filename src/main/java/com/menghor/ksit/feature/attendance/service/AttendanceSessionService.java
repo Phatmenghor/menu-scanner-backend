@@ -13,15 +13,15 @@ import java.util.List;
 public interface AttendanceSessionService {
     AttendanceSessionDto findById(Long id);
     
-    Page<AttendanceSessionDto> findAll(Long teacherId, Long scheduleId, Long classId, Long courseId,
-                                       Boolean isFinal, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
+    Page<AttendanceSessionDto> findAll(Long teacherId, Long scheduleId, Long classId,
+                                       Boolean isFinal, Pageable pageable);
     
     List<AttendanceSessionDto> findByScheduleId(Long scheduleId);
     
     AttendanceSessionDto generateAttendanceSession(AttendanceSessionRequest request, Long teacherId);
-    
+
     QrResponse generateQrCode(Long sessionId);
-    
+
     AttendanceSessionDto markAttendanceByQr(QrAttendanceRequest request);
     
     AttendanceSessionDto finalizeAttendanceSession(Long sessionId);
