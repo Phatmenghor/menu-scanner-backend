@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.attendance.service.impl;
 
 import com.menghor.ksit.enumations.AttendanceStatus;
+import com.menghor.ksit.feature.attendance.dto.request.AttendanceHistoryFilterDto;
 import com.menghor.ksit.feature.attendance.dto.response.AttendanceDto;
 import com.menghor.ksit.feature.attendance.dto.update.AttendanceUpdateRequest;
 import com.menghor.ksit.feature.attendance.mapper.AttendanceMapper;
@@ -9,6 +10,8 @@ import com.menghor.ksit.feature.attendance.repository.AttendanceRepository;
 import com.menghor.ksit.feature.attendance.repository.AttendanceSessionRepository;
 import com.menghor.ksit.feature.attendance.service.AttendanceService;
 import com.menghor.ksit.feature.attendance.specification.AttendanceSpecification;
+import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
+import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -48,23 +51,10 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
-    public List<AttendanceDto> findBySessionId(Long sessionId) {
-        return attendanceRepository.findByAttendanceSessionId(sessionId)
-                .stream()
-                .map(attendanceMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     @Transactional
     public AttendanceDto updateAttendance(AttendanceUpdateRequest request) {
         AttendanceEntity attendance = attendanceRepository.findById(request.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Attendance not found with id: " + request.getId()));
-
-        // Check if the attendance session is finalized
-        if (attendance.getAttendanceSession().isFinal()) {
-            throw new IllegalStateException("Cannot update attendance for a finalized session");
-        }
 
         attendance.setStatus(request.getStatus());
         attendance.setAttendanceType(request.getAttendanceType());
@@ -75,25 +65,40 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
 
+    // Implementation
     @Override
-    public Double calculateAttendanceScore(Long studentId, Long scheduleId, LocalDateTime startDate, LocalDateTime endDate) {
-        // Count total sessions
-        long totalSessions;
-        if (startDate != null && endDate != null) {
-            totalSessions = sessionRepository.countByScheduleIdAndSessionDateBetween(scheduleId, startDate, endDate);
-        } else {
-            totalSessions = sessionRepository.countByScheduleId(scheduleId);
-        }
-        
-        if (totalSessions == 0) {
-            return 100.0; // No sessions, perfect attendance
-        }
-        
-        // Count attended sessions
-        long attendedSessions = attendanceRepository.countByStudentIdAndScheduleIdAndStatus(
-            studentId, scheduleId, AttendanceStatus.PRESENT
+    public CustomPaginationResponseDto<AttendanceDto> findAttendanceHistory(AttendanceHistoryFilterDto filterDto) {
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                 "recordedTime",
+               "DESC"
         );
-        
-        return (double) attendedSessions / totalSessions * 100;
+
+        Specification<AttendanceEntity> spec = AttendanceSpecification.combine(
+                filterDto.getSearch(),
+                filterDto.getStatus(),
+                filterDto.getFinalizationStatus(),
+                filterDto.getScheduleId(),
+                filterDto.getClassId(),
+                filterDto.getTeacherId(),
+                filterDto.getStartDate(),
+                filterDto.getEndDate()
+        );
+
+        Page<AttendanceEntity> attendancePage = attendanceRepository.findAll(spec, pageable);
+
+        List<AttendanceDto> content = attendancePage.getContent().stream()
+                .map(attendanceMapper::toDto)
+                .collect(Collectors.toList());
+
+        return new CustomPaginationResponseDto<>(
+                content,
+                attendancePage.getNumber() + 1,
+                attendancePage.getSize(),
+                attendancePage.getTotalElements(),
+                attendancePage.getTotalPages(),
+                attendancePage.isLast()
+        );
     }
 }

@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.attendance.models;
 
+import com.menghor.ksit.enumations.AttendanceFinalizationStatus;
 import com.menghor.ksit.enumations.AttendanceStatus;
 import com.menghor.ksit.enumations.AttendanceType;
 import com.menghor.ksit.feature.auth.models.UserEntity;
@@ -26,9 +27,10 @@ public class AttendanceEntity extends BaseEntity {
     
     @Column(name = "recorded_time")
     private LocalDateTime recordedTime;
-    
-    @Column(name = "is_final")
-    private boolean isFinal = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "finalization_status")
+    private AttendanceFinalizationStatus finalizationStatus = AttendanceFinalizationStatus.DRAFT;
     
     @ManyToOne
     @JoinColumn(name = "student_id")
