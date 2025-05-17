@@ -16,7 +16,6 @@ import java.util.Base64;
 @RequestMapping("/api/v1/qr-code")
 @RequiredArgsConstructor
 public class QrCodeController {
-
     private final AttendanceSessionService sessionService;
     private final QrCodeGenerator qrCodeGenerator;
     

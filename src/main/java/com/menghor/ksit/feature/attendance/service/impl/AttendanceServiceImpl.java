@@ -1,27 +1,23 @@
 package com.menghor.ksit.feature.attendance.service.impl;
 
 import com.menghor.ksit.enumations.AttendanceStatus;
-import com.menghor.ksit.feature.attendance.dto.request.AttendanceUpdateRequest;
 import com.menghor.ksit.feature.attendance.dto.response.AttendanceDto;
+import com.menghor.ksit.feature.attendance.dto.update.AttendanceUpdateRequest;
 import com.menghor.ksit.feature.attendance.mapper.AttendanceMapper;
 import com.menghor.ksit.feature.attendance.models.AttendanceEntity;
-import com.menghor.ksit.feature.attendance.models.AttendanceSessionEntity;
 import com.menghor.ksit.feature.attendance.repository.AttendanceRepository;
 import com.menghor.ksit.feature.attendance.repository.AttendanceSessionRepository;
 import com.menghor.ksit.feature.attendance.service.AttendanceService;
 import com.menghor.ksit.feature.attendance.specification.AttendanceSpecification;
-import com.menghor.ksit.feature.auth.models.UserEntity;
-import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -72,6 +68,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         attendance.setStatus(request.getStatus());
+        attendance.setAttendanceType(request.getAttendanceType());
         attendance.setComment(request.getComment());
         attendance.setRecordedTime(LocalDateTime.now());
 
@@ -80,67 +77,12 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public Double calculateAttendanceScore(Long studentId, Long scheduleId) {
-        return calculateSingleStudentScore(studentId, scheduleId, null, null);
+        return calculateAttendanceScore(studentId, scheduleId, null, null);
     }
 
     @Override
-    public AttendanceScoreDto calculateForStudent(Long studentId, Long scheduleId,
-                                                 LocalDateTime startDate, LocalDateTime endDate) {
-        return calculateSingleStudentScore(studentId, scheduleId, startDate, endDate);
-    }
-
-    @Override
-    public List<AttendanceScoreDto> calculateForClass(Long classId, Long scheduleId) {
-        return calculateClassScores(classId, scheduleId, null, null);
-    }
-
-    @Override
-    public List<AttendanceScoreDto> calculateForClass(Long classId, Long scheduleId, 
-                                                    LocalDateTime startDate, LocalDateTime endDate) {
-        return calculateClassScores(classId, scheduleId, startDate, endDate);
-    }
-
-    @Override
-    public Page<AttendanceScoreDto> calculateForCourse(Long courseId, Long semesterId, Pageable pageable) {
-        // Get all schedules for this course and semester
-        List<ScheduleEntity> schedules = scheduleRepository.findByCourseIdAndSemesterId(courseId, semesterId);
-        
-        if (schedules.isEmpty()) {
-            return Page.empty(pageable);
-        }
-        
-        List<AttendanceScoreDto> allScores = new ArrayList<>();
-        
-        for (ScheduleEntity schedule : schedules) {
-            // Get all students in the class
-            List<UserEntity> students = userRepository.findByClassesId(schedule.getClasses().getId());
-            
-            for (UserEntity student : students) {
-                AttendanceScoreDto score = calculateSingleStudentScore(student.getId(), schedule.getId(), null, null);
-                allScores.add(score);
-            }
-        }
-        
-        // Paginate results manually
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), allScores.size());
-        
-        return new PageImpl<>(
-            allScores.subList(start, end),
-            pageable,
-            allScores.size()
-        );
-    }
-    
-    private AttendanceScoreDto calculateSingleStudentScore(Long studentId, Long scheduleId, 
-                                                          LocalDateTime startDate, LocalDateTime endDate) {
-        UserEntity student = userRepository.findById(studentId)
-                .orElseThrow(() -> new EntityNotFoundException("Student not found with id: " + studentId));
-                
-        ScheduleEntity schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new EntityNotFoundException("Schedule not found with id: " + scheduleId));
-        
-        // Count total finalized attendance sessions
+    public Double calculateAttendanceScore(Long studentId, Long scheduleId, LocalDateTime startDate, LocalDateTime endDate) {
+        // Count total sessions
         long totalSessions;
         if (startDate != null && endDate != null) {
             totalSessions = sessionRepository.countByScheduleIdAndSessionDateBetween(scheduleId, startDate, endDate);
@@ -149,75 +91,14 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
         
         if (totalSessions == 0) {
-            // No sessions yet
-            return AttendanceScoreDto.builder()
-                    .studentId(studentId)
-                    .studentName(student.getName())
-                    .studentCode(student.getCode())
-                    .scheduleId(scheduleId)
-                    .courseName(schedule.getCourse().getName())
-                    .className(schedule.getClasses().getCode())
-                    .totalSessions(0L)
-                    .attendedSessions(0L)
-                    .attendancePercentage(100.0) // Perfect attendance (no sessions to attend)
-                    .build();
+            return 100.0; // No sessions, perfect attendance
         }
         
-        // Count sessions where student was present or late
-        Specification<AttendanceSessionEntity> sessionSpec = Specification.where(null);
+        // Count attended sessions
+        long attendedSessions = attendanceRepository.countByStudentIdAndScheduleIdAndStatus(
+            studentId, scheduleId, AttendanceStatus.PRESENT
+        );
         
-        if (startDate != null && endDate != null) {
-            sessionSpec = sessionSpec.and((root, query, cb) -> 
-                cb.between(root.get("sessionDate"), startDate, endDate));
-        }
-        
-        sessionSpec = sessionSpec.and((root, query, cb) -> 
-            cb.equal(root.get("schedule").get("id"), scheduleId))
-            .and((root, query, cb) -> 
-                cb.equal(root.get("isFinal"), true));
-        
-        List<AttendanceSessionEntity> sessions = sessionRepository.findAll(sessionSpec);
-        
-        long attendedSessions = 0;
-        for (AttendanceSessionEntity session : sessions) {
-            boolean attended = attendanceRepository.findAll(
-                Specification.where(AttendanceSpecification.hasStudentId(studentId))
-                    .and(AttendanceSpecification.hasSessionId(session.getId()))
-                    .and((root, query, cb) -> {
-                        return cb.or(
-                            cb.equal(root.get("status"), AttendanceStatus.PRESENT),
-                            cb.equal(root.get("status"), AttendanceStatus.LATE)
-                        );
-                    })
-            ).size() > 0;
-            
-            if (attended) {
-                attendedSessions++;
-            }
-        }
-        
-        double percentage = (double) attendedSessions / totalSessions * 100;
-        
-        return AttendanceScoreDto.builder()
-                .studentId(studentId)
-                .studentName(student.getName())
-                .studentCode(student.getCode())
-                .scheduleId(scheduleId)
-                .courseName(schedule.getCourse().getName())
-                .className(schedule.getClasses().getCode())
-                .totalSessions(totalSessions)
-                .attendedSessions(attendedSessions)
-                .attendancePercentage(percentage)
-                .build();
-    }
-    
-    private List<AttendanceScoreDto> calculateClassScores(Long classId, Long scheduleId, 
-                                                         LocalDateTime startDate, LocalDateTime endDate) {
-        // Get all students in the class
-        List<UserEntity> students = userRepository.findByClassesId(classId);
-        
-        return students.stream()
-                .map(student -> calculateSingleStudentScore(student.getId(), scheduleId, startDate, endDate))
-                .collect(Collectors.toList());
+        return (double) attendedSessions / totalSessions * 100;
     }
 }

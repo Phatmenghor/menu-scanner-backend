@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.attendance.dto.response;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class CourseAttendanceDto {
+public class CourseAttendanceDto {
     private Long courseId;
     private String courseName;
     private Long scheduleId;
