@@ -22,38 +22,15 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpec
 
     boolean existsByUsername(String username);
 
-    @EntityGraph(attributePaths = {"roles", "classes", "department"})
-    @Query("SELECT u FROM UserEntity u JOIN FETCH u.roles WHERE u.id = :id")
-    Optional<UserEntity> findUserWithRolesById(@Param("id") Long id);
-
-    @Query("SELECT u FROM UserEntity u JOIN u.roles r WHERE r.name = :roleName")
-    Page<UserEntity> findByRoleName(@Param("roleName") RoleEnum roleName, Pageable pageable);
-
-    @Query("SELECT u FROM UserEntity u JOIN u.roles r WHERE r.name IN :roleNames")
-    Page<UserEntity> findByRoleNames(@Param("roleNames") List<RoleEnum> roleNames, Pageable pageable);
-
-    @Query("SELECT u FROM UserEntity u JOIN u.classes c WHERE c.id = :classId")
-    List<UserEntity> findStudentsByClassId(@Param("classId") Long classId);
-
-    @Query("SELECT u FROM UserEntity u WHERE u.department.id = :departmentId")
-    List<UserEntity> findUsersByDepartmentId(@Param("departmentId") Long departmentId);
-
-    @Query("SELECT COUNT(u) FROM UserEntity u JOIN u.roles r WHERE r.name = :roleName")
-    Long countByRole(@Param("roleName") RoleEnum roleName);
-
-    /**
-     * Find users by identifyNumber pattern (for generating sequential identifiers)
-     * Used for finding the highest sequence number for a given class prefix
-     */
     @Query("SELECT u FROM UserEntity u WHERE u.identifyNumber LIKE :pattern")
     List<UserEntity> findByIdentifyNumberLike(@Param("pattern") String pattern);
 
     boolean existsByUsernameAndIdNot(String username, Long id);
 
-    boolean existsByIdentifyNumberAndIdNot(String identifyNumber, Long id);
-
     /**
      * Check if identifyNumber exists
      */
     boolean existsByIdentifyNumber(String identifyNumber);
+
+    List<UserEntity> findByClassesId(Long id);
 }
