@@ -21,6 +21,7 @@ public class StudentSiblingEntity extends BaseEntity {
     private LocalDate dateOfBirth; // ថ្ងៃខែឆ្នាំកំណើត
     private String occupation; // មុខរបរ
     private String phoneNumber; // លេខទូរស័ព្ទ
+    private String address; // អាសយដ្ឋាន
 
     @ManyToOne
     @JoinColumn(name = "user_id")

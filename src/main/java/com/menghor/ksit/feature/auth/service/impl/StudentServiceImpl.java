@@ -170,6 +170,7 @@ public class StudentServiceImpl implements StudentService {
                 entity.setDateOfBirth(dto.getDateOfBirth());
                 entity.setOccupation(dto.getOccupation());
                 entity.setPhoneNumber(dto.getPhoneNumber());
+                entity.setAddress(dto.getAddress());
                 entity.setUser(savedStudent);
                 studentSiblingRepository.save(entity);
             }
@@ -433,6 +434,7 @@ public class StudentServiceImpl implements StudentService {
                 if (dto.getDateOfBirth() != null) entity.setDateOfBirth(dto.getDateOfBirth());
                 if (dto.getOccupation() != null) entity.setOccupation(dto.getOccupation());
                 if (dto.getPhoneNumber() != null) entity.setPhoneNumber(dto.getPhoneNumber());
+                if (dto.getAddress() != null) entity.setAddress(dto.getAddress());
 
                 entity.setUser(savedStudent);
                 studentSiblingRepository.save(entity);

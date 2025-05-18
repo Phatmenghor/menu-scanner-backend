@@ -15,7 +15,7 @@ import java.util.List;
 @Setter
 @Getter
 @Entity
-@Table(name = "semesterEnum")
+@Table(name = "semesters")
 public class SemesterEntity extends BaseEntity {
 
     private LocalDate startDate;
