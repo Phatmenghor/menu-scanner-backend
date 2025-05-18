@@ -63,6 +63,8 @@ public class UserEntity extends BaseEntity {
     //    teacher , student
     private String englishLastName; // ជាអក្សរឡាតាំង
 
+    private String profileUrl; // URL of the image
+
     //    teacher , student
     @Enumerated(EnumType.STRING)
     private GenderEnum gender; // ភេទ

@@ -25,6 +25,7 @@ public class StaffUserListResponseDto {
     private DepartmentResponseDto department;
     // Common personal info
     private String khmerFirstName;
+    private String profileUrl;
     private String khmerLastName;
     private String englishFirstName;
     private String englishLastName;
@@ -34,4 +35,5 @@ public class StaffUserListResponseDto {
     private String identifyNumber;
     private String staffId;
     private String createdAt;
+
 }

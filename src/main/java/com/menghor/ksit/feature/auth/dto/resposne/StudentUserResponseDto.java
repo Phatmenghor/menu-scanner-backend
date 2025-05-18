@@ -36,6 +36,7 @@ public class StudentUserResponseDto {
     private String englishFirstName;
     private String englishLastName;
     private GenderEnum gender;
+    private String profileUrl;
     private LocalDate dateOfBirth;
     private String phoneNumber;
     private String currentAddress;

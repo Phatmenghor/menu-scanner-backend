@@ -38,6 +38,7 @@ public class StaffUpdateRequestDto {
     private String nationality;
     private String ethnicity;
     private String placeOfBirth;
+    private String profileUrl;
 
     private String taughtEnglish;
     private String threeLevelClass;

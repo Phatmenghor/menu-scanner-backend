@@ -44,6 +44,7 @@ public class StudentCreateRequestDto {
     private String nationality;
     private String ethnicity;
     private String placeOfBirth;
+    private String profileUrl;
 
     // Student-specific fields
     private String memberSiblings;

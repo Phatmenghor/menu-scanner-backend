@@ -45,6 +45,7 @@ public class StaffCreateRequestDto {
     private String nationality;
     private String ethnicity;
     private String placeOfBirth;
+    private String profileUrl;
 
     // Staff/Teacher specific fields
     private String staffId;

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,7 +58,8 @@ public class StaffMapperImpl implements StaffMapper {
                 .currentAddress(user.getCurrentAddress())
                 .nationality(user.getNationality())
                 .ethnicity(user.getEthnicity())
-                .placeOfBirth(user.getPlaceOfBirth());
+                .placeOfBirth(user.getPlaceOfBirth())
+                .profileUrl(user.getProfileUrl());
 
         // Map staff-specific fields
         dto.staffId(user.getStaffId())
@@ -77,6 +79,23 @@ public class StaffMapperImpl implements StaffMapper {
                 .currentPosition(user.getCurrentPosition())
                 .decreeFinal(user.getDecreeFinal())
                 .rankAndClass(user.getRankAndClass());
+
+
+        dto.taughtEnglish(user.getTaughtEnglish())
+                .threeLevelClass(user.getThreeLevelClass())
+                .referenceNote(user.getReferenceNote())
+                .technicalTeamLeader(user.getTechnicalTeamLeader())
+                .assistInTeaching(user.getAssistInTeaching())
+                .serialNumber(user.getSerialNumber())
+                .twoLevelClass(user.getTwoLevelClass())
+                .classResponsibility(user.getClassResponsibility())
+                .lastSalaryIncrementDate(user.getLastSalaryIncrementDate())
+                .teachAcrossSchools(user.getTeachAcrossSchools())
+                .overtimeHours(user.getOvertimeHours())
+                .issuedDate(user.getIssuedDate())
+                .suitableClass(user.getSuitableClass())
+                .bilingual(user.getBilingual())
+                .academicYearTaught(user.getAcademicYearTaught());
 
 
         // Map work history and family information
@@ -162,7 +181,8 @@ public class StaffMapperImpl implements StaffMapper {
                 .phoneNumber(user.getPhoneNumber())
                 .identifyNumber(user.getIdentifyNumber())
                 .staffId(user.getStaffId())
-                .createdAt(user.getCreatedAt().toString());
+                .createdAt(user.getCreatedAt().toString())
+                .profileUrl(user.getProfileUrl());
 
         // Map department
         if (user.getDepartment() != null) {

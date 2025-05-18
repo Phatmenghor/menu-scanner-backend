@@ -62,8 +62,23 @@ public class StaffUserResponseDto {
     private String decreeFinal;
     private String rankAndClass;
     private DepartmentResponseDto department;
+    private String profileUrl;
 
-    // Work History
+    private String taughtEnglish;
+    private String threeLevelClass;
+    private String referenceNote;
+    private String technicalTeamLeader;
+    private String assistInTeaching;
+    private String serialNumber;
+    private String twoLevelClass;
+    private String classResponsibility;
+    private LocalDate lastSalaryIncrementDate;
+    private String teachAcrossSchools;
+    private String overtimeHours;
+    private LocalDate issuedDate;
+    private String suitableClass;
+    private String bilingual;
+    private String academicYearTaught;
     private String workHistory;
 
     // Family Information

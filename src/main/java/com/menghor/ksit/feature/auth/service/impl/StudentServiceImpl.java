@@ -107,6 +107,7 @@ public class StudentServiceImpl implements StudentService {
         student.setNationality(requestDto.getNationality());
         student.setEthnicity(requestDto.getEthnicity());
         student.setPlaceOfBirth(requestDto.getPlaceOfBirth());
+        student.setProfileUrl(requestDto.getProfileUrl());
 
         // Set student-specific fields
         student.setMemberSiblings(requestDto.getMemberSiblings());
@@ -333,6 +334,7 @@ public class StudentServiceImpl implements StudentService {
         if (updateDto.getNationality() != null) student.setNationality(updateDto.getNationality());
         if (updateDto.getEthnicity() != null) student.setEthnicity(updateDto.getEthnicity());
         if (updateDto.getPlaceOfBirth() != null) student.setPlaceOfBirth(updateDto.getPlaceOfBirth());
+        if (updateDto.getProfileUrl() != null) student.setProfileUrl(updateDto.getProfileUrl());
 
         // Update student-specific fields
         if (updateDto.getMemberSiblings() != null) student.setMemberSiblings(updateDto.getMemberSiblings());

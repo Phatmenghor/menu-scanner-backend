@@ -92,6 +92,7 @@ public class StaffServiceImpl implements StaffService {
         staff.setNationality(requestDto.getNationality());
         staff.setEthnicity(requestDto.getEthnicity());
         staff.setPlaceOfBirth(requestDto.getPlaceOfBirth());
+        staff.setProfileUrl(requestDto.getProfileUrl());
 
         staff.setTaughtEnglish(requestDto.getTaughtEnglish());
         staff.setThreeLevelClass(requestDto.getThreeLevelClass());
@@ -405,6 +406,7 @@ public class StaffServiceImpl implements StaffService {
         if (updateDto.getNationality() != null) staff.setNationality(updateDto.getNationality());
         if (updateDto.getEthnicity() != null) staff.setEthnicity(updateDto.getEthnicity());
         if (updateDto.getPlaceOfBirth() != null) staff.setPlaceOfBirth(updateDto.getPlaceOfBirth());
+        if(updateDto.getProfileUrl() != null) staff.setProfileUrl(updateDto.getProfileUrl());
 
         // Update staff-specific fields
         if (updateDto.getStaffId() != null) staff.setStaffId(updateDto.getStaffId());
