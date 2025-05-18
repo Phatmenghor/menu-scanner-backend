@@ -168,29 +168,42 @@ public class ScheduleServiceImpl implements ScheduleService {
         CriteriaQuery<ScheduleEntity> cq = cb.createQuery(ScheduleEntity.class);
         Root<ScheduleEntity> root = cq.from(ScheduleEntity.class);
 
+        // Declare all join variables at the beginning
+        Join<ScheduleEntity, ClassEntity> classJoin = null;
+        Join<ScheduleEntity, UserEntity> teacherJoin = null;
+        Join<ScheduleEntity, CourseEntity> courseJoin = null;
+        Join<ScheduleEntity, RoomEntity> roomJoin = null;
+        Join<ScheduleEntity, SemesterEntity> semesterJoin = null;
+
         // Apply filters from the filter DTO
         List<Predicate> predicates = new ArrayList<>();
 
         if (filterDto.getClassId() != null) {
-            predicates.add(cb.equal(root.get("classes").get("id"), filterDto.getClassId()));
+            classJoin = root.join("classes", JoinType.LEFT);
+            predicates.add(cb.equal(classJoin.get("id"), filterDto.getClassId()));
         }
 
         if (filterDto.getRoomId() != null) {
-            predicates.add(cb.equal(root.get("room").get("id"), filterDto.getRoomId()));
+            roomJoin = root.join("room", JoinType.LEFT);
+            predicates.add(cb.equal(roomJoin.get("id"), filterDto.getRoomId()));
         }
 
         if (filterDto.getTeacherId() != null) {
-            predicates.add(cb.equal(root.get("user").get("id"), filterDto.getTeacherId()));
+            teacherJoin = root.join("user", JoinType.LEFT);
+            predicates.add(cb.equal(teacherJoin.get("id"), filterDto.getTeacherId()));
         }
 
-        if (filterDto.getAcademyYear() != null) {
-            Join<ScheduleEntity, SemesterEntity> semesterJoin = root.join("semester", JoinType.INNER);
-            predicates.add(cb.equal(semesterJoin.get("academyYear"), filterDto.getAcademyYear()));
-        }
+        // Create semester join only once if either condition needs it
+        if (filterDto.getAcademyYear() != null || filterDto.getSemester() != null) {
+            semesterJoin = root.join("semester", JoinType.INNER);
 
-        if (filterDto.getSemester() != null) {
-            Join<ScheduleEntity, SemesterEntity> semesterJoin = root.join("semester", JoinType.INNER);
-            predicates.add(cb.equal(semesterJoin.get("semester"), filterDto.getSemester()));
+            if (filterDto.getAcademyYear() != null) {
+                predicates.add(cb.equal(semesterJoin.get("academyYear"), filterDto.getAcademyYear()));
+            }
+
+            if (filterDto.getSemester() != null) {
+                predicates.add(cb.equal(semesterJoin.get("semester"), filterDto.getSemester()));
+            }
         }
 
         if (filterDto.getStatus() != null) {
@@ -201,27 +214,36 @@ public class ScheduleServiceImpl implements ScheduleService {
             predicates.add(cb.equal(root.get("day"), filterDto.getDayOfWeek()));
         }
 
-        // Add search criteria if provided
-        if (filterDto.getSearch() != null && !filterDto.getSearch().isEmpty()) {
-            // Use the existing search specification as reference to implement the search logic here
-            // This is a simplified example, adjust according to your actual search requirements
-            String searchTerm = "%" + filterDto.getSearch().toLowerCase() + "%";
+        // Add search criteria if provided - with careful null handling
+        if (filterDto.getSearch() != null && !filterDto.getSearch().trim().isEmpty()) {
+            // Safely handle the search term
+            String searchTerm = "%" + filterDto.getSearch().toLowerCase().trim().replace("'", "''") + "%";
 
-            Join<ScheduleEntity, ClassEntity> classJoin = root.join("classes", JoinType.LEFT);
-            Join<ScheduleEntity, UserEntity> teacherJoin = root.join("user", JoinType.LEFT);
-            Join<ScheduleEntity, CourseEntity> courseJoin = root.join("course", JoinType.LEFT);
-            Join<ScheduleEntity, RoomEntity> roomJoin = root.join("room", JoinType.LEFT);
+            // Initialize joins safely
+            if (classJoin == null) {
+                classJoin = root.join("classes", JoinType.LEFT);
+            }
+            if (teacherJoin == null) {
+                teacherJoin = root.join("user", JoinType.LEFT);
+            }
+            if (courseJoin == null) {
+                courseJoin = root.join("course", JoinType.LEFT);
+            }
+            if (roomJoin == null) {
+                roomJoin = root.join("room", JoinType.LEFT);
+            }
 
-            Predicate searchPredicate = cb.or(
-                    cb.like(cb.lower(classJoin.get("code")), searchTerm),
-                    cb.like(cb.lower(teacherJoin.get("englishFirstName")), searchTerm),
-                    cb.like(cb.lower(teacherJoin.get("englishLastName")), searchTerm),
-                    cb.like(cb.lower(courseJoin.get("nameEn")), searchTerm),
-                    cb.like(cb.lower(courseJoin.get("nameKH")), searchTerm),
-                    cb.like(cb.lower(roomJoin.get("name")), searchTerm)
-            );
+            // Build search predicates carefully
+            List<Predicate> searchPredicates = new ArrayList<>();
 
-            predicates.add(searchPredicate);
+            searchPredicates.add(cb.like(cb.lower(classJoin.get("code")), searchTerm));
+            searchPredicates.add(cb.like(cb.lower(teacherJoin.get("englishFirstName")), searchTerm));
+            searchPredicates.add(cb.like(cb.lower(teacherJoin.get("englishLastName")), searchTerm));
+            searchPredicates.add(cb.like(cb.lower(courseJoin.get("nameEn")), searchTerm));
+            searchPredicates.add(cb.like(cb.lower(courseJoin.get("nameKH")), searchTerm));
+            searchPredicates.add(cb.like(cb.lower(roomJoin.get("name")), searchTerm));
+
+            predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
         }
 
         // Apply all predicates to the query
@@ -240,70 +262,146 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .when(cb.equal(root.get("day"), DayOfWeek.SUNDAY), 7)
                 .otherwise(8); // null or other values
 
-
         // Order by day of week and then by start time
         cq.orderBy(cb.asc(dayOrderCase), cb.asc(root.get("startTime")));
 
         // Create a count query for pagination
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<ScheduleEntity> countRoot = countQuery.from(ScheduleEntity.class);
+
+        // Create the same joins for the count query if predicates need them
+        Join<ScheduleEntity, ClassEntity> countClassJoin = null;
+        Join<ScheduleEntity, UserEntity> countTeacherJoin = null;
+        Join<ScheduleEntity, CourseEntity> countCourseJoin = null;
+        Join<ScheduleEntity, RoomEntity> countRoomJoin = null;
+        Join<ScheduleEntity, SemesterEntity> countSemesterJoin = null;
+
+        // Create the same join structure for the count query that we used in the main query
+        if (classJoin != null) {
+            countClassJoin = countRoot.join("classes", JoinType.LEFT);
+        }
+
+        if (roomJoin != null) {
+            countRoomJoin = countRoot.join("room", JoinType.LEFT);
+        }
+
+        if (teacherJoin != null) {
+            countTeacherJoin = countRoot.join("user", JoinType.LEFT);
+        }
+
+        if (semesterJoin != null) {
+            countSemesterJoin = countRoot.join("semester", JoinType.INNER);
+        }
+
+        if (courseJoin != null) {
+            countCourseJoin = countRoot.join("course", JoinType.LEFT);
+        }
+
         countQuery.select(cb.count(countRoot));
 
-        // Apply the same predicates to the count query
-        if (!predicates.isEmpty()) {
-            countQuery.where(cb.and(predicates.toArray(new Predicate[0])));
+        // Rebuild predicates list for count query
+        List<Predicate> countPredicates = new ArrayList<>();
+
+        if (filterDto.getClassId() != null && countClassJoin != null) {
+            countPredicates.add(cb.equal(countClassJoin.get("id"), filterDto.getClassId()));
+        }
+
+        if (filterDto.getRoomId() != null && countRoomJoin != null) {
+            countPredicates.add(cb.equal(countRoomJoin.get("id"), filterDto.getRoomId()));
+        }
+
+        if (filterDto.getTeacherId() != null && countTeacherJoin != null) {
+            countPredicates.add(cb.equal(countTeacherJoin.get("id"), filterDto.getTeacherId()));
+        }
+
+        if (countSemesterJoin != null) {
+            if (filterDto.getAcademyYear() != null) {
+                countPredicates.add(cb.equal(countSemesterJoin.get("academyYear"), filterDto.getAcademyYear()));
+            }
+
+            if (filterDto.getSemester() != null) {
+                countPredicates.add(cb.equal(countSemesterJoin.get("semester"), filterDto.getSemester()));
+            }
+        }
+
+        if (filterDto.getStatus() != null) {
+            countPredicates.add(cb.equal(countRoot.get("status"), filterDto.getStatus()));
+        }
+
+        if (filterDto.getDayOfWeek() != null) {
+            countPredicates.add(cb.equal(countRoot.get("day"), filterDto.getDayOfWeek()));
+        }
+
+        // Rebuild search predicate for count query - with careful null handling
+        if (filterDto.getSearch() != null && !filterDto.getSearch().trim().isEmpty()) {
+            String searchTerm = "%" + filterDto.getSearch().toLowerCase().trim().replace("'", "''") + "%";
+
+            List<Predicate> countSearchPredicates = new ArrayList<>();
+
+            if (countClassJoin != null) {
+                countSearchPredicates.add(cb.like(cb.lower(countClassJoin.get("code")), searchTerm));
+            }
+
+            if (countTeacherJoin != null) {
+                countSearchPredicates.add(cb.like(cb.lower(countTeacherJoin.get("englishFirstName")), searchTerm));
+                countSearchPredicates.add(cb.like(cb.lower(countTeacherJoin.get("englishLastName")), searchTerm));
+            }
+
+            if (countCourseJoin != null) {
+                countSearchPredicates.add(cb.like(cb.lower(countCourseJoin.get("nameEn")), searchTerm));
+                countSearchPredicates.add(cb.like(cb.lower(countCourseJoin.get("nameKH")), searchTerm));
+            }
+
+            if (countRoomJoin != null) {
+                countSearchPredicates.add(cb.like(cb.lower(countRoomJoin.get("name")), searchTerm));
+            }
+
+            if (!countSearchPredicates.isEmpty()) {
+                countPredicates.add(cb.or(countSearchPredicates.toArray(new Predicate[0])));
+            }
+        }
+
+        // Apply predicates to count query
+        if (!countPredicates.isEmpty()) {
+            countQuery.where(cb.and(countPredicates.toArray(new Predicate[0])));
         }
 
         // Execute the count query
         Long totalResults = entityManager.createQuery(countQuery).getSingleResult();
 
-        // Apply pagination
-        int pageNo = filterDto.getPageNo() != null ? filterDto.getPageNo() : 1;
-        int pageSize = filterDto.getPageSize() != null ? filterDto.getPageSize() : 10;
+        // Apply pagination with appropriate default values
+        int pageNo = filterDto.getPageNo() != null && filterDto.getPageNo() > 0 ? filterDto.getPageNo() : 1;
+        int pageSize = filterDto.getPageSize() != null && filterDto.getPageSize() > 0 ? filterDto.getPageSize() : 10;
         int zeroBasedPageNo = pageNo - 1;
 
         TypedQuery<ScheduleEntity> query = entityManager.createQuery(cq);
         query.setFirstResult(zeroBasedPageNo * pageSize);
         query.setMaxResults(pageSize);
 
-        // Execute the query
-        List<ScheduleEntity> schedules = query.getResultList();
+        try {
+            // Execute the query with error handling
+            List<ScheduleEntity> schedules = query.getResultList();
 
-        // Create a Page object
-        Page<ScheduleEntity> page = new PageImpl<>(
-                schedules,
-                PageRequest.of(zeroBasedPageNo, pageSize),
-                totalResults
-        );
+            // Create a Page object
+            Page<ScheduleEntity> page = new PageImpl<>(
+                    schedules,
+                    PageRequest.of(zeroBasedPageNo, pageSize),
+                    totalResults
+            );
 
-        // Convert to response DTO
-        CustomPaginationResponseDto<ScheduleResponseDto> response = scheduleMapper.toScheduleAllResponseDto(page);
+            // Convert to response DTO with error handling
+            CustomPaginationResponseDto<ScheduleResponseDto> response = scheduleMapper.toScheduleAllResponseDto(page);
 
-        log.info("Retrieved {} schedules (page {}/{})",
-                response.getContent().size(),
-                response.getPageNo(),
-                response.getTotalPages());
+            log.info("Retrieved {} schedules (page {}/{})",
+                    response.getContent().size(),
+                    response.getPageNo(),
+                    response.getTotalPages());
 
-        return response;
-    }
-
-    /**
-     * Helper method to get numerical day order for sorting
-     * Monday=1, Tuesday=2, etc.
-     */
-    private int getDayOrder(DayOfWeek day) {
-        if (day == null) return Integer.MAX_VALUE; // Put null days at the end
-
-        return switch (day) {
-            case MONDAY -> 1;
-            case TUESDAY -> 2;
-            case WEDNESDAY -> 3;
-            case THURSDAY -> 4;
-            case FRIDAY -> 5;
-            case SATURDAY -> 6;
-            case SUNDAY -> 7;
-            default -> 8; // For any unexpected values
-        };
+            return response;
+        } catch (Exception e) {
+            log.error("Error processing schedule query results: " + e.getMessage(), e);
+            throw new RuntimeException("Error processing schedule results: " + e.getMessage(), e);
+        }
     }
 
     /**
