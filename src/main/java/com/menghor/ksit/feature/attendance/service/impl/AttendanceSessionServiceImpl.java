@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.attendance.service.impl;
 
 import com.menghor.ksit.enumations.AttendanceFinalizationStatus;
 import com.menghor.ksit.enumations.AttendanceStatus;
+import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.attendance.dto.request.AttendanceSessionRequest;
 import com.menghor.ksit.feature.attendance.dto.request.QrAttendanceRequest;
 import com.menghor.ksit.feature.attendance.dto.response.AttendanceSessionDto;
@@ -23,9 +24,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -49,6 +53,8 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
     @Override
     @Transactional
     public AttendanceSessionDto generateAttendanceSession(AttendanceSessionRequest request, Long teacherId) {
+        log.info("Generating attendance session for schedule ID: {}, teacher ID: {}", request.getScheduleId(), teacherId);
+
         // Validate schedule exists
         ScheduleEntity schedule = scheduleRepository.findById(request.getScheduleId())
                 .orElseThrow(() -> new EntityNotFoundException("Schedule not found with id: " + request.getScheduleId()));
@@ -58,15 +64,37 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
             throw new IllegalStateException("Teacher is not assigned to this schedule");
         }
 
+        // Get current date/time
         LocalDateTime now = LocalDateTime.now();
+        LocalDate today = now.toLocalDate();
 
-        // Create new attendance session - without checking for existing ones
-        // This allows multiple sessions per schedule
+        // Check if an attendance session already exists for this schedule today
+        List<AttendanceSessionEntity> todaySessions = findTodaySessionsForSchedule(schedule.getId(), today);
+
+        // Check if there's a DRAFT session for today
+        Optional<AttendanceSessionEntity> draftSession = todaySessions.stream()
+                .filter(session -> session.getFinalizationStatus() == AttendanceFinalizationStatus.DRAFT)
+                .findFirst();
+
+        // If a draft session exists for today, return it (don't create a new one)
+        if (draftSession.isPresent()) {
+            log.info("Draft attendance session already exists for today, returning existing session ID: {}",
+                    draftSession.get().getId());
+            return attendanceMapper.toDto(draftSession.get());
+        }
+
+        // Create new attendance session
         AttendanceSessionEntity session = new AttendanceSessionEntity();
         session.setSessionDate(now);
         session.setSchedule(schedule);
+        session.setStatus(Status.ACTIVE);
+        session.setFinalizationStatus(AttendanceFinalizationStatus.DRAFT);
         session.setTeacher(userRepository.findById(teacherId)
                 .orElseThrow(() -> new EntityNotFoundException("Teacher not found with id: " + teacherId)));
+
+        // Generate QR code
+        session.setQrCode(UUID.randomUUID().toString());
+        session.setQrExpiryTime(now.plusMinutes(15)); // QR code valid for 15 minutes
 
         // Save session first to generate ID
         AttendanceSessionEntity savedSession = sessionRepository.save(session);
@@ -80,14 +108,28 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
             AttendanceEntity attendance = new AttendanceEntity();
             attendance.setStudent(student);
             attendance.setAttendanceSession(savedSession);
+            attendance.setFinalizationStatus(AttendanceFinalizationStatus.DRAFT);
             attendance.setRecordedTime(now);
+            attendance.setAttendanceType(null); // No type yet
+            attendance.setStatus(null); // Not marked yet
             attendances.add(attendance);
         }
 
         attendanceRepository.saveAll(attendances);
         savedSession.setAttendances(attendances);
 
+        log.info("Created new attendance session with ID: {}", savedSession.getId());
         return attendanceMapper.toDto(savedSession);
+    }
+
+    /**
+     * Find all attendance sessions for a schedule on a specific date
+     */
+    private List<AttendanceSessionEntity> findTodaySessionsForSchedule(Long scheduleId, LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+
+        return sessionRepository.findByScheduleIdAndSessionDateBetween(scheduleId, startOfDay, endOfDay);
     }
 
     @Override
@@ -95,6 +137,11 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
     public QrResponse regenerateQrCode(Long sessionId) {
         AttendanceSessionEntity session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new EntityNotFoundException("Attendance session not found with id: " + sessionId));
+
+        // Only allow regeneration if session is in DRAFT status
+        if (session.getFinalizationStatus() != AttendanceFinalizationStatus.DRAFT) {
+            throw new IllegalStateException("Cannot regenerate QR code for finalized session");
+        }
 
         // Generate new QR code and reset expiry time (15 minutes from now)
         LocalDateTime now = LocalDateTime.now();
@@ -128,7 +175,6 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
 
         // Mark as present
         attendance.setStatus(AttendanceStatus.PRESENT);
-
         attendance.setRecordedTime(LocalDateTime.now());
         attendanceRepository.save(attendance);
 
@@ -160,22 +206,6 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         // Save both the attendances and session
         attendanceRepository.saveAll(attendances);
         session = sessionRepository.save(session);
-
-        // Calculate attendance scores for all students in this session
-        try {
-            // Get schedule ID from session
-            Long scheduleId = session.getSchedule().getId();
-
-            // Get all students in this session
-            List<UserEntity> students = attendances.stream()
-                    .map(AttendanceEntity::getStudent)
-                    .distinct()
-                    .toList();
-
-        } catch (Exception e) {
-            log.error("Error calculating attendance scores during session finalization", e);
-            // Don't fail the finalization process if score calculation fails
-        }
 
         return attendanceMapper.toDto(session);
     }

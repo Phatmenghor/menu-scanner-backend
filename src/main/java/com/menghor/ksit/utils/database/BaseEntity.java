@@ -14,7 +14,7 @@ public abstract class BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, updatable = false,name = "created_at")
+    @Column(nullable = false, updatable = false, name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(nullable = true, name = "updated_at")
@@ -30,3 +30,5 @@ public abstract class BaseEntity {
         updatedAt = LocalDateTime.now();
     }
 }
+
+

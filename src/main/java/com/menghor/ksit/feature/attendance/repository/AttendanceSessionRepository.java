@@ -20,4 +20,5 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     @Query("SELECT COUNT(a) FROM AttendanceSessionEntity a WHERE a.schedule.id = :scheduleId AND a.sessionDate BETWEEN :startDate AND :endDate")
     Long countByScheduleIdAndSessionDateBetween(Long scheduleId, LocalDateTime startDate, LocalDateTime endDate);
 
+    List<AttendanceSessionEntity> findByScheduleIdAndSessionDateBetween(Long scheduleId, LocalDateTime startOfDay, LocalDateTime endOfDay);
 }

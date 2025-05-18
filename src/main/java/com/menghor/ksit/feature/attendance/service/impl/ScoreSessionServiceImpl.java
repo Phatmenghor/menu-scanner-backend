@@ -224,7 +224,7 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
 
     @Override
     @Transactional
-    public ScoreSessionResponseDto reviewScoreSession(Long scoreSessionId, String statusStr, String comments) {
+    public ScoreSessionResponseDto reviewScoreSession(Long scoreSessionId, SubmissionStatus statusStr, String comments) {
         log.info("Reviewing score session with ID: {}, status: {}", scoreSessionId, statusStr);
 
         ScoreSessionEntity scoreSession = scoreSessionRepository.findById(scoreSessionId)
@@ -238,7 +238,7 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
         // Parse status
         SubmissionStatus status;
         try {
-            status = SubmissionStatus.valueOf(statusStr.toUpperCase());
+            status = statusStr;
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid status: " + statusStr);
         }

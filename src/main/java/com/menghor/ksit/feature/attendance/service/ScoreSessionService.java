@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.attendance.service;
 
+import com.menghor.ksit.enumations.SubmissionStatus;
 import com.menghor.ksit.feature.attendance.dto.request.BatchUpdateScoresRequestDto;
 import com.menghor.ksit.feature.attendance.dto.request.CalculateAttendanceScoresRequestDto;
 import com.menghor.ksit.feature.attendance.dto.request.ScoreSessionRequestDto;
@@ -38,7 +39,7 @@ public interface ScoreSessionService {
     /**
      * Staff review of score session (approve/reject/pending)
      */
-    ScoreSessionResponseDto reviewScoreSession(Long scoreSessionId, String status, String comments);
+    ScoreSessionResponseDto reviewScoreSession(Long scoreSessionId, SubmissionStatus status, String comments);
 
     /**
      * Get all score sessions for staff review

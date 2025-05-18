@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.attendance.controller;
 
+import com.menghor.ksit.enumations.SubmissionStatus;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.attendance.dto.request.BatchUpdateScoresRequestDto;
 import com.menghor.ksit.feature.attendance.dto.request.CalculateAttendanceScoresRequestDto;
@@ -86,7 +87,7 @@ public class ScoreSessionController {
     @PostMapping("/review/{id}")
     public ApiResponse<ScoreSessionResponseDto> reviewScoreSession(
             @PathVariable Long id, 
-            @RequestParam String status,
+            @RequestParam SubmissionStatus status,
             @RequestParam(required = false) String comments) {
         log.info("REST request to review score session: {}, status: {}", id, status);
         ScoreSessionResponseDto responseDto = scoreSessionService.reviewScoreSession(id, status, comments);
