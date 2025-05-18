@@ -153,20 +153,6 @@ public class StudentScoreServiceImpl implements StudentScoreService {
         studentScoreRepository.save(studentScore);
         log.info("Attendance score calculated successfully: {}%", attendancePercentage);
     }
-
-    @Override
-    @Transactional
-    public void calculateTotalScore(Long studentScoreId) {
-        log.info("Calculating total score for student score ID: {}", studentScoreId);
-        
-        StudentScoreEntity studentScore = studentScoreRepository.findById(studentScoreId)
-                .orElseThrow(() -> new NotFoundException("Student score not found with ID: " + studentScoreId));
-        
-        studentScore.calculateTotalScore();
-        
-        studentScoreRepository.save(studentScore);
-        log.info("Total score calculated successfully");
-    }
     
     @Override
     @Transactional

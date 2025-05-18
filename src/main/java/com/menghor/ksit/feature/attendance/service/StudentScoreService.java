@@ -26,12 +26,7 @@ public interface StudentScoreService {
      * Calculate attendance score for a student in a session
      */
     void calculateAttendanceScore(Long studentId, Long scoreSessionId);
-    
-    /**
-     * Calculate total score and grade for a student score
-     */
-    void calculateTotalScore(Long studentScoreId);
-    
+
     /**
      * Create a new student score entry for a student in a score session
      */

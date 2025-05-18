@@ -32,7 +32,6 @@ public class StudentScoreController {
     }
     
     @PutMapping("/update")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'TEACHER')")
     public ApiResponse<StudentScoreResponseDto> updateStudentScore(
             @Valid @RequestBody StudentScoreUpdateDto updateDto) {
         log.info("REST request to update student score: {}", updateDto);
@@ -55,34 +54,7 @@ public class StudentScoreController {
         );
     }
     
-    @PostMapping("/calculate-attendance/{studentId}/{scoreSessionId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'TEACHER')")
-    public ApiResponse<String> calculateAttendanceScore(
-            @PathVariable Long studentId, @PathVariable Long scoreSessionId) {
-        log.info("REST request to calculate attendance score for student ID: {} in session ID: {}", 
-                studentId, scoreSessionId);
-        studentScoreService.calculateAttendanceScore(studentId, scoreSessionId);
-        return new ApiResponse<>(
-                "success",
-                "Attendance score calculated successfully",
-                "Attendance score has been calculated based on finalized attendance records"
-        );
-    }
-    
-    @PostMapping("/calculate-total/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'TEACHER')")
-    public ApiResponse<String> calculateTotalScore(@PathVariable Long id) {
-        log.info("REST request to calculate total score for student score ID: {}", id);
-        studentScoreService.calculateTotalScore(id);
-        return new ApiResponse<>(
-                "success",
-                "Total score calculated successfully",
-                "Total score and grade have been calculated"
-        );
-    }
-    
     @PostMapping("/create/{studentId}/{scoreSessionId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'TEACHER')")
     public ApiResponse<StudentScoreResponseDto> createStudentScore(
             @PathVariable Long studentId, @PathVariable Long scoreSessionId) {
         log.info("REST request to create score for student ID: {} in session ID: {}", 

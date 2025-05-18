@@ -26,7 +26,6 @@ public class ScoreSessionController {
     private final SecurityUtils securityUtils;
     
     @PostMapping("/initialize")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'TEACHER')")
     public ApiResponse<ScoreSessionResponseDto> initializeScoreSession(@Valid @RequestBody ScoreSessionRequestDto requestDto) {
         log.info("REST request to initialize score session: {}", requestDto);
         ScoreSessionResponseDto responseDto = scoreSessionService.initializeScoreSession(requestDto);
@@ -58,22 +57,9 @@ public class ScoreSessionController {
                 responseDto
         );
     }
-    
-    @PostMapping("/update-scores")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'TEACHER')")
-    public ApiResponse<ScoreSessionResponseDto> batchUpdateStudentScores(
-            @Valid @RequestBody BatchUpdateScoresRequestDto requestDto) {
-        log.info("REST request to batch update student scores: {}", requestDto);
-        ScoreSessionResponseDto responseDto = scoreSessionService.batchUpdateStudentScores(requestDto);
-        return new ApiResponse<>(
-                "success",
-                "Student scores updated successfully",
-                responseDto
-        );
-    }
+
     
     @PutMapping("/update")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'TEACHER', 'STAFF')")
     public ApiResponse<ScoreSessionResponseDto> updateScoreSession(
             @Valid @RequestBody ScoreSessionUpdateDto updateDto) {
         log.info("REST request to update score session: {}", updateDto);
@@ -86,7 +72,6 @@ public class ScoreSessionController {
     }
     
     @PostMapping("/submit/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'TEACHER')")
     public ApiResponse<ScoreSessionResponseDto> submitForReview(
             @PathVariable Long id, @RequestParam(required = false) String comments) {
         log.info("REST request to submit score session for review: {}", id);
@@ -99,7 +84,6 @@ public class ScoreSessionController {
     }
     
     @PostMapping("/review/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<ScoreSessionResponseDto> reviewScoreSession(
             @PathVariable Long id, 
             @RequestParam String status,
@@ -112,35 +96,9 @@ public class ScoreSessionController {
                 responseDto
         );
     }
-    
-    @PostMapping("/calculate-attendance")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'TEACHER')")
-    public ApiResponse<String> calculateAttendanceScores(
-            @Valid @RequestBody CalculateAttendanceScoresRequestDto requestDto) {
-        log.info("REST request to calculate attendance scores for session ID: {}", requestDto.getScoreSessionId());
-        scoreSessionService.calculateAttendanceScores(requestDto);
-        return new ApiResponse<>(
-                "success",
-                "Attendance scores calculated successfully",
-                "Attendance scores have been calculated for all students in this session"
-        );
-    }
-    
-    @GetMapping("/teacher")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'TEACHER')")
-    public ApiResponse<List<ScoreSessionResponseDto>> getScoreSessionsByTeacher() {
-        Long teacherId = securityUtils.getCurrentUser().getId();
-        log.info("REST request to get score sessions for teacher ID: {}", teacherId);
-        List<ScoreSessionResponseDto> responseDtos = scoreSessionService.getScoreSessionsByTeacherId(teacherId);
-        return new ApiResponse<>(
-                "success",
-                "Score sessions retrieved successfully",
-                responseDtos
-        );
-    }
+
     
     @GetMapping("/for-review")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER', 'STAFF')")
     public ApiResponse<List<ScoreSessionResponseDto>> getScoreSessionsForReview() {
         log.info("REST request to get score sessions for review");
         List<ScoreSessionResponseDto> responseDtos = scoreSessionService.getScoreSessionsForReview();
@@ -148,19 +106,6 @@ public class ScoreSessionController {
                 "success",
                 "Score sessions for review retrieved successfully",
                 responseDtos
-        );
-    }
-    
-    @PostMapping("/process-new-student/{studentId}/{classId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'DEVELOPER')")
-    public ApiResponse<String> processNewlyAddedStudent(
-            @PathVariable Long studentId, @PathVariable Long classId) {
-        log.info("REST request to process newly added student ID: {} for class ID: {}", studentId, classId);
-        scoreSessionService.processNewlyAddedStudent(studentId, classId);
-        return new ApiResponse<>(
-                "success",
-                "Newly added student processed successfully",
-                "Student has been added to all existing score sessions for the class"
         );
     }
 }

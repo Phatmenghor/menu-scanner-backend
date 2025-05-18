@@ -152,32 +152,6 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
 
     @Override
     @Transactional
-    public ScoreSessionResponseDto batchUpdateStudentScores(BatchUpdateScoresRequestDto requestDto) {
-        log.info("Batch updating student scores for session ID: {}", requestDto.getScoreSessionId());
-        
-        // Verify score session exists
-        ScoreSessionEntity scoreSession = scoreSessionRepository.findById(requestDto.getScoreSessionId())
-                .orElseThrow(() -> new NotFoundException("Score session not found with ID: " + requestDto.getScoreSessionId()));
-        
-        // Verify session is in DRAFT status
-        if (scoreSession.getStatus() != SubmissionStatus.DRAFT && scoreSession.getStatus() != SubmissionStatus.REJECTED) {
-            throw new BadRequestException("Cannot update scores. Session is in " + scoreSession.getStatus() + " status");
-        }
-        
-        // Update each student score
-        for (var scoreUpdateDto : requestDto.getStudentScores()) {
-            studentScoreService.updateStudentScore(scoreUpdateDto);
-        }
-        
-        // Refresh session from database
-        scoreSession = scoreSessionRepository.findById(requestDto.getScoreSessionId()).get();
-        
-        log.info("Successfully updated scores for {} students", requestDto.getStudentScores().size());
-        return scoreSessionMapper.toDto(scoreSession);
-    }
-
-    @Override
-    @Transactional
     public ScoreSessionResponseDto updateScoreSession(ScoreSessionUpdateDto updateDto) {
         log.info("Updating score session with ID: {}", updateDto.getId());
         
@@ -274,38 +248,6 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     }
 
     @Override
-    @Transactional
-    public void calculateAttendanceScores(CalculateAttendanceScoresRequestDto requestDto) {
-        log.info("Calculating attendance scores for session ID: {}", requestDto.getScoreSessionId());
-        
-        ScoreSessionEntity scoreSession = scoreSessionRepository.findById(requestDto.getScoreSessionId())
-                .orElseThrow(() -> new NotFoundException("Score session not found with ID: " + requestDto.getScoreSessionId()));
-        
-        // Calculate attendance score for each student
-        for (StudentScoreEntity studentScore : scoreSession.getStudentScores()) {
-            try {
-                studentScoreService.calculateAttendanceScore(studentScore.getStudent().getId(), requestDto.getScoreSessionId());
-            } catch (Exception e) {
-                log.error("Error calculating attendance score for student ID: {}", studentScore.getStudent().getId(), e);
-                // Continue with next student if one fails
-            }
-        }
-        
-        log.info("Attendance scores calculated successfully for {} students", scoreSession.getStudentScores().size());
-    }
-
-    @Override
-    public List<ScoreSessionResponseDto> getScoreSessionsByTeacherId(Long teacherId) {
-        log.info("Getting score sessions for teacher ID: {}", teacherId);
-        
-        List<ScoreSessionEntity> sessions = scoreSessionRepository.findByTeacherId(teacherId);
-        
-        return sessions.stream()
-                .map(scoreSessionMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public List<ScoreSessionResponseDto> getScoreSessionsForReview() {
         log.info("Getting score sessions for review");
         
@@ -315,52 +257,5 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
                 .map(scoreSessionMapper::toDto)
                 .collect(Collectors.toList());
     }
-    
-    @Override
-    @Transactional
-    public void processNewlyAddedStudent(Long studentId, Long classId) {
-        log.info("Processing newly added student ID: {} for class ID: {}", studentId, classId);
-        
-        // Find all score sessions for this class
-        List<ScoreSessionEntity> sessions = scoreSessionRepository.findByClassId(classId);
-        
-        if (sessions.isEmpty()) {
-            log.info("No score sessions found for class ID: {}", classId);
-            return;
-        }
-        
-        // Get the student
-        UserEntity student = userRepository.findById(studentId)
-                .orElseThrow(() -> new NotFoundException("Student not found with ID: " + studentId));
-        
-        // For each session, ensure the student has a score record
-        for (ScoreSessionEntity session : sessions) {
-            if (!studentScoreRepository.existsByScoreSessionIdAndStudentId(session.getId(), studentId)) {
-                log.info("Creating score record for student ID: {} in session ID: {}", studentId, session.getId());
-                
-                // Create score record
-                StudentScoreEntity studentScore = new StudentScoreEntity();
-                studentScore.setScoreSession(session);
-                studentScore.setStudent(student);
-                
-                // Initialize with default values
-                studentScore.setAttendanceScore(0.0);
-                studentScore.setAssignmentScore(0.0);
-                studentScore.setMidtermScore(0.0);
-                studentScore.setFinalScore(0.0);
-                
-                studentScoreRepository.save(studentScore);
-                
-                // Try to calculate attendance score if possible
-                try {
-                    studentScoreService.calculateAttendanceScore(studentId, session.getId());
-                } catch (Exception e) {
-                    log.error("Error calculating attendance score for new student", e);
-                    // Don't fail the process if attendance calculation fails
-                }
-            }
-        }
-        
-        log.info("Successfully processed newly added student for {} score sessions", sessions.size());
-    }
+
 }
