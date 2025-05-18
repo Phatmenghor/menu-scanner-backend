@@ -16,7 +16,7 @@ public class ScoreSessionResponseDto {
     private String teacherName;
     private Long reviewerId;
     private String reviewerName;
-    private SubmissionStatus status;
+    private String status;
     private String teacherComments;
     private String staffComments;
     private LocalDateTime submissionDate;
