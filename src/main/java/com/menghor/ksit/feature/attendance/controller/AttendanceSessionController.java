@@ -23,7 +23,7 @@ import java.util.Base64;
 public class AttendanceSessionController {
     private final AttendanceSessionService sessionService;
     private final SecurityUtils securityUtils;
-    private final QrCodeGenerator qrCodeGenerator;
+
 
     @GetMapping("/{id}")
     public ResponseEntity<AttendanceSessionDto> getAttendanceSession(@PathVariable Long id) {
@@ -44,16 +44,5 @@ public class AttendanceSessionController {
     @PostMapping("/finalize/{sessionId}")
     public ResponseEntity<AttendanceSessionDto> finalizeSession(@PathVariable Long sessionId) {
         return ResponseEntity.ok(sessionService.finalizeAttendanceSession(sessionId));
-    }
-
-    @GetMapping(value = "generate-qr-image/{sessionId}", produces = MediaType.IMAGE_PNG_VALUE)
-    public ResponseEntity<byte[]> regenerateQrCodeImage(@PathVariable Long sessionId) {
-        QrResponse response = sessionService.regenerateQrCode(sessionId);
-        String base64QrCode = qrCodeGenerator.generateQrCodeBase64(response.getQrCode(), 500, 500);
-        byte[] qrCodeImage = Base64.getDecoder().decode(base64QrCode);
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .body(qrCodeImage);
     }
 }
