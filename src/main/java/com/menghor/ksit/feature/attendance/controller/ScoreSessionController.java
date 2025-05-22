@@ -59,7 +59,6 @@ public class ScoreSessionController {
         );
     }
 
-    
     @PutMapping("/update")
     public ApiResponse<ScoreSessionResponseDto> updateScoreSession(
             @Valid @RequestBody ScoreSessionUpdateDto updateDto) {

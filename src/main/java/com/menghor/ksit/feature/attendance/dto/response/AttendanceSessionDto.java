@@ -18,15 +18,13 @@ import java.util.List;
 public class AttendanceSessionDto {
     private Long id;
     private LocalDateTime sessionDate;
-    private String qrCode;
-    private LocalDateTime qrExpiryTime;
     private AttendanceFinalizationStatus finalizationStatus;
     private Status status;
     private Long scheduleId;
-    private String courseName;
     private String roomName;
-    private String className;
+    private String classCode;
     private Long teacherId;
     private String teacherName;
+    private String createdAt;
     private List<AttendanceDto> attendances;
 }

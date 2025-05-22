@@ -43,6 +43,7 @@ public class StudentUserResponseDto {
     private String nationality;
     private String ethnicity;
     private String placeOfBirth;
+    private String identifyNumber;
 
     // Student-specific fields
     private String memberSiblings;

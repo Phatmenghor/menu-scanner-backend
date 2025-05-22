@@ -49,7 +49,8 @@ public class StudentMapperImpl implements StudentMapper {
                 .nationality(user.getNationality())
                 .ethnicity(user.getEthnicity())
                 .placeOfBirth(user.getPlaceOfBirth())
-                .profileUrl(user.getProfileUrl());
+                .profileUrl(user.getProfileUrl())
+                .identifyNumber(user.getIdentifyNumber());
 
         // Map student-specific fields
         dto.memberSiblings(user.getMemberSiblings())
@@ -104,7 +105,8 @@ public class StudentMapperImpl implements StudentMapper {
                 .dateOfBirth(user.getDateOfBirth())
                 .phoneNumber(user.getPhoneNumber())
                 .createdAt(user.getCreatedAt().toString())
-                .profileUrl(user.getProfileUrl());
+                .profileUrl(user.getProfileUrl())
+                .identifyNumber(user.getIdentifyNumber());
 
         return dto.build();
     }

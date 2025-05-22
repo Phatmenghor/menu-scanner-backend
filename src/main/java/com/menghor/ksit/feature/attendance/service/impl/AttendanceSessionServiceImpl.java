@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.attendance.service.impl;
 
 import com.menghor.ksit.enumations.AttendanceFinalizationStatus;
 import com.menghor.ksit.enumations.AttendanceStatus;
+import com.menghor.ksit.enumations.AttendanceType;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.attendance.dto.request.AttendanceSessionRequest;
 import com.menghor.ksit.feature.attendance.dto.request.QrAttendanceRequest;
@@ -108,10 +109,9 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
             AttendanceEntity attendance = new AttendanceEntity();
             attendance.setStudent(student);
             attendance.setAttendanceSession(savedSession);
+            attendance.setAttendanceType(AttendanceType.NONE); // No type yet
+            attendance.setStatus(AttendanceStatus.ABSENT); // Not marked yet
             attendance.setFinalizationStatus(AttendanceFinalizationStatus.DRAFT);
-            attendance.setRecordedTime(now);
-            attendance.setAttendanceType(null); // No type yet
-            attendance.setStatus(null); // Not marked yet
             attendances.add(attendance);
         }
 
