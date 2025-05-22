@@ -31,28 +31,36 @@ public class AttendanceController {
     private final AttendanceSessionService sessionService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<AttendanceDto> getAttendance(@PathVariable Long id) {
-        return ResponseEntity.ok(attendanceService.findById(id));
+    public ApiResponse<AttendanceDto> getAttendance(@PathVariable Long id) {
+        log.info("Fetching attendance with ID: {}", id);
+        return new ApiResponse<>(
+                "success",
+                "Attendance retrieved successfully",
+                attendanceService.findById(id)
+        );
     }
 
     @PostMapping("/history")
     public ApiResponse<CustomPaginationResponseDto<AttendanceDto>> getAttendanceHistory(
             @RequestBody AttendanceHistoryFilterDto filterDto) {
         log.info("Fetching attendance history with filter: {}", filterDto);
-
         CustomPaginationResponseDto<AttendanceDto> response =
                 attendanceService.findAttendanceHistory(filterDto);
-
         return new ApiResponse<>(
                 "success",
                 "Attendance history retrieved successfully",
                 response
         );
     }
-    
+
     @PutMapping("/update")
-    public ResponseEntity<AttendanceDto> updateAttendance(@RequestBody AttendanceUpdateRequest request) {
-        return ResponseEntity.ok(attendanceService.updateAttendance(request));
+    public ApiResponse<AttendanceDto> updateAttendance(@RequestBody AttendanceUpdateRequest request) {
+        log.info("Updating attendance with request: {}", request);
+        return new ApiResponse<>(
+                "success",
+                "Attendance updated retrieved successfully",
+                attendanceService.updateAttendance(request)
+        );
     }
 
 }
