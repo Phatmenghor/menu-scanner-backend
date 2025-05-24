@@ -16,6 +16,7 @@ import com.menghor.ksit.feature.auth.mapper.StaffMapper;
 import com.menghor.ksit.feature.auth.models.*;
 import com.menghor.ksit.feature.auth.repository.*;
 import com.menghor.ksit.feature.auth.service.StaffService;
+import com.menghor.ksit.feature.auth.specification.UserSpecification;
 import com.menghor.ksit.feature.master.model.DepartmentEntity;
 import com.menghor.ksit.feature.master.repository.DepartmentRepository;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;

@@ -243,6 +243,14 @@ public class UserEntity extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ScheduleEntity> schedule = new ArrayList<>();
 
+    // payment
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PaymentEntity> payment = new ArrayList<>();
+
+    // payment student
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<PaymentEntity> payments;
+
     /**
      * Check if user has a specific role
      */

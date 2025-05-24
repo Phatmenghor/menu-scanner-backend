@@ -1,4 +1,4 @@
-package com.menghor.ksit.feature.auth.repository;
+package com.menghor.ksit.feature.auth.specification;
 
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;

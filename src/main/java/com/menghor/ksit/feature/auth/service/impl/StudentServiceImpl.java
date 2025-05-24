@@ -21,6 +21,7 @@ import com.menghor.ksit.feature.auth.mapper.StudentMapper;
 import com.menghor.ksit.feature.auth.models.*;
 import com.menghor.ksit.feature.auth.repository.*;
 import com.menghor.ksit.feature.auth.service.StudentService;
+import com.menghor.ksit.feature.auth.specification.UserSpecification;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.master.repository.ClassRepository;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
