@@ -11,6 +11,11 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Mapper(componentModel = "spring")
 public interface AttendanceMapper {
     AttendanceMapper INSTANCE = Mappers.getMapper(AttendanceMapper.class);
@@ -27,10 +32,26 @@ public interface AttendanceMapper {
     @Mapping(source = "teacher.id", target = "teacherId")
     @Mapping(source = "teacher", target = "teacherName", qualifiedByName = "mapTeacherName")
     @Mapping(source = "finalizationStatus", target = "finalizationStatus")
+    @Mapping(source = "attendances", target = "attendances", qualifiedByName = "sortAttendances")
     @Mapping(target = "totalStudents", expression = "java(calculateTotalStudents(entity))")
     @Mapping(target = "totalPresent", expression = "java(calculateTotalPresent(entity))")
     @Mapping(target = "totalAbsent", expression = "java(calculateTotalAbsent(entity))")
     AttendanceSessionDto toDto(AttendanceSessionEntity entity);
+
+    // Custom method to sort attendances: PRESENT first, then by createdAt
+    @Named("sortAttendances")
+    default List<AttendanceDto> sortAttendances(List<AttendanceEntity> attendances) {
+        if (attendances == null || attendances.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return attendances.stream()
+                .sorted(Comparator
+                        .comparing((AttendanceEntity a) -> a.getStatus().ordinal()) // PRESENT (0) first, ABSENT (1) second
+                        .thenComparing(AttendanceEntity::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()))) // Then by createdAt ascending, nulls last
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
 
     // Custom method to handle the student name logic
     @Named("mapStudentName")

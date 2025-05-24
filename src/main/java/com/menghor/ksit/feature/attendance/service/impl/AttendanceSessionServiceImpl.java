@@ -28,10 +28,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -81,6 +79,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         if (draftSession.isPresent()) {
             log.info("Draft attendance session already exists for today, returning existing session ID: {}",
                     draftSession.get().getId());
+            // Sorting will be handled by the mapper
             return attendanceMapper.toDto(draftSession.get());
         }
 
@@ -115,10 +114,12 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
             attendances.add(attendance);
         }
 
+        // Save all attendance records
         attendanceRepository.saveAll(attendances);
-        savedSession.setAttendances(attendances);
 
-        log.info("Created new attendance session with ID: {}", savedSession.getId());
+        log.info("Created new attendance session with ID: {} with {} students", savedSession.getId(), attendances.size());
+
+        // The sorting will be handled automatically in the mapper
         return attendanceMapper.toDto(savedSession);
     }
 
