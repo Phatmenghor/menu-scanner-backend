@@ -110,6 +110,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
             attendance.setAttendanceSession(savedSession);
             attendance.setAttendanceType(AttendanceType.NONE); // No type yet
             attendance.setStatus(AttendanceStatus.ABSENT); // Not marked yet
+            attendance.setRecordedTime(now); // Not recorded yet
             attendance.setFinalizationStatus(AttendanceFinalizationStatus.DRAFT);
             attendances.add(attendance);
         }
