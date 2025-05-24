@@ -25,6 +25,9 @@ public class AttendanceSessionDto {
     private String classCode;
     private Long teacherId;
     private String teacherName;
+    private Long totalStudents;
+    private Long totalPresent;
+    private Long totalAbsent;
     private String createdAt;
     private List<AttendanceDto> attendances;
 }
