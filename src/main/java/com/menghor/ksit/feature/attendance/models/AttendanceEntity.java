@@ -17,9 +17,11 @@ import java.time.LocalDateTime;
 @Setter
 public class AttendanceEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
-    private AttendanceStatus status;
+    @Column(name = "status", nullable = false)
+    private AttendanceStatus status = AttendanceStatus.ABSENT;
     
     @Enumerated(EnumType.STRING)
+    @Column(name = "attendance_type", nullable = false)
     private AttendanceType attendanceType = AttendanceType.NONE;
     
     @Column(name = "comment")
