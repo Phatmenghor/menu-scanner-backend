@@ -52,7 +52,7 @@ public class PaymentController {
         return ApiResponse.success("Payment retrieved successfully", payment);
     }
 
-    @GetMapping
+    @PostMapping("/all")
     public ApiResponse<CustomPaginationResponseDto<PaymentResponseDTO>> getAllPayments(
             @ModelAttribute PaymentFilterDTO filterDto) {
         CustomPaginationResponseDto<PaymentResponseDTO> payments = paymentService.getAllPayments(filterDto);
