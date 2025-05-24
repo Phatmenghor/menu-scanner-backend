@@ -56,11 +56,21 @@ public class AttendanceServiceImpl implements AttendanceService {
         AttendanceEntity attendance = attendanceRepository.findById(request.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Attendance not found with id: " + request.getId()));
 
-        attendance.setStatus(request.getStatus());
-        attendance.setAttendanceType(request.getAttendanceType());
-        attendance.setComment(request.getComment());
-        attendance.setRecordedTime(LocalDateTime.now());
+        // Only update if not null
+        if (request.getStatus() != null) {
+            attendance.setStatus(request.getStatus());
+        }
 
+        if (request.getAttendanceType() != null) {
+            attendance.setAttendanceType(request.getAttendanceType());
+        }
+
+        if (request.getComment() != null) {
+            attendance.setComment(request.getComment());
+        }
+
+        // Always update recorded time when any field is modified
+        attendance.setRecordedTime(LocalDateTime.now());
         return attendanceMapper.toDto(attendanceRepository.save(attendance));
     }
 
