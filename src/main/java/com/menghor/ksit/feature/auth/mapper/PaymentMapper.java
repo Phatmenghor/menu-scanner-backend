@@ -2,7 +2,7 @@ package com.menghor.ksit.feature.auth.mapper;
 
 import com.menghor.ksit.feature.auth.dto.request.PaymentCreateDTO;
 import com.menghor.ksit.feature.auth.dto.resposne.PaymentResponseDTO;
-import com.menghor.ksit.feature.auth.dto.update.PaymentUpdateDTO;
+import com.menghor.ksit.feature.auth.dto.update.PaymentUpdateDto;
 import com.menghor.ksit.feature.auth.models.PaymentEntity;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
@@ -26,7 +26,7 @@ public interface PaymentMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "user", source = "userId", qualifiedByName = "mapUserIdToUser")
-    void updateEntityFromDto(PaymentUpdateDTO dto, @MappingTarget PaymentEntity entity);
+    void updateEntityFromDto(PaymentUpdateDto dto, @MappingTarget PaymentEntity entity);
 
     @Mapping(target = "userId", source = "user.id")
     PaymentResponseDTO toResponseDto(PaymentEntity entity);

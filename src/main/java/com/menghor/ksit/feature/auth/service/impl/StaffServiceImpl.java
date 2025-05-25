@@ -704,13 +704,8 @@ public class StaffServiceImpl implements StaffService {
                     return new NotFoundException("User not found with ID: " + id);
                 });
 
-        // Verify user is staff type (not a student)
-        if (user.isStudent()) {
-            throw new BadRequestException("User with ID " + id + " is a student, not a staff user");
-        }
-
         // Instead of hard delete, deactivate the user
-        user.setStatus(Status.INACTIVE);
+        user.setStatus(Status.DELETED);
         UserEntity deactivatedUser = userRepository.save(user);
 
         log.info("Staff user with ID {} deactivated successfully", id);

@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class PaymentUpdateDTO {
+public class PaymentUpdateDto {
     private String item;
     private StudentTypePayment type;
     private String amount;

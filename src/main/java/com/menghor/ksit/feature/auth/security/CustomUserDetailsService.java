@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.auth.security;
 
+import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
@@ -31,16 +32,32 @@ public class CustomUserDetailsService implements UserDetailsService {
         UserEntity user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Username not found"));
 
-        // Check if the user is active
-        if (user.getStatus() == null || !user.getStatus().name().equals("ACTIVE")) {
-            throw new UsernameNotFoundException("User account is not active. Please contact administrator.");
-        }
-
         return new User(
                 user.getUsername(),
                 user.getPassword(),
+                isUserEnabled(user),        // enabled
+                true,                       // accountNonExpired
+                true,                       // credentialsNonExpired
+                isAccountNonLocked(user),   // accountNonLocked
                 mapRolesToAuthorities(user.getRoles())
         );
+    }
+
+    /**
+     * Check if user account is not locked
+     * DELETED users are considered locked (permanent)
+     * INACTIVE users are disabled but not locked (can be reactivated)
+     */
+    private boolean isAccountNonLocked(UserEntity user) {
+        return user.getStatus() != null && user.getStatus() != Status.DELETED;
+    }
+
+    /**
+     * Check if user account is enabled (active)
+     * Only ACTIVE users can login
+     */
+    private boolean isUserEnabled(UserEntity user) {
+        return user.getStatus() != null && user.getStatus() == Status.ACTIVE;
     }
 
     /**

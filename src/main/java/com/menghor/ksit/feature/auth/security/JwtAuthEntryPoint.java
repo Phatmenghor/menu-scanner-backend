@@ -3,61 +3,39 @@ package com.menghor.ksit.feature.auth.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
+/**
+ * JWT Authentication Entry Point
+ * Handles unauthenticated requests to protected resources
+ */
 @Component
 @Slf4j
 public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
+
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
-        // Log detailed request information
-        log.error("Unauthorized access attempt", authException);
-        log.error("Request URL: {}", request.getRequestURL());
-        log.error("Request Method: {}", request.getMethod());
 
-        // Log all headers
-        log.error("Request Headers:");
-        Enumeration<String> headerNames = request.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            String headerName = headerNames.nextElement();
-            log.error("{}: {}", headerName, request.getHeader(headerName));
-        }
+        log.error("Unauthorized access attempt to: {} - {}",
+                request.getRequestURI(), authException.getMessage());
 
-        // Prepare response
+        // Set response properties
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        String errorMessage = "Authentication failed";
-
-        // Provide more specific error messages based on exception type
-        if (authException instanceof UsernameNotFoundException) {
-            errorMessage = "User not found or subscription expired";
-        } else if (authException instanceof BadCredentialsException) {
-            errorMessage = "Invalid credentials";
-        } else if (authException instanceof InsufficientAuthenticationException) {
-            errorMessage = "Insufficient authentication details";
-        }
-
-        // Include the full exception message if available
-        if (authException.getMessage() != null) {
-            errorMessage += ": " + authException.getMessage();
-        }
-
+        // Simple JSON response for JWT authentication failures
         String jsonResponse = String.format(
-                "{\"code\": 401, \"status\": \"failed\", \"message\": \"%s\"}",
-                errorMessage.replace("\"", "'")
+                "{\"statusCode\": 401, \"message\": \"Authentication required. Please provide a valid token\", \"timestamp\": \"%s\", \"path\": \"%s\"}",
+                new java.util.Date().toString(),
+                request.getRequestURI()
         );
 
-        log.error("Sending error response: {}", jsonResponse);
         response.getWriter().write(jsonResponse);
     }
 }

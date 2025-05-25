@@ -10,7 +10,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -69,6 +70,12 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
                 } catch (org.springframework.security.core.userdetails.UsernameNotFoundException ex) {
                     log.error("Authentication failed for user {}: {}", username, ex.getMessage());
+                    SecurityContextHolder.clearContext();
+                } catch (DisabledException ex) {
+                    log.error("Account disabled for user {}: {}", username, ex.getMessage());
+                    SecurityContextHolder.clearContext();
+                } catch (LockedException ex) {
+                    log.error("Account locked for user {}: {}", username, ex.getMessage());
                     SecurityContextHolder.clearContext();
                 }
             }

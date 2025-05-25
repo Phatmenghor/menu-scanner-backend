@@ -1,10 +1,10 @@
 package com.menghor.ksit.feature.auth.service.impl;
 
 import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.feature.auth.dto.filter.PaymentFilterDTO;
+import com.menghor.ksit.feature.auth.dto.filter.PaymentFilterDto;
 import com.menghor.ksit.feature.auth.dto.request.PaymentCreateDTO;
 import com.menghor.ksit.feature.auth.dto.resposne.PaymentResponseDTO;
-import com.menghor.ksit.feature.auth.dto.update.PaymentUpdateDTO;
+import com.menghor.ksit.feature.auth.dto.update.PaymentUpdateDto;
 import com.menghor.ksit.feature.auth.mapper.PaymentMapper;
 import com.menghor.ksit.feature.auth.models.PaymentEntity;
 import com.menghor.ksit.feature.auth.repository.PaymentRepository;
@@ -19,9 +19,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -43,7 +40,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public PaymentResponseDTO updatePayment(Long id, PaymentUpdateDTO updateDTO) {
+    public PaymentResponseDTO updatePayment(Long id, PaymentUpdateDto updateDTO) {
         log.info("Updating payment with ID: {}", id);
 
         PaymentEntity payment = paymentRepository.findById(id)
@@ -69,7 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional()
-    public CustomPaginationResponseDto<PaymentResponseDTO> getAllPayments(PaymentFilterDTO filterDto) {
+    public CustomPaginationResponseDto<PaymentResponseDTO> getAllPayments(PaymentFilterDto filterDto) {
         log.info("Fetching all payments with filter: {}", filterDto);
 
         // Validate and prepare pagination using PaginationUtils
@@ -111,16 +108,18 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public void deletePayment(Long id) {
+    public PaymentResponseDTO deletePayment(Long id) {
         log.info("Soft deleting payment with ID: {}", id);
 
         PaymentEntity payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Payment not found with ID: " + id));
 
         payment.setStatus(Status.DELETED);
-        paymentRepository.save(payment);
+        payment = paymentRepository.save(payment);
 
         log.info("Payment soft deleted successfully with ID: {}", id);
+        return paymentMapper.toResponseDto(payment);
+
     }
 
 }

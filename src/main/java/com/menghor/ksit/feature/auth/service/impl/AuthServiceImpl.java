@@ -54,13 +54,13 @@ public class AuthServiceImpl implements AuthService {
                         loginRequestDto.getEmail(),
                         loginRequestDto.getPassword()));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtGenerator.generateToken(authentication);
-
-        // Get the authenticated user to include their info in the response
         UserEntity user = userRepository.findByUsername(loginRequestDto.getEmail())
                 .orElseThrow(() -> new NotFoundException(
                         String.format(ErrorMessages.EMAIL_NOT_FOUND, loginRequestDto.getEmail())));
+
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = jwtGenerator.generateToken(authentication);
 
         // Extract roles
         List<RoleEnum> roles = user.getRoles().stream()
