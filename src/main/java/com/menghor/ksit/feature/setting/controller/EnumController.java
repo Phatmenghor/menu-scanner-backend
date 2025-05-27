@@ -34,7 +34,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all attendance finalization status enum values successfully...!",
                 days
         );
@@ -54,7 +54,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all attendance status enum values successfully...!",
                 statuses
         );
@@ -74,7 +74,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all attendance type enum values successfully...!",
                 types
         );
@@ -93,7 +93,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all enum day of week successfully...!",
                 days
         );
@@ -113,7 +113,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all degree enum values successfully...!",
                 degrees
         );
@@ -138,7 +138,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all education level successfully...!",
                 levels
         );
@@ -158,7 +158,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all gender enum values successfully...!",
                 genders
         );
@@ -178,7 +178,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all grade enum values successfully...!",
                 parents
         );
@@ -198,7 +198,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all parent enum values successfully...!",
                 parents
         );
@@ -223,7 +223,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all position type successfully...!",
                 positions
         );
@@ -243,7 +243,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all role enum values successfully...!",
                 roles
         );
@@ -268,7 +268,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all semester successfully...!",
                 semesters
         );
@@ -288,7 +288,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all semester type enum values successfully...!",
                 semesterTypes
         );
@@ -308,7 +308,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all status enum values successfully...!",
                 statuses
         );
@@ -333,7 +333,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all student type payment successfully...!",
                 years
         );
@@ -358,7 +358,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all student type payment successfully...!",
                 years
         );
@@ -383,7 +383,7 @@ public class EnumController {
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(
-                "Success",
+                "success",
                 "Get all year level successfully...!",
                 years
         );
