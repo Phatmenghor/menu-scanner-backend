@@ -19,12 +19,11 @@ import java.util.stream.Collectors;
 @RestController
 @Slf4j
 @RequestMapping("/api/v1/enums")
-@Tag(name = "Enum status", description = "All of enumerations")
 public class EnumController {
 
-    @GetMapping("/days-of-week")
-    public ApiResponse<List<Map<String, Object>>> getAllDaysOfWeek() {
-        List<Map<String, Object>> days = Arrays.stream(DayOfWeek.values())
+    @GetMapping("/attendance-final-status")
+    public ApiResponse<List<Map<String, Object>>> getAllAttendanceFinalStatus() {
+        List<Map<String, Object>> days = Arrays.stream(AttendanceFinalizationStatus.values())
                 .map(day -> {
                     Map<String, Object> dayMap = new HashMap<>();
                     dayMap.put("id", day.ordinal() + 1); // Adding 1 to start from 1
@@ -36,7 +35,7 @@ public class EnumController {
 
         return new ApiResponse<>(
                 "Success",
-                "Get all enum day of week successfully...!",
+                "Get all attendance finalization status enum values successfully...!",
                 days
         );
     }
@@ -78,6 +77,25 @@ public class EnumController {
                 "Success",
                 "Get all attendance type enum values successfully...!",
                 types
+        );
+    }
+
+    @GetMapping("/days-of-week")
+    public ApiResponse<List<Map<String, Object>>> getAllDaysOfWeek() {
+        List<Map<String, Object>> days = Arrays.stream(DayOfWeek.values())
+                .map(day -> {
+                    Map<String, Object> dayMap = new HashMap<>();
+                    dayMap.put("id", day.ordinal() + 1); // Adding 1 to start from 1
+                    dayMap.put("name", day.name());
+                    dayMap.put("displayName", day.name().charAt(0) + day.name().substring(1).toLowerCase());
+                    return dayMap;
+                })
+                .collect(Collectors.toList());
+
+        return new ApiResponse<>(
+                "Success",
+                "Get all enum day of week successfully...!",
+                days
         );
     }
 
@@ -143,6 +161,26 @@ public class EnumController {
                 "Success",
                 "Get all gender enum values successfully...!",
                 genders
+        );
+    }
+
+    @GetMapping("/grade")
+    public ApiResponse<List<Map<String, Object>>> getAllGrade() {
+        List<Map<String, Object>> parents = Arrays.stream(GradeLevel.values())
+                .map(parent -> {
+                    Map<String, Object> parentMap = new HashMap<>();
+                    parentMap.put("id", parent.ordinal() + 1);
+                    parentMap.put("name", parent.name());
+                    // Display name with no underscore formatting needed for this enum
+                    parentMap.put("displayName", parent.name().charAt(0) + parent.name().substring(1).toLowerCase());
+                    return parentMap;
+                })
+                .collect(Collectors.toList());
+
+        return new ApiResponse<>(
+                "Success",
+                "Get all grade enum values successfully...!",
+                parents
         );
     }
 
@@ -273,6 +311,56 @@ public class EnumController {
                 "Success",
                 "Get all status enum values successfully...!",
                 statuses
+        );
+    }
+
+    @GetMapping("/student-type-payment")
+    public ApiResponse<List<Map<String, Object>>> getAllStudentType() {
+        List<Map<String, Object>> years = Arrays.stream(StudentTypePayment.values())
+                .map(year -> {
+                    Map<String, Object> yearMap = new HashMap<>();
+                    yearMap.put("id", year.ordinal() + 1);
+                    yearMap.put("name", year.name());
+
+                    // Create formatted display name
+                    String displayName = Arrays.stream(year.name().split("_"))
+                            .map(word -> word.charAt(0) + word.substring(1).toLowerCase())
+                            .collect(Collectors.joining(" "));
+
+                    yearMap.put("displayName", displayName);
+                    return yearMap;
+                })
+                .collect(Collectors.toList());
+
+        return new ApiResponse<>(
+                "Success",
+                "Get all student type payment successfully...!",
+                years
+        );
+    }
+
+    @GetMapping("/submission-status")
+    public ApiResponse<List<Map<String, Object>>> getAllSubmissionStatus() {
+        List<Map<String, Object>> years = Arrays.stream(SubmissionStatus.values())
+                .map(year -> {
+                    Map<String, Object> yearMap = new HashMap<>();
+                    yearMap.put("id", year.ordinal() + 1);
+                    yearMap.put("name", year.name());
+
+                    // Create formatted display name
+                    String displayName = Arrays.stream(year.name().split("_"))
+                            .map(word -> word.charAt(0) + word.substring(1).toLowerCase())
+                            .collect(Collectors.joining(" "));
+
+                    yearMap.put("displayName", displayName);
+                    return yearMap;
+                })
+                .collect(Collectors.toList());
+
+        return new ApiResponse<>(
+                "Success",
+                "Get all student type payment successfully...!",
+                years
         );
     }
 

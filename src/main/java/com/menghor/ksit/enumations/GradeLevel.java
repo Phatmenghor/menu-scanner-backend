@@ -1,5 +1,8 @@
 package com.menghor.ksit.enumations;
 
+import lombok.Getter;
+
+@Getter
 public enum GradeLevel {
     A_PLUS("A+", 95.0, 100.0),
     A("A", 90.0, 94.99),
@@ -23,18 +26,6 @@ public enum GradeLevel {
         this.grade = grade;
         this.minScore = minScore;
         this.maxScore = maxScore;
-    }
-
-    public String getGrade() {
-        return grade;
-    }
-
-    public double getMinScore() {
-        return minScore;
-    }
-
-    public double getMaxScore() {
-        return maxScore;
     }
 
     public static GradeLevel fromScore(double score) {
