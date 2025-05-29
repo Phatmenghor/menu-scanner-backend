@@ -3,11 +3,8 @@ package com.menghor.ksit.feature.school.service;
 import com.menghor.ksit.feature.school.dto.filter.ScheduleFilterDto;
 import com.menghor.ksit.feature.school.dto.request.ScheduleRequestDto;
 import com.menghor.ksit.feature.school.dto.response.ScheduleResponseDto;
-import com.menghor.ksit.feature.school.dto.response.ScheduleResponseListDto;
 import com.menghor.ksit.feature.school.dto.update.ScheduleUpdateDto;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
-
-import java.util.List;
 
 public interface ScheduleService {
 

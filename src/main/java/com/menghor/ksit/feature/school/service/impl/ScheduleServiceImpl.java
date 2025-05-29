@@ -226,9 +226,11 @@ public class ScheduleServiceImpl implements ScheduleService {
             if (teacherJoin == null) {
                 teacherJoin = root.join("user", JoinType.LEFT);
             }
+
             if (courseJoin == null) {
                 courseJoin = root.join("course", JoinType.LEFT);
             }
+
             if (roomJoin == null) {
                 roomJoin = root.join("room", JoinType.LEFT);
             }
