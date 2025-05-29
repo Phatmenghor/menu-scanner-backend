@@ -19,9 +19,9 @@ import java.util.List;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface RequestMapper {
 
-    // Main entity to response DTO mapping (detailed version with history)
-    @Named("toDetailedResponseDto")
-    @Mapping(target = "user", source = "user", qualifiedByName = "mapToUserBasicInfo")
+    // === BASIC MAPPINGS WITHOUT QUALIFIERS ===
+
+    // Main entity to response DTO mapping
     RequestResponseDto toResponseDto(RequestEntity entity);
 
     // Create DTO to entity mapping
@@ -46,37 +46,18 @@ public interface RequestMapper {
     void updateEntityFromDto(RequestUpdateDto updateDto, @MappingTarget RequestEntity entity);
 
     // User to User Basic Info mapping
-    @Named("mapToUserBasicInfo")
-    @Mapping(target = "userClass", source = "classes", qualifiedByName = "mapToClassBasicInfo")
+    @Mapping(target = "userClass", ignore = true)  // Ignore until we fix the field name
     UserBasicInfoDto toUserBasicInfo(UserEntity user);
 
     // Class to Class Basic Info mapping
-    @Named("mapToClassBasicInfo")
     ClassBasicInfoDto toClassBasicInfo(ClassEntity classEntity);
 
     // History entity to DTO mapping
-    @Mapping(target = "user", source = "user", qualifiedByName = "mapToUserBasicInfoForHistory")
     RequestHistoryDto toHistoryDto(RequestHistoryEntity entity);
 
-    // User to User Basic Info mapping for history (simpler version)
-    @Named("mapToUserBasicInfoForHistory")
-    @Mapping(target = "userClass", ignore = true)
-    UserBasicInfoDto toUserBasicInfoForHistory(UserEntity user);
-
-    // Summary/List view mapping (lighter version without full details)
-    @Named("toListResponseDto")
-    @Mapping(target = "user", source = "user", qualifiedByName = "mapToUserBasicInfo")
-    RequestResponseDto toListResponseDto(RequestEntity entity);
-
-    @Named("mapToHistoryDtoList")
-    List<RequestHistoryDto> toHistoryDtoList(List<RequestHistoryEntity> entities);
-
-    // List mappings - specify which method to use
-    @IterableMapping(qualifiedByName = "toDetailedResponseDto")
+    // List mappings
     List<RequestResponseDto> toResponseDtoList(List<RequestEntity> entities);
-
-    @IterableMapping(qualifiedByName = "toListResponseDto")
-    List<RequestResponseDto> toListResponseDtoList(List<RequestEntity> entities);
+    List<RequestHistoryDto> toHistoryDtoList(List<RequestHistoryEntity> entities);
 
     // Pagination response mapping
     default CustomPaginationResponseDto<RequestResponseDto> toPaginationResponse(Page<RequestEntity> page) {
@@ -92,8 +73,9 @@ public interface RequestMapper {
                 .build();
     }
 
+    // List pagination response mapping (for lighter list views)
     default CustomPaginationResponseDto<RequestResponseDto> toListPaginationResponse(Page<RequestEntity> page) {
-        List<RequestResponseDto> content = toListResponseDtoList(page.getContent());
+        List<RequestResponseDto> content = toResponseDtoList(page.getContent());
 
         return CustomPaginationResponseDto.<RequestResponseDto>builder()
                 .content(content)
