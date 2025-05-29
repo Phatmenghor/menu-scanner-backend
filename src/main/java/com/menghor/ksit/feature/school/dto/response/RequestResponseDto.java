@@ -1,8 +1,7 @@
 package com.menghor.ksit.feature.school.dto.response;
 
 import com.menghor.ksit.enumations.RequestStatus;
-import com.menghor.ksit.feature.auth.dto.resposne.StudentResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
+import com.menghor.ksit.feature.auth.dto.resposne.StudentUserListResponseDto;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -15,7 +14,7 @@ public class RequestResponseDto {
     private RequestStatus status;
     private String requestComment;
     private String staffComment;
-    private StudentUserResponseDto user;
+    private StudentUserListResponseDto user;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

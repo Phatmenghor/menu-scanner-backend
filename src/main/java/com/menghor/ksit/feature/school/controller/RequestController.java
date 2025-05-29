@@ -2,7 +2,9 @@ package com.menghor.ksit.feature.school.controller;
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.school.dto.filter.RequestFilterDto;
+import com.menghor.ksit.feature.school.dto.filter.RequestHistoryFilterDto;
 import com.menghor.ksit.feature.school.dto.request.RequestCreateDto;
+import com.menghor.ksit.feature.school.dto.response.RequestHistoryDto;
 import com.menghor.ksit.feature.school.dto.response.RequestResponseDto;
 import com.menghor.ksit.feature.school.dto.update.RequestUpdateDto;
 import com.menghor.ksit.feature.school.service.RequestService;
@@ -58,6 +60,17 @@ public class RequestController {
         CustomPaginationResponseDto<RequestResponseDto> response = requestService.getAllRequests(filterDto);
         log.info("Requests fetched successfully. Total elements: {}", response.getTotalElements());
         return ApiResponse.success("Requests fetched successfully", response);
+    }
+
+    @PostMapping("/history")
+    public ApiResponse<CustomPaginationResponseDto<RequestHistoryDto>> getRequestHistory(
+            @RequestBody RequestHistoryFilterDto filterDto) {
+        log.info("Fetching history for request with ID: {} and filter: {}", filterDto.getRequestId(), filterDto);
+
+
+        CustomPaginationResponseDto<RequestHistoryDto> response = requestService.getRequestHistory(filterDto);
+        log.info("Request history fetched successfully for ID: {}. Total elements: {}", filterDto.getRequestId(), response.getTotalElements());
+        return ApiResponse.success("Request history fetched successfully", response);
     }
     
     @DeleteMapping("/{id}")

@@ -3,9 +3,10 @@ package com.menghor.ksit.feature.school.service.impl;
 import com.menghor.ksit.enumations.RequestStatus;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.models.UserEntity;
-import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.school.dto.filter.RequestFilterDto;
+import com.menghor.ksit.feature.school.dto.filter.RequestHistoryFilterDto;
 import com.menghor.ksit.feature.school.dto.request.RequestCreateDto;
+import com.menghor.ksit.feature.school.dto.response.RequestHistoryDto;
 import com.menghor.ksit.feature.school.dto.response.RequestResponseDto;
 import com.menghor.ksit.feature.school.dto.update.RequestUpdateDto;
 import com.menghor.ksit.feature.school.mapper.RequestMapper;
@@ -14,6 +15,7 @@ import com.menghor.ksit.feature.school.model.RequestHistoryEntity;
 import com.menghor.ksit.feature.school.repository.RequestHistoryRepository;
 import com.menghor.ksit.feature.school.repository.RequestRepository;
 import com.menghor.ksit.feature.school.service.RequestService;
+import com.menghor.ksit.feature.school.specification.RequestHistorySpecification;
 import com.menghor.ksit.feature.school.specification.RequestSpecification;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.database.SecurityUtils;
@@ -34,7 +36,6 @@ public class RequestServiceImpl implements RequestService {
     
     private final RequestRepository requestRepository;
     private final RequestHistoryRepository historyRepository;
-    private final UserRepository userRepository;
     private final RequestMapper requestMapper;
     private final SecurityUtils securityUtils;
     
@@ -52,7 +53,7 @@ public class RequestServiceImpl implements RequestService {
         RequestEntity savedRequest = requestRepository.save(request);
         
         // Create history entry
-        createHistoryEntry(savedRequest, null, RequestStatus.PENDING,
+        createHistoryEntry(savedRequest, RequestStatus.PENDING, RequestStatus.PENDING,
             "Request created by user", currentUser);
         
         log.info("Request created successfully with ID: {}", savedRequest.getId());
@@ -74,7 +75,7 @@ public class RequestServiceImpl implements RequestService {
         
         // Create history entry
         String action = currentUser.isOther() ? "Request updated by staff" : "Request updated by user";
-        createHistoryEntry(updatedRequest, request.getStatus(), request.getStatus(), action, currentUser);
+        createHistoryEntry(updatedRequest, request.getStatus(), updateDto.getStatus(), action, currentUser);
         
         log.info("Request with ID {} updated successfully", id);
         return requestMapper.toResponseDto(updatedRequest);
@@ -92,13 +93,6 @@ public class RequestServiceImpl implements RequestService {
     public CustomPaginationResponseDto<RequestResponseDto> getAllRequests(RequestFilterDto filterDto) {
         log.info("Fetching all requests with filter: {}", filterDto);
         
-        UserEntity currentUser = securityUtils.getCurrentUser();
-        
-        // If current user is not staff, only show their requests
-        if (!currentUser.isOther()) {
-            filterDto.setUserId(currentUser.getId());
-        }
-        
         Pageable pageable = PaginationUtils.createPageable(
             filterDto.getPageNo(),
             filterDto.getPageSize(),
@@ -112,6 +106,25 @@ public class RequestServiceImpl implements RequestService {
         // Use list version for better performance in list view
         return requestMapper.toListPaginationResponse(requestPage);
     }
+
+    @Override
+    @Transactional()
+    public CustomPaginationResponseDto<RequestHistoryDto> getRequestHistory(RequestHistoryFilterDto filterDto) {
+        log.info("Fetching history with filter: {}", filterDto);
+
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
+
+        Specification<RequestHistoryEntity> spec = RequestHistorySpecification.createSpecification(filterDto);
+        Page<RequestHistoryEntity> historyPage = historyRepository.findAll(spec, pageable);
+
+        return requestMapper.toHistoryPaginationResponse(historyPage);
+    }
+
 
     @Override
     @Transactional

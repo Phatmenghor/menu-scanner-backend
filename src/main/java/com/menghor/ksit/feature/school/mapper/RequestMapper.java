@@ -1,10 +1,8 @@
 package com.menghor.ksit.feature.school.mapper;
 
 import com.menghor.ksit.feature.auth.models.UserEntity;
-import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.school.dto.request.RequestCreateDto;
-import com.menghor.ksit.feature.school.dto.request.RequestHistoryDto;
-import com.menghor.ksit.feature.school.dto.response.ClassBasicInfoDto;
+import com.menghor.ksit.feature.school.dto.response.RequestHistoryDto;
 import com.menghor.ksit.feature.school.dto.response.RequestResponseDto;
 import com.menghor.ksit.feature.school.dto.response.UserBasicInfoDto;
 import com.menghor.ksit.feature.school.dto.update.RequestUpdateDto;
@@ -31,26 +29,21 @@ public interface RequestMapper {
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "staffComment", ignore = true)
     RequestEntity toEntity(RequestCreateDto createDto);
 
     // Update entity from DTO (only update non-null values)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "status", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "staffComment", ignore = true)
     void updateEntityFromDto(RequestUpdateDto updateDto, @MappingTarget RequestEntity entity);
 
     // User to User Basic Info mapping
     @Mapping(target = "userClass", ignore = true)  // Ignore until we fix the field name
     UserBasicInfoDto toUserBasicInfo(UserEntity user);
 
-    // Class to Class Basic Info mapping
-    ClassBasicInfoDto toClassBasicInfo(ClassEntity classEntity);
 
     // History entity to DTO mapping
     RequestHistoryDto toHistoryDto(RequestHistoryEntity entity);
@@ -59,8 +52,8 @@ public interface RequestMapper {
     List<RequestResponseDto> toResponseDtoList(List<RequestEntity> entities);
     List<RequestHistoryDto> toHistoryDtoList(List<RequestHistoryEntity> entities);
 
-    // Pagination response mapping
-    default CustomPaginationResponseDto<RequestResponseDto> toPaginationResponse(Page<RequestEntity> page) {
+    // List pagination response mapping (for lighter list views)
+    default CustomPaginationResponseDto<RequestResponseDto> toListPaginationResponse(Page<RequestEntity> page) {
         List<RequestResponseDto> content = toResponseDtoList(page.getContent());
 
         return CustomPaginationResponseDto.<RequestResponseDto>builder()
@@ -73,11 +66,10 @@ public interface RequestMapper {
                 .build();
     }
 
-    // List pagination response mapping (for lighter list views)
-    default CustomPaginationResponseDto<RequestResponseDto> toListPaginationResponse(Page<RequestEntity> page) {
-        List<RequestResponseDto> content = toResponseDtoList(page.getContent());
+    default CustomPaginationResponseDto<RequestHistoryDto> toHistoryPaginationResponse(Page<RequestHistoryEntity> page) {
+        List<RequestHistoryDto> content = toHistoryDtoList(page.getContent());
 
-        return CustomPaginationResponseDto.<RequestResponseDto>builder()
+        return CustomPaginationResponseDto.<RequestHistoryDto>builder()
                 .content(content)
                 .pageNo(page.getNumber() + 1)
                 .pageSize(page.getSize())
