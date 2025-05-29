@@ -20,12 +20,7 @@ public interface ScoreSessionService {
      * Get a score session by its ID
      */
     ScoreSessionResponseDto getScoreSessionById(Long id);
-    
-    /**
-     * Get a score session by schedule ID
-     */
-    ScoreSessionResponseDto getScoreSessionByScheduleId(Long scheduleId);
-    
+
     /**
      * Update score session status and comments
      */
@@ -40,10 +35,5 @@ public interface ScoreSessionService {
      * Staff review of score session (approve/reject/pending)
      */
     ScoreSessionResponseDto reviewScoreSession(Long scoreSessionId, SubmissionStatus status, String comments);
-
-    /**
-     * Get all score sessions for staff review
-     */
-    List<ScoreSessionResponseDto> getScoreSessionsForReview();
 
 }

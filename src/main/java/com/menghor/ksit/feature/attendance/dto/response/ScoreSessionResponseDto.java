@@ -10,16 +10,13 @@ import java.util.List;
 public class ScoreSessionResponseDto {
     private Long id;
     private Long scheduleId;
-    private String className;
+    private String classCode;
     private String courseName;
     private Long teacherId;
     private String teacherName;
-    private Long reviewerId;
-    private String reviewerName;
     private String status;
     private String teacherComments;
     private String staffComments;
     private LocalDateTime submissionDate;
-    private LocalDateTime reviewDate;
     private List<StudentScoreResponseDto> studentScores;
 }

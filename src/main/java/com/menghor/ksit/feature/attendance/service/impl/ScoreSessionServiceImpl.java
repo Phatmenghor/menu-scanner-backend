@@ -158,16 +158,6 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     }
 
     @Override
-    public ScoreSessionResponseDto getScoreSessionByScheduleId(Long scheduleId) {
-        log.info("Getting score session for schedule ID: {}", scheduleId);
-
-        ScoreSessionEntity scoreSession = scoreSessionRepository.findByScheduleId(scheduleId)
-                .orElseThrow(() -> new NotFoundException("No score session found for schedule with ID: " + scheduleId));
-
-        return scoreSessionMapper.toDto(scoreSession);
-    }
-
-    @Override
     @Transactional
     public ScoreSessionResponseDto updateScoreSession(ScoreSessionUpdateDto updateDto) {
         log.info("Updating score session with ID: {}", updateDto.getId());
@@ -250,8 +240,6 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
 
         // Update status, set reviewer and review date
         scoreSession.setStatus(status);
-        scoreSession.setReviewer(securityUtils.getCurrentUser());
-        scoreSession.setReviewDate(LocalDateTime.now());
 
         // Update staff comments if provided
         if (comments != null && !comments.trim().isEmpty()) {
@@ -262,16 +250,5 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
         log.info("Score session reviewed successfully, new status: {}", status);
 
         return scoreSessionMapper.toDto(updatedSession);
-    }
-
-    @Override
-    public List<ScoreSessionResponseDto> getScoreSessionsForReview() {
-        log.info("Getting score sessions for review");
-
-        List<ScoreSessionEntity> sessions = scoreSessionRepository.findByStatus(SubmissionStatus.SUBMITTED);
-
-        return sessions.stream()
-                .map(scoreSessionMapper::toDto)
-                .collect(Collectors.toList());
     }
 }

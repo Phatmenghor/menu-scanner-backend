@@ -25,16 +25,9 @@ public class ScoreSessionEntity extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "teacher_id", nullable = false)
     private UserEntity teacher;
-    
-    @ManyToOne
-    @JoinColumn(name = "reviewer_id")
-    private UserEntity reviewer;
-    
+
     @Column(name = "submission_date")
     private LocalDateTime submissionDate;
-    
-    @Column(name = "review_date")
-    private LocalDateTime reviewDate;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -47,17 +47,6 @@ public class ScoreSessionController {
                 responseDto
         );
     }
-    
-    @GetMapping("/schedule/{scheduleId}")
-    public ApiResponse<ScoreSessionResponseDto> getScoreSessionByScheduleId(@PathVariable Long scheduleId) {
-        log.info("REST request to get score session by schedule ID: {}", scheduleId);
-        ScoreSessionResponseDto responseDto = scoreSessionService.getScoreSessionByScheduleId(scheduleId);
-        return new ApiResponse<>(
-                "success",
-                "Score session retrieved successfully",
-                responseDto
-        );
-    }
 
     @PutMapping("/update")
     public ApiResponse<ScoreSessionResponseDto> updateScoreSession(
@@ -82,10 +71,10 @@ public class ScoreSessionController {
                 responseDto
         );
     }
-    
+
     @PostMapping("/review/{id}")
     public ApiResponse<ScoreSessionResponseDto> reviewScoreSession(
-            @PathVariable Long id, 
+            @PathVariable Long id,
             @RequestParam SubmissionStatus status,
             @RequestParam(required = false) String comments) {
         log.info("REST request to review score session: {}, status: {}", id, status);
@@ -94,18 +83,6 @@ public class ScoreSessionController {
                 "success",
                 "Score session reviewed successfully",
                 responseDto
-        );
-    }
-
-    
-    @GetMapping("/for-review")
-    public ApiResponse<List<ScoreSessionResponseDto>> getScoreSessionsForReview() {
-        log.info("REST request to get score sessions for review");
-        List<ScoreSessionResponseDto> responseDtos = scoreSessionService.getScoreSessionsForReview();
-        return new ApiResponse<>(
-                "success",
-                "Score sessions for review retrieved successfully",
-                responseDtos
         );
     }
 }
