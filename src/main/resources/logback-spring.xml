@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <property name="LOG_PATH" value="logs" />
+    <!-- Use environment variable LOG_PATH or default to /opt/logs -->
+    <property name="LOG_PATH" value="${LOG_PATH:-/opt/logs}" />
     <property name="LOG_FILE_NAME" value="ks-it" />
     <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
     <property name="MAX_FILE_SIZE" value="1024MB" />
@@ -18,13 +19,9 @@
             <pattern>${LOG_PATTERN}</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- daily rollover with date in the filename and incremental counter -->
             <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
-            <!-- each file should be at most 1GB -->
             <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
-            <!-- keep 30 days of history -->
             <maxHistory>30</maxHistory>
-            <!-- total size of all archive files, if total size > 30GB, it will delete old archived file -->
             <totalSizeCap>30GB</totalSizeCap>
         </rollingPolicy>
     </appender>

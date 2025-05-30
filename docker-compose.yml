@@ -11,12 +11,11 @@ services:
       SPRING_DATASOURCE_USERNAME: menghor
       SPRING_DATASOURCE_PASSWORD: Hour1819
       SPRING_PROFILES_ACTIVE: prod
-      LOG_PATH: /opt/ksit-api/logs  # Point to host directory
+      LOG_PATH: /opt/logs
     ports:
       - "8080:8080"
     volumes:
-      # Mount host directory directly
-      - /opt/ksit-api/logs:/opt/ksit-api/logs
+      - /opt/logs:/opt/logs
     depends_on:
       - postgres
     networks:
@@ -60,4 +59,3 @@ networks:
 
 volumes:
   postgres_data:
-  # Removed app_logs volume since we're using host directory

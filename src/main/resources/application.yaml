@@ -17,17 +17,9 @@ spring:
           use_jdbc_metadata_defaults: false
 
   datasource:
-#    url: jdbc:postgresql://143.198.93.97:5434/ks_it_school
-#    username: menghor
-#    password: Hour1819
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://143.198.93.97:5434/ks_it_school}
     username: ${SPRING_DATASOURCE_USERNAME:menghor}
     password: ${SPRING_DATASOURCE_PASSWORD:Hour1819}
-
-#    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/ks_it_school}
-#    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-#    password: ${SPRING_DATASOURCE_PASSWORD:Hour1819}
-
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -43,8 +35,6 @@ spring:
         static-locations: classpath:/static/,classpath:/public/
 
 # Logging configuration
-# Logging configuration
-# Logging configuration
 logging:
   config: classpath:logback-spring.xml
   level:
@@ -56,14 +46,13 @@ logging:
   file:
     path: ${LOG_PATH:/opt/logs}
 
-
 server:
   port: ${APP_PORT:8080}
 
 jwt:
   secret:
     key: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
-  expiration-min: 1440000000000  # 10 days in minutes
+  expiration-min: 1440000000000
 
 springdoc:
   swagger-ui:
