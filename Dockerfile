@@ -36,7 +36,7 @@ COPY --from=build /app/target/*.jar app.jar
 # Expose port
 EXPOSE 8080
 
-# Set environment variable for log path to /opt/logs
+# Set environment variable for log path
 ENV LOG_PATH=/opt/logs
 
 # Default command to run the jar

@@ -11,12 +11,12 @@ services:
       SPRING_DATASOURCE_USERNAME: menghor
       SPRING_DATASOURCE_PASSWORD: Hour1819
       SPRING_PROFILES_ACTIVE: prod
-      LOG_PATH: /opt/logs  # Changed to /opt/logs
+      LOG_PATH: /opt/ksit-api/logs  # Point to host directory
     ports:
       - "8080:8080"
     volumes:
-      # Mount /opt/logs directory to persist logs outside container
-      - app_logs:/opt/logs  # Changed from /app/logs to /opt/logs
+      # Mount host directory directly
+      - /opt/ksit-api/logs:/opt/ksit-api/logs
     depends_on:
       - postgres
     networks:
@@ -60,4 +60,4 @@ networks:
 
 volumes:
   postgres_data:
-  app_logs:  # This will now map to /opt/logs
+  # Removed app_logs volume since we're using host directory

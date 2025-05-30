@@ -16,7 +16,7 @@ public class LogDirectoryInitializer {
 
     @EventListener(ApplicationReadyEvent.class)
     public void initializeLogDirectory() {
-        String logPath = System.getProperty("LOG_PATH", "/opt/logs");  // Changed default to /opt/logs
+        String logPath = System.getProperty("LOG_PATH", "/opt/logs");  // Changed default
 
         try {
             Path logDir = Paths.get(logPath);

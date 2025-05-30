@@ -44,6 +44,7 @@ spring:
 
 # Logging configuration
 # Logging configuration
+# Logging configuration
 logging:
   config: classpath:logback-spring.xml
   level:
@@ -53,7 +54,7 @@ logging:
     org.springframework.web.servlet.PageNotFound: ERROR
     org.hibernate: WARN
   file:
-    path: ${LOG_PATH:/opt/logs}  # Changed to /opt/logs
+    path: ${LOG_PATH:/opt/logs}
 
 
 server:
