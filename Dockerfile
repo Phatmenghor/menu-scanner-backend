@@ -27,11 +27,17 @@ FROM eclipse-temurin:17-jdk AS production
 # Set working directory
 WORKDIR /app
 
+# Create logs directory with proper permissions
+RUN mkdir -p /app/logs && chmod 755 /app/logs
+
 # Copy the jar from the build stage
 COPY --from=build /app/target/*.jar app.jar
 
 # Expose port (adjust according to your application settings)
 EXPOSE 8080
+
+# Set environment variable for log path
+ENV LOG_PATH=/app/logs
 
 # Default command to run the jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
