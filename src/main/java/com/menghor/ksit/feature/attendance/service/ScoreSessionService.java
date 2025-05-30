@@ -1,11 +1,13 @@
 package com.menghor.ksit.feature.attendance.service;
 
 import com.menghor.ksit.enumations.SubmissionStatus;
+import com.menghor.ksit.feature.attendance.dto.filter.ScoreSessionFilterDto;
 import com.menghor.ksit.feature.attendance.dto.request.BatchUpdateScoresRequestDto;
 import com.menghor.ksit.feature.attendance.dto.request.CalculateAttendanceScoresRequestDto;
 import com.menghor.ksit.feature.attendance.dto.request.ScoreSessionRequestDto;
 import com.menghor.ksit.feature.attendance.dto.response.ScoreSessionResponseDto;
 import com.menghor.ksit.feature.attendance.dto.update.ScoreSessionUpdateDto;
+import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 
 import java.util.List;
 
@@ -25,15 +27,10 @@ public interface ScoreSessionService {
      * Update score session status and comments
      */
     ScoreSessionResponseDto updateScoreSession(ScoreSessionUpdateDto updateDto);
-    
+
     /**
-     * Submit score session for review
+     * Get all score sessions with pagination and filtering
      */
-    ScoreSessionResponseDto submitForReview(Long scoreSessionId, String comments);
-    
-    /**
-     * Staff review of score session (approve/reject/pending)
-     */
-    ScoreSessionResponseDto reviewScoreSession(Long scoreSessionId, SubmissionStatus status, String comments);
+    CustomPaginationResponseDto<ScoreSessionResponseDto> getAllScoreSessions(ScoreSessionFilterDto filterDto);
 
 }

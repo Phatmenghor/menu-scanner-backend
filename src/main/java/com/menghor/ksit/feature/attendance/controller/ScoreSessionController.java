@@ -2,12 +2,14 @@ package com.menghor.ksit.feature.attendance.controller;
 
 import com.menghor.ksit.enumations.SubmissionStatus;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
+import com.menghor.ksit.feature.attendance.dto.filter.ScoreSessionFilterDto;
 import com.menghor.ksit.feature.attendance.dto.request.BatchUpdateScoresRequestDto;
 import com.menghor.ksit.feature.attendance.dto.request.CalculateAttendanceScoresRequestDto;
 import com.menghor.ksit.feature.attendance.dto.request.ScoreSessionRequestDto;
 import com.menghor.ksit.feature.attendance.dto.response.ScoreSessionResponseDto;
 import com.menghor.ksit.feature.attendance.dto.update.ScoreSessionUpdateDto;
 import com.menghor.ksit.feature.attendance.service.ScoreSessionService;
+import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.database.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -59,30 +61,19 @@ public class ScoreSessionController {
                 responseDto
         );
     }
-    
-    @PostMapping("/submit/{id}")
-    public ApiResponse<ScoreSessionResponseDto> submitForReview(
-            @PathVariable Long id, @RequestParam(required = false) String comments) {
-        log.info("REST request to submit score session for review: {}", id);
-        ScoreSessionResponseDto responseDto = scoreSessionService.submitForReview(id, comments);
-        return new ApiResponse<>(
-                "success",
-                "Score session submitted for review successfully",
-                responseDto
-        );
-    }
 
-    @PostMapping("/review/{id}")
-    public ApiResponse<ScoreSessionResponseDto> reviewScoreSession(
-            @PathVariable Long id,
-            @RequestParam SubmissionStatus status,
-            @RequestParam(required = false) String comments) {
-        log.info("REST request to review score session: {}, status: {}", id, status);
-        ScoreSessionResponseDto responseDto = scoreSessionService.reviewScoreSession(id, status, comments);
+    @PostMapping("/all")
+    public ApiResponse<CustomPaginationResponseDto<ScoreSessionResponseDto>> getAllScoreSessions(
+            @Valid @RequestBody ScoreSessionFilterDto filterDto) {
+        log.info("REST request to get all score sessions with filter: {}", filterDto);
+
+        CustomPaginationResponseDto<ScoreSessionResponseDto> response =
+                scoreSessionService.getAllScoreSessions(filterDto);
+
         return new ApiResponse<>(
                 "success",
-                "Score session reviewed successfully",
-                responseDto
+                "Score sessions retrieved successfully",
+                response
         );
     }
 }

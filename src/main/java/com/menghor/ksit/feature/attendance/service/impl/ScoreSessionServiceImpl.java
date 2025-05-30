@@ -3,6 +3,7 @@ package com.menghor.ksit.feature.attendance.service.impl;
 import com.menghor.ksit.enumations.SubmissionStatus;
 import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
+import com.menghor.ksit.feature.attendance.dto.filter.ScoreSessionFilterDto;
 import com.menghor.ksit.feature.attendance.dto.request.ScoreSessionRequestDto;
 import com.menghor.ksit.feature.attendance.dto.response.ScoreSessionResponseDto;
 import com.menghor.ksit.feature.attendance.dto.update.ScoreSessionUpdateDto;
@@ -13,14 +14,20 @@ import com.menghor.ksit.feature.attendance.repository.ScoreSessionRepository;
 import com.menghor.ksit.feature.attendance.repository.StudentScoreRepository;
 import com.menghor.ksit.feature.attendance.service.ScoreSessionService;
 import com.menghor.ksit.feature.attendance.service.StudentScoreService;
+import com.menghor.ksit.feature.attendance.specification.ScoreSessionSpecification;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.feature.school.repository.ScheduleRepository;
+import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.database.SecurityUtils;
+import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -177,6 +184,7 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
         if (updateDto.getStaffComments() != null) {
             scoreSession.setStaffComments(updateDto.getStaffComments());
         }
+        scoreSession.setSubmissionDate(LocalDateTime.now());
 
         ScoreSessionEntity updatedSession = scoreSessionRepository.save(scoreSession);
         log.info("Score session updated successfully");
@@ -185,70 +193,43 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     }
 
     @Override
-    @Transactional
-    public ScoreSessionResponseDto submitForReview(Long scoreSessionId, String comments) {
-        log.info("Submitting score session with ID: {} for review", scoreSessionId);
+    public CustomPaginationResponseDto<ScoreSessionResponseDto> getAllScoreSessions(ScoreSessionFilterDto filterDto) {
+        log.info("Getting all score sessions with filter: {}", filterDto);
 
-        ScoreSessionEntity scoreSession = scoreSessionRepository.findById(scoreSessionId)
-                .orElseThrow(() -> new NotFoundException("Score session not found with ID: " + scoreSessionId));
+        // Create pageable object
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
 
-        // Verify session is in DRAFT or REJECTED status
-        if (scoreSession.getStatus() != SubmissionStatus.DRAFT && scoreSession.getStatus() != SubmissionStatus.REJECTED) {
-            throw new BadRequestException("Cannot submit session. Session is in " + scoreSession.getStatus() + " status");
-        }
+        // Build specification based on filter criteria
+        Specification<ScoreSessionEntity> spec = ScoreSessionSpecification.combine(
+                filterDto.getSearch(),
+                filterDto.getStatus(),
+                filterDto.getTeacherId(),
+                filterDto.getScheduleId(),
+                filterDto.getClassId(),
+                filterDto.getCourseId()
+        );
 
-        // Update status and set submission date
-        scoreSession.setStatus(SubmissionStatus.SUBMITTED);
-        scoreSession.setSubmissionDate(LocalDateTime.now());
+        // Execute query with pagination
+        Page<ScoreSessionEntity> scoreSessionPage = scoreSessionRepository.findAll(spec, pageable);
 
-        // Update teacher comments if provided
-        if (comments != null && !comments.trim().isEmpty()) {
-            scoreSession.setTeacherComments(comments);
-        }
+        // Convert entities to DTOs
+        List<ScoreSessionResponseDto> content = scoreSessionPage.getContent().stream()
+                .map(scoreSessionMapper::toDto)
+                .collect(Collectors.toList());
 
-        ScoreSessionEntity updatedSession = scoreSessionRepository.save(scoreSession);
-        log.info("Score session submitted for review successfully");
-
-        return scoreSessionMapper.toDto(updatedSession);
-    }
-
-    @Override
-    @Transactional
-    public ScoreSessionResponseDto reviewScoreSession(Long scoreSessionId, SubmissionStatus statusStr, String comments) {
-        log.info("Reviewing score session with ID: {}, status: {}", scoreSessionId, statusStr);
-
-        ScoreSessionEntity scoreSession = scoreSessionRepository.findById(scoreSessionId)
-                .orElseThrow(() -> new NotFoundException("Score session not found with ID: " + scoreSessionId));
-
-        // Verify session is in SUBMITTED or PENDING status
-        if (scoreSession.getStatus() != SubmissionStatus.SUBMITTED && scoreSession.getStatus() != SubmissionStatus.PENDING) {
-            throw new BadRequestException("Cannot review session. Session is in " + scoreSession.getStatus() + " status");
-        }
-
-        // Parse status
-        SubmissionStatus status;
-        try {
-            status = statusStr;
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid status: " + statusStr);
-        }
-
-        // Only allow valid status transitions
-        if (status != SubmissionStatus.APPROVED && status != SubmissionStatus.REJECTED && status != SubmissionStatus.PENDING) {
-            throw new BadRequestException("Invalid status for review: " + status);
-        }
-
-        // Update status, set reviewer and review date
-        scoreSession.setStatus(status);
-
-        // Update staff comments if provided
-        if (comments != null && !comments.trim().isEmpty()) {
-            scoreSession.setStaffComments(comments);
-        }
-
-        ScoreSessionEntity updatedSession = scoreSessionRepository.save(scoreSession);
-        log.info("Score session reviewed successfully, new status: {}", status);
-
-        return scoreSessionMapper.toDto(updatedSession);
+        // Build and return pagination response
+        return new CustomPaginationResponseDto<>(
+                content,
+                scoreSessionPage.getNumber() + 1, // Convert back to 1-based page number
+                scoreSessionPage.getSize(),
+                scoreSessionPage.getTotalElements(),
+                scoreSessionPage.getTotalPages(),
+                scoreSessionPage.isLast()
+        );
     }
 }

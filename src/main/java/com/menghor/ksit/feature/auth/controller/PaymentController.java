@@ -50,7 +50,7 @@ public class PaymentController {
 
     @PostMapping("/all")
     public ApiResponse<CustomPaginationResponseDto<PaymentResponseDTO>> getAllPayments(
-            @ModelAttribute PaymentFilterDto filterDto) {
+            @RequestBody PaymentFilterDto filterDto) {
         log.info("Retrieving all payments with filter: {}", filterDto);
         CustomPaginationResponseDto<PaymentResponseDTO> payments = paymentService.getAllPayments(filterDto);
         log.info("Payments retrieved successfully with total count: {}", payments.getTotalElements());
