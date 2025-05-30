@@ -11,12 +11,12 @@ services:
       SPRING_DATASOURCE_USERNAME: menghor
       SPRING_DATASOURCE_PASSWORD: Hour1819
       SPRING_PROFILES_ACTIVE: prod
-      LOG_PATH: /app/logs
+      LOG_PATH: /opt/logs  # Changed to /opt/logs
     ports:
       - "8080:8080"
     volumes:
-      # Mount logs directory to persist logs outside container
-      - app_logs:/app/logs
+      # Mount /opt/logs directory to persist logs outside container
+      - app_logs:/opt/logs  # Changed from /app/logs to /opt/logs
     depends_on:
       - postgres
     networks:
@@ -60,4 +60,4 @@ networks:
 
 volumes:
   postgres_data:
-  app_logs:  # Add volume for application logs
+  app_logs:  # This will now map to /opt/logs

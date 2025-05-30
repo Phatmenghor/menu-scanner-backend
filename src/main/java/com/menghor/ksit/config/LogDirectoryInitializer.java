@@ -16,8 +16,8 @@ public class LogDirectoryInitializer {
 
     @EventListener(ApplicationReadyEvent.class)
     public void initializeLogDirectory() {
-        String logPath = System.getProperty("LOG_PATH", "logs");
-        
+        String logPath = System.getProperty("LOG_PATH", "/opt/logs");  // Changed default to /opt/logs
+
         try {
             Path logDir = Paths.get(logPath);
             if (!Files.exists(logDir)) {
@@ -26,7 +26,7 @@ public class LogDirectoryInitializer {
             } else {
                 log.info("✅ Log directory already exists: {}", logDir.toAbsolutePath());
             }
-            
+
             // Check if directory is writable
             File logDirFile = logDir.toFile();
             if (!logDirFile.canWrite()) {
@@ -34,7 +34,7 @@ public class LogDirectoryInitializer {
             } else {
                 log.info("✅ Log directory is writable: {}", logDir.toAbsolutePath());
             }
-            
+
         } catch (Exception e) {
             log.error("❌ Failed to create log directory: {}", logPath, e);
         }

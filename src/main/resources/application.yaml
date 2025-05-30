@@ -43,14 +43,17 @@ spring:
         static-locations: classpath:/static/,classpath:/public/
 
 # Logging configuration
+# Logging configuration
 logging:
   config: classpath:logback-spring.xml
   level:
     root: INFO
     com.menghor.ksit: INFO
     org.springframework: INFO
-    org.springframework.web.servlet.PageNotFound: ERROR  # Add this line
+    org.springframework.web.servlet.PageNotFound: ERROR
     org.hibernate: WARN
+  file:
+    path: ${LOG_PATH:/opt/logs}  # Changed to /opt/logs
 
 
 server:
