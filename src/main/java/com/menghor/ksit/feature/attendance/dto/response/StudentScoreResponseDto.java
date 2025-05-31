@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class StudentScoreResponseDto {
     private Long id;
-    private Long studentId;
+    private String studentId;
     private String studentNameKhmer;
     private String studentNameEnglish;
     private Double attendanceScore; // Out of 10 points

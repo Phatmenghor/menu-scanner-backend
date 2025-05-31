@@ -18,5 +18,7 @@ public class ScoreSessionResponseDto {
     private String teacherComments;
     private String staffComments;
     private LocalDateTime submissionDate;
+    private String createdAt;
+    private String updatedAt;
     private List<StudentScoreResponseDto> studentScores;
 }
