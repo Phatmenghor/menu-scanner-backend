@@ -5,6 +5,7 @@ import com.menghor.ksit.feature.attendance.dto.response.StudentScoreResponseDto;
 import com.menghor.ksit.feature.attendance.models.ScoreSessionEntity;
 import com.menghor.ksit.feature.attendance.models.StudentScoreEntity;
 import com.menghor.ksit.feature.auth.models.UserEntity;
+import com.menghor.ksit.feature.master.mapper.SemesterMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 @Mapper(
         componentModel = "spring",
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
-        uses = {StudentScoreMapper.class}
+        uses = {StudentScoreMapper.class, SemesterMapper.class}
 )
 public interface ScoreSessionMapper {
 
@@ -26,6 +27,7 @@ public interface ScoreSessionMapper {
     @Mapping(target = "courseName", source = "schedule.course.nameEn")
     @Mapping(target = "teacherId", source = "teacher.id")
     @Mapping(source = "teacher", target = "teacherName", qualifiedByName = "mapTeacherName")
+    @Mapping(target = "semester", source = "schedule.semester")
     @Mapping(target = "status", expression = "java(entity.getStatus() != null ? entity.getStatus().name() : null)")
     @Mapping(target = "studentScores", source = "studentScores", qualifiedByName = "mapAndSortStudentScores")
     ScoreSessionResponseDto toDto(ScoreSessionEntity entity);
@@ -139,6 +141,4 @@ public interface ScoreSessionMapper {
         // Fallback: Return a default identifier
         return "Teacher #" + teacher.getId();
     }
-
-
 }

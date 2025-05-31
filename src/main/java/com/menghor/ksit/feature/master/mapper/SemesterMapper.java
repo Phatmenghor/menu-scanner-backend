@@ -31,23 +31,35 @@ public interface SemesterMapper {
     @Mapping(target = "academyYear", source = "academyYear")
     @Mapping(target = "status", source = "status")
     @Mapping(target = "semester", source = "semester")
-    @Mapping(target = "semesterType", ignore = true) // We'll set this in the afterMapping method
+    @Mapping(target = "semesterType", source = "entity", qualifiedByName = "calculateSemesterType")
     SemesterResponseDto toResponseDto(SemesterEntity entity);
 
-    // After mapping method to calculate and set the semesterType based on date comparison
-    @AfterMapping
-    default void setSemesterType(@MappingTarget SemesterResponseDto responseDto, SemesterEntity entity) {
-        // Get current date
+    // Named method to calculate semester type
+    @Named("calculateSemesterType")
+    default SemesterType calculateSemesterType(SemesterEntity entity) {
+        if (entity == null) {
+            return SemesterType.PROGRESS;
+        }
+
         LocalDate currentDate = LocalDate.now();
+        LocalDate startDate = entity.getStartDate();
+        LocalDate endDate = entity.getEndDate();
+
+        // Check if dates are null
+        if (startDate == null || endDate == null) {
+            return SemesterType.PROGRESS;
+        }
 
         // Set semesterType based on date comparison
-        if (currentDate.isBefore(entity.getStartDate())) {
-            responseDto.setSemesterType(SemesterType.PROGRESS);
-        } else if (currentDate.isAfter(entity.getEndDate())) {
-            responseDto.setSemesterType(SemesterType.DONE);
+        if (currentDate.isBefore(startDate)) {
+            // Semester hasn't started yet
+            return SemesterType.PROGRESS;
+        } else if (currentDate.isAfter(endDate)) {
+            // Semester has ended
+            return SemesterType.DONE;
         } else {
-            // Current date is between start and end dates
-            responseDto.setSemesterType(SemesterType.PROCESSING);
+            // Current date is between start and end dates - semester is currently active
+            return SemesterType.PROCESSING;
         }
     }
 

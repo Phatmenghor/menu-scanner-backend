@@ -19,4 +19,5 @@ public class StudentScoreResponseDto {
     private Double totalScore;      // Out of 100 points
     private String grade;
     private String comments;
+    private String createdAt;
 }

@@ -15,4 +15,5 @@ public class SemesterResponseDto {
     private Integer academyYear;
     private SemesterType semesterType;
     private Status status;
+    private String createdAt;
 }

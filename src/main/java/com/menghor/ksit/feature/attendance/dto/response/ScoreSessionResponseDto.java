@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.attendance.dto.response;
 
 import com.menghor.ksit.enumations.SubmissionStatus;
+import com.menghor.ksit.feature.master.dto.response.SemesterResponseDto;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -14,12 +15,12 @@ public class ScoreSessionResponseDto {
     private String courseName;
     private Long teacherId;
     private String teacherName;
-    private String semester;
     private String status;
     private String teacherComments;
     private String staffComments;
     private LocalDateTime submissionDate;
     private String createdAt;
     private String updatedAt;
+    private SemesterResponseDto semester;
     private List<StudentScoreResponseDto> studentScores;
 }

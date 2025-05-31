@@ -14,4 +14,5 @@ public class UserBasicInfoDto {
     private String phoneNumber;
     private String identifyNumber;
     private ClassBasicInfoDto userClass;
+    private String createdAt;
 }

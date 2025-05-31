@@ -36,7 +36,7 @@ public class ScoreController {
         );
     }
     
-    @GetMapping("/{id}")
+    @GetMapping("session/{id}")
     public ApiResponse<ScoreSessionResponseDto> getScoreSessionById(@PathVariable Long id) {
         log.info("REST request to get score session by ID: {}", id);
         ScoreSessionResponseDto responseDto = scoreSessionService.getScoreSessionById(id);
@@ -75,7 +75,7 @@ public class ScoreController {
         );
     }
 
-    @GetMapping("score/{id}")
+    @GetMapping("/{id}")
     public ApiResponse<StudentScoreResponseDto> getStudentScoreById(@PathVariable Long id) {
         log.info("REST request to get student score by ID: {}", id);
         StudentScoreResponseDto responseDto = studentScoreService.getStudentScoreById(id);
@@ -87,7 +87,7 @@ public class ScoreController {
         );
     }
 
-    @PutMapping("/score-update")
+    @PutMapping("score-update")
     public ApiResponse<StudentScoreResponseDto> updateStudentScore(
             @Valid @RequestBody StudentScoreUpdateDto updateDto) {
         log.info("REST request to update student score: {}", updateDto);
