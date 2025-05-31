@@ -14,6 +14,7 @@ public class ScoreSessionResponseDto {
     private String courseName;
     private Long teacherId;
     private String teacherName;
+    private String semester;
     private String status;
     private String teacherComments;
     private String staffComments;
