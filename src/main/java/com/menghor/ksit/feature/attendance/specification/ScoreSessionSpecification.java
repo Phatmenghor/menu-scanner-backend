@@ -5,6 +5,8 @@ import com.menghor.ksit.feature.attendance.models.ScoreSessionEntity;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
+import jakarta.persistence.criteria.JoinType;
+
 public class ScoreSessionSpecification {
 
     /**
@@ -86,12 +88,28 @@ public class ScoreSessionSpecification {
     }
 
     /**
+     * Filter by student ID - NEW METHOD
+     * This filters score sessions that have student scores for the specified student
+     */
+    public static Specification<ScoreSessionEntity> hasStudentId(Long studentId) {
+        return (root, query, criteriaBuilder) -> {
+            if (studentId != null) {
+                // Join with studentScores and filter by student ID
+                var studentScoresJoin = root.join("studentScores", JoinType.INNER);
+                return criteriaBuilder.equal(studentScoresJoin.get("student").get("id"), studentId);
+            }
+            return null;
+        };
+    }
+
+    /**
      * Combine multiple specifications with AND operator
+     * Updated to include studentId parameter
      */
     public static Specification<ScoreSessionEntity> combine(String search, SubmissionStatus status,
-                                                            Long teacherId, Long scheduleId, 
-                                                            Long classId, Long courseId) {
-        
+                                                            Long teacherId, Long scheduleId,
+                                                            Long classId, Long courseId, Long studentId) {
+
         Specification<ScoreSessionEntity> result = Specification.where(null);
 
         if (StringUtils.hasText(search)) {
@@ -116,6 +134,10 @@ public class ScoreSessionSpecification {
 
         if (courseId != null) {
             result = result.and(hasCourseId(courseId));
+        }
+
+        if (studentId != null) {
+            result = result.and(hasStudentId(studentId));
         }
 
         return result;

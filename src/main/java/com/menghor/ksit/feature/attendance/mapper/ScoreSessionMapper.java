@@ -77,22 +77,22 @@ public interface ScoreSessionMapper {
         }
 
         // If all names are null, return username or identify number
-        return student.getUsername() != null ? student.getUsername() : student.getIdentifyNumber();
+        return student.getUsername() != null ? student.getUsername() : "";
     }
 
-    default StudentScoreResponseDto mapStudentScore(StudentScoreEntity score) {
-        StudentScoreResponseDto dto = new StudentScoreResponseDto();
-        dto.setId(score.getId());
-        dto.setStudentId(score.getStudent().getId());
-        dto.setStudentName(mapStudentName(score.getStudent())); // Use the helper method
-        dto.setStudentCode(score.getStudent().getIdentifyNumber());
-        dto.setAttendanceScore(score.getAttendanceScore());
-        dto.setAssignmentScore(score.getAssignmentScore());
-        dto.setMidtermScore(score.getMidtermScore());
-        dto.setFinalScore(score.getFinalScore());
-        dto.setTotalScore(score.getTotalScore());
-        dto.setGrade(score.getGrade() != null ? score.getGrade().getGrade() : null);
-        dto.setComments(score.getComments());
-        return dto;
-    }
+//    default StudentScoreResponseDto mapStudentScore(StudentScoreEntity score) {
+//        StudentScoreResponseDto dto = new StudentScoreResponseDto();
+//        dto.setId(score.getId());
+//        dto.setStudentId(score.getStudent().getId());
+//        dto.setStudentName(mapStudentName(score.getStudent())); // Use the helper method
+//        dto.setStudentCode(score.getStudent().getIdentifyNumber());
+//        dto.setAttendanceScore(score.getAttendanceScore());
+//        dto.setAssignmentScore(score.getAssignmentScore());
+//        dto.setMidtermScore(score.getMidtermScore());
+//        dto.setFinalScore(score.getFinalScore());
+//        dto.setTotalScore(score.getTotalScore());
+//        dto.setGrade(score.getGrade() != null ? score.getGrade().getGrade() : null);
+//        dto.setComments(score.getComments());
+//        return dto;
+//    }
 }

@@ -16,19 +16,4 @@ public interface StudentScoreService {
      * Update a student score
      */
     StudentScoreResponseDto updateStudentScore(StudentScoreUpdateDto updateDto);
-    
-    /**
-     * Get all scores for a student
-     */
-    List<StudentScoreResponseDto> getScoresByStudentId(Long studentId);
-    
-    /**
-     * Calculate attendance score for a student in a session
-     */
-    void calculateAttendanceScore(Long studentId, Long scoreSessionId);
-
-    /**
-     * Create a new student score entry for a student in a score session
-     */
-    StudentScoreResponseDto createStudentScore(Long studentId, Long scoreSessionId);
 }

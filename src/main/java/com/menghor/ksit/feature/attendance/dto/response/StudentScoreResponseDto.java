@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 public class StudentScoreResponseDto {
     private Long id;
     private Long studentId;
-    private String studentName;
-    private String studentCode;
+    private String studentNameKhmer;
+    private String studentNameEnglish;
     private Double attendanceScore; // Out of 10 points
     private Double assignmentScore; // Out of 20 points
     private Double midtermScore;    // Out of 30 points

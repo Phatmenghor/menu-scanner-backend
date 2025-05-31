@@ -11,6 +11,7 @@ public class ScoreSessionFilterDto {
     private Long scheduleId;
     private Long classId;
     private Long courseId;
+    private Long studentId;
     private Integer pageNo = 1;
     private Integer pageSize = 10;
 }
