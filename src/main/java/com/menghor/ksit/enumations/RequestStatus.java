@@ -5,5 +5,6 @@ public enum RequestStatus {
     ACCEPTED,   // Staff accepts the request
     DONE,       // Request is completed
     REJECTED,    // Staff rejects the request
-    DELETED     // Request is deleted by the student
+    RETURN,   // Request is deleted by the student
+    DELETED,   // Request is deleted by the staff
 }

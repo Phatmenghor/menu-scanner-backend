@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.school.dto.filter;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.menghor.ksit.enumations.RequestStatus;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -11,6 +12,8 @@ public class RequestHistoryFilterDto {
     private Long requestId;
     
     private String search;
+
+    private RequestStatus status;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;

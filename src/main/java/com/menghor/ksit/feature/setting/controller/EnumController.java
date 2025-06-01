@@ -249,6 +249,26 @@ public class EnumController {
         );
     }
 
+    @GetMapping("/status-request")
+    public ApiResponse<List<Map<String, Object>>> getAllStatusRequest() {
+        List<Map<String, Object>> roles = Arrays.stream(RequestStatus.values())
+                .map(role -> {
+                    Map<String, Object> roleMap = new HashMap<>();
+                    roleMap.put("id", role.ordinal() + 1);
+                    roleMap.put("name", role.name());
+                    // Display name with no underscore formatting needed for this enum
+                    roleMap.put("displayName", role.name().charAt(0) + role.name().substring(1).toLowerCase());
+                    return roleMap;
+                })
+                .collect(Collectors.toList());
+
+        return new ApiResponse<>(
+                "success",
+                "Get all request status values successfully...!",
+                roles
+        );
+    }
+
     @GetMapping("/semester")
     public ApiResponse<List<Map<String, Object>>> getAllSemester() {
         List<Map<String, Object>> semesters = Arrays.stream(SemesterEnum.values())

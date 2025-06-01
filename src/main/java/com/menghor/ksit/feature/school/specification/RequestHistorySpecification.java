@@ -57,6 +57,10 @@ public class RequestHistorySpecification {
                 ));
             }
 
+            if(filter.getStatus() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), filter.getStatus()));
+            }
+
             if (filter.getStartDate() != null) {
                 // Convert LocalDate to LocalDateTime (start of day: 00:00:00)
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(
