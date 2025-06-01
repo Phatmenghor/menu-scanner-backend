@@ -73,34 +73,9 @@ public class UserSpecification {
             // Join with class first
             Join<UserEntity, ClassEntity> classJoin = root.join("classes", JoinType.LEFT);
 
-            // Then join class with schedules
-            Join<ClassEntity, ScheduleEntity> scheduleJoin = classJoin.join("schedules", JoinType.INNER);
-
-            return criteriaBuilder.equal(scheduleJoin.get("id"), scheduleId);
-        };
-    }
-
-    /**
-     * Alternative method to filter students by schedule ID through course relationship
-     * Use this if schedules are related to courses rather than directly to classes
-     */
-    public static Specification<UserEntity> hasScheduleIdThroughCourse(Long scheduleId) {
-        return (root, query, criteriaBuilder) -> {
-            if (scheduleId == null) return criteriaBuilder.conjunction();
-
-            // Join with class first
-            Join<UserEntity, ClassEntity> classJoin = root.join("classes", JoinType.LEFT);
-
-            // Join class with courses
-            // Assuming ClassEntity has a relationship with CourseEntity
-            // Join<ClassEntity, CourseEntity> courseJoin = classJoin.join("courses", JoinType.INNER);
-
-            // Join course with schedules
-            // Join<CourseEntity, ScheduleEntity> scheduleJoin = courseJoin.join("schedules", JoinType.INNER);
-
-            // For now, we'll use the direct class-schedule relationship
-            // If you need the course relationship, uncomment above and modify accordingly
-            Join<ClassEntity, ScheduleEntity> scheduleJoin = classJoin.join("schedules", JoinType.INNER);
+            // Then join class with schedules using the correct relationship
+            // Since ClassEntity has "schedule" field (List<ScheduleEntity>), we use "schedule"
+            Join<ClassEntity, ScheduleEntity> scheduleJoin = classJoin.join("schedule", JoinType.INNER);
 
             return criteriaBuilder.equal(scheduleJoin.get("id"), scheduleId);
         };

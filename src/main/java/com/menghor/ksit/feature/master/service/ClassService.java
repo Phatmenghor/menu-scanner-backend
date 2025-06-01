@@ -17,4 +17,7 @@ public interface ClassService {
     ClassResponseDto deleteClassById(Long id);
 
     CustomPaginationResponseDto<ClassResponseDto> getAllClasses(ClassFilterDto filterDto);
+
+    CustomPaginationResponseDto<ClassResponseDto> getMyClasses(ClassFilterDto filterDto);
+
 }

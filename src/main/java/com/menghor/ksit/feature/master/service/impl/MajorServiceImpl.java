@@ -1,8 +1,10 @@
 package com.menghor.ksit.feature.master.service.impl;
 
+import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.exceptoins.error.DuplicateNameException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
+import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.master.dto.filter.MajorFilterDto;
 import com.menghor.ksit.feature.master.dto.request.MajorRequestDto;
 import com.menghor.ksit.feature.master.dto.response.MajorResponseDto;
@@ -15,6 +17,7 @@ import com.menghor.ksit.feature.master.repository.MajorRepository;
 import com.menghor.ksit.feature.master.service.MajorService;
 import com.menghor.ksit.feature.master.specification.MajorSpecification;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
+import com.menghor.ksit.utils.database.SecurityUtils;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.stream.Collectors;
+
+import static com.menghor.ksit.feature.auth.specification.UserSpecification.isStudent;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -31,6 +39,7 @@ public class MajorServiceImpl implements MajorService {
     private final MajorRepository majorRepository;
     private final DepartmentRepository departmentRepository;
     private final MajorMapper majorMapper;
+    private final SecurityUtils securityUtils;
 
     @Override
     @Transactional
@@ -193,6 +202,113 @@ public class MajorServiceImpl implements MajorService {
                 response.getTotalPages());
 
         return response;
+    }
+
+    @Override
+    public CustomPaginationResponseDto<MajorResponseDto> getMyMajors(MajorFilterDto filterDto) {
+        log.info("Fetching user-specific majors with filter: {}", filterDto);
+
+        UserEntity currentUser = securityUtils.getCurrentUser();
+        log.info("Current user: {} with roles: {}", currentUser.getUsername(),
+                currentUser.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toList()));
+
+        // Determine user access level
+        if (hasAdminAccess(currentUser)) {
+            log.info("User has admin access, returning all majors");
+            return getAllMajors(filterDto);
+        } else if (isTeacherOrStaff(currentUser)) {
+            log.info("User is teacher/staff, filtering by department ID: {}",
+                    currentUser.getDepartment() != null ? currentUser.getDepartment().getId() : "none");
+            return getMajorsForStaff(currentUser, filterDto);
+        } else if (isStudent(currentUser)) {
+            log.info("User is student, filtering by class's major");
+            return getMajorsForStudent(currentUser, filterDto);
+        } else {
+            log.warn("User {} has unknown or no roles, returning empty majors", currentUser.getUsername());
+            return createEmptyMajorResponse(filterDto);
+        }
+    }
+
+    private CustomPaginationResponseDto<MajorResponseDto> getMajorsForStaff(UserEntity staff, MajorFilterDto filterDto) {
+        if (staff.getDepartment() == null) {
+            log.warn("Staff {} has no department assigned", staff.getUsername());
+            return createEmptyMajorResponse(filterDto);
+        }
+
+        // Create a copy of the filter with department ID constraint
+        MajorFilterDto staffFilter = new MajorFilterDto();
+        staffFilter.setSearch(filterDto.getSearch());
+        staffFilter.setStatus(filterDto.getStatus());
+        staffFilter.setDepartmentId(staff.getDepartment().getId()); // Override with staff's department
+        staffFilter.setPageNo(filterDto.getPageNo());
+        staffFilter.setPageSize(filterDto.getPageSize());
+
+        // Use the existing getAllMajors method with the modified filter
+        CustomPaginationResponseDto<MajorResponseDto> response = getAllMajors(staffFilter);
+        log.info("Retrieved {} majors for staff (page {}/{})",
+                response.getContent().size(), response.getPageNo(), response.getTotalPages());
+
+        return response;
+    }
+
+    private CustomPaginationResponseDto<MajorResponseDto> getMajorsForStudent(UserEntity student, MajorFilterDto filterDto) {
+        if (student.getClasses() == null || student.getClasses().getMajor() == null) {
+            log.warn("Student {} has no class/major assigned", student.getUsername());
+            return createEmptyMajorResponse(filterDto);
+        }
+
+        Long majorId = student.getClasses().getMajor().getId();
+
+        // Create specification that only returns the student's major
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
+
+        Specification<MajorEntity> spec = MajorSpecification.combine(
+                filterDto.getSearch(),
+                filterDto.getStatus(),
+                null // Don't filter by department here since we're filtering by specific major
+        ).and((root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("id"), majorId)
+        );
+
+        Page<MajorEntity> majorPage = majorRepository.findAll(spec, pageable);
+
+        CustomPaginationResponseDto<MajorResponseDto> response = majorMapper.toMajorAllResponseDto(majorPage);
+        log.info("Retrieved {} majors for student (page {}/{})",
+                response.getContent().size(), response.getPageNo(), response.getTotalPages());
+
+        return response;
+    }
+
+    private CustomPaginationResponseDto<MajorResponseDto> createEmptyMajorResponse(MajorFilterDto filterDto) {
+        return CustomPaginationResponseDto.<MajorResponseDto>builder()
+                .content(Collections.emptyList())
+                .pageNo(filterDto.getPageNo() != null ? filterDto.getPageNo() : 1)
+                .pageSize(filterDto.getPageSize() != null ? filterDto.getPageSize() : 10)
+                .totalElements(0L)
+                .totalPages(0)
+                .last(true)
+                .build();
+    }
+
+    // Role checking methods
+    private boolean hasAdminAccess(UserEntity user) {
+        return user.getRoles().stream()
+                .anyMatch(role -> role.getName() == RoleEnum.ADMIN || role.getName() == RoleEnum.DEVELOPER);
+    }
+
+    private boolean isTeacherOrStaff(UserEntity user) {
+        return user.getRoles().stream()
+                .anyMatch(role -> role.getName() == RoleEnum.TEACHER || role.getName() == RoleEnum.STAFF);
+    }
+
+    private boolean isStudent(UserEntity user) {
+        return user.getRoles().stream()
+                .anyMatch(role -> role.getName() == RoleEnum.STUDENT);
     }
 
     /**

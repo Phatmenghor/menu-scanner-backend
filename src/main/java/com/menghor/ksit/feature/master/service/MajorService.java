@@ -17,4 +17,7 @@ public interface MajorService {
     MajorResponseDto deleteMajorById(Long id);
 
     CustomPaginationResponseDto<MajorResponseDto> getAllMajors(MajorFilterDto filterDto);
+
+    CustomPaginationResponseDto<MajorResponseDto> getMyMajors(MajorFilterDto filterDto);
+
 }

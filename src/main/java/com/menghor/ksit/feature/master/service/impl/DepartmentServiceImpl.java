@@ -1,8 +1,10 @@
 package com.menghor.ksit.feature.master.service.impl;
 
+import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.exceptoins.error.DuplicateNameException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
+import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.master.dto.filter.DepartmentFilter;
 import com.menghor.ksit.feature.master.dto.request.DepartmentRequestDto;
 import com.menghor.ksit.feature.master.dto.response.DepartmentResponseDto;
@@ -13,6 +15,7 @@ import com.menghor.ksit.feature.master.repository.DepartmentRepository;
 import com.menghor.ksit.feature.master.service.DepartmentService;
 import com.menghor.ksit.feature.master.specification.DepartmentSpecification;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
+import com.menghor.ksit.utils.database.SecurityUtils;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -30,6 +36,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
+    private final SecurityUtils securityUtils;
 
     @Override
     @Transactional
@@ -210,6 +217,123 @@ public class DepartmentServiceImpl implements DepartmentService {
                 response.getTotalPages());
 
         return response;
+    }
+
+    @Override
+    public CustomPaginationResponseDto<DepartmentResponseDto> getMyDepartments(DepartmentFilter filterDto) {
+        log.info("Fetching user-specific departments with filter: {}", filterDto);
+
+        UserEntity currentUser = securityUtils.getCurrentUser();
+        log.info("Current user: {} with roles: {}", currentUser.getUsername(),
+                currentUser.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toList()));
+
+        // Determine user access level
+        if (hasAdminAccess(currentUser)) {
+            log.info("User has admin access, returning all departments");
+            return getAllDepartments(filterDto);
+        } else if (isTeacherOrStaff(currentUser)) {
+            log.info("User is teacher/staff, filtering by department ID: {}",
+                    currentUser.getDepartment() != null ? currentUser.getDepartment().getId() : "none");
+            return getDepartmentsForStaff(currentUser, filterDto);
+        } else if (isStudent(currentUser)) {
+            log.info("User is student, filtering by class's major's department");
+            return getDepartmentsForStudent(currentUser, filterDto);
+        } else {
+            log.warn("User {} has unknown or no roles, returning empty departments", currentUser.getUsername());
+            return createEmptyDepartmentResponse(filterDto);
+        }
+    }
+
+    // ===== Private Helper Methods =====
+
+    private CustomPaginationResponseDto<DepartmentResponseDto> getDepartmentsForStaff(UserEntity staff, DepartmentFilter filterDto) {
+        if (staff.getDepartment() == null) {
+            log.warn("Staff {} has no department assigned", staff.getUsername());
+            return createEmptyDepartmentResponse(filterDto);
+        }
+
+        // Create specification that only returns the staff's department
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
+
+        Specification<DepartmentEntity> spec = DepartmentSpecification.combine(
+                filterDto.getSearch(),
+                filterDto.getStatus()
+        ).and((root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("id"), staff.getDepartment().getId())
+        );
+
+        Page<DepartmentEntity> departmentPage = departmentRepository.findAll(spec, pageable);
+
+        CustomPaginationResponseDto<DepartmentResponseDto> response = departmentMapper.toDepartmentAllResponseDto(departmentPage);
+        log.info("Retrieved {} departments for staff (page {}/{})",
+                response.getContent().size(), response.getPageNo(), response.getTotalPages());
+
+        return response;
+    }
+
+    private CustomPaginationResponseDto<DepartmentResponseDto> getDepartmentsForStudent(UserEntity student, DepartmentFilter filterDto) {
+        if (student.getClasses() == null || student.getClasses().getMajor() == null ||
+                student.getClasses().getMajor().getDepartment() == null) {
+            log.warn("Student {} has no class/major/department assigned", student.getUsername());
+            return createEmptyDepartmentResponse(filterDto);
+        }
+
+        Long departmentId = student.getClasses().getMajor().getDepartment().getId();
+
+        // Create specification that only returns the student's department
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
+
+        Specification<DepartmentEntity> spec = DepartmentSpecification.combine(
+                filterDto.getSearch(),
+                filterDto.getStatus()
+        ).and((root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("id"), departmentId)
+        );
+
+        Page<DepartmentEntity> departmentPage = departmentRepository.findAll(spec, pageable);
+
+        CustomPaginationResponseDto<DepartmentResponseDto> response = departmentMapper.toDepartmentAllResponseDto(departmentPage);
+        log.info("Retrieved {} departments for student (page {}/{})",
+                response.getContent().size(), response.getPageNo(), response.getTotalPages());
+
+        return response;
+    }
+
+    private CustomPaginationResponseDto<DepartmentResponseDto> createEmptyDepartmentResponse(DepartmentFilter filterDto) {
+        return CustomPaginationResponseDto.<DepartmentResponseDto>builder()
+                .content(Collections.emptyList())
+                .pageNo(filterDto.getPageNo() != null ? filterDto.getPageNo() : 1)
+                .pageSize(filterDto.getPageSize() != null ? filterDto.getPageSize() : 10)
+                .totalElements(0L)
+                .totalPages(0)
+                .last(true)
+                .build();
+    }
+
+    // Role checking methods
+    private boolean hasAdminAccess(UserEntity user) {
+        return user.getRoles().stream()
+                .anyMatch(role -> role.getName() == RoleEnum.ADMIN || role.getName() == RoleEnum.DEVELOPER);
+    }
+
+    private boolean isTeacherOrStaff(UserEntity user) {
+        return user.getRoles().stream()
+                .anyMatch(role -> role.getName() == RoleEnum.TEACHER || role.getName() == RoleEnum.STAFF);
+    }
+
+    private boolean isStudent(UserEntity user) {
+        return user.getRoles().stream()
+                .anyMatch(role -> role.getName() == RoleEnum.STUDENT);
     }
 
     /**

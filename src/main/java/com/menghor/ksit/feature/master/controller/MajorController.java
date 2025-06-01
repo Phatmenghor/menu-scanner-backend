@@ -80,4 +80,16 @@ public class MajorController {
                 majorResponseDto
         );
     }
+
+    @PostMapping("/my-majors")
+    public ApiResponse<CustomPaginationResponseDto<MajorResponseDto>> getMyMajors(@RequestBody MajorFilterDto filterDto) {
+        log.info("Received request to get user-specific majors with filter: {}", filterDto);
+        CustomPaginationResponseDto<MajorResponseDto> majorResponseDto = majorService.getMyMajors(filterDto);
+        log.info("User majors retrieved successfully: {}", majorResponseDto.getTotalElements());
+        return new ApiResponse<>(
+                "success",
+                "User majors retrieved successfully...!",
+                majorResponseDto
+        );
+    }
 }

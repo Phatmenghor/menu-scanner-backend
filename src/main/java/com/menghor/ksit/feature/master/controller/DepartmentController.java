@@ -79,4 +79,16 @@ public class DepartmentController {
                 department
         );
     }
+
+    @PostMapping("/my-departments")
+    public ApiResponse<CustomPaginationResponseDto<DepartmentResponseDto>> getMyDepartments(@RequestBody DepartmentFilter filterDto) {
+        log.info("Received request to get user-specific departments with filter: {}", filterDto);
+        CustomPaginationResponseDto<DepartmentResponseDto> department = departmentService.getMyDepartments(filterDto);
+        log.info("User departments retrieved successfully: {}", department.getTotalElements());
+        return new ApiResponse<>(
+                "success",
+                "User departments retrieved successfully...!",
+                department
+        );
+    }
 }

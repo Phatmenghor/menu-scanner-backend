@@ -79,4 +79,16 @@ public class ClassController {
                 classResponseList
         );
     }
+
+    @PostMapping("/my-classes")
+    public ApiResponse<CustomPaginationResponseDto<ClassResponseDto>> getMyClasses(@RequestBody ClassFilterDto filterDto) {
+        log.info("Received request to get user-specific classes with filter: {}", filterDto);
+        CustomPaginationResponseDto<ClassResponseDto> classResponseList = classService.getMyClasses(filterDto);
+        log.info("User classes retrieved successfully: {}", classResponseList.getTotalElements());
+        return new ApiResponse<>(
+                "success",
+                "User classes retrieved successfully...!",
+                classResponseList
+        );
+    }
 }
