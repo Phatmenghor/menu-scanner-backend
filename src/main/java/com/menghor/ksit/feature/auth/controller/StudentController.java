@@ -57,6 +57,7 @@ public class StudentController {
     public ApiResponse<StudentUserAllResponseDto> getAllStudentUsers(@RequestBody StudentUserFilterRequestDto filterDto) {
         log.info("Searching student users with filter: {}", filterDto);
         StudentUserAllResponseDto users = studentService.getAllStudentUsers(filterDto);
+        log.info("Found {} student users matching the filter", users.getTotalElements());
         return new ApiResponse<>("success", "Student users retrieved successfully", users);
     }
 
@@ -67,6 +68,7 @@ public class StudentController {
     public ApiResponse<StudentUserResponseDto> getStudentUserById(@PathVariable Long id) {
         log.info("Fetching student user with ID: {}", id);
         StudentUserResponseDto user = studentService.getStudentUserById(id);
+        log.info("Student user fetched successfully with ID: {}", id);
         return new ApiResponse<>("'success'", "Student user fetched successfully", user);
     }
 
@@ -77,6 +79,7 @@ public class StudentController {
     public ApiResponse<StudentUserResponseDto> updateStudentUser(@PathVariable Long id, @Valid @RequestBody StudentUpdateRequestDto updateDto) {
         log.info("Updating student user with ID: {}", id);
         StudentUserResponseDto updatedUser = studentService.updateStudentUser(id, updateDto);
+        log.info("Student user updated successfully with ID: {}", updatedUser.getId());
         return new ApiResponse<>("'success'", "Student user updated successfully", updatedUser);
     }
 
@@ -87,6 +90,7 @@ public class StudentController {
     public ApiResponse<StudentUserResponseDto> deleteStudentUser(@PathVariable Long id) {
         log.info("Deleting/deactivating student user with ID: {}", id);
         StudentUserResponseDto user = studentService.deleteStudentUser(id);
+        log.info("Student user deactivated successfully with ID: {}", id);
         return new ApiResponse<>("success", "Student user deactivated successfully", user);
     }
 }

@@ -8,6 +8,7 @@ import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.master.model.DepartmentEntity;
+import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -58,6 +59,50 @@ public class UserSpecification {
 
             Join<UserEntity, DepartmentEntity> departmentJoin = root.join("department", JoinType.LEFT);
             return criteriaBuilder.equal(departmentJoin.get("id"), departmentId);
+        };
+    }
+
+    /**
+     * Filter students by schedule ID
+     * This will find students whose class is associated with the given schedule
+     */
+    public static Specification<UserEntity> hasScheduleId(Long scheduleId) {
+        return (root, query, criteriaBuilder) -> {
+            if (scheduleId == null) return criteriaBuilder.conjunction();
+
+            // Join with class first
+            Join<UserEntity, ClassEntity> classJoin = root.join("classes", JoinType.LEFT);
+
+            // Then join class with schedules
+            Join<ClassEntity, ScheduleEntity> scheduleJoin = classJoin.join("schedules", JoinType.INNER);
+
+            return criteriaBuilder.equal(scheduleJoin.get("id"), scheduleId);
+        };
+    }
+
+    /**
+     * Alternative method to filter students by schedule ID through course relationship
+     * Use this if schedules are related to courses rather than directly to classes
+     */
+    public static Specification<UserEntity> hasScheduleIdThroughCourse(Long scheduleId) {
+        return (root, query, criteriaBuilder) -> {
+            if (scheduleId == null) return criteriaBuilder.conjunction();
+
+            // Join with class first
+            Join<UserEntity, ClassEntity> classJoin = root.join("classes", JoinType.LEFT);
+
+            // Join class with courses
+            // Assuming ClassEntity has a relationship with CourseEntity
+            // Join<ClassEntity, CourseEntity> courseJoin = classJoin.join("courses", JoinType.INNER);
+
+            // Join course with schedules
+            // Join<CourseEntity, ScheduleEntity> scheduleJoin = courseJoin.join("schedules", JoinType.INNER);
+
+            // For now, we'll use the direct class-schedule relationship
+            // If you need the course relationship, uncomment above and modify accordingly
+            Join<ClassEntity, ScheduleEntity> scheduleJoin = classJoin.join("schedules", JoinType.INNER);
+
+            return criteriaBuilder.equal(scheduleJoin.get("id"), scheduleId);
         };
     }
 
@@ -120,6 +165,7 @@ public class UserSpecification {
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("phoneNumber")), term));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("staffId")), term));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("nationalId")), term));
+            predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("identifyNumber")), term));
 
             return criteriaBuilder.or(predicates.toArray(new Predicate[0]));
         };
@@ -171,7 +217,7 @@ public class UserSpecification {
         return spec;
     }
 
-    // Create specification for student users
+    // Create specification for student users - UPDATED with schedule filter
     public static Specification<UserEntity> createStudentSpecification(StudentUserFilterRequestDto filterDto) {
         Specification<UserEntity> spec = isStudent();
 
@@ -189,6 +235,11 @@ public class UserSpecification {
 
         if (filterDto.getAcademicYear() != null) {
             spec = spec.and(hasAcademicYear(filterDto.getAcademicYear()));
+        }
+
+        // NEW: Add schedule filter
+        if (filterDto.getScheduleId() != null) {
+            spec = spec.and(hasScheduleId(filterDto.getScheduleId()));
         }
 
         return spec;

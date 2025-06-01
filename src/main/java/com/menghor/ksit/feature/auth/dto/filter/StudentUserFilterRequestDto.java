@@ -12,6 +12,7 @@ public class StudentUserFilterRequestDto {
     private Status status;
     private Long classId;
     private Integer academicYear;
+    private Long scheduleId;
     private Integer pageNo = 1;
     private Integer pageSize = 10;
 }
