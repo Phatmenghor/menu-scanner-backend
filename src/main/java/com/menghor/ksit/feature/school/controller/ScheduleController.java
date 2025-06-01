@@ -24,7 +24,7 @@ public class ScheduleController {
     public ApiResponse<ScheduleResponseDto> createSchedule(@Valid @RequestBody ScheduleRequestDto requestDto) {
         log.info("REST request to create schedule: {}", requestDto);
         ScheduleResponseDto responseDto = scheduleService.createSchedule(requestDto);
-        log.info("Schedule created successfully: {}", responseDto);
+        log.info("Schedule created successfully");
         return new ApiResponse<>(
                 "success",
                 "Schedule created successfully",
@@ -36,7 +36,7 @@ public class ScheduleController {
     public ApiResponse<ScheduleResponseDto> getScheduleById(@PathVariable Long id) {
         log.info("REST request to get schedule by ID: {}", id);
         ScheduleResponseDto responseDto = scheduleService.getScheduleById(id);
-        log.info("Schedule retrieved successfully: {}", responseDto);
+        log.info("Schedule retrieved successfully for ID {}: {}", id, responseDto);
         return new ApiResponse<>(
                 "success",
                 "Schedule retrieved successfully",
@@ -48,7 +48,7 @@ public class ScheduleController {
     public ApiResponse<ScheduleResponseDto> updateSchedule(@PathVariable Long id, @Valid @RequestBody ScheduleUpdateDto updateDto) {
         log.info("REST request to update schedule with ID {}: {}", id, updateDto);
         ScheduleResponseDto responseDto = scheduleService.updateSchedule(id, updateDto);
-        log.info("Schedule updated successfully: {}", responseDto);
+        log.info("Schedule updated successfully for ID {}: {}", id, responseDto);
         return new ApiResponse<>(
                 "success",
                 "Schedule updated successfully",
@@ -60,7 +60,7 @@ public class ScheduleController {
     public ApiResponse<ScheduleResponseDto> deleteSchedule(@PathVariable Long id) {
         log.info("REST request to delete schedule with ID: {}", id);
         ScheduleResponseDto responseDto = scheduleService.deleteSchedule(id);
-        log.info("Schedule deleted successfully: {}", responseDto);
+        log.info("Schedule deleted successfully for ID: {}", id);
         return new ApiResponse<>(
                 "success",
                 "Schedule deleted successfully",
@@ -72,7 +72,7 @@ public class ScheduleController {
     public ApiResponse<CustomPaginationResponseDto<ScheduleResponseDto>> getAllSchedules(@RequestBody ScheduleFilterDto filterDto) {
         log.info("REST request to search schedules with filter: {}", filterDto);
         CustomPaginationResponseDto<ScheduleResponseDto> responseDto = scheduleService.getAllSchedules(filterDto);
-        log.info("Schedules retrieved successfully: {}", responseDto);
+        log.info("Schedules retrieved successfully: {}", responseDto.getTotalElements());
         return new ApiResponse<>(
                 "success",
                 "Schedules retrieved successfully",
@@ -84,7 +84,7 @@ public class ScheduleController {
     public ApiResponse<CustomPaginationResponseDto<ScheduleResponseDto>> getMySchedules(@RequestBody ScheduleFilterDto filterDto) {
         log.info("REST request to get user-specific schedules with filter: {}", filterDto);
         CustomPaginationResponseDto<ScheduleResponseDto> responseDto = scheduleService.getMySchedules(filterDto);
-        log.info("User schedules retrieved successfully: {}", responseDto);
+        log.info("User schedules all retrieved successfully: {}", responseDto.getTotalElements());
         return new ApiResponse<>(
                 "success",
                 "User schedules retrieved successfully",
