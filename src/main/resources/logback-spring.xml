@@ -9,9 +9,10 @@
     </springProfile>
 
     <property name="LOG_FILE_NAME" value="ks-it" />
-    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
+    <!-- Updated pattern with Cambodia timezone for logs only -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS, Asia/Phnom_Penh} [%thread] %-5level %logger{36} - %msg%n" />
     <property name="MAX_FILE_SIZE" value="1024MB" />
-    <timestamp key="byDay" datePattern="yyyy-MM-dd" />
+    <timestamp key="byDay" datePattern="yyyy-MM-dd" timeReference="Asia/Phnom_Penh" />
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
