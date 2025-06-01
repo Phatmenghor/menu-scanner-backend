@@ -1,6 +1,5 @@
 package com.menghor.ksit.feature.master.service.impl;
 
-import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.exceptoins.error.DuplicateNameException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
@@ -20,14 +19,10 @@ import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-
-import java.util.Collections;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -173,7 +168,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         DepartmentEntity department = findDepartmentById(id);
         department.setStatus(Status.DELETED);
 
-        department= departmentRepository.save(department);
+        department = departmentRepository.save(department);
 
         log.info("Department deleted successfully with ID: {}", id);
         return departmentMapper.toResponseDto(department);
@@ -225,116 +220,35 @@ public class DepartmentServiceImpl implements DepartmentService {
 
         UserEntity currentUser = securityUtils.getCurrentUser();
         log.info("Current user: {} with roles: {}", currentUser.getUsername(),
-                currentUser.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toList()));
+                currentUser.getRoles().stream().map(role -> role.getName().name()).toList());
 
-        // Determine user access level
-        if (hasAdminAccess(currentUser)) {
-            log.info("User has admin access, returning all departments");
-            return getAllDepartments(filterDto);
-        } else if (isTeacherOrStaff(currentUser)) {
-            log.info("User is teacher/staff, filtering by department ID: {}",
-                    currentUser.getDepartment() != null ? currentUser.getDepartment().getId() : "none");
-            return getDepartmentsForStaff(currentUser, filterDto);
-        } else if (isStudent(currentUser)) {
-            log.info("User is student, filtering by class's major's department");
-            return getDepartmentsForStudent(currentUser, filterDto);
-        } else {
-            log.warn("User {} has unknown or no roles, returning empty departments", currentUser.getUsername());
-            return createEmptyDepartmentResponse(filterDto);
-        }
+        // Validate and prepare pagination using PaginationUtils
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
+
+        // Use the enhanced specification with role-based filtering
+        Specification<DepartmentEntity> spec = DepartmentSpecification.combineWithUserRole(
+                filterDto.getSearch(),
+                filterDto.getStatus(),
+                currentUser
+        );
+
+        // Execute query with specification and pagination
+        Page<DepartmentEntity> departmentPage = departmentRepository.findAll(spec, pageable);
+
+        // Map to response DTO
+        CustomPaginationResponseDto<DepartmentResponseDto> response = departmentMapper.toDepartmentAllResponseDto(departmentPage);
+        log.info("User-specific departments retrieved successfully: {} departments (page {}/{})",
+                response.getContent().size(), response.getPageNo(), response.getTotalPages());
+
+        return response;
     }
 
     // ===== Private Helper Methods =====
-
-    private CustomPaginationResponseDto<DepartmentResponseDto> getDepartmentsForStaff(UserEntity staff, DepartmentFilter filterDto) {
-        if (staff.getDepartment() == null) {
-            log.warn("Staff {} has no department assigned", staff.getUsername());
-            return createEmptyDepartmentResponse(filterDto);
-        }
-
-        // Create specification that only returns the staff's department
-        Pageable pageable = PaginationUtils.createPageable(
-                filterDto.getPageNo(),
-                filterDto.getPageSize(),
-                "createdAt",
-                "DESC"
-        );
-
-        Specification<DepartmentEntity> spec = DepartmentSpecification.combine(
-                filterDto.getSearch(),
-                filterDto.getStatus()
-        ).and((root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("id"), staff.getDepartment().getId())
-        );
-
-        Page<DepartmentEntity> departmentPage = departmentRepository.findAll(spec, pageable);
-
-        CustomPaginationResponseDto<DepartmentResponseDto> response = departmentMapper.toDepartmentAllResponseDto(departmentPage);
-        log.info("Retrieved {} departments for staff (page {}/{})",
-                response.getContent().size(), response.getPageNo(), response.getTotalPages());
-
-        return response;
-    }
-
-    private CustomPaginationResponseDto<DepartmentResponseDto> getDepartmentsForStudent(UserEntity student, DepartmentFilter filterDto) {
-        if (student.getClasses() == null || student.getClasses().getMajor() == null ||
-                student.getClasses().getMajor().getDepartment() == null) {
-            log.warn("Student {} has no class/major/department assigned", student.getUsername());
-            return createEmptyDepartmentResponse(filterDto);
-        }
-
-        Long departmentId = student.getClasses().getMajor().getDepartment().getId();
-
-        // Create specification that only returns the student's department
-        Pageable pageable = PaginationUtils.createPageable(
-                filterDto.getPageNo(),
-                filterDto.getPageSize(),
-                "createdAt",
-                "DESC"
-        );
-
-        Specification<DepartmentEntity> spec = DepartmentSpecification.combine(
-                filterDto.getSearch(),
-                filterDto.getStatus()
-        ).and((root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("id"), departmentId)
-        );
-
-        Page<DepartmentEntity> departmentPage = departmentRepository.findAll(spec, pageable);
-
-        CustomPaginationResponseDto<DepartmentResponseDto> response = departmentMapper.toDepartmentAllResponseDto(departmentPage);
-        log.info("Retrieved {} departments for student (page {}/{})",
-                response.getContent().size(), response.getPageNo(), response.getTotalPages());
-
-        return response;
-    }
-
-    private CustomPaginationResponseDto<DepartmentResponseDto> createEmptyDepartmentResponse(DepartmentFilter filterDto) {
-        return CustomPaginationResponseDto.<DepartmentResponseDto>builder()
-                .content(Collections.emptyList())
-                .pageNo(filterDto.getPageNo() != null ? filterDto.getPageNo() : 1)
-                .pageSize(filterDto.getPageSize() != null ? filterDto.getPageSize() : 10)
-                .totalElements(0L)
-                .totalPages(0)
-                .last(true)
-                .build();
-    }
-
-    // Role checking methods
-    private boolean hasAdminAccess(UserEntity user) {
-        return user.getRoles().stream()
-                .anyMatch(role -> role.getName() == RoleEnum.ADMIN || role.getName() == RoleEnum.DEVELOPER);
-    }
-
-    private boolean isTeacherOrStaff(UserEntity user) {
-        return user.getRoles().stream()
-                .anyMatch(role -> role.getName() == RoleEnum.TEACHER || role.getName() == RoleEnum.STAFF);
-    }
-
-    private boolean isStudent(UserEntity user) {
-        return user.getRoles().stream()
-                .anyMatch(role -> role.getName() == RoleEnum.STUDENT);
-    }
 
     /**
      * Helper method to find a department by ID or throw NotFoundException
