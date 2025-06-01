@@ -15,6 +15,8 @@ services:
     ports:
       - "8080:8080"
     volumes:
+      # Map host directory to container directory
+      # This maps /opt/logs on HOST to /opt/logs in CONTAINER
       - /opt/logs:/opt/logs
     depends_on:
       - postgres
