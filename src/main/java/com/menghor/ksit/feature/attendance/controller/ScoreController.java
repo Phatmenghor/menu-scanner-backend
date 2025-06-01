@@ -28,7 +28,7 @@ public class ScoreController {
     public ApiResponse<ScoreSessionResponseDto> initializeScoreSession(@Valid @RequestBody ScoreSessionRequestDto requestDto) {
         log.info("REST request to initialize score session: {}", requestDto);
         ScoreSessionResponseDto responseDto = scoreSessionService.initializeScoreSession(requestDto);
-        log.info("Score session initialized successfully: {}", responseDto);
+        log.info("Score session initialized successfully");
         return new ApiResponse<>(
                 "success",
                 "Score session initialized successfully",
@@ -40,7 +40,7 @@ public class ScoreController {
     public ApiResponse<ScoreSessionResponseDto> getScoreSessionById(@PathVariable Long id) {
         log.info("REST request to get score session by ID: {}", id);
         ScoreSessionResponseDto responseDto = scoreSessionService.getScoreSessionById(id);
-        log.info("Score session retrieved successfully: {}", responseDto);
+        log.info("Score session retrieved successfully");
         return new ApiResponse<>(
                 "success",
                 "Score session retrieved successfully",
@@ -53,7 +53,7 @@ public class ScoreController {
             @Valid @RequestBody ScoreSessionUpdateDto updateDto) {
         log.info("REST request to update score session: {}", updateDto);
         ScoreSessionResponseDto responseDto = scoreSessionService.updateScoreSession(updateDto);
-        log.info("Score session updated successfully: {}", responseDto);
+        log.info("Score session updated successfully");
         return new ApiResponse<>(
                 "success",
                 "Score session updated successfully",
@@ -67,7 +67,7 @@ public class ScoreController {
         log.info("REST request to get all score sessions with filter: {}", filterDto);
         CustomPaginationResponseDto<ScoreSessionResponseDto> response =
                 scoreSessionService.getAllScoreSessions(filterDto);
-        log.info("Score sessions retrieved successfully: {}", response);
+        log.info("Score sessions retrieved successfully");
         return new ApiResponse<>(
                 "success",
                 "Score sessions retrieved successfully",
@@ -79,7 +79,7 @@ public class ScoreController {
     public ApiResponse<StudentScoreResponseDto> getStudentScoreById(@PathVariable Long id) {
         log.info("REST request to get student score by ID: {}", id);
         StudentScoreResponseDto responseDto = studentScoreService.getStudentScoreById(id);
-        log.info("Student score retrieved successfully: {}", responseDto);
+        log.info("Student score retrieved successfully");
         return new ApiResponse<>(
                 "success",
                 "Student score retrieved successfully",
@@ -92,7 +92,7 @@ public class ScoreController {
             @Valid @RequestBody StudentScoreUpdateDto updateDto) {
         log.info("REST request to update student score: {}", updateDto);
         StudentScoreResponseDto responseDto = studentScoreService.updateStudentScore(updateDto);
-        log.info("Student score updated successfully: {}", responseDto);
+        log.info("Student score updated successfully");
         return new ApiResponse<>(
                 "success",
                 "Student score updated successfully",
