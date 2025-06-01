@@ -11,6 +11,7 @@ public class ScheduleFilterDto {
     private Long classId;
     private Long roomId;
     private Long teacherId;
+    private Long studentId;
     private Integer academyYear;
     private SemesterEnum semester;
     private DayOfWeek dayOfWeek;

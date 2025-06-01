@@ -32,4 +32,12 @@ public interface ScheduleService {
      * Get all schedules with filtering
      */
     CustomPaginationResponseDto<ScheduleResponseDto> getAllSchedules(ScheduleFilterDto filterDto);
+
+    /**
+     * Get schedules based on current user's role and permissions (Token-based):
+     * - Students: Get schedules for their class
+     * - Teachers/Staff: Get schedules where they are the teacher
+     * - Admins/Developers: Get all schedules with filters
+     */
+    CustomPaginationResponseDto<ScheduleResponseDto> getMySchedules(ScheduleFilterDto filterDto);
 }
