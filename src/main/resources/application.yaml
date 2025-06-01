@@ -34,18 +34,6 @@ spring:
       resources:
         static-locations: classpath:/static/,classpath:/public/
 
-# Logging configuration
-logging:
-  config: classpath:logback-spring.xml
-  level:
-    root: INFO
-    com.menghor.ksit: INFO
-    org.springframework: INFO
-    org.springframework.web.servlet.PageNotFound: ERROR
-    org.hibernate: WARN
-  file:
-    path: ${LOG_PATH:/opt/logs}
-
 server:
   port: ${APP_PORT:8080}
 

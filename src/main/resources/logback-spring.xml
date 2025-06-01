@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <property name="LOG_PATH" value="logs" />
+    <!-- Use different log paths for different profiles -->
+    <springProfile name="dev">
+        <property name="LOG_PATH" value="./logs" />
+    </springProfile>
+    <springProfile name="!dev">
+        <property name="LOG_PATH" value="${LOG_PATH:-/opt/logs}" />
+    </springProfile>
+
     <property name="LOG_FILE_NAME" value="ks-it" />
     <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
     <property name="MAX_FILE_SIZE" value="1024MB" />
@@ -29,18 +36,29 @@
         </rollingPolicy>
     </appender>
 
-    <!-- Application specific logging -->
-    <logger name="com.menghor.ksit" level="INFO" additivity="false">
-        <appender-ref ref="FILE" />
-        <appender-ref ref="CONSOLE" />
-    </logger>
+    <!-- Development profile: Console only -->
+    <springProfile name="dev">
+        <logger name="com.menghor.ksit" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE" />
+        </logger>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+    <!-- Production profile: Both console and file -->
+    <springProfile name="!dev">
+        <logger name="com.menghor.ksit" level="INFO" additivity="false">
+            <appender-ref ref="FILE" />
+            <appender-ref ref="CONSOLE" />
+        </logger>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE" />
+        </root>
+    </springProfile>
 
     <!-- Third-party library logging levels -->
     <logger name="org.springframework" level="INFO" />
     <logger name="org.hibernate" level="WARN" />
-
-    <root level="INFO">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
-    </root>
 </configuration>
