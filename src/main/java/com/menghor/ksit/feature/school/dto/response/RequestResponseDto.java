@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 public class RequestResponseDto {
     private Long id;
     private String title;
-    private String description;
     private RequestStatus status;
     private String requestComment;
     private String staffComment;
