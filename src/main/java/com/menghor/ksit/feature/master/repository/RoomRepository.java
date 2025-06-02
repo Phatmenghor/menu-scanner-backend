@@ -14,5 +14,9 @@ import java.util.Optional;
 @Repository
 public interface RoomRepository extends JpaRepository<RoomEntity, Long>, JpaSpecificationExecutor<RoomEntity> {
     boolean existsByNameAndStatus(String name, Status status);
+
     boolean existsByNameAndStatusAndIdNot(String name, Status status, Long id);
+
+    long countByStatus(Status status);
+
 }

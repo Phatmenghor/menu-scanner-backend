@@ -42,6 +42,9 @@ jwt:
     key: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
   expiration-min: 1440000000000
 
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui/index.html

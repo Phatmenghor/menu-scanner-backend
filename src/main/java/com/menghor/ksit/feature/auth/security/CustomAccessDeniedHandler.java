@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -17,7 +18,9 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,17 +35,25 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
                        AccessDeniedException accessDeniedException) throws IOException, ServletException {
+
+        String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+
         // Get current authentication
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         // Prepare response
-        response.setContentType("application/json");
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
+        response.setStatus(HttpStatus.FORBIDDEN.value());
 
         // Default error response
         Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("code", HttpStatus.FORBIDDEN.value());
-        errorResponse.put("status", "failed");
+        errorResponse.put("status", "error");
+        errorResponse.put("statusCode", HttpStatus.FORBIDDEN.value());
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("path", requestURI);
+        errorResponse.put("method", method);
 
         // Check if we have a user in the context
         if (authentication != null && authentication.getPrincipal() instanceof User) {
@@ -55,31 +66,46 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
                 if (userOpt.isPresent()) {
                     UserEntity user = userOpt.get();
-                    log.warn("Access denied to user {} (roles: {}) for path: {}",
-                            username,
-                            user.getRoles().stream().map(r -> r.getName().name()).toList(),
-                            request.getRequestURI());
+                    List<String> userRoles = user.getRoles().stream()
+                            .map(r -> r.getName().name())
+                            .toList();
 
-                    errorResponse.put("message", "You don't have permission to access this resource");
+                    log.warn("Access denied for user {} (roles: {}) accessing {} {}",
+                            username, userRoles, method, requestURI);
+
+                    errorResponse.put("message",
+                            "Access denied. You don't have sufficient permissions to access this resource.");
+
+                    // Add user context for better debugging (only in development)
+                    if (isDevelopmentMode()) {
+                        errorResponse.put("user", username);
+                        errorResponse.put("userRoles", userRoles);
+                        errorResponse.put("requiredPermissions", "Contact administrator for required permissions");
+                    }
                 } else {
-                    errorResponse.put("message", "User not found");
+                    log.warn("Access denied for unknown user: {}", username);
+                    errorResponse.put("message", "Access denied. User authentication invalid.");
                 }
-
-                response.setStatus(HttpStatus.FORBIDDEN.value());
 
             } catch (Exception e) {
                 // Error finding user
-                errorResponse.put("message", "Authentication error");
-                response.setStatus(HttpStatus.FORBIDDEN.value());
-                log.error("Error processing access denied for user {}", username, e);
+                log.error("Error processing access denied for user {}: {}", username, e.getMessage());
+                errorResponse.put("message", "Access denied. Unable to verify user permissions.");
             }
         } else {
-            // No authentication details
-            errorResponse.put("message", "Authentication required");
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            // No authentication details or wrong principal type
+            log.warn("Access denied for unauthenticated request to {} {}", method, requestURI);
+            errorResponse.put("message", "Access denied. Authentication required to access this resource.");
         }
 
         // Write the response
-        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+        String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+        response.getWriter().write(jsonResponse);
+    }
+
+    private boolean isDevelopmentMode() {
+        // Check if we're in development mode
+        String profile = System.getProperty("spring.profiles.active");
+        return "dev".equals(profile) || "development".equals(profile);
     }
 }

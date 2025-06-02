@@ -9,5 +9,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MajorRepository extends JpaRepository<MajorEntity, Long>, JpaSpecificationExecutor<MajorEntity> {
     boolean existsByCodeAndStatus(String code, Status status);
+
     boolean existsByCodeAndStatusAndIdNot(String code, Status status, Long id);
+
+    long countByStatus(Status status);
 }

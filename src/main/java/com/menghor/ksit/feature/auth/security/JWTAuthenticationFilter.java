@@ -1,14 +1,18 @@
 package com.menghor.ksit.feature.auth.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.BlacklistedTokenRepository;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
@@ -20,6 +24,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -31,6 +37,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private final CustomUserDetailsService customUserDetailsService;
     private final UserRepository userRepository;
     private final BlacklistedTokenRepository blacklistedTokenRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -38,64 +45,116 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
             String token = getJWTFromRequest(request);
-            log.debug("Token from request: {}", token);
+            log.debug("Processing request to: {} with token: {}", request.getRequestURI(),
+                    token != null ? "present" : "absent");
 
-            // Check if token is blacklisted
-            if (StringUtils.hasText(token) &&
-                    !blacklistedTokenRepository.existsByToken(token) &&
-                    tokenGenerator.validateToken(token)) {
+            if (StringUtils.hasText(token)) {
+                // Check if token is blacklisted
+                if (blacklistedTokenRepository.existsByToken(token)) {
+                    log.warn("Attempted to use blacklisted token");
+                    handleAuthenticationError(response, "Token has been invalidated. Please login again.",
+                            HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
 
-                String username = tokenGenerator.getUsernameFromJWT(token);
-                log.debug("Username from token: {}", username);
+                // Validate and process token
+                if (tokenGenerator.validateToken(token)) {
+                    String username = tokenGenerator.getUsernameFromJWT(token);
+                    log.debug("Token valid for username: {}", username);
 
-                try {
-                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-
-                    UsernamePasswordAuthenticationToken authenticationToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
-
-                    authenticationToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
-
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-
-                    // Store current user in request for reference by other components
-                    Optional<UserEntity> userOpt = userRepository.findByUsername(username);
-                    userOpt.ifPresent(user -> request.setAttribute("currentUser", user));
-
-                } catch (org.springframework.security.core.userdetails.UsernameNotFoundException ex) {
-                    log.error("Authentication failed for user {}: {}", username, ex.getMessage());
-                    SecurityContextHolder.clearContext();
-                } catch (DisabledException ex) {
-                    log.error("Account disabled for user {}: {}", username, ex.getMessage());
-                    SecurityContextHolder.clearContext();
-                } catch (LockedException ex) {
-                    log.error("Account locked for user {}: {}", username, ex.getMessage());
-                    SecurityContextHolder.clearContext();
+                    authenticateUser(username, token, request);
                 }
             }
 
             filterChain.doFilter(request, response);
 
-        } catch (Exception e) {
-            log.error("Authentication process failed", e);
-            SecurityContextHolder.clearContext();
-            throw e;
+        } catch (ExpiredJwtException ex) {
+            log.warn("JWT token expired for request to: {}", request.getRequestURI());
+            handleAuthenticationError(response, "Your session has expired. Please login again to continue.",
+                    HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (JwtException ex) {
+            log.warn("JWT error for request to {}: {}", request.getRequestURI(), ex.getMessage());
+            handleAuthenticationError(response, "Invalid authentication token. Please login again.",
+                    HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (Exception ex) {
+            log.error("Authentication processing failed for request to {}: {}", request.getRequestURI(), ex.getMessage());
+            handleAuthenticationError(response, "Authentication failed. Please try again.",
+                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private void authenticateUser(String username, String token, HttpServletRequest request) {
+        try {
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+
+            authenticationToken.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+            // Store current user in request for reference by other components
+            Optional<UserEntity> userOpt = userRepository.findByUsername(username);
+            userOpt.ifPresent(user -> request.setAttribute("currentUser", user));
+
+            log.debug("Successfully authenticated user: {}", username);
+
+        } catch (DisabledException ex) {
+            log.warn("Account disabled for user {}: {}", username, ex.getMessage());
+            throw new DisabledException("Your account has been disabled. Please contact administrator.");
+        } catch (LockedException ex) {
+            log.warn("Account locked for user {}: {}", username, ex.getMessage());
+            throw new LockedException("Your account has been locked. Please contact administrator.");
+        } catch (Exception ex) {
+            log.error("Authentication failed for user {}: {}", username, ex.getMessage());
+            SecurityContextHolder.clearContext();
+            throw ex;
+        }
+    }
+
+    private void handleAuthenticationError(HttpServletResponse response, String message, int statusCode)
+            throws IOException {
+        response.setStatus(statusCode);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("status", "error");
+        errorResponse.put("message", message);
+        errorResponse.put("timestamp", System.currentTimeMillis());
+
+        String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+        response.getWriter().write(jsonResponse);
     }
 
     private String getJWTFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        log.debug("Authorization header: {}", bearerToken);
+        log.debug("Authorization header: {}", bearerToken != null ? "Bearer ***" : "null");
 
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
         return null;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+
+        // Skip filter for public endpoints
+        return path.startsWith("/api/v1/auth/") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/webjars/") ||
+                path.equals("/favicon.ico") ||
+                path.startsWith("/static/") ||
+                path.equals("/error");
     }
 }

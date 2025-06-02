@@ -18,17 +18,6 @@ public interface AuthService {
      */
     StaffUserResponseDto changePasswordStaff(ChangePasswordRequestDto requestDto);
 
-
-    /**
-     * Change user's student password (by user themselves)
-     */
-    StudentUserResponseDto changePasswordStudent(ChangePasswordRequestDto requestDto);
-
-    /**
-     * Change user's staff password (by admin)
-     */
-    StaffUserResponseDto changePasswordStaffByAdmin(ChangePasswordByAdminRequestDto requestDto);
-
     /**
      * Change user's student password (by admin)
      */

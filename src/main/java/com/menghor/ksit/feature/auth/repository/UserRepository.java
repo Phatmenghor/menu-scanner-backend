@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.auth.repository;
 
 import com.menghor.ksit.enumations.RoleEnum;
+import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,4 +34,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpec
     boolean existsByIdentifyNumber(String identifyNumber);
 
     List<UserEntity> findByClassesId(Long id);
+
+    @Query("SELECT COUNT(u) FROM UserEntity u JOIN u.roles r WHERE r.name = :role AND u.status = :status")
+    long countActiveUsersByRole(@Param("role") RoleEnum role, @Param("status") Status status);
 }

@@ -19,14 +19,21 @@ import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.auth.security.JWTGenerator;
 import com.menghor.ksit.feature.auth.service.AuthService;
 import com.menghor.ksit.utils.database.SecurityUtils;
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -49,48 +56,87 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponseDto login(LoginRequestDto loginRequestDto) {
         log.info("Attempting login for email: {}", loginRequestDto.getEmail());
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequestDto.getEmail(),
-                        loginRequestDto.getPassword()));
+        // Validate input
+        if (!StringUtils.hasText(loginRequestDto.getEmail()) || !StringUtils.hasText(loginRequestDto.getPassword())) {
+            log.warn("Login attempt with missing credentials");
+            throw new BadRequestException("Email and password are required");
+        }
 
-        UserEntity user = userRepository.findByUsername(loginRequestDto.getEmail())
-                .orElseThrow(() -> new NotFoundException(
-                        String.format(ErrorMessages.EMAIL_NOT_FOUND, loginRequestDto.getEmail())));
+        try {
+            // Check if user exists and is active before authentication
+            UserEntity user = userRepository.findByUsername(loginRequestDto.getEmail())
+                    .orElseThrow(() -> {
+                        log.warn("Login attempt with non-existent email: {}", loginRequestDto.getEmail());
+                        return new BadCredentialsException("Invalid email or password");
+                    });
 
+            // Check user status
+            validateUserStatus(user);
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtGenerator.generateToken(authentication);
+            // Attempt authentication
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequestDto.getEmail(),
+                            loginRequestDto.getPassword()));
 
-        // Extract roles
-        List<RoleEnum> roles = user.getRoles().stream()
-                .map(Role::getName)
-                .collect(Collectors.toList());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = jwtGenerator.generateToken(authentication);
 
-        log.info("Login successful for email: {}", loginRequestDto.getEmail());
+            // Extract roles
+            List<RoleEnum> roles = user.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toList());
 
-        // Use builder to create response with user information
-        return AuthResponseDto.builder()
-                .accessToken(token)
-                .tokenType("Bearer ")
-                .userId(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .roles(roles)
-                .build();
+            log.info("Login successful for email: {} with roles: {}", loginRequestDto.getEmail(), roles);
+
+            // Use builder to create response with user information
+            return AuthResponseDto.builder()
+                    .accessToken(token)
+                    .tokenType("Bearer ")
+                    .userId(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .roles(roles)
+                    .build();
+
+        } catch (BadCredentialsException ex) {
+            log.warn("Authentication failed for email: {} - Invalid credentials", loginRequestDto.getEmail());
+            throw new BadCredentialsException("Invalid email or password. Please check your credentials and try again.");
+        } catch (DisabledException ex) {
+            log.warn("Authentication failed for email: {} - Account disabled", loginRequestDto.getEmail());
+            throw new DisabledException("Your account has been disabled. Please contact administrator for assistance.");
+        } catch (LockedException ex) {
+            log.warn("Authentication failed for email: {} - Account locked", loginRequestDto.getEmail());
+            throw new LockedException("Your account has been locked. Please contact administrator for assistance.");
+        } catch (AuthenticationException ex) {
+            log.warn("Authentication failed for email: {} - {}", loginRequestDto.getEmail(), ex.getMessage());
+            throw new BadCredentialsException("Authentication failed. Please check your credentials and try again.");
+        }
     }
-
 
     @Override
     public AuthResponseDto refreshToken(String refreshToken) {
-        log.info("Refreshing token");
+        log.info("Attempting token refresh");
+
+        if (!StringUtils.hasText(refreshToken)) {
+            throw new BadRequestException("Refresh token is required");
+        }
+
         try {
+            // Validate the refresh token
+            if (!jwtGenerator.validateToken(refreshToken)) {
+                throw new BadRequestException("Invalid refresh token");
+            }
+
             String username = jwtGenerator.getUsernameFromJWT(refreshToken);
             UserEntity userEntity = userRepository.findByUsername(username)
                     .orElseThrow(() -> {
                         log.warn("Token refresh failed: User not found for username: {}", username);
-                        return new BadRequestException("User not found");
+                        return new NotFoundException("User not found");
                     });
+
+            // Check user status
+            validateUserStatus(userEntity);
 
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     username, null, Collections.emptyList());
@@ -103,7 +149,6 @@ public class AuthServiceImpl implements AuthService {
 
             log.info("Token refreshed successfully for user: {}", username);
 
-            // Use builder to create response with user information
             return AuthResponseDto.builder()
                     .accessToken(newToken)
                     .tokenType("Bearer ")
@@ -112,9 +157,13 @@ public class AuthServiceImpl implements AuthService {
                     .email(userEntity.getEmail())
                     .roles(roles)
                     .build();
+
+        } catch (ExpiredJwtException ex) {
+            log.warn("Token refresh failed: Refresh token expired");
+            throw new BadRequestException("Refresh token has expired. Please login again.");
         } catch (Exception e) {
-            log.error("Token refresh failed", e);
-            throw new BadRequestException("Token refresh failed: " + e.getMessage());
+            log.error("Token refresh failed: {}", e.getMessage());
+            throw new BadRequestException("Token refresh failed. Please login again.");
         }
     }
 
@@ -122,34 +171,7 @@ public class AuthServiceImpl implements AuthService {
     public StaffUserResponseDto changePasswordStaff(ChangePasswordRequestDto requestDto) {
         log.info("Changing password for staff user");
 
-        UserEntity user = securityUtils.getCurrentUser();
-
-        if (!passwordEncoder.matches(requestDto.getCurrentPassword(), user.getPassword())) {
-            log.warn("Current password is incorrect for user ID: {}", user.getId());
-            throw new BadRequestException(ErrorMessages.CURRENT_PASSWORD_INCORRECT);
-        }
-
-        if (!requestDto.getNewPassword().equals(requestDto.getConfirmNewPassword())) {
-            log.warn("New passwords do not match for user ID: {}", user.getId());
-            throw new BadRequestException(ErrorMessages.PASSWORDS_DO_NOT_MATCH);
-        }
-
-        user.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
-
-        if (user.getStatus() == null) {
-            user.setStatus(Status.ACTIVE);
-        }
-
-        UserEntity updatedUser = userRepository.save(user);
-        log.info("Password changed successfully for user ID: {}", user.getId());
-
-        return staffMapper.toStaffUserDto(updatedUser);
-    }
-
-
-    @Override
-    public StudentUserResponseDto changePasswordStudent(ChangePasswordRequestDto requestDto) {
-        log.info("Changing password for student user");
+        validatePasswordChangeRequest(requestDto);
 
         UserEntity user = securityUtils.getCurrentUser();
 
@@ -171,33 +193,6 @@ public class AuthServiceImpl implements AuthService {
 
         UserEntity updatedUser = userRepository.save(user);
         log.info("Password changed successfully for user ID: {}", user.getId());
-
-        return studentMapper.toStudentUserDto(updatedUser);
-    }
-
-    @Override
-    public StaffUserResponseDto changePasswordStaffByAdmin(ChangePasswordByAdminRequestDto requestDto) {
-        log.info("Admin changing password for user ID: {}", requestDto.getId());
-
-        UserEntity user = userRepository.findById(requestDto.getId())
-                .orElseThrow(() -> {
-                    log.error("User with ID {} not found", requestDto.getId());
-                    return new NotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, requestDto.getId()));
-                });
-
-        if (!requestDto.getNewPassword().equals(requestDto.getConfirmNewPassword())) {
-            log.warn("New passwords do not match for user ID: {}", requestDto.getId());
-            throw new BadRequestException(ErrorMessages.PASSWORDS_DO_NOT_MATCH);
-        }
-
-        user.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
-
-        if (user.getStatus() == null) {
-            user.setStatus(Status.ACTIVE);
-        }
-
-        UserEntity updatedUser = userRepository.save(user);
-        log.info("Password changed successfully for user ID: {}", requestDto.getId());
 
         return staffMapper.toStaffUserDto(updatedUser);
     }
@@ -206,6 +201,8 @@ public class AuthServiceImpl implements AuthService {
     public StudentUserResponseDto changePasswordStudentByAdmin(ChangePasswordByAdminRequestDto requestDto) {
         log.info("Admin changing password for user ID: {}", requestDto.getId());
 
+        validateAdminPasswordChangeRequest(requestDto);
+
         UserEntity user = userRepository.findById(requestDto.getId())
                 .orElseThrow(() -> {
                     log.error("User with ID {} not found", requestDto.getId());
@@ -227,5 +224,58 @@ public class AuthServiceImpl implements AuthService {
         log.info("Password changed successfully for user ID: {}", requestDto.getId());
 
         return studentMapper.toStudentUserDto(updatedUser);
+    }
+
+    // Helper methods for validation
+    private void validateUserStatus(UserEntity user) {
+        if (user.getStatus() == null) {
+            user.setStatus(Status.ACTIVE);
+            userRepository.save(user);
+        }
+
+        switch (user.getStatus()) {
+            case DELETED:
+                log.warn("Login attempt for deleted user: {}", user.getUsername());
+                throw new LockedException("Your account has been deleted. Please contact administrator.");
+            case INACTIVE:
+                log.warn("Login attempt for inactive user: {}", user.getUsername());
+                throw new DisabledException("Your account is inactive. Please contact administrator to activate your account.");
+            case ACTIVE:
+                // User is active, continue
+                break;
+            default:
+                log.warn("Login attempt for user with unknown status: {} - {}", user.getUsername(), user.getStatus());
+                throw new DisabledException("Your account status is invalid. Please contact administrator.");
+        }
+    }
+
+    private void validatePasswordChangeRequest(ChangePasswordRequestDto requestDto) {
+        if (!StringUtils.hasText(requestDto.getCurrentPassword())) {
+            throw new BadRequestException("Current password is required");
+        }
+        if (!StringUtils.hasText(requestDto.getNewPassword())) {
+            throw new BadRequestException("New password is required");
+        }
+        if (!StringUtils.hasText(requestDto.getConfirmNewPassword())) {
+            throw new BadRequestException("Confirm password is required");
+        }
+        if (requestDto.getNewPassword().length() < 6) {
+            throw new BadRequestException("New password must be at least 6 characters long");
+        }
+    }
+
+    private void validateAdminPasswordChangeRequest(ChangePasswordByAdminRequestDto requestDto) {
+        if (requestDto.getId() == null) {
+            throw new BadRequestException("User ID is required");
+        }
+        if (!StringUtils.hasText(requestDto.getNewPassword())) {
+            throw new BadRequestException("New password is required");
+        }
+        if (!StringUtils.hasText(requestDto.getConfirmNewPassword())) {
+            throw new BadRequestException("Confirm password is required");
+        }
+        if (requestDto.getNewPassword().length() < 6) {
+            throw new BadRequestException("New password must be at least 6 characters long");
+        }
     }
 }
