@@ -19,9 +19,6 @@ public class RequestEntity extends BaseEntity {
     @Column(nullable = false)
     private String title; // Request title
     
-    @Column(columnDefinition = "TEXT")
-    private String description; // Detailed description of the request
-    
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RequestStatus status = RequestStatus.PENDING; // Current status
