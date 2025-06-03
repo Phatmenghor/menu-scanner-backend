@@ -19,8 +19,14 @@ public class RequestHistorySpecification {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (filter.getRequestId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("request").get("id"), filter.getRequestId()));
+            // REMOVED: requestId filter
+             if (filter.getRequestId() != null) {
+                 predicates.add(criteriaBuilder.equal(root.get("request").get("id"), filter.getRequestId()));
+             }
+
+            // ADDED: userId filter - get all history for a specific user
+            if (filter.getUserId() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("user").get("id"), filter.getUserId()));
             }
 
             if (StringUtils.hasText(filter.getSearch())) {
@@ -44,6 +50,8 @@ public class RequestHistorySpecification {
                         criteriaBuilder.lower(userJoin.get("englishLastName")), searchTerm);
                 Predicate requestTitlePredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(requestJoin.get("title")), searchTerm);
+                Predicate titlePredicate = criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("title")), searchTerm);
 
                 predicates.add(criteriaBuilder.or(
                         commentPredicate,
@@ -53,12 +61,13 @@ public class RequestHistorySpecification {
                         userKhmerLastNamePredicate,
                         userEnglishFirstNamePredicate,
                         userEnglishLastNamePredicate,
-                        requestTitlePredicate
+                        requestTitlePredicate,
+                        titlePredicate
                 ));
             }
 
             if(filter.getStatus() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("status"), filter.getStatus()));
+                predicates.add(criteriaBuilder.equal(root.get("toStatus"), filter.getStatus()));
             }
 
             if (filter.getStartDate() != null) {
@@ -77,10 +86,11 @@ public class RequestHistorySpecification {
         };
     }
 
-    public static Specification<RequestHistoryEntity> findByRequestId(Long requestId) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("request").get("id"), requestId);
-    }
+    // REMOVED: findByRequestId method since we're not using requestId anymore
+     public static Specification<RequestHistoryEntity> findByRequestId(Long requestId) {
+         return (root, query, criteriaBuilder) ->
+                 criteriaBuilder.equal(root.get("request").get("id"), requestId);
+     }
 
     public static Specification<RequestHistoryEntity> findByUserId(Long userId) {
         return (root, query, criteriaBuilder) ->

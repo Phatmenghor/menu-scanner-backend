@@ -8,9 +8,11 @@ import java.time.LocalDate;
 
 @Data
 public class RequestHistoryFilterDto {
-    
+
+    private Long userId;
+
     private Long requestId;
-    
+
     private String search;
 
     private RequestStatus status;
@@ -25,3 +27,4 @@ public class RequestHistoryFilterDto {
     
     private int pageSize = 10;
 }
+

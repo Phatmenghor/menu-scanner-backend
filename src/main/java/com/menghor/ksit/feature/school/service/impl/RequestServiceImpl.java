@@ -126,6 +126,30 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @Transactional()
+    public CustomPaginationResponseDto<RequestHistoryDto> getMyRequestHistory(RequestHistoryFilterDto filterDto) {
+        log.info("Fetching current user's request history with filter: {}", filterDto);
+
+        UserEntity currentUser = securityUtils.getCurrentUser();
+
+        // Override the userId in the filter to ensure we only get current user's history
+        filterDto.setUserId(currentUser.getId());
+
+        Pageable pageable = PaginationUtils.createPageable(
+                filterDto.getPageNo(),
+                filterDto.getPageSize(),
+                "createdAt",
+                "DESC"
+        );
+
+        Specification<RequestHistoryEntity> spec = RequestHistorySpecification.createSpecification(filterDto);
+        Page<RequestHistoryEntity> historyPage = historyRepository.findAll(spec, pageable);
+
+        log.info("Retrieved {} history entries for current user", historyPage.getTotalElements());
+        return requestMapper.toHistoryPaginationResponse(historyPage);
+    }
+
+    @Override
     public RequestHistoryDto getRequestHistoryDetail(Long historyId) {
         log.info("Fetching detailed history with ID: {}", historyId);
 

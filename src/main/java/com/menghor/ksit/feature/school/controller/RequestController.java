@@ -65,12 +65,21 @@ public class RequestController {
     @PostMapping("/history")
     public ApiResponse<CustomPaginationResponseDto<RequestHistoryDto>> getRequestHistory(
             @RequestBody RequestHistoryFilterDto filterDto) {
-        log.info("Fetching history for request with ID: {} and filter: {}", filterDto.getRequestId(), filterDto);
-
+        log.info("Fetching request history with filter: {}", filterDto);
 
         CustomPaginationResponseDto<RequestHistoryDto> response = requestService.getRequestHistory(filterDto);
-        log.info("Request history fetched successfully for ID: {}. Total elements: {}", filterDto.getRequestId(), response.getTotalElements());
+        log.info("Request history fetched successfully. Total elements: {}", response.getTotalElements());
         return ApiResponse.success("Request history fetched successfully", response);
+    }
+
+    @PostMapping("/my-history")
+    public ApiResponse<CustomPaginationResponseDto<RequestHistoryDto>> getMyRequestHistory(
+            @RequestBody RequestHistoryFilterDto filterDto) {
+        log.info("Fetching current user's request history with filter: {}", filterDto);
+
+        CustomPaginationResponseDto<RequestHistoryDto> response = requestService.getMyRequestHistory(filterDto);
+        log.info("Current user's request history fetched successfully. Total elements: {}", response.getTotalElements());
+        return ApiResponse.success("Your request history fetched successfully", response);
     }
 
     // NEW ENDPOINT: Get detailed history by history ID

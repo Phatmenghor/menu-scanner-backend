@@ -20,6 +20,8 @@ public interface RequestService {
 
     CustomPaginationResponseDto<RequestHistoryDto> getRequestHistory(RequestHistoryFilterDto filterDto);
 
+    CustomPaginationResponseDto<RequestHistoryDto> getMyRequestHistory(RequestHistoryFilterDto filterDto);
+
     RequestHistoryDto getRequestHistoryDetail(Long historyId);
 
     RequestResponseDto deleteRequest(Long id);

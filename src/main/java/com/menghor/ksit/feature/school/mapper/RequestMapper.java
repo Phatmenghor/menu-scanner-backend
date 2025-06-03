@@ -101,9 +101,10 @@ public interface RequestMapper {
         return null;
     }
 
-    // Named mapping methods to avoid ambiguity - these are the ONLY history mapping methods
+    // FIXED: History mapping methods with explicit field mapping
     @Named("mapToBasicHistoryDto")
-    @Mapping(target = "request.user", ignore = true)
+    @Mapping(target = "requestId", source = "request.id")
+    @Mapping(target = "requestCreatedAt", source = "request.createdAt")
     RequestHistoryDto mapToBasicHistoryDto(RequestHistoryEntity entity);
 
     @Named("mapToDetailedHistoryDto")
