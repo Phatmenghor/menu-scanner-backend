@@ -7,18 +7,28 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDateTime;
+
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
 @Table(name = "request_history")
 public class RequestHistoryEntity extends BaseEntity {
-    
+
+    private String title; // Request title
+
     @Enumerated(EnumType.STRING)
     private RequestStatus fromStatus; // Previous status
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RequestStatus toStatus; // New status
+
+    @Column(columnDefinition = "TEXT")
+    private String requestComment; // User's comment/note
+
+    @Column(columnDefinition = "TEXT")
+    private String staffComment; // Staff's comment when processing
     
     @Column(columnDefinition = "TEXT")
     private String comment; // Comment about the status change

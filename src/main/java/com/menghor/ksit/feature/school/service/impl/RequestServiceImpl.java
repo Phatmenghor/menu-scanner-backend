@@ -102,7 +102,7 @@ public class RequestServiceImpl implements RequestService {
         
         Specification<RequestEntity> spec = RequestSpecification.createSpecification(filterDto);
         Page<RequestEntity> requestPage = requestRepository.findAll(spec, pageable);
-        
+
         // Use list version for better performance in list view
         return requestMapper.toListPaginationResponse(requestPage);
     }
@@ -123,6 +123,23 @@ public class RequestServiceImpl implements RequestService {
         Page<RequestHistoryEntity> historyPage = historyRepository.findAll(spec, pageable);
 
         return requestMapper.toHistoryPaginationResponse(historyPage);
+    }
+
+    @Override
+    public RequestHistoryDto getRequestHistoryDetail(Long historyId) {
+        log.info("Fetching detailed history with ID: {}", historyId);
+
+        RequestHistoryEntity historyEntity = historyRepository.findById(historyId)
+                .orElseThrow(() -> {
+                    log.error("Request history not found with ID: {}", historyId);
+                    return new NotFoundException("Request history not found with ID: " + historyId);
+                });
+
+        // Use a special mapper that includes the full request details
+        RequestHistoryDto historyDto = requestMapper.mapToDetailedHistoryDto(historyEntity);
+
+        log.info("Request history detail fetched successfully with ID: {}", historyId);
+        return historyDto;
     }
 
 
@@ -168,7 +185,9 @@ public class RequestServiceImpl implements RequestService {
         history.setComment(comment);
         history.setActionBy(user.getUsername());
         history.setUser(user);
-        
+        history.setTitle(request.getTitle());
+        history.setRequestComment(request.getRequestComment());
+        history.setStaffComment(request.getStaffComment());
         historyRepository.save(history);
     }
 }

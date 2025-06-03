@@ -72,6 +72,16 @@ public class RequestController {
         log.info("Request history fetched successfully for ID: {}. Total elements: {}", filterDto.getRequestId(), response.getTotalElements());
         return ApiResponse.success("Request history fetched successfully", response);
     }
+
+    // NEW ENDPOINT: Get detailed history by history ID
+    @GetMapping("/history/{historyId}")
+    public ApiResponse<RequestHistoryDto> getRequestHistoryDetail(
+            @Parameter(description = "Request History ID") @PathVariable Long historyId) {
+        log.info("Fetching detailed history with ID: {}", historyId);
+        RequestHistoryDto response = requestService.getRequestHistoryDetail(historyId);
+        log.info("Request history detail fetched successfully with ID: {}", historyId);
+        return ApiResponse.success("Request history detail fetched successfully", response);
+    }
     
     @DeleteMapping("/{id}")
     public ApiResponse<RequestResponseDto> deleteRequest(
