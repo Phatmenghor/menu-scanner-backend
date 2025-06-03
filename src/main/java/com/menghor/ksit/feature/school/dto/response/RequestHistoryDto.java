@@ -18,6 +18,8 @@ public class RequestHistoryDto {
 
     private String actionBy;
 
+    private RequestResponseDto request;
+
     private UserBasicInfoDto user;
 
     private LocalDate createdAt;

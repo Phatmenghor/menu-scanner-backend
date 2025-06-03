@@ -10,6 +10,4 @@ public class RequestCreateDto {
     private String title;
     private RequestStatus status;
     private String requestComment;
-
-
 }

@@ -1,8 +1,5 @@
-package com.menghor.ksit.exceptoins.handler;
+package com.menghor.ksit.exceptoins.error;
 
-import com.menghor.ksit.exceptoins.error.BadRequestException;
-import com.menghor.ksit.exceptoins.error.DuplicateNameException;
-import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
