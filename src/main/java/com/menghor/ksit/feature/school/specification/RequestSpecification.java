@@ -19,15 +19,13 @@ public class RequestSpecification {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             
-            // Search in title, description, user name
+            // Search in title, description
             if (StringUtils.hasText(filter.getSearch())) {
                 String searchTerm = "%" + filter.getSearch().toLowerCase() + "%";
                 Join<RequestEntity, UserEntity> userJoin = root.join("user", JoinType.LEFT);
                 
                 Predicate titlePredicate = criteriaBuilder.like(
                     criteriaBuilder.lower(root.get("title")), searchTerm);
-                Predicate descriptionPredicate = criteriaBuilder.like(
-                    criteriaBuilder.lower(root.get("description")), searchTerm);
                 Predicate userUsernamePredicate = criteriaBuilder.like(
                     criteriaBuilder.lower(userJoin.get("username")), searchTerm);
                 Predicate userKhmerFirstNamePredicate = criteriaBuilder.like(
@@ -43,7 +41,6 @@ public class RequestSpecification {
                 
                 predicates.add(criteriaBuilder.or(
                     titlePredicate, 
-                    descriptionPredicate, 
                     userUsernamePredicate,
                     userKhmerFirstNamePredicate,
                     userKhmerLastNamePredicate,
@@ -62,7 +59,7 @@ public class RequestSpecification {
             if (filter.getUserId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("user").get("id"), filter.getUserId()));
             }
-            
+
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
