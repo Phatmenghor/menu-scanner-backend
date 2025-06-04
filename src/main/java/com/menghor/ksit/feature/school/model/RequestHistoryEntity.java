@@ -7,8 +7,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
-
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
@@ -19,7 +17,7 @@ public class RequestHistoryEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private RequestStatus fromStatus; // Previous status
-    
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RequestStatus toStatus; // New status
@@ -29,18 +27,21 @@ public class RequestHistoryEntity extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String staffComment; // Staff's comment when processing
-    
+
     @Column(columnDefinition = "TEXT")
     private String comment; // Comment about the status change
-    
+
     @Column(nullable = false)
-    private String actionBy; // Who performed the action (username)
-    
+    private String actionBy; // Who performed the action (username) - kept for backward compatibility
+
+    // The original request (we can get request owner through request.user)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "request_id", nullable = false)
     private RequestEntity request;
-    
+
+    // RENAMED: This is the user who PERFORMED the action (not the request owner)
+    // Changed from 'user' to 'actionUser' for clarity
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user; // User who made the change
+    @JoinColumn(name = "action_user_id", nullable = false)
+    private UserEntity actionUser; // User who performed this action (staff/student/admin)
 }

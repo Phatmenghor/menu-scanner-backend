@@ -199,19 +199,28 @@ public class RequestServiceImpl implements RequestService {
         return requestRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Request not found with ID: " + id));
     }
-    
-    private void createHistoryEntry(RequestEntity request, RequestStatus fromStatus, 
-                                  RequestStatus toStatus, String comment, UserEntity user) {
+
+    private void createHistoryEntry(RequestEntity request, RequestStatus fromStatus,
+                                    RequestStatus toStatus, String comment, UserEntity actionUser) {
         RequestHistoryEntity history = new RequestHistoryEntity();
         history.setRequest(request);
         history.setFromStatus(fromStatus);
         history.setToStatus(toStatus);
         history.setComment(comment);
-        history.setActionBy(user.getUsername());
-        history.setUser(user);
+        history.setActionBy(actionUser.getUsername()); // Keep for backward compatibility
+
+        // Set the user who performed the action
+        history.setActionUser(actionUser);
+
+        // No need to set requestOwner - we get it through request.user
+
+        // Copy request details for history snapshot
         history.setTitle(request.getTitle());
         history.setRequestComment(request.getRequestComment());
         history.setStaffComment(request.getStaffComment());
+
         historyRepository.save(history);
+        log.debug("Created history entry: {} -> {} by user {} for request owned by {}",
+                fromStatus, toStatus, actionUser.getUsername(), request.getUser().getUsername());
     }
 }

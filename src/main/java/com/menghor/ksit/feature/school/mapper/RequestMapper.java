@@ -43,7 +43,7 @@ public interface RequestMapper {
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntityFromDto(RequestUpdateDto updateDto, @MappingTarget RequestEntity entity);
 
-    // User to User Basic Info mapping - Fixed duplicate userClass mapping
+    // User to User Basic Info mapping
     @Mapping(target = "userClass", source = "classes", qualifiedByName = "mapUserClass")
     @Mapping(target = "departmentName", source = ".", qualifiedByName = "extractDepartmentName")
     @Mapping(target = "degree", source = "classes.degree", qualifiedByName = "mapDegreeToString")
@@ -68,31 +68,27 @@ public interface RequestMapper {
 
     @Named("extractMajor")
     default String extractMajor(UserEntity user) {
-        // Try to get major from different sources
         if (user.getClasses() != null && user.getClasses().getMajor() != null) {
             return user.getClasses().getMajor().getName();
         }
         if (user.getDepartment() != null) {
-            return user.getDepartment().getName(); // Department name as major fallback
+            return user.getDepartment().getName();
         }
         return null;
     }
 
     @Named("extractDepartmentName")
     default String extractDepartmentName(UserEntity user) {
-        // Check if user is a student (has STUDENT role)
         boolean isStudent = user.getRoles().stream()
                 .anyMatch(role -> role.getName() == RoleEnum.STUDENT);
 
         if (isStudent) {
-            // For students: get department from classes.major.department
             if (user.getClasses() != null &&
                     user.getClasses().getMajor() != null &&
                     user.getClasses().getMajor().getDepartment() != null) {
                 return user.getClasses().getMajor().getDepartment().getName();
             }
         } else {
-            // For other roles: get department directly from user.department
             if (user.getDepartment() != null) {
                 return user.getDepartment().getName();
             }
@@ -101,25 +97,32 @@ public interface RequestMapper {
         return null;
     }
 
-    // FIXED: History mapping methods with explicit field mapping
+    // UPDATED: History mapping methods with proper action user and request owner mapping
+
+// Updated mapper methods for RequestMapper
+
     @Named("mapToBasicHistoryDto")
     @Mapping(target = "requestId", source = "request.id")
     @Mapping(target = "requestCreatedAt", source = "request.createdAt")
+    @Mapping(target = "actionUser", source = "actionUser")
+    @Mapping(target = "requestOwner", source = "request.user") // Get request owner through request.user
     RequestHistoryDto mapToBasicHistoryDto(RequestHistoryEntity entity);
 
     @Named("mapToDetailedHistoryDto")
-    @Mapping(target = "id", source = "id")  // Map the history entity's own ID
-    @Mapping(target = "requestId", source = "request.id")  // Map request ID
-    @Mapping(target = "requestCreatedAt", source = "request.createdAt")  // Map request creation date
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "requestId", source = "request.id")
+    @Mapping(target = "requestCreatedAt", source = "request.createdAt")
+    @Mapping(target = "actionUser", source = "actionUser")
+    @Mapping(target = "requestOwner", source = "request.user") // Get request owner through request.user
     RequestHistoryDto mapToDetailedHistoryDto(RequestHistoryEntity entity);
 
-    // List mappings - explicitly use the basic history mapping
+    // List mappings
     List<RequestResponseDto> toResponseDtoList(List<RequestEntity> entities);
 
     @IterableMapping(qualifiedByName = "mapToBasicHistoryDto")
     List<RequestHistoryDto> toHistoryDtoList(List<RequestHistoryEntity> entities);
 
-    // List pagination response mapping (for lighter list views)
+    // Pagination response mappings
     default CustomPaginationResponseDto<RequestResponseDto> toListPaginationResponse(Page<RequestEntity> page) {
         List<RequestResponseDto> content = toResponseDtoList(page.getContent());
 

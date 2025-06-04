@@ -4,7 +4,6 @@ import com.menghor.ksit.enumations.RequestStatus;
 import com.menghor.ksit.feature.auth.dto.resposne.UserBasicInfoDto;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -16,9 +15,15 @@ public class RequestHistoryDto {
     private String requestComment;
     private String staffComment;
     private String comment;
-    private String actionBy;
+    private String actionBy; // Username for backward compatibility
     private LocalDateTime requestCreatedAt;
     private Long requestId;
-    private UserBasicInfoDto user;
+
+    // The user who performed the action (staff/admin/student)
+    private UserBasicInfoDto actionUser;
+
+    // The user who originally made the request (from request.user)
+    private UserBasicInfoDto requestOwner;
+
     private LocalDateTime createdAt;
 }
