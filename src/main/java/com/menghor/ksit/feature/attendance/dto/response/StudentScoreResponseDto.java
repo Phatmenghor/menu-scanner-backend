@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class StudentScoreResponseDto {
     private Long id;
     private String studentNameKhmer;
@@ -16,12 +18,21 @@ public class StudentScoreResponseDto {
     private GenderEnum gender;
     private Long studentId;
     private LocalDate dateOfBirth;
-    private Double attendanceScore; // Out of 10 points
-    private Double assignmentScore; // Out of 20 points
-    private Double midtermScore;    // Out of 30 points
-    private Double finalScore;      // Out of 40 points
-    private Double totalScore;      // Out of 100 points
-    private String grade;
-    private String comments;
+
+    // Raw scores (0-100 each) - what teachers enter
+    private Double attendanceRawScore;    // Raw attendance score out of 100
+    private Double assignmentRawScore;    // Raw assignment score out of 100
+    private Double midtermRawScore;       // Raw midterm score out of 100
+    private Double finalRawScore;         // Raw final score out of 100
+
+    // Weighted scores (calculated based on configuration) - what gets used for final grade
+    private Double attendanceScore;       // Weighted attendance score (raw * percentage)
+    private Double assignmentScore;       // Weighted assignment score (raw * percentage)
+    private Double midtermScore;          // Weighted midterm score (raw * percentage)
+    private Double finalScore;            // Weighted final score (raw * percentage)
+
+    private Double totalScore;            // Sum of all weighted scores (max 100)
+    private String grade;                 // Letter grade (A+, A, B+, etc.)
+    private String comments;              // Teacher comments
     private String createdAt;
 }

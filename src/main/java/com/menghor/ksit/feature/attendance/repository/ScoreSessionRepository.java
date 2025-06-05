@@ -14,15 +14,8 @@ import java.util.Optional;
 @Repository
 public interface ScoreSessionRepository extends JpaRepository<ScoreSessionEntity, Long>,
         JpaSpecificationExecutor<ScoreSessionEntity> {
-    
+
+    // Custom query methods can still be used alongside specifications
     Optional<ScoreSessionEntity> findByScheduleId(Long scheduleId);
-    
-    List<ScoreSessionEntity> findByTeacherId(Long teacherId);
-    
     List<ScoreSessionEntity> findByStatus(SubmissionStatus status);
-    
-    List<ScoreSessionEntity> findByScheduleIdAndStatus(Long scheduleId, SubmissionStatus status);
-    
-    @Query("SELECT s FROM ScoreSessionEntity s WHERE s.schedule.classes.id = :classId")
-    List<ScoreSessionEntity> findByClassId(@Param("classId") Long classId);
 }

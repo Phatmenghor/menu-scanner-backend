@@ -11,12 +11,7 @@ import java.util.Optional;
 @Repository
 public interface StudentScoreRepository extends JpaRepository<StudentScoreEntity, Long>,
         JpaSpecificationExecutor<StudentScoreEntity> {
-    
+
     List<StudentScoreEntity> findByScoreSessionId(Long scoreSessionId);
-    
     Optional<StudentScoreEntity> findByScoreSessionIdAndStudentId(Long scoreSessionId, Long studentId);
-    
-    List<StudentScoreEntity> findByStudentId(Long studentId);
-    
-    boolean existsByScoreSessionIdAndStudentId(Long scoreSessionId, Long studentId);
 }

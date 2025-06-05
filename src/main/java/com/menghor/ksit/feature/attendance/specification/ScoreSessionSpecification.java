@@ -7,139 +7,101 @@ import org.springframework.util.StringUtils;
 
 import jakarta.persistence.criteria.JoinType;
 
+import java.time.LocalDateTime;
+
 public class ScoreSessionSpecification {
 
-    /**
-     * Search by course name or class code
-     */
+    public static Specification<ScoreSessionEntity> hasId(Long id) {
+        return (root, query, criteriaBuilder) -> {
+            if (id == null) return criteriaBuilder.conjunction();
+            return criteriaBuilder.equal(root.get("id"), id);
+        };
+    }
+
     public static Specification<ScoreSessionEntity> searchByNameOrCode(String search) {
         return (root, query, criteriaBuilder) -> {
-            if (StringUtils.hasText(search)) {
-                String searchPattern = "%" + search.toLowerCase() + "%";
-                return criteriaBuilder.or(
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("course").get("nameEn")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("course").get("nameKh")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("classes").get("code")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("classes").get("name")), searchPattern)
-                );
-            }
-            return null;
+            if (!StringUtils.hasText(search)) return criteriaBuilder.conjunction();
+
+            String searchPattern = "%" + search.toLowerCase() + "%";
+            return criteriaBuilder.or(
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("course").get("nameEn")), searchPattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("course").get("nameKh")), searchPattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("classes").get("code")), searchPattern)
+            );
         };
     }
 
-    /**
-     * Filter by submission status
-     */
     public static Specification<ScoreSessionEntity> hasStatus(SubmissionStatus status) {
         return (root, query, criteriaBuilder) -> {
-            if (status != null) {
-                return criteriaBuilder.equal(root.get("status"), status);
-            }
-            return null;
+            if (status == null) return criteriaBuilder.conjunction();
+            return criteriaBuilder.equal(root.get("status"), status);
         };
     }
 
-    /**
-     * Filter by teacher ID
-     */
     public static Specification<ScoreSessionEntity> hasTeacherId(Long teacherId) {
         return (root, query, criteriaBuilder) -> {
-            if (teacherId != null) {
-                return criteriaBuilder.equal(root.get("teacher").get("id"), teacherId);
-            }
-            return null;
+            if (teacherId == null) return criteriaBuilder.conjunction();
+            return criteriaBuilder.equal(root.get("teacher").get("id"), teacherId);
         };
     }
 
-    /**
-     * Filter by schedule ID
-     */
     public static Specification<ScoreSessionEntity> hasScheduleId(Long scheduleId) {
         return (root, query, criteriaBuilder) -> {
-            if (scheduleId != null) {
-                return criteriaBuilder.equal(root.get("schedule").get("id"), scheduleId);
-            }
-            return null;
+            if (scheduleId == null) return criteriaBuilder.conjunction();
+            return criteriaBuilder.equal(root.get("schedule").get("id"), scheduleId);
         };
     }
 
-    /**
-     * Filter by class ID
-     */
     public static Specification<ScoreSessionEntity> hasClassId(Long classId) {
         return (root, query, criteriaBuilder) -> {
-            if (classId != null) {
-                return criteriaBuilder.equal(root.get("schedule").get("classes").get("id"), classId);
-            }
-            return null;
+            if (classId == null) return criteriaBuilder.conjunction();
+            return criteriaBuilder.equal(root.get("schedule").get("classes").get("id"), classId);
         };
     }
 
-    /**
-     * Filter by course ID
-     */
     public static Specification<ScoreSessionEntity> hasCourseId(Long courseId) {
         return (root, query, criteriaBuilder) -> {
-            if (courseId != null) {
-                return criteriaBuilder.equal(root.get("schedule").get("course").get("id"), courseId);
-            }
-            return null;
+            if (courseId == null) return criteriaBuilder.conjunction();
+            return criteriaBuilder.equal(root.get("schedule").get("course").get("id"), courseId);
         };
     }
 
-    /**
-     * Filter by student ID - NEW METHOD
-     * This filters score sessions that have student scores for the specified student
-     */
     public static Specification<ScoreSessionEntity> hasStudentId(Long studentId) {
         return (root, query, criteriaBuilder) -> {
-            if (studentId != null) {
-                // Join with studentScores and filter by student ID
-                var studentScoresJoin = root.join("studentScores", JoinType.INNER);
-                return criteriaBuilder.equal(studentScoresJoin.get("student").get("id"), studentId);
-            }
-            return null;
+            if (studentId == null) return criteriaBuilder.conjunction();
+
+            var studentScoresJoin = root.join("studentScores", JoinType.INNER);
+            return criteriaBuilder.equal(studentScoresJoin.get("student").get("id"), studentId);
         };
     }
 
-    /**
-     * Combine multiple specifications with AND operator
-     * Updated to include studentId parameter
-     */
-    public static Specification<ScoreSessionEntity> combine(String search, SubmissionStatus status,
-                                                            Long teacherId, Long scheduleId,
-                                                            Long classId, Long courseId, Long studentId) {
+    public static Specification<ScoreSessionEntity> isNotDeleted() {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.notEqual(root.get("status"), SubmissionStatus.REJECTED);
+    }
 
-        Specification<ScoreSessionEntity> result = Specification.where(null);
+    public static Specification<ScoreSessionEntity> createdBetween(LocalDateTime startDate, LocalDateTime endDate) {
+        return (root, query, criteriaBuilder) -> {
+            if (startDate == null && endDate == null) return criteriaBuilder.conjunction();
+            if (startDate == null) return criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), endDate);
+            if (endDate == null) return criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), startDate);
+            return criteriaBuilder.between(root.get("createdAt"), startDate, endDate);
+        };
+    }
 
-        if (StringUtils.hasText(search)) {
-            result = result.and(searchByNameOrCode(search));
-        }
+    // Combine multiple specifications
+    public static Specification<ScoreSessionEntity> combine(
+            String search, SubmissionStatus status, Long teacherId, Long scheduleId,
+            Long classId, Long courseId, Long studentId) {
 
-        if (status != null) {
-            result = result.and(hasStatus(status));
-        }
-
-        if (teacherId != null) {
-            result = result.and(hasTeacherId(teacherId));
-        }
-
-        if (scheduleId != null) {
-            result = result.and(hasScheduleId(scheduleId));
-        }
-
-        if (classId != null) {
-            result = result.and(hasClassId(classId));
-        }
-
-        if (courseId != null) {
-            result = result.and(hasCourseId(courseId));
-        }
-
-        if (studentId != null) {
-            result = result.and(hasStudentId(studentId));
-        }
-
-        return result;
+        return Specification
+                .where(searchByNameOrCode(search))
+                .and(hasStatus(status))
+                .and(hasTeacherId(teacherId))
+                .and(hasScheduleId(scheduleId))
+                .and(hasClassId(classId))
+                .and(hasCourseId(courseId))
+                .and(hasStudentId(studentId))
+                .and(isNotDeleted());
     }
 }

@@ -22,16 +22,17 @@ public interface StudentScoreMapper {
     @Mapping(target = "studentNameKhmer", source = "student", qualifiedByName = "mapKhmerStudentName")
     @Mapping(target = "totalScore", expression = "java(calculateTotalScore(entity))")
     @Mapping(target = "grade", expression = "java(mapGradeLevel(entity))")
-    @Mapping(target = "attendanceScore", source = "attendanceScore")
-    @Mapping(target = "assignmentScore", source = "assignmentScore")
-    @Mapping(target = "midtermScore", source = "midtermScore")
-    @Mapping(target = "finalScore", source = "finalScore")
+    @Mapping(target = "attendanceScore", expression = "java(calculateAttendanceScore(entity))")
+    @Mapping(target = "assignmentScore", expression = "java(calculateAssignmentScore(entity))")
+    @Mapping(target = "midtermScore", expression = "java(calculateMidtermScore(entity))")
+    @Mapping(target = "finalScore", expression = "java(calculateFinalScore(entity))")
+    @Mapping(target = "attendanceRawScore", expression = "java(mapRawScore(entity.getAttendanceRawScore()))")
+    @Mapping(target = "assignmentRawScore", expression = "java(mapRawScore(entity.getAssignmentRawScore()))")
+    @Mapping(target = "midtermRawScore", expression = "java(mapRawScore(entity.getMidtermRawScore()))")
+    @Mapping(target = "finalRawScore", expression = "java(mapRawScore(entity.getFinalRawScore()))")
     @Mapping(target = "comments", source = "comments")
     StudentScoreResponseDto toDto(StudentScoreEntity entity);
 
-    /**
-     * Maps English student name with proper concatenation and null handling
-     */
     @Named("mapEnglishStudentName")
     default String mapEnglishStudentName(UserEntity student) {
         if (student == null) {
@@ -41,7 +42,6 @@ public interface StudentScoreMapper {
         String firstName = student.getEnglishFirstName();
         String lastName = student.getEnglishLastName();
 
-        // Handle various combinations of first and last names
         if (firstName != null && lastName != null) {
             firstName = firstName.trim();
             lastName = lastName.trim();
@@ -67,9 +67,6 @@ public interface StudentScoreMapper {
         return null;
     }
 
-    /**
-     * Maps Khmer student name with proper concatenation and null handling
-     */
     @Named("mapKhmerStudentName")
     default String mapKhmerStudentName(UserEntity student) {
         if (student == null) {
@@ -79,7 +76,6 @@ public interface StudentScoreMapper {
         String firstName = student.getKhmerFirstName();
         String lastName = student.getKhmerLastName();
 
-        // Handle various combinations of first and last names
         if (firstName != null && lastName != null) {
             firstName = firstName.trim();
             lastName = lastName.trim();
@@ -105,39 +101,81 @@ public interface StudentScoreMapper {
         return null;
     }
 
-    /**
-     * Calculates total score with null safety and proper validation
-     */
     default Double calculateTotalScore(StudentScoreEntity entity) {
         if (entity == null) {
             return 0.0;
         }
 
-        // Use the entity's built-in method but add validation
-        Double totalScore = entity.getTotalScore();
-
-        // Additional validation to ensure score doesn't exceed 100
-        if (totalScore != null && totalScore > 100.0) {
-            // Log warning or handle overflow case
-            return 100.0;
+        try {
+            Double totalScore = entity.getTotalScoreDouble();
+            if (totalScore != null && totalScore > 100.0) {
+                return 100.0;
+            }
+            return totalScore != null ? totalScore : 0.0;
+        } catch (Exception e) {
+            return 0.0;
         }
-
-        return totalScore != null ? totalScore : 0.0;
     }
 
-    /**
-     * Maps grade level with null safety
-     */
+    default Double calculateAttendanceScore(StudentScoreEntity entity) {
+        if (entity == null) {
+            return 0.0;
+        }
+        try {
+            return entity.getAttendanceScoreDouble();
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    default Double calculateAssignmentScore(StudentScoreEntity entity) {
+        if (entity == null) {
+            return 0.0;
+        }
+        try {
+            return entity.getAssignmentScoreDouble();
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    default Double calculateMidtermScore(StudentScoreEntity entity) {
+        if (entity == null) {
+            return 0.0;
+        }
+        try {
+            return entity.getMidtermScoreDouble();
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    default Double calculateFinalScore(StudentScoreEntity entity) {
+        if (entity == null) {
+            return 0.0;
+        }
+        try {
+            return entity.getFinalScoreDouble();
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    default Double mapRawScore(java.math.BigDecimal rawScore) {
+        if (rawScore == null) {
+            return 0.0;
+        }
+        return rawScore.doubleValue();
+    }
+
     default String mapGradeLevel(StudentScoreEntity entity) {
         if (entity == null) {
             return null;
         }
-
         try {
             var gradeLevel = entity.getGrade();
             return gradeLevel != null ? gradeLevel.getGrade() : "N/A";
         } catch (Exception e) {
-            // Handle any potential calculation errors
             return "ERROR";
         }
     }
