@@ -14,7 +14,10 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 )
 public interface StudentScoreMapper {
 
-    @Mapping(target = "studentId", source = "student.identifyNumber")
+    @Mapping(target = "studentIdentityNumber", source = "student.identifyNumber")
+    @Mapping(target = "studentId", source = "student.id")
+    @Mapping(target = "gender", source = "student.gender")
+    @Mapping(target = "dateOfBirth", source = "student.dateOfBirth")
     @Mapping(target = "studentNameEnglish", source = "student", qualifiedByName = "mapEnglishStudentName")
     @Mapping(target = "studentNameKhmer", source = "student", qualifiedByName = "mapKhmerStudentName")
     @Mapping(target = "totalScore", expression = "java(calculateTotalScore(entity))")
