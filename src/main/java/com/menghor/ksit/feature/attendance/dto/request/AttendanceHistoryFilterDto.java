@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.attendance.dto.request;
 
 import com.menghor.ksit.enumations.AttendanceFinalizationStatus;
 import com.menghor.ksit.enumations.AttendanceStatus;
+import com.menghor.ksit.enumations.SemesterEnum;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -15,6 +16,8 @@ public class AttendanceHistoryFilterDto {
     private Long teacherId;
     private AttendanceFinalizationStatus finalizationStatus;
     private AttendanceStatus status;
+    private SemesterEnum semester;
+    private Integer academyYear;
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer pageNo = 1;
