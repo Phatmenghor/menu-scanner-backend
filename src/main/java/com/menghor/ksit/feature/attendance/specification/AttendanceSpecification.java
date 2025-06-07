@@ -13,13 +13,19 @@ public class AttendanceSpecification {
     /**
      * Search by student name
      */
-    public static Specification<AttendanceEntity> searchByStudentName(String search) {
+    public static Specification<AttendanceEntity> searchWithAttendance(String search) {
         return (root, query, criteriaBuilder) -> {
             if (StringUtils.hasText(search)) {
                 String searchPattern = "%" + search.toLowerCase() + "%";
                 return criteriaBuilder.or(
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("firstName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("lastName")), searchPattern)
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("identifyNumber")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("username")), searchPattern),
+                        // Class name search
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("classes").get("code")), searchPattern),
+
+                        // Course name search
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("course").get("nameEn")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("course").get("nameKh")),searchPattern)
                 );
             }
             return null;
@@ -139,7 +145,7 @@ public class AttendanceSpecification {
         Specification<AttendanceEntity> result = Specification.where(null);
 
         if (StringUtils.hasText(search)) {
-            result = result.and(searchByStudentName(search));
+            result = result.and(searchWithAttendance(search));
         }
 
         if (status != null) {

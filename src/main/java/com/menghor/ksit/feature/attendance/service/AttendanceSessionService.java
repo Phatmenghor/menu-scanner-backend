@@ -8,7 +8,7 @@ import com.menghor.ksit.feature.attendance.dto.response.QrResponse;
 public interface AttendanceSessionService {
     AttendanceSessionDto findById(Long id);
 
-    AttendanceSessionDto generateAttendanceSession(AttendanceSessionRequest request, Long teacherId);
+    AttendanceSessionDto generateAttendanceSession(AttendanceSessionRequest request);
 
     QrResponse regenerateQrCode(Long sessionId);
 

@@ -71,7 +71,7 @@ public interface AttendanceMapper {
         }
 
         // If all names are null, return username or null
-        return student.getUsername();
+        return null;
     }
 
     // Custom method to handle the teacher name logic

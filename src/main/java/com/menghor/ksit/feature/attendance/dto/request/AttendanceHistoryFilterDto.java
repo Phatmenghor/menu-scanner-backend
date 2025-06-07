@@ -10,14 +10,11 @@ import java.time.LocalDateTime;
 @Data
 public class AttendanceHistoryFilterDto {
     private String search;
-    private Long studentId;
     private Long scheduleId;
-    private Long sessionId;
     private Long classId;
     private Long teacherId;
     private AttendanceFinalizationStatus finalizationStatus;
     private AttendanceStatus status;
-    private Boolean isFinal;
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer pageNo = 1;

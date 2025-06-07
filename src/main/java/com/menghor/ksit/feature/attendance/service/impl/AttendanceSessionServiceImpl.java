@@ -51,17 +51,13 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
 
     @Override
     @Transactional
-    public AttendanceSessionDto generateAttendanceSession(AttendanceSessionRequest request, Long teacherId) {
-        log.info("Generating attendance session for schedule ID: {}, teacher ID: {}", request.getScheduleId(), teacherId);
+    public AttendanceSessionDto generateAttendanceSession(AttendanceSessionRequest request) {
+        log.info("Generating attendance session for schedule ID: {}", request.getScheduleId());
 
         // Validate schedule exists
         ScheduleEntity schedule = scheduleRepository.findById(request.getScheduleId())
                 .orElseThrow(() -> new EntityNotFoundException("Schedule not found with id: " + request.getScheduleId()));
 
-        // Verify teacher is assigned to this schedule
-        if (!schedule.getUser().getId().equals(teacherId)) {
-            throw new IllegalStateException("Teacher is not assigned to this schedule");
-        }
 
         // Get current date/time
         LocalDateTime now = LocalDateTime.now();
@@ -89,8 +85,8 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         session.setSchedule(schedule);
         session.setStatus(Status.ACTIVE);
         session.setFinalizationStatus(AttendanceFinalizationStatus.DRAFT);
-        session.setTeacher(userRepository.findById(teacherId)
-                .orElseThrow(() -> new EntityNotFoundException("Teacher not found with id: " + teacherId)));
+        session.setTeacher(userRepository.findById(schedule.getUser().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Teacher not found with id: " + schedule.getUser().getId())));
 
         // Generate QR code
         session.setQrCode(UUID.randomUUID().toString());
