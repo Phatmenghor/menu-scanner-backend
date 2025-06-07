@@ -7,7 +7,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 import jakarta.persistence.criteria.JoinType;
 
-
 public class ScoreSessionSpecification {
 
     public static Specification<ScoreSessionEntity> hasId(Long id) {
@@ -57,10 +56,5 @@ public class ScoreSessionSpecification {
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("teacher").get("id").as(String.class)), searchPattern)
             );
         };
-    }
-
-    public static Specification<ScoreSessionEntity> isNotDeleted() {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("isDeleted"), false);
     }
 }

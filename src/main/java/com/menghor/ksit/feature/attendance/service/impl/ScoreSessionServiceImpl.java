@@ -61,10 +61,18 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
                 .hasScheduleId(requestDto.getScheduleId())
                 .and(ScoreSessionSpecification.hasStatus(SubmissionStatus.DRAFT));
 
-        Optional<ScoreSessionEntity> existingSession = scoreSessionRepository.findOne(existingSessionSpec);
+        // Use PaginationUtils to get the latest session (page 1, size 1, sorted by createdAt DESC)
+        Pageable latestFirst = PaginationUtils.createPageable(1, 1, "createdAt", "DESC");
+        Page<ScoreSessionEntity> existingSessionsPage = scoreSessionRepository.findAll(existingSessionSpec, latestFirst);
 
-        if (existingSession.isPresent()) {
-            return handleExistingSession(existingSession.get());
+        if (!existingSessionsPage.isEmpty()) {
+            // Use the latest session
+            ScoreSessionEntity latestSession = existingSessionsPage.getContent().get(0);
+
+            log.info("Found existing DRAFT session for scheduleId={}, using sessionId={}",
+                    requestDto.getScheduleId(), latestSession.getId());
+
+            return handleExistingSession(latestSession);
         } else {
             return createNewSession(requestDto);
         }
@@ -76,23 +84,41 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
         ScheduleEntity schedule = session.getSchedule();
         Long classId = schedule.getClasses().getId();
 
-        List<UserEntity> studentsInClass = findStudentsByClass(classId);
-        log.info("Retrieved {} students from classId={}", studentsInClass.size(), classId);
+        // Get ALL current students in the class (including newly added ones)
+        List<UserEntity> allStudentsInClass = findStudentsByClass(classId);
+        log.info("Retrieved {} total students from classId={}", allStudentsInClass.size(), classId);
 
+        // Get existing student scores for this session
         List<StudentScoreEntity> existingScores = findStudentScoresBySession(session.getId());
-        log.info("Found {} existing student scores", existingScores.size());
+        log.info("Found {} existing student scores in sessionId={}", existingScores.size(), session.getId());
 
+        // Create a map of existing scores by student ID for quick lookup
         Map<Long, StudentScoreEntity> existingScoresMap = existingScores.stream()
                 .collect(Collectors.toMap(score -> score.getStudent().getId(), score -> score));
 
-        List<StudentScoreEntity> newScores = createMissingStudentScores(studentsInClass, existingScoresMap, session);
+        // Find students who don't have scores yet (newly added to class)
+        List<StudentScoreEntity> newScores = createMissingStudentScores(allStudentsInClass, existingScoresMap, session);
 
         if (!newScores.isEmpty()) {
             studentScoreRepository.saveAll(newScores);
-            log.info("Added {} new student scores", newScores.size());
+            log.info("Created {} new student scores with initial 0 values for newly added students", newScores.size());
+
+            // Log details of new students added
+            newScores.forEach(score ->
+                    log.info("Added new student score for studentId={} in sessionId={} with initial scores of 0",
+                            score.getStudent().getId(), session.getId())
+            );
+        } else {
+            log.info("No new students found - all current class students already have scores in this session");
         }
 
+        // Refresh the session to get updated relationships
         ScoreSessionEntity refreshedSession = scoreSessionRepository.findById(session.getId()).orElse(session);
+
+        log.info("Session initialization complete - sessionId={} now has {} total student scores",
+                refreshedSession.getId(),
+                refreshedSession.getStudentScores() != null ? refreshedSession.getStudentScores().size() : 0);
+
         return scoreSessionMapper.toDto(refreshedSession);
     }
 
@@ -120,11 +146,7 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     public ScoreSessionResponseDto getScoreSessionById(Long id) {
         log.info("Retrieving score session sessionId={}", id);
 
-        Specification<ScoreSessionEntity> spec = ScoreSessionSpecification
-                .hasId(id)
-                .and(ScoreSessionSpecification.isNotDeleted());
-
-        ScoreSessionEntity scoreSession = scoreSessionRepository.findOne(spec)
+        ScoreSessionEntity scoreSession = scoreSessionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Score session not found with ID: " + id));
 
         log.info("Found score session with {} student scores", scoreSession.getStudentScores().size());
@@ -185,8 +207,7 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
 
     private List<StudentScoreEntity> findStudentScoresBySession(Long sessionId) {
         Specification<StudentScoreEntity> spec = StudentScoreSpecification
-                .hasScoreSessionId(sessionId)
-                .and(StudentScoreSpecification.isNotDeleted());
+                .hasScoreSessionId(sessionId);
 
         return studentScoreRepository.findAll(spec);
     }
@@ -206,14 +227,24 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     }
 
     private List<StudentScoreEntity> createMissingStudentScores(
-            List<UserEntity> studentsInClass,
+            List<UserEntity> allStudentsInClass,
             Map<Long, StudentScoreEntity> existingScoresMap,
             ScoreSessionEntity session) {
 
-        return studentsInClass.stream()
+        List<StudentScoreEntity> newScores = allStudentsInClass.stream()
                 .filter(student -> !existingScoresMap.containsKey(student.getId()))
-                .map(student -> createDefaultStudentScore(student, session))
+                .map(student -> {
+                    StudentScoreEntity newScore = createDefaultStudentScore(student, session);
+                    log.debug("Creating new score for studentId={} with initial 0 values", student.getId());
+                    return newScore;
+                })
                 .collect(Collectors.toList());
+
+        if (!newScores.isEmpty()) {
+            log.info("Will create {} new student score records for newly added students", newScores.size());
+        }
+
+        return newScores;
     }
 
     private List<StudentScoreEntity> createStudentScoresForSession(List<UserEntity> students, ScoreSessionEntity session) {
@@ -227,14 +258,29 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
         studentScore.setScoreSession(scoreSession);
         studentScore.setStudent(student);
 
+        // Get and set the active score configuration
         Optional<ScoreConfigurationEntity> scoreConfig = scoreConfigRepository.findByStatus(Status.ACTIVE);
-        scoreConfig.ifPresent(studentScore::setScoreConfiguration);
+        scoreConfig.ifPresent(config -> {
+            studentScore.setScoreConfiguration(config);
+            log.debug("Applied score configuration to studentId={}: attendance={}%, assignment={}%, midterm={}%, final={}%",
+                    student.getId(), config.getAttendancePercentage(), config.getAssignmentPercentage(),
+                    config.getMidtermPercentage(), config.getFinalPercentage());
+        });
 
-        // Initialize scores to 0 - max will be determined by percentages
+        // Initialize all scores to 0 (students start with 0 scores)
         studentScore.setAttendanceRawScore(BigDecimal.ZERO);
         studentScore.setAssignmentRawScore(BigDecimal.ZERO);
         studentScore.setMidtermRawScore(BigDecimal.ZERO);
         studentScore.setFinalRawScore(BigDecimal.ZERO);
+
+        // Initialize weighted scores to 0 as well
+        studentScore.setAttendanceScore(BigDecimal.ZERO);
+        studentScore.setAssignmentScore(BigDecimal.ZERO);
+        studentScore.setMidtermScore(BigDecimal.ZERO);
+        studentScore.setFinalScore(BigDecimal.ZERO);
+        studentScore.setTotalScore(BigDecimal.ZERO);
+
+        log.debug("Created default student score for studentId={} with all scores initialized to 0", student.getId());
 
         return studentScore;
     }

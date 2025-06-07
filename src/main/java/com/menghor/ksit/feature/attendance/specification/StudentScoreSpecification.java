@@ -14,9 +14,4 @@ public class StudentScoreSpecification {
         return (root, query, criteriaBuilder) ->
                 studentId != null ? criteriaBuilder.equal(root.get("student").get("id"), studentId) : null;
     }
-
-    public static Specification<StudentScoreEntity> isNotDeleted() {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("isDeleted"), false);
-    }
 }
