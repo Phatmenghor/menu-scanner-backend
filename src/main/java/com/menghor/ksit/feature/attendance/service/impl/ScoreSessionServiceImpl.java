@@ -7,9 +7,7 @@ import com.menghor.ksit.feature.attendance.dto.filter.ScoreSessionFilterDto;
 import com.menghor.ksit.feature.attendance.dto.request.ScoreSessionRequestDto;
 import com.menghor.ksit.feature.attendance.dto.response.ScoreSessionResponseDto;
 import com.menghor.ksit.feature.attendance.dto.update.ScoreSessionUpdateDto;
-import com.menghor.ksit.feature.attendance.mapper.ScoreConfigurationMapper;
 import com.menghor.ksit.feature.attendance.mapper.ScoreSessionMapper;
-import com.menghor.ksit.feature.attendance.mapper.StudentScoreMapper;
 import com.menghor.ksit.feature.attendance.models.ScoreConfigurationEntity;
 import com.menghor.ksit.feature.attendance.models.ScoreSessionEntity;
 import com.menghor.ksit.feature.attendance.models.StudentScoreEntity;
@@ -36,7 +34,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,19 +44,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ScoreSessionServiceImpl implements ScoreSessionService {
 
-    // Repositories
     private final ScoreSessionRepository scoreSessionRepository;
     private final StudentScoreRepository studentScoreRepository;
     private final ScheduleRepository scheduleRepository;
     private final UserRepository userRepository;
     private final ScoreConfigurationRepository scoreConfigRepository;
-
-    // MapStruct Mappers - Injected as dependencies
     private final ScoreSessionMapper scoreSessionMapper;
-    private final StudentScoreMapper studentScoreMapper;
-    private final ScoreConfigurationMapper scoreConfigurationMapper;
-
-    // Utils
     private final SecurityUtils securityUtils;
 
     @Override
@@ -67,7 +57,6 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     public ScoreSessionResponseDto initializeScoreSession(ScoreSessionRequestDto requestDto) {
         log.info("Starting score session initialization for scheduleId={}", requestDto.getScheduleId());
 
-        // Use specification to find existing session
         Specification<ScoreSessionEntity> existingSessionSpec = ScoreSessionSpecification
                 .hasScheduleId(requestDto.getScheduleId())
                 .and(ScoreSessionSpecification.hasStatus(SubmissionStatus.DRAFT));
@@ -87,19 +76,15 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
         ScheduleEntity schedule = session.getSchedule();
         Long classId = schedule.getClasses().getId();
 
-        // Use specification to get students by class
         List<UserEntity> studentsInClass = findStudentsByClass(classId);
         log.info("Retrieved {} students from classId={}", studentsInClass.size(), classId);
 
-        // Use specification to get existing student scores
         List<StudentScoreEntity> existingScores = findStudentScoresBySession(session.getId());
         log.info("Found {} existing student scores", existingScores.size());
 
-        // Create map for quick lookup
         Map<Long, StudentScoreEntity> existingScoresMap = existingScores.stream()
                 .collect(Collectors.toMap(score -> score.getStudent().getId(), score -> score));
 
-        // Create new scores for students who don't have them
         List<StudentScoreEntity> newScores = createMissingStudentScores(studentsInClass, existingScoresMap, session);
 
         if (!newScores.isEmpty()) {
@@ -107,7 +92,6 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
             log.info("Added {} new student scores", newScores.size());
         }
 
-        // Refresh and return using mapper
         ScoreSessionEntity refreshedSession = scoreSessionRepository.findById(session.getId()).orElse(session);
         return scoreSessionMapper.toDto(refreshedSession);
     }
@@ -115,15 +99,12 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     private ScoreSessionResponseDto createNewSession(ScoreSessionRequestDto requestDto) {
         log.info("Creating new score session for scheduleId={}", requestDto.getScheduleId());
 
-        // Find schedule using specification
         ScheduleEntity schedule = findScheduleById(requestDto.getScheduleId());
         UserEntity currentUser = securityUtils.getCurrentUser();
 
-        // Create new session entity
         ScoreSessionEntity scoreSession = createScoreSessionEntity(schedule, currentUser);
         ScoreSessionEntity savedSession = scoreSessionRepository.save(scoreSession);
 
-        // Get students and create their score records
         List<UserEntity> students = findStudentsByClass(schedule.getClasses().getId());
         List<StudentScoreEntity> studentScores = createStudentScoresForSession(students, savedSession);
 
@@ -132,7 +113,6 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
 
         log.info("Created session sessionId={} with {} students", savedSession.getId(), studentScores.size());
 
-        // Use mapper to convert to DTO
         return scoreSessionMapper.toDto(savedSession);
     }
 
@@ -140,7 +120,6 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     public ScoreSessionResponseDto getScoreSessionById(Long id) {
         log.info("Retrieving score session sessionId={}", id);
 
-        // Use specification to find session with all related data
         Specification<ScoreSessionEntity> spec = ScoreSessionSpecification
                 .hasId(id)
                 .and(ScoreSessionSpecification.isNotDeleted());
@@ -150,7 +129,6 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
 
         log.info("Found score session with {} student scores", scoreSession.getStudentScores().size());
 
-        // Use mapper to convert to DTO
         return scoreSessionMapper.toDto(scoreSession);
     }
 
@@ -162,13 +140,11 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
         ScoreSessionEntity scoreSession = scoreSessionRepository.findById(updateDto.getId())
                 .orElseThrow(() -> new NotFoundException("Score session not found with ID: " + updateDto.getId()));
 
-        // Update entity fields
         updateScoreSessionFields(scoreSession, updateDto);
 
         ScoreSessionEntity updatedSession = scoreSessionRepository.save(scoreSession);
         log.info("Score session updated successfully");
 
-        // Use mapper to convert to DTO
         return scoreSessionMapper.toDto(updatedSession);
     }
 
@@ -176,7 +152,6 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     public CustomPaginationResponseDto<ScoreSessionResponseDto> getAllScoreSessions(ScoreSessionFilterDto filterDto) {
         log.info("Retrieving score sessions with filters: {}", filterDto);
 
-        // Create pageable
         Pageable pageable = PaginationUtils.createPageable(
                 filterDto.getPageNo(),
                 filterDto.getPageSize(),
@@ -184,13 +159,10 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
                 "DESC"
         );
 
-        // Build complex specification using multiple criteria
         Specification<ScoreSessionEntity> spec = buildScoreSessionSpecification(filterDto);
 
-        // Execute query
         Page<ScoreSessionEntity> scoreSessionPage = scoreSessionRepository.findAll(spec, pageable);
 
-        // Convert entities to DTOs using mapper
         List<ScoreSessionResponseDto> content = scoreSessionPage.getContent().stream()
                 .map(scoreSessionMapper::toDto)
                 .collect(Collectors.toList());
@@ -207,10 +179,7 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
         );
     }
 
-    // Private helper methods using specifications and mappers
-
     private List<UserEntity> findStudentsByClass(Long classId) {
-        // You could create a UserSpecification for this
         return userRepository.findByClassesId(classId);
     }
 
@@ -258,16 +227,11 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
         studentScore.setScoreSession(scoreSession);
         studentScore.setStudent(student);
 
-        // Get active score configuration using specification
-        Specification<ScoreConfigurationEntity> configSpec = Specification
-                .where((root, query, criteriaBuilder) ->
-                        criteriaBuilder.equal(root.get("status"), Status.ACTIVE));
-
-        Optional<ScoreConfigurationEntity> scoreConfig = scoreConfigRepository.findOne(configSpec);
+        Optional<ScoreConfigurationEntity> scoreConfig = scoreConfigRepository.findByStatus(Status.ACTIVE);
         scoreConfig.ifPresent(studentScore::setScoreConfiguration);
 
-        // Initialize default scores
-        studentScore.setAttendanceRawScore(BigDecimal.valueOf(100.0));
+        // Initialize scores to 0 - max will be determined by percentages
+        studentScore.setAttendanceRawScore(BigDecimal.ZERO);
         studentScore.setAssignmentRawScore(BigDecimal.ZERO);
         studentScore.setMidtermRawScore(BigDecimal.ZERO);
         studentScore.setFinalRawScore(BigDecimal.ZERO);

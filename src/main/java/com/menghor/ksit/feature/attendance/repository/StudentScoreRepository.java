@@ -9,9 +9,5 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface StudentScoreRepository extends JpaRepository<StudentScoreEntity, Long>,
-        JpaSpecificationExecutor<StudentScoreEntity> {
-
-    List<StudentScoreEntity> findByScoreSessionId(Long scoreSessionId);
-    Optional<StudentScoreEntity> findByScoreSessionIdAndStudentId(Long scoreSessionId, Long studentId);
+public interface StudentScoreRepository extends JpaRepository<StudentScoreEntity, Long>, JpaSpecificationExecutor<StudentScoreEntity> {
 }

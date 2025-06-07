@@ -12,10 +12,5 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ScoreSessionRepository extends JpaRepository<ScoreSessionEntity, Long>,
-        JpaSpecificationExecutor<ScoreSessionEntity> {
-
-    // Custom query methods can still be used alongside specifications
-    Optional<ScoreSessionEntity> findByScheduleId(Long scheduleId);
-    List<ScoreSessionEntity> findByStatus(SubmissionStatus status);
+public interface ScoreSessionRepository extends JpaRepository<ScoreSessionEntity, Long>, JpaSpecificationExecutor<ScoreSessionEntity> {
 }

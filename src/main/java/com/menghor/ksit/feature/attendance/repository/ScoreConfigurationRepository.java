@@ -9,8 +9,6 @@ import java.util.Optional;
 
 @Repository
 public interface ScoreConfigurationRepository extends JpaRepository<ScoreConfigurationEntity, Long> {
-
     Optional<ScoreConfigurationEntity> findByStatus(Status status);
-
     long countByStatus(Status status);
 }

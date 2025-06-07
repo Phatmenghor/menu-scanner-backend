@@ -8,6 +8,7 @@ import lombok.Data;
 public class ScoreSessionUpdateDto {
     @NotNull(message = "Score session ID is required")
     private Long id;
+
     private SubmissionStatus status;
     private String teacherComments;
     private String staffComments;

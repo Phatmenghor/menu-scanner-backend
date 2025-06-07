@@ -11,134 +11,68 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.factory.Mappers;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(
-        componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
-        uses = {StudentScoreMapper.class, SemesterMapper.class}
-)
-public interface ScoreSessionMapper {
+@Component
+public class ScoreSessionMapper {
 
-    @Mapping(target = "scheduleId", source = "schedule.id")
-    @Mapping(target = "classCode", source = "schedule.classes.code")
-    @Mapping(target = "courseName", source = "schedule.course.nameEn")
-    @Mapping(target = "teacherId", source = "teacher.id")
-    @Mapping(source = "teacher", target = "teacherName", qualifiedByName = "mapTeacherName")
-    @Mapping(target = "semester", source = "schedule.semester")
-    @Mapping(target = "status", expression = "java(entity.getStatus() != null ? entity.getStatus().name() : null)")
-    @Mapping(target = "studentScores", source = "studentScores", qualifiedByName = "mapAndSortStudentScores")
-    ScoreSessionResponseDto toDto(ScoreSessionEntity entity);
+    private final StudentScoreMapper studentScoreMapper;
 
-    // Inject the StudentScoreMapper
-    StudentScoreMapper studentScoreMapper = Mappers.getMapper(StudentScoreMapper.class);
-
-    /**
-     * Maps and sorts student scores by student name for consistent ordering
-     */
-    @Named("mapAndSortStudentScores")
-    default List<StudentScoreResponseDto> mapAndSortStudentScores(List<StudentScoreEntity> studentScores) {
-        if (studentScores == null || studentScores.isEmpty()) {
-            return null;
-        }
-
-        return studentScores.stream()
-                .map(studentScoreMapper::toDto)
-                .sorted((s1, s2) -> {
-                    // Sort by student name (English first, then Khmer fallback)
-                    String name1 = s1.getStudentNameEnglish() != null ? s1.getStudentNameEnglish() : s1.getStudentNameKhmer();
-                    String name2 = s2.getStudentNameEnglish() != null ? s2.getStudentNameEnglish() : s2.getStudentNameKhmer();
-
-                    if (name1 == null && name2 == null) return 0;
-                    if (name1 == null) return 1;
-                    if (name2 == null) return -1;
-
-                    return name1.compareToIgnoreCase(name2);
-                })
-                .collect(Collectors.toList());
+    public ScoreSessionMapper(StudentScoreMapper studentScoreMapper) {
+        this.studentScoreMapper = studentScoreMapper;
     }
 
-    /**
-     * Maps English name with proper null handling
-     */
-    @Named("mapEnglishName")
-    default String mapEnglishName(UserEntity student) {
-        if (student == null) {
+    public ScoreSessionResponseDto toDto(ScoreSessionEntity entity) {
+        if (entity == null) {
             return null;
         }
 
-        String firstName = student.getEnglishFirstName();
-        String lastName = student.getEnglishLastName();
+        ScoreSessionResponseDto dto = new ScoreSessionResponseDto();
 
-        if (firstName != null && lastName != null) {
-            return firstName.trim() + " " + lastName.trim();
-        } else if (firstName != null) {
-            return firstName.trim();
-        } else if (lastName != null) {
-            return lastName.trim();
+        // Basic session fields
+        dto.setId(entity.getId());
+        dto.setStatus(entity.getStatus());
+        dto.setSubmissionDate(entity.getSubmissionDate());
+        dto.setTeacherComments(entity.getTeacherComments());
+        dto.setStaffComments(entity.getStaffComments());
+        dto.setCreatedAt(entity.getCreatedAt());
+
+        // Schedule fields - update these based on your actual entity field names
+        if (entity.getSchedule() != null) {
+            dto.setScheduleId(entity.getSchedule().getId());
+            dto.setScheduleName("Schedule #" + entity.getSchedule().getId()); // Update with actual field name
+
+            // Class fields - update based on your actual ClassEntity fields
+            if (entity.getSchedule().getClasses() != null) {
+                dto.setClassId(entity.getSchedule().getClasses().getId());
+                dto.setClassName("Class #" + entity.getSchedule().getClasses().getId()); // Update with actual field name
+            }
+
+            // Course fields - update based on your actual CourseEntity fields
+            if (entity.getSchedule().getCourse() != null) {
+                dto.setCourseId(entity.getSchedule().getCourse().getId());
+                dto.setCourseName("Course #" + entity.getSchedule().getCourse().getId()); // Update with actual field name
+            }
         }
 
-        return null;
-    }
-
-    /**
-     * Maps Khmer name with proper null handling
-     */
-    @Named("mapKhmerName")
-    default String mapKhmerName(UserEntity student) {
-        if (student == null) {
-            return null;
+        // Teacher fields - update based on your actual UserEntity fields
+        if (entity.getTeacher() != null) {
+            dto.setTeacherId(entity.getTeacher().getId());
+            dto.setTeacherName("Teacher #" + entity.getTeacher().getId()); // Update with actual field name
         }
 
-        String firstName = student.getKhmerFirstName();
-        String lastName = student.getKhmerLastName();
-
-        if (firstName != null && lastName != null) {
-            return firstName.trim() + " " + lastName.trim();
-        } else if (firstName != null) {
-            return firstName.trim();
-        } else if (lastName != null) {
-            return lastName.trim();
+        // Student scores
+        if (entity.getStudentScores() != null) {
+            dto.setStudentScores(
+                    entity.getStudentScores().stream()
+                            .map(studentScoreMapper::toDto)
+                            .collect(Collectors.toList())
+            );
         }
 
-        return null;
-    }
-
-    /**
-     * Enhanced teacher name mapping with comprehensive fallback logic
-     */
-    @Named("mapTeacherName")
-    default String mapTeacherName(UserEntity teacher) {
-        if (teacher == null) {
-            return null;
-        }
-
-        // Priority 1: English names
-        String englishName = mapEnglishName(teacher);
-        if (englishName != null && !englishName.trim().isEmpty()) {
-            return englishName;
-        }
-
-        // Priority 2: Khmer names
-        String khmerName = mapKhmerName(teacher);
-        if (khmerName != null && !khmerName.trim().isEmpty()) {
-            return khmerName;
-        }
-
-        // Priority 3: Username
-        if (teacher.getUsername() != null && !teacher.getUsername().trim().isEmpty()) {
-            return teacher.getUsername();
-        }
-
-        // Priority 4: Email (if different from username)
-        if (teacher.getEmail() != null && !teacher.getEmail().trim().isEmpty()
-                && !teacher.getEmail().equals(teacher.getUsername())) {
-            return teacher.getEmail();
-        }
-
-        // Fallback: Return a default identifier
-        return "Teacher #" + teacher.getId();
+        return dto;
     }
 }

@@ -1,38 +1,36 @@
 package com.menghor.ksit.feature.attendance.dto.response;
 
-import com.menghor.ksit.enumations.GenderEnum;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
+import lombok.Data;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class StudentScoreResponseDto {
     private Long id;
     private String studentNameKhmer;
     private String studentNameEnglish;
     private Long studentIdentityNumber;
-    private GenderEnum gender;
+    private String gender;
     private Long studentId;
     private LocalDate dateOfBirth;
 
-    // Raw scores (0-100 each) - what teachers enter
-    private Double attendanceRawScore;    // Raw attendance score out of 100
-    private Double assignmentRawScore;    // Raw assignment score out of 100
-    private Double midtermRawScore;       // Raw midterm score out of 100
-    private Double finalRawScore;         // Raw final score out of 100
+    // Raw scores
+    private BigDecimal attendanceRawScore;
+    private BigDecimal assignmentRawScore;
+    private BigDecimal midtermRawScore;
+    private BigDecimal finalRawScore;
 
-    // Weighted scores (calculated based on configuration) - what gets used for final grade
-    private Double attendanceScore;       // Weighted attendance score (raw * percentage)
-    private Double assignmentScore;       // Weighted assignment score (raw * percentage)
-    private Double midtermScore;          // Weighted midterm score (raw * percentage)
-    private Double finalScore;            // Weighted final score (raw * percentage)
+    // Weighted scores
+    private BigDecimal attendanceScore;
+    private BigDecimal assignmentScore;
+    private BigDecimal midtermScore;
+    private BigDecimal finalScore;
 
-    private Double totalScore;            // Sum of all weighted scores (max 100)
-    private String grade;                 // Letter grade (A+, A, B+, etc.)
-    private String comments;              // Teacher comments
-    private String createdAt;
+    private BigDecimal totalScore;
+    private String grade;
+    private String comments;
+    private LocalDateTime createdAt;
 }

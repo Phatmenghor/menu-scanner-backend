@@ -2,11 +2,14 @@ package com.menghor.ksit.feature.attendance.controller;
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.attendance.dto.filter.ScoreSessionFilterDto;
+import com.menghor.ksit.feature.attendance.dto.request.ScoreConfigurationRequestDto;
 import com.menghor.ksit.feature.attendance.dto.request.ScoreSessionRequestDto;
+import com.menghor.ksit.feature.attendance.dto.response.ScoreConfigurationResponseDto;
 import com.menghor.ksit.feature.attendance.dto.response.ScoreSessionResponseDto;
 import com.menghor.ksit.feature.attendance.dto.response.StudentScoreResponseDto;
 import com.menghor.ksit.feature.attendance.dto.update.ScoreSessionUpdateDto;
 import com.menghor.ksit.feature.attendance.dto.update.StudentScoreUpdateDto;
+import com.menghor.ksit.feature.attendance.service.ScoreConfigurationService;
 import com.menghor.ksit.feature.attendance.service.ScoreSessionService;
 import com.menghor.ksit.feature.attendance.service.StudentScoreService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
@@ -20,10 +23,38 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Slf4j
 public class ScoreController {
-    
+
     private final ScoreSessionService scoreSessionService;
     private final StudentScoreService studentScoreService;
+    private final ScoreConfigurationService scoreConfigurationService;
 
+    // Score Configuration Endpoints
+    @PostMapping("/configuration")
+    public ApiResponse<ScoreConfigurationResponseDto> createOrUpdateScoreConfiguration(
+            @Valid @RequestBody ScoreConfigurationRequestDto requestDto) {
+        log.info("REST request to create/update score configuration: {}", requestDto);
+        ScoreConfigurationResponseDto responseDto = scoreConfigurationService.createOrUpdateScoreConfiguration(requestDto);
+        log.info("Score configuration created/updated successfully");
+        return new ApiResponse<>(
+                "success",
+                "Score configuration saved successfully",
+                responseDto
+        );
+    }
+
+    @GetMapping("/configuration")
+    public ApiResponse<ScoreConfigurationResponseDto> getScoreConfiguration() {
+        log.info("REST request to get score configuration");
+        ScoreConfigurationResponseDto responseDto = scoreConfigurationService.getScoreConfiguration();
+        log.info("Score configuration retrieved successfully");
+        return new ApiResponse<>(
+                "success",
+                "Score configuration retrieved successfully",
+                responseDto
+        );
+    }
+
+    // Score Session Endpoints
     @PostMapping("/initialize")
     public ApiResponse<ScoreSessionResponseDto> initializeScoreSession(@Valid @RequestBody ScoreSessionRequestDto requestDto) {
         log.info("REST request to initialize score session: {}", requestDto);
@@ -35,8 +66,8 @@ public class ScoreController {
                 responseDto
         );
     }
-    
-    @GetMapping("session/{id}")
+
+    @GetMapping("/session/{id}")
     public ApiResponse<ScoreSessionResponseDto> getScoreSessionById(@PathVariable Long id) {
         log.info("REST request to get score session by ID: {}", id);
         ScoreSessionResponseDto responseDto = scoreSessionService.getScoreSessionById(id);
@@ -75,6 +106,7 @@ public class ScoreController {
         );
     }
 
+    // Student Score Endpoints
     @GetMapping("/{id}")
     public ApiResponse<StudentScoreResponseDto> getStudentScoreById(@PathVariable Long id) {
         log.info("REST request to get student score by ID: {}", id);
@@ -87,7 +119,7 @@ public class ScoreController {
         );
     }
 
-    @PutMapping("score-update")
+    @PutMapping("/score-update")
     public ApiResponse<StudentScoreResponseDto> updateStudentScore(
             @Valid @RequestBody StudentScoreUpdateDto updateDto) {
         log.info("REST request to update student score: {}", updateDto);

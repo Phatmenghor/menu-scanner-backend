@@ -4,6 +4,8 @@ import com.menghor.ksit.enumations.GradeLevel;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,117 +14,69 @@ import java.math.RoundingMode;
 
 @Entity
 @Table(name = "student_scores")
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(callSuper = true)
 public class StudentScoreEntity extends BaseEntity {
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "score_session_id", nullable = false)
     private ScoreSessionEntity scoreSession;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private UserEntity student;
 
-    // Raw scores (out of 100 each) - RENAMED FROM OLD COLUMNS
-    @Column(name = "attendance_raw_score", precision = 5, scale = 2)
-    private BigDecimal attendanceRawScore; // 0-100
-
-    @Column(name = "assignment_raw_score", precision = 5, scale = 2)
-    private BigDecimal assignmentRawScore; // 0-100
-
-    @Column(name = "midterm_raw_score", precision = 5, scale = 2)
-    private BigDecimal midtermRawScore; // 0-100
-
-    @Column(name = "final_raw_score", precision = 5, scale = 2)
-    private BigDecimal finalRawScore; // 0-100
-
-    @Column(name = "comments")
-    private String comments;
-
-    // Configuration reference
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "score_config_id")
+    @JoinColumn(name = "score_configuration_id")
     private ScoreConfigurationEntity scoreConfiguration;
 
-    // Computed weighted scores based on configuration
-    @Transient
-    public BigDecimal getAttendanceScore() {
-        if (attendanceRawScore == null || scoreConfiguration == null) {
-            return BigDecimal.ZERO;
+    // Raw scores (what teachers enter, max = percentage)
+    @Column(name = "attendance_raw_score", precision = 5, scale = 2)
+    private BigDecimal attendanceRawScore = BigDecimal.ZERO;
+
+    @Column(name = "assignment_raw_score", precision = 5, scale = 2)
+    private BigDecimal assignmentRawScore = BigDecimal.ZERO;
+
+    @Column(name = "midterm_raw_score", precision = 5, scale = 2)
+    private BigDecimal midtermRawScore = BigDecimal.ZERO;
+
+    @Column(name = "final_raw_score", precision = 5, scale = 2)
+    private BigDecimal finalRawScore = BigDecimal.ZERO;
+
+    // Weighted scores (calculated values, same as raw in your system)
+    @Column(name = "attendance_score", precision = 5, scale = 2)
+    private BigDecimal attendanceScore = BigDecimal.ZERO;
+
+    @Column(name = "assignment_score", precision = 5, scale = 2)
+    private BigDecimal assignmentScore = BigDecimal.ZERO;
+
+    @Column(name = "midterm_score", precision = 5, scale = 2)
+    private BigDecimal midtermScore = BigDecimal.ZERO;
+
+    @Column(name = "final_score", precision = 5, scale = 2)
+    private BigDecimal finalScore = BigDecimal.ZERO;
+
+    @Column(name = "total_score", precision = 5, scale = 2)
+    private BigDecimal totalScore = BigDecimal.ZERO;
+
+    @Column(name = "grade", length = 2)
+    private String grade;
+
+    @Column(name = "comments", columnDefinition = "TEXT")
+    private String comments;
+
+    // Calculate grade based on total score
+    @PostLoad
+    @PostPersist
+    @PostUpdate
+    public void calculateGrade() {
+        if (totalScore != null) {
+            double score = totalScore.doubleValue();
+            if (score >= 90) this.grade = "A";
+            else if (score >= 80) this.grade = "B";
+            else if (score >= 70) this.grade = "C";
+            else if (score >= 60) this.grade = "D";
+            else this.grade = "F";
         }
-        return attendanceRawScore
-                .multiply(scoreConfiguration.getAttendancePercentage())
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-    }
-
-    @Transient
-    public BigDecimal getAssignmentScore() {
-        if (assignmentRawScore == null || scoreConfiguration == null) {
-            return BigDecimal.ZERO;
-        }
-        return assignmentRawScore
-                .multiply(scoreConfiguration.getAssignmentPercentage())
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-    }
-
-    @Transient
-    public BigDecimal getMidtermScore() {
-        if (midtermRawScore == null || scoreConfiguration == null) {
-            return BigDecimal.ZERO;
-        }
-        return midtermRawScore
-                .multiply(scoreConfiguration.getMidtermPercentage())
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-    }
-
-    @Transient
-    public BigDecimal getFinalScore() {
-        if (finalRawScore == null || scoreConfiguration == null) {
-            return BigDecimal.ZERO;
-        }
-        return finalRawScore
-                .multiply(scoreConfiguration.getFinalPercentage())
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-    }
-
-    @Transient
-    public BigDecimal getTotalScore() {
-        return getAttendanceScore()
-                .add(getAssignmentScore())
-                .add(getMidtermScore())
-                .add(getFinalScore());
-    }
-
-    @Transient
-    public GradeLevel getGrade() {
-        BigDecimal total = getTotalScore();
-        return total != null ? GradeLevel.fromScore(total.doubleValue()) : null;
-    }
-
-    // Legacy methods for backward compatibility (return Double for existing code)
-    @Transient
-    public Double getAttendanceScoreDouble() {
-        return getAttendanceScore().doubleValue();
-    }
-
-    @Transient
-    public Double getAssignmentScoreDouble() {
-        return getAssignmentScore().doubleValue();
-    }
-
-    @Transient
-    public Double getMidtermScoreDouble() {
-        return getMidtermScore().doubleValue();
-    }
-
-    @Transient
-    public Double getFinalScoreDouble() {
-        return getFinalScore().doubleValue();
-    }
-
-    @Transient
-    public Double getTotalScoreDouble() {
-        return getTotalScore().doubleValue();
     }
 }

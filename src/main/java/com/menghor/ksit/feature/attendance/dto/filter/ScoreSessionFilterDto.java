@@ -2,9 +2,10 @@ package com.menghor.ksit.feature.attendance.dto.filter;
 
 import com.menghor.ksit.enumations.SubmissionStatus;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class ScoreSessionFilterDto {
+public class ScoreSessionFilterDto  {
     private String search;
     private SubmissionStatus status;
     private Long teacherId;
@@ -15,3 +16,4 @@ public class ScoreSessionFilterDto {
     private Integer pageNo = 1;
     private Integer pageSize = 10;
 }
+

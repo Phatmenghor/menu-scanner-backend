@@ -5,6 +5,8 @@ import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,31 +16,31 @@ import java.util.List;
 
 @Entity
 @Table(name = "score_sessions")
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(callSuper = true)
 public class ScoreSessionEntity extends BaseEntity {
-    
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id", nullable = false)
     private ScheduleEntity schedule;
-    
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = false)
     private UserEntity teacher;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private SubmissionStatus status = SubmissionStatus.DRAFT;
+
     @Column(name = "submission_date")
     private LocalDateTime submissionDate;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private SubmissionStatus status = SubmissionStatus.DRAFT;
-    
-    @Column(name = "teacher_comments")
+
+    @Column(name = "teacher_comments", columnDefinition = "TEXT")
     private String teacherComments;
-    
-    @Column(name = "staff_comments")
+
+    @Column(name = "staff_comments", columnDefinition = "TEXT")
     private String staffComments;
-    
-    @OneToMany(mappedBy = "scoreSession", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<StudentScoreEntity> studentScores = new ArrayList<>();
+
+    @OneToMany(mappedBy = "scoreSession", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<StudentScoreEntity> studentScores;
 }

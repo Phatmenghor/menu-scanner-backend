@@ -10,16 +10,13 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class ScoreConfigurationResponseDto {
     private Long id;
-    private BigDecimal attendancePercentage;
-    private BigDecimal assignmentPercentage;
-    private BigDecimal midtermPercentage;
-    private BigDecimal finalPercentage;
-    private BigDecimal totalPercentage;
+    private Integer attendancePercentage;
+    private Integer assignmentPercentage;
+    private Integer midtermPercentage;
+    private Integer finalPercentage;
+    private Integer totalPercentage;
     private Status status;
     private String createdAt;
 }

@@ -39,43 +39,24 @@ public class ScoreConfigurationServiceImpl implements ScoreConfigurationService 
         // Validate percentages total 100%
         if (!validatePercentageTotal(requestDto)) {
             throw new BadRequestException("Score percentages must add up to exactly 100%. Current total: " +
-                    requestDto.getTotalPercentage());
+                    getTotalPercentage(requestDto));
         }
 
         Optional<ScoreConfigurationEntity> existingConfig = scoreConfigRepository.findByStatus(Status.ACTIVE);
 
         ScoreConfigurationEntity entity;
         if (existingConfig.isPresent()) {
-            // Use MapStruct to update existing entity
             entity = existingConfig.get();
             log.info("Updating existing score configuration with ID: {}", entity.getId());
-
-            // MapStruct will handle the field mapping and ignore id, createdAt, updatedAt, status
             scoreConfigMapper.updateEntityFromDto(requestDto, entity);
-
-            log.info("Updated configuration: {}%/{}%/{}%/{}% (Total: {}%)",
-                    entity.getAttendancePercentage(),
-                    entity.getAssignmentPercentage(),
-                    entity.getMidtermPercentage(),
-                    entity.getFinalPercentage(),
-                    entity.getTotalPercentage());
         } else {
-            // Use MapStruct to create new entity
             log.info("Creating new score configuration");
             entity = scoreConfigMapper.toEntity(requestDto);
-
-            log.info("Created new configuration: {}%/{}%/{}%/{}% (Total: {}%)",
-                    entity.getAttendancePercentage(),
-                    entity.getAssignmentPercentage(),
-                    entity.getMidtermPercentage(),
-                    entity.getFinalPercentage(),
-                    entity.getTotalPercentage());
         }
 
         ScoreConfigurationEntity savedEntity = scoreConfigRepository.save(entity);
         log.info("Score configuration saved successfully with ID: {}", savedEntity.getId());
 
-        // Use MapStruct to convert to response DTO
         return scoreConfigMapper.toResponseDto(savedEntity);
     }
 
@@ -93,20 +74,23 @@ public class ScoreConfigurationServiceImpl implements ScoreConfigurationService 
                 entity.getMidtermPercentage(),
                 entity.getFinalPercentage());
 
-        // Use MapStruct to convert to response DTO
         return scoreConfigMapper.toResponseDto(entity);
     }
 
-    @Override
-    public boolean validatePercentageTotal(ScoreConfigurationRequestDto requestDto) {
-        BigDecimal total = requestDto.getTotalPercentage();
-        boolean isValid = total.compareTo(BigDecimal.valueOf(100)) == 0;
-
+    private boolean validatePercentageTotal(ScoreConfigurationRequestDto requestDto) {
+        Integer total = getTotalPercentage(requestDto);
+        boolean isValid = total.equals(100);
         log.debug("Validating percentages - Total: {}%, Valid: {}", total, isValid);
         return isValid;
     }
 
-    @Override
+    private Integer getTotalPercentage(ScoreConfigurationRequestDto requestDto) {
+        return requestDto.getAttendancePercentage() +
+                requestDto.getAssignmentPercentage() +
+                requestDto.getMidtermPercentage() +
+                requestDto.getFinalPercentage();
+    }
+
     @EventListener(ContextRefreshedEvent.class)
     @Transactional
     public void initializeDefaultConfiguration() {
@@ -114,10 +98,7 @@ public class ScoreConfigurationServiceImpl implements ScoreConfigurationService 
 
         if (scoreConfigRepository.countByStatus(Status.ACTIVE) == 0) {
             log.info("No score configuration found, creating default configuration");
-
-            // Use MapStruct to create default configuration
             ScoreConfigurationEntity defaultConfig = scoreConfigMapper.createDefaultConfiguration();
-
             ScoreConfigurationEntity savedConfig = scoreConfigRepository.save(defaultConfig);
 
             log.info("Default score configuration created successfully with ID: {} - Attendance: {}%, Assignment: {}%, Midterm: {}%, Final: {}%",
@@ -129,52 +110,5 @@ public class ScoreConfigurationServiceImpl implements ScoreConfigurationService 
         } else {
             log.info("Score configuration already exists, skipping initialization");
         }
-    }
-
-    // Additional utility methods using MapStruct
-
-    public ScoreConfigurationResponseDto createCustomConfiguration(
-            BigDecimal attendancePercentage,
-            BigDecimal assignmentPercentage,
-            BigDecimal midtermPercentage,
-            BigDecimal finalPercentage) {
-
-        log.info("Creating custom configuration: {}%/{}%/{}%/{}%",
-                attendancePercentage, assignmentPercentage, midtermPercentage, finalPercentage);
-
-        // Use MapStruct to create entity from individual percentages
-        ScoreConfigurationEntity entity = scoreConfigMapper.createConfiguration(
-                attendancePercentage, assignmentPercentage, midtermPercentage, finalPercentage);
-
-        // Validate before saving
-        if (!entity.isValidConfiguration()) {
-            throw new BadRequestException("Custom configuration percentages must add up to exactly 100%. Current total: " +
-                    entity.getTotalPercentage());
-        }
-
-        ScoreConfigurationEntity savedEntity = scoreConfigRepository.save(entity);
-        log.info("Custom configuration saved with ID: {}", savedEntity.getId());
-
-        // Use MapStruct to convert to response DTO
-        return scoreConfigMapper.toResponseDto(savedEntity);
-    }
-
-    public ScoreConfigurationEntity cloneConfiguration(Long configId) {
-        log.info("Cloning score configuration with ID: {}", configId);
-
-        ScoreConfigurationEntity original = scoreConfigRepository.findById(configId)
-                .orElseThrow(() -> new NotFoundException("Score configuration not found with ID: " + configId));
-
-        // Use MapStruct to copy entity (creates new entity without id, createdAt, updatedAt)
-        ScoreConfigurationEntity cloned = scoreConfigMapper.copyEntity(original);
-
-        log.info("Cloned configuration from ID: {} with percentages: {}%/{}%/{}%/{}%",
-                configId,
-                cloned.getAttendancePercentage(),
-                cloned.getAssignmentPercentage(),
-                cloned.getMidtermPercentage(),
-                cloned.getFinalPercentage());
-
-        return cloned;
     }
 }
