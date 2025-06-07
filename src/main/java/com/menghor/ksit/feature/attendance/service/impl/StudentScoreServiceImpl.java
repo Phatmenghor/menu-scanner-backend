@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
@@ -57,26 +56,23 @@ public class StudentScoreServiceImpl implements StudentScoreService {
         // Validate and update scores with percentage limits
         if (updateDto.getAssignmentScore() != null) {
             validateScoreLimit(updateDto.getAssignmentScore(), config.getAssignmentPercentage(), "Assignment");
-            BigDecimal assignmentRawScore = BigDecimal.valueOf(updateDto.getAssignmentScore());
-            log.info("Assignment raw score updated from {} to {} for studentScoreId={}",
-                    studentScore.getAssignmentRawScore(), assignmentRawScore, updateDto.getId());
-            studentScore.setAssignmentRawScore(assignmentRawScore);
+            studentScore.setAssignmentScore(BigDecimal.valueOf(updateDto.getAssignmentScore()));
+            log.info("Assignment score updated to {} for studentScoreId={}",
+                    updateDto.getAssignmentScore(), updateDto.getId());
         }
 
         if (updateDto.getMidtermScore() != null) {
             validateScoreLimit(updateDto.getMidtermScore(), config.getMidtermPercentage(), "Midterm");
-            BigDecimal midtermRawScore = BigDecimal.valueOf(updateDto.getMidtermScore());
-            log.info("Midterm raw score updated from {} to {} for studentScoreId={}",
-                    studentScore.getMidtermRawScore(), midtermRawScore, updateDto.getId());
-            studentScore.setMidtermRawScore(midtermRawScore);
+            studentScore.setMidtermScore(BigDecimal.valueOf(updateDto.getMidtermScore()));
+            log.info("Midterm score updated to {} for studentScoreId={}",
+                    updateDto.getMidtermScore(), updateDto.getId());
         }
 
         if (updateDto.getFinalScore() != null) {
             validateScoreLimit(updateDto.getFinalScore(), config.getFinalPercentage(), "Final");
-            BigDecimal finalRawScore = BigDecimal.valueOf(updateDto.getFinalScore());
-            log.info("Final raw score updated from {} to {} for studentScoreId={}",
-                    studentScore.getFinalRawScore(), finalRawScore, updateDto.getId());
-            studentScore.setFinalRawScore(finalRawScore);
+            studentScore.setFinalScore(BigDecimal.valueOf(updateDto.getFinalScore()));
+            log.info("Final score updated to {} for studentScoreId={}",
+                    updateDto.getFinalScore(), updateDto.getId());
         }
 
         if (updateDto.getComments() != null) {
@@ -84,16 +80,16 @@ public class StudentScoreServiceImpl implements StudentScoreService {
             log.info("Comments updated for studentScoreId={}", updateDto.getId());
         }
 
-        // Calculate weighted scores
-        calculateWeightedScores(studentScore);
+        // Calculate total score
+        calculateTotalScore(studentScore);
 
         StudentScoreEntity updatedScore = studentScoreRepository.save(studentScore);
 
-        log.info("Student score update completed for studentScoreId={} - Raw Scores: Assignment={}, Midterm={}, Final={}, Total={}",
+        log.info("Student score update completed for studentScoreId={} - Scores: Assignment={}, Midterm={}, Final={}, Total={}",
                 updateDto.getId(),
-                updatedScore.getAssignmentRawScore(),
-                updatedScore.getMidtermRawScore(),
-                updatedScore.getFinalRawScore(),
+                updatedScore.getAssignmentScore(),
+                updatedScore.getMidtermScore(),
+                updatedScore.getFinalScore(),
                 updatedScore.getTotalScore());
 
         return studentScoreMapper.toDto(updatedScore);
@@ -106,39 +102,28 @@ public class StudentScoreServiceImpl implements StudentScoreService {
                             scoreType, maxPercentage, score)
             );
         }
+        if (score < 0) {
+            throw new IllegalArgumentException(
+                    String.format("%s score cannot be negative. You entered: %.2f", scoreType, score)
+            );
+        }
         log.info("Score validation passed: {} score {} is within limit of {}", scoreType, score, maxPercentage);
     }
 
-    private void calculateWeightedScores(StudentScoreEntity studentScore) {
-        ScoreConfigurationEntity config = studentScore.getScoreConfiguration();
-
-        if (config == null) {
-            log.warn("No score configuration found for studentScoreId={}, skipping weighted calculation", studentScore.getId());
-            return;
-        }
-
-        log.info("Calculating weighted scores using config: Attendance={}%, Assignment={}%, Midterm={}%, Final={}%",
-                config.getAttendancePercentage(), config.getAssignmentPercentage(),
-                config.getMidtermPercentage(), config.getFinalPercentage());
-
-        // In this system, raw score IS the weighted score (since max raw = percentage)
-        studentScore.setAttendanceScore(studentScore.getAttendanceRawScore());
-        studentScore.setAssignmentScore(studentScore.getAssignmentRawScore());
-        studentScore.setMidtermScore(studentScore.getMidtermRawScore());
-        studentScore.setFinalScore(studentScore.getFinalRawScore());
-
-        // Calculate total score
-        BigDecimal totalScore = safeAdd(studentScore.getAttendanceRawScore())
-                .add(safeAdd(studentScore.getAssignmentRawScore()))
-                .add(safeAdd(studentScore.getMidtermRawScore()))
-                .add(safeAdd(studentScore.getFinalRawScore()));
+    private void calculateTotalScore(StudentScoreEntity studentScore) {
+        // Simple addition since scores are already in their final weighted form
+        BigDecimal totalScore = safeAdd(studentScore.getAttendanceScore())
+                .add(safeAdd(studentScore.getAssignmentScore()))
+                .add(safeAdd(studentScore.getMidtermScore()))
+                .add(safeAdd(studentScore.getFinalScore()));
 
         studentScore.setTotalScore(totalScore);
 
-        log.info("Scores calculated - Assignment: {}, Midterm: {}, Final: {}, Total: {}",
-                studentScore.getAssignmentRawScore(),
-                studentScore.getMidtermRawScore(),
-                studentScore.getFinalRawScore(),
+        log.info("Total score calculated: Assignment={}, Midterm={}, Final={}, Attendance={}, Total={}",
+                studentScore.getAssignmentScore(),
+                studentScore.getMidtermScore(),
+                studentScore.getFinalScore(),
+                studentScore.getAttendanceScore(),
                 totalScore);
     }
 

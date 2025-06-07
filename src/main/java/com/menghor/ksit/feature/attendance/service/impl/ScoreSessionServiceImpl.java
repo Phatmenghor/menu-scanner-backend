@@ -267,13 +267,7 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
                     config.getMidtermPercentage(), config.getFinalPercentage());
         });
 
-        // Initialize all scores to 0 (students start with 0 scores)
-        studentScore.setAttendanceRawScore(BigDecimal.ZERO);
-        studentScore.setAssignmentRawScore(BigDecimal.ZERO);
-        studentScore.setMidtermRawScore(BigDecimal.ZERO);
-        studentScore.setFinalRawScore(BigDecimal.ZERO);
-
-        // Initialize weighted scores to 0 as well
+        // Initialize all scores to 0
         studentScore.setAttendanceScore(BigDecimal.ZERO);
         studentScore.setAssignmentScore(BigDecimal.ZERO);
         studentScore.setMidtermScore(BigDecimal.ZERO);

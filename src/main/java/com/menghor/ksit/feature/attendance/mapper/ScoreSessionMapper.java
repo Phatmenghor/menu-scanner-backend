@@ -1,78 +1,63 @@
 package com.menghor.ksit.feature.attendance.mapper;
 
 import com.menghor.ksit.feature.attendance.dto.response.ScoreSessionResponseDto;
-import com.menghor.ksit.feature.attendance.dto.response.StudentScoreResponseDto;
 import com.menghor.ksit.feature.attendance.models.ScoreSessionEntity;
-import com.menghor.ksit.feature.attendance.models.StudentScoreEntity;
 import com.menghor.ksit.feature.auth.models.UserEntity;
-import com.menghor.ksit.feature.master.mapper.SemesterMapper;
+import com.menghor.ksit.feature.master.model.ClassEntity;
+import com.menghor.ksit.feature.school.model.CourseEntity;
+import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.factory.Mappers;
-import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.stream.Collectors;
+@Mapper(componentModel = "spring", uses = {StudentScoreMapper.class})
+public interface ScoreSessionMapper {
 
-@Component
-public class ScoreSessionMapper {
+    ScoreSessionMapper INSTANCE = Mappers.getMapper(ScoreSessionMapper.class);
 
-    private final StudentScoreMapper studentScoreMapper;
+    @Mapping(source = "schedule.id", target = "scheduleId")
+    @Mapping(source = "teacher.id", target = "teacherId")
+    @Mapping(source = "teacher", target = "teacherName", qualifiedByName = "mapTeacherName")
+    @Mapping(source = "schedule.classes.id", target = "classId")
+    @Mapping(source = "schedule.classes", target = "classCode", qualifiedByName = "mapClassCode")
+    @Mapping(source = "schedule.course.id", target = "courseId")
+    @Mapping(source = "schedule.semester.semester", target = "semester")
+    @Mapping(source = "schedule.course", target = "courseName", qualifiedByName = "mapCourseName")
+    @Mapping(source = "studentScores", target = "studentScores")
+    ScoreSessionResponseDto toDto(ScoreSessionEntity entity);
 
-    public ScoreSessionMapper(StudentScoreMapper studentScoreMapper) {
-        this.studentScoreMapper = studentScoreMapper;
-    }
-
-    public ScoreSessionResponseDto toDto(ScoreSessionEntity entity) {
-        if (entity == null) {
+    @Named("mapTeacherName")
+    default String mapTeacherName(UserEntity teacher) {
+        if (teacher == null) {
             return null;
         }
 
-        ScoreSessionResponseDto dto = new ScoreSessionResponseDto();
-
-        // Basic session fields
-        dto.setId(entity.getId());
-        dto.setStatus(entity.getStatus());
-        dto.setSubmissionDate(entity.getSubmissionDate());
-        dto.setTeacherComments(entity.getTeacherComments());
-        dto.setStaffComments(entity.getStaffComments());
-        dto.setCreatedAt(entity.getCreatedAt());
-
-        // Schedule fields - update these based on your actual entity field names
-        if (entity.getSchedule() != null) {
-            dto.setScheduleId(entity.getSchedule().getId());
-            dto.setScheduleName("Schedule #" + entity.getSchedule().getId()); // Update with actual field name
-
-            // Class fields - update based on your actual ClassEntity fields
-            if (entity.getSchedule().getClasses() != null) {
-                dto.setClassId(entity.getSchedule().getClasses().getId());
-                dto.setClassName("Class #" + entity.getSchedule().getClasses().getId()); // Update with actual field name
-            }
-
-            // Course fields - update based on your actual CourseEntity fields
-            if (entity.getSchedule().getCourse() != null) {
-                dto.setCourseId(entity.getSchedule().getCourse().getId());
-                dto.setCourseName("Course #" + entity.getSchedule().getCourse().getId()); // Update with actual field name
-            }
+        if (teacher.getEnglishFirstName() != null && teacher.getEnglishLastName() != null) {
+            return teacher.getEnglishFirstName() + " " + teacher.getEnglishLastName();
         }
 
-        // Teacher fields - update based on your actual UserEntity fields
-        if (entity.getTeacher() != null) {
-            dto.setTeacherId(entity.getTeacher().getId());
-            dto.setTeacherName("Teacher #" + entity.getTeacher().getId()); // Update with actual field name
+        if (teacher.getKhmerFirstName() != null && teacher.getKhmerLastName() != null) {
+            return teacher.getKhmerFirstName() + " " + teacher.getKhmerLastName();
         }
 
-        // Student scores
-        if (entity.getStudentScores() != null) {
-            dto.setStudentScores(
-                    entity.getStudentScores().stream()
-                            .map(studentScoreMapper::toDto)
-                            .collect(Collectors.toList())
-            );
-        }
+        return teacher.getUsername();
+    }
 
-        return dto;
+    @Named("mapClassCode")
+    default String mapClassName(ClassEntity classEntity) {
+        if (classEntity == null) {
+            return null;
+        }
+        return classEntity.getCode() != null ? classEntity.getCode() : "Class #" + classEntity.getId();
+    }
+
+    @Named("mapCourseName")
+    default String mapCourseName(CourseEntity course) {
+        if (course == null) {
+            return null;
+        }
+        return course.getNameEn() != null ? course.getNameEn() :
+                course.getNameKH() != null ? course.getNameKH() : "Course #" + course.getId();
     }
 }

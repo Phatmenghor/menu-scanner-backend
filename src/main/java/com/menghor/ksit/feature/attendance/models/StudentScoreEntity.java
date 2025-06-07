@@ -1,16 +1,12 @@
 package com.menghor.ksit.feature.attendance.models;
 
-import com.menghor.ksit.enumations.GradeLevel;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Entity
 @Table(name = "student_scores")
@@ -30,20 +26,7 @@ public class StudentScoreEntity extends BaseEntity {
     @JoinColumn(name = "score_configuration_id")
     private ScoreConfigurationEntity scoreConfiguration;
 
-    // Raw scores (what teachers enter, max = percentage)
-    @Column(name = "attendance_raw_score", precision = 5, scale = 2)
-    private BigDecimal attendanceRawScore = BigDecimal.ZERO;
-
-    @Column(name = "assignment_raw_score", precision = 5, scale = 2)
-    private BigDecimal assignmentRawScore = BigDecimal.ZERO;
-
-    @Column(name = "midterm_raw_score", precision = 5, scale = 2)
-    private BigDecimal midtermRawScore = BigDecimal.ZERO;
-
-    @Column(name = "final_raw_score", precision = 5, scale = 2)
-    private BigDecimal finalRawScore = BigDecimal.ZERO;
-
-    // Weighted scores (calculated values, same as raw in your system)
+    // Final scores (teachers enter scores directly within percentage limits)
     @Column(name = "attendance_score", precision = 5, scale = 2)
     private BigDecimal attendanceScore = BigDecimal.ZERO;
 

@@ -1,6 +1,6 @@
 package com.menghor.ksit.feature.attendance.dto.response;
 
-
+import com.menghor.ksit.enumations.GenderEnum;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -12,18 +12,12 @@ public class StudentScoreResponseDto {
     private Long id;
     private String studentNameKhmer;
     private String studentNameEnglish;
-    private Long studentIdentityNumber;
-    private String gender;
+    private String studentIdentityNumber;
+    private GenderEnum gender;
     private Long studentId;
     private LocalDate dateOfBirth;
 
-    // Raw scores
-    private BigDecimal attendanceRawScore;
-    private BigDecimal assignmentRawScore;
-    private BigDecimal midtermRawScore;
-    private BigDecimal finalRawScore;
-
-    // Weighted scores
+    // Final scores only
     private BigDecimal attendanceScore;
     private BigDecimal assignmentScore;
     private BigDecimal midtermScore;

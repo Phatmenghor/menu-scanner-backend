@@ -2,55 +2,53 @@ package com.menghor.ksit.feature.attendance.mapper;
 
 import com.menghor.ksit.feature.attendance.dto.response.StudentScoreResponseDto;
 import com.menghor.ksit.feature.attendance.models.StudentScoreEntity;
+import com.menghor.ksit.feature.auth.models.UserEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
-import org.springframework.stereotype.Component;
 
-@Component
-public class StudentScoreMapper {
+@Mapper(componentModel = "spring")
+public interface StudentScoreMapper {
 
-    public StudentScoreResponseDto toDto(StudentScoreEntity entity) {
-        if (entity == null) {
+    StudentScoreMapper INSTANCE = Mappers.getMapper(StudentScoreMapper.class);
+
+    @Mapping(source = "student.id", target = "studentId")
+    @Mapping(source = "student", target = "studentNameKhmer", qualifiedByName = "mapStudentKhmerName")
+    @Mapping(source = "student", target = "studentNameEnglish", qualifiedByName = "mapStudentEnglishName")
+    @Mapping(source = "student.identifyNumber", target = "studentIdentityNumber")
+    @Mapping(source = "student.gender", target = "gender")
+    @Mapping(source = "student.dateOfBirth", target = "dateOfBirth")
+    StudentScoreResponseDto toDto(StudentScoreEntity entity);
+
+    @Named("mapStudentKhmerName")
+    default String mapStudentKhmerName(UserEntity student) {
+        if (student == null) {
             return null;
         }
 
-        StudentScoreResponseDto dto = new StudentScoreResponseDto();
-
-        // Basic score entity fields
-        dto.setId(entity.getId());
-        dto.setAttendanceRawScore(entity.getAttendanceRawScore());
-        dto.setAssignmentRawScore(entity.getAssignmentRawScore());
-        dto.setMidtermRawScore(entity.getMidtermRawScore());
-        dto.setFinalRawScore(entity.getFinalRawScore());
-        dto.setAttendanceScore(entity.getAttendanceScore());
-        dto.setAssignmentScore(entity.getAssignmentScore());
-        dto.setMidtermScore(entity.getMidtermScore());
-        dto.setFinalScore(entity.getFinalScore());
-        dto.setTotalScore(entity.getTotalScore());
-        dto.setGrade(entity.getGrade());
-        dto.setComments(entity.getComments());
-        dto.setCreatedAt(entity.getCreatedAt());
-
-        // Student fields - update these based on your actual UserEntity fields
-        if (entity.getStudent() != null) {
-            dto.setStudentId(entity.getStudent().getId());
-
-            // TODO: Update these with your actual UserEntity field names:
-            // dto.setStudentNameKhmer(entity.getStudent().getKhmerName());
-            // dto.setStudentNameEnglish(entity.getStudent().getEnglishName());
-            // dto.setStudentIdentityNumber(entity.getStudent().getIdentityNumber());
-            // dto.setGender(entity.getStudent().getGender());
-            // dto.setDateOfBirth(entity.getStudent().getDateOfBirth());
-
-            // Temporary fallback values to avoid errors
-            dto.setStudentNameKhmer("Student Khmer Name");
-            dto.setStudentNameEnglish("Student English Name");
-            dto.setStudentIdentityNumber(entity.getStudent().getId()); // Using ID as fallback
-            dto.setGender("N/A");
-            dto.setDateOfBirth(null);
+        if (student.getKhmerFirstName() != null && student.getKhmerLastName() != null) {
+            return student.getKhmerFirstName() + " " + student.getKhmerLastName();
         }
 
-        return dto;
+        return null;
     }
+
+    @Named("mapStudentEnglishName")
+    default String mapStudentEnglishName(UserEntity student) {
+        if (student == null) {
+            return null;
+        }
+
+        if (student.getEnglishFirstName() != null && student.getEnglishLastName() != null) {
+            return student.getEnglishFirstName() + " " + student.getEnglishLastName();
+        }
+
+        if (student.getKhmerFirstName() != null && student.getKhmerLastName() != null) {
+            return student.getKhmerFirstName() + " " + student.getKhmerLastName();
+        }
+
+        return null;
+    }
+
 }
