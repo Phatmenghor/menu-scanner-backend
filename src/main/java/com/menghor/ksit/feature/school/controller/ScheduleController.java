@@ -32,6 +32,30 @@ public class ScheduleController {
         );
     }
 
+    @PostMapping("/all")
+    public ApiResponse<CustomPaginationResponseDto<ScheduleResponseDto>> getAllSchedules(@RequestBody ScheduleFilterDto filterDto) {
+        log.info("REST request to search schedules with filter: {}", filterDto);
+        CustomPaginationResponseDto<ScheduleResponseDto> responseDto = scheduleService.getAllSchedules(filterDto);
+        log.info("Schedules retrieved successfully: {}", responseDto.getTotalElements());
+        return new ApiResponse<>(
+                "success",
+                "Schedules retrieved successfully",
+                responseDto
+        );
+    }
+
+    @PostMapping("/my-schedules")
+    public ApiResponse<CustomPaginationResponseDto<ScheduleResponseDto>> getMySchedules(@RequestBody ScheduleFilterDto filterDto) {
+        log.info("REST request to get user-specific schedules with filter: {}", filterDto);
+        CustomPaginationResponseDto<ScheduleResponseDto> responseDto = scheduleService.getMySchedules(filterDto);
+        log.info("User schedules all retrieved successfully: {}", responseDto.getTotalElements());
+        return new ApiResponse<>(
+                "success",
+                "User schedules retrieved successfully",
+                responseDto
+        );
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<ScheduleResponseDto> getScheduleById(@PathVariable Long id) {
         log.info("REST request to get schedule by ID: {}", id);
@@ -68,27 +92,4 @@ public class ScheduleController {
         );
     }
 
-    @PostMapping("/all")
-    public ApiResponse<CustomPaginationResponseDto<ScheduleResponseDto>> getAllSchedules(@RequestBody ScheduleFilterDto filterDto) {
-        log.info("REST request to search schedules with filter: {}", filterDto);
-        CustomPaginationResponseDto<ScheduleResponseDto> responseDto = scheduleService.getAllSchedules(filterDto);
-        log.info("Schedules retrieved successfully: {}", responseDto.getTotalElements());
-        return new ApiResponse<>(
-                "success",
-                "Schedules retrieved successfully",
-                responseDto
-        );
-    }
-
-    @PostMapping("/my-schedules")
-    public ApiResponse<CustomPaginationResponseDto<ScheduleResponseDto>> getMySchedules(@RequestBody ScheduleFilterDto filterDto) {
-        log.info("REST request to get user-specific schedules with filter: {}", filterDto);
-        CustomPaginationResponseDto<ScheduleResponseDto> responseDto = scheduleService.getMySchedules(filterDto);
-        log.info("User schedules all retrieved successfully: {}", responseDto.getTotalElements());
-        return new ApiResponse<>(
-                "success",
-                "User schedules retrieved successfully",
-                responseDto
-        );
-    }
 }

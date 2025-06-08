@@ -4,13 +4,15 @@ import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.master.model.*;
+import com.menghor.ksit.feature.survey.model.SurveyEntity; // Import SurveyEntity
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalTime;
-
+import java.util.ArrayList;
+import java.util.List;
 
 @Setter
 @Getter
@@ -47,4 +49,8 @@ public class ScheduleEntity extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "semester_id")
     private SemesterEntity semester;
+
+    // Add bidirectional relationship with surveys
+    @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SurveyEntity> surveys = new ArrayList<>();
 }
