@@ -9,16 +9,11 @@ import java.util.List;
 
 @Data
 public class SurveyResponseSubmitDto {
-    
-    @NotNull(message = "Survey ID is required")
-    private Long surveyId;
-    
-    @NotNull(message = "Schedule ID is required")
-    private Long scheduleId;
-    
+
+    @Valid
+    @NotNull(message = "Answers are required")
+    private List<SurveyAnswerSubmitDto> answers;
+
     private String overallComment;
     private Double overallRating;
-    
-    @Valid
-    private List<SurveyAnswerSubmitDto> answers;
 }

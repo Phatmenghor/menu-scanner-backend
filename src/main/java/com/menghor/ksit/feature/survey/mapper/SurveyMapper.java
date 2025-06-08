@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring", uses = {RequestMapper.class, SurveySectionMapper.class})
 public interface SurveyMapper {
-    
+
     @Mapping(target = "createdBy", source = "createdBy")
     @Mapping(target = "sections", source = "sections")
     @Mapping(target = "totalResponses", ignore = true)

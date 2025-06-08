@@ -27,24 +27,4 @@ public interface SurveyResponseRepository extends JpaRepository<SurveyResponseEn
 
     // Get responses by user
     Page<SurveyResponseEntity> findByUserId(Long userId, Pageable pageable);
-
-    // Get responses with filters
-    @Query("SELECT sr FROM SurveyResponseEntity sr " +
-            "JOIN sr.user u " +
-            "JOIN sr.schedule s " +
-            "WHERE (:scheduleId IS NULL OR sr.schedule.id = :scheduleId) " +
-            "AND (:studentId IS NULL OR sr.user.id = :studentId) " +
-            "AND (:completedOnly IS NULL OR :completedOnly = false OR sr.isCompleted = true) " +
-            "AND (:searchTerm IS NULL OR :searchTerm = '' OR " +
-            "LOWER(u.khmerFirstName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            "LOWER(u.englishFirstName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            "LOWER(s.course.name) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) " +
-            "ORDER BY sr.submittedAt DESC")
-    Page<SurveyResponseEntity> findWithFilters(
-            @Param("scheduleId") Long scheduleId,
-            @Param("studentId") Long studentId,
-            @Param("completedOnly") Boolean completedOnly,
-            @Param("searchTerm") String searchTerm,
-            Pageable pageable
-    );
 }

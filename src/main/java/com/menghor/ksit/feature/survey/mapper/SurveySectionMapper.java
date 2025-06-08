@@ -9,9 +9,9 @@ import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {SurveyQuestionMapper.class})
 public interface SurveySectionMapper {
-    
+
     @Mapping(target = "questions", source = "questions")
     SurveySectionResponseDto toResponseDto(SurveySectionEntity entity);
-    
+
     List<SurveySectionResponseDto> toResponseDtoList(List<SurveySectionEntity> entities);
 }

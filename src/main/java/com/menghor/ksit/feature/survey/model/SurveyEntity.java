@@ -27,15 +27,14 @@ public class SurveyEntity extends BaseEntity {
     @Column(nullable = false)
     private Status status = Status.ACTIVE;
 
-    // Link survey to specific schedule - MADE NULLABLE
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "schedule_id", nullable = true) // Added nullable = true
-    private ScheduleEntity schedule;
-
     // Creator of the survey (typically admin/staff)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private UserEntity createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "schedule_id")
+    private ScheduleEntity schedule;
 
     // Survey sections
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)

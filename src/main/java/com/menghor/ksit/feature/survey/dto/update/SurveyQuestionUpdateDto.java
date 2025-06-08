@@ -8,16 +8,16 @@ import lombok.Data;
 @Data
 public class SurveyQuestionUpdateDto {
     private Long id; // For updating existing questions
-    
+
     @NotBlank(message = "Question text is required")
     private String questionText;
-    
+
     @NotNull(message = "Question type is required")
     private QuestionTypeEnum questionType;
-    
+
     private Boolean required = false;
     private Integer displayOrder = 0;
-    
+
     // For RATING type questions
     private Integer minRating = 1;
     private Integer maxRating = 5;

@@ -16,7 +16,7 @@ public class SurveyQuestionResponseDto {
     private Integer maxRating;
     private String leftLabel;
     private String rightLabel;
-    
+
     // For easy frontend looping
     private List<RatingOptionDto> ratingOptions;
 }

@@ -17,5 +17,5 @@ public class SurveyResponseDto {
     private List<SurveySectionResponseDto> sections;
     private LocalDateTime createdAt;
     private Integer totalResponses;
-    private Boolean hasUserResponded; // For student view
+    private Boolean hasUserResponded;
 }

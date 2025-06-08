@@ -1,8 +1,8 @@
 package com.menghor.ksit.feature.school.service.impl;
 
-import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.SurveyStatus;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
@@ -24,19 +24,15 @@ import com.menghor.ksit.feature.school.repository.CourseRepository;
 import com.menghor.ksit.feature.school.repository.ScheduleRepository;
 import com.menghor.ksit.feature.school.service.ScheduleService;
 import com.menghor.ksit.feature.school.specification.ScheduleSpecification;
+import com.menghor.ksit.feature.survey.repository.SurveyResponseRepository;
+import com.menghor.ksit.feature.survey.service.SurveyService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.database.SecurityUtils;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -55,9 +51,11 @@ public class ScheduleServiceImpl implements ScheduleService {
     private final CourseRepository courseRepository;
     private final RoomRepository roomRepository;
     private final SemesterRepository semesterRepository;
+    private final SurveyResponseRepository surveyResponseRepository;
     private final ScheduleMapper scheduleMapper;
     private final SecurityUtils securityUtils;
     private final ScheduleFilterHelper filterHelper;
+    private final SurveyService surveyService;
 
     @Override
     @Transactional
@@ -97,7 +95,12 @@ public class ScheduleServiceImpl implements ScheduleService {
     public ScheduleResponseDto getScheduleById(Long id) {
         log.info("Fetching schedule by ID: {}", id);
         ScheduleEntity schedule = findScheduleById(id);
-        return scheduleMapper.toResponseDto(schedule);
+        ScheduleResponseDto responseDto = scheduleMapper.toResponseDto(schedule);
+
+        // Add survey status for current user
+        addSurveyStatusToSchedule(responseDto);
+
+        return responseDto;
     }
 
     @Override
@@ -142,8 +145,18 @@ public class ScheduleServiceImpl implements ScheduleService {
         // Execute query
         Page<ScheduleEntity> schedulePage = scheduleRepository.findAll(spec, pageable);
 
-        // Convert to response DTO using MapStruct
+        // Convert to response DTO using MapStruct and add survey status
         CustomPaginationResponseDto<ScheduleResponseDto> response = scheduleMapper.toScheduleAllResponseDto(schedulePage);
+
+        // Add survey status to each schedule for current user (if user is a student)
+        try {
+            UserEntity currentUser = securityUtils.getCurrentUser();
+            if (isStudent(currentUser)) {
+                addSurveyStatusToSchedules(response.getContent(), currentUser.getId());
+            }
+        } catch (Exception e) {
+            log.debug("Could not determine current user or add survey status: {}", e.getMessage());
+        }
 
         log.info("Retrieved {} schedules (page {}/{})",
                 response.getContent().size(), response.getPageNo(), response.getTotalPages());
@@ -220,10 +233,80 @@ public class ScheduleServiceImpl implements ScheduleService {
         Page<ScheduleEntity> schedulePage = scheduleRepository.findAll(spec, pageable);
 
         CustomPaginationResponseDto<ScheduleResponseDto> response = scheduleMapper.toScheduleAllResponseDto(schedulePage);
+
+        // Add survey status for student
+        addSurveyStatusToSchedules(response.getContent(), student.getId());
+
         log.info("Retrieved {} schedules for student (page {}/{})",
                 response.getContent().size(), response.getPageNo(), response.getTotalPages());
 
         return response;
+    }
+
+    private void addSurveyStatusToSchedules(List<ScheduleResponseDto> schedules, Long userId) {
+        for (ScheduleResponseDto schedule : schedules) {
+            try {
+                // Check if user has completed survey for this schedule
+                Boolean hasCompleted = surveyService.hasUserCompletedSurvey(userId, schedule.getId());
+
+                if (hasCompleted) {
+                    schedule.setSurveyStatus(SurveyStatus.COMPLETED);
+
+                    // Get survey response details
+                    Optional<com.menghor.ksit.feature.survey.model.SurveyResponseEntity> responseOpt =
+                            surveyResponseRepository.findByUserIdAndScheduleId(userId, schedule.getId());
+
+                    if (responseOpt.isPresent()) {
+                        var response = responseOpt.get();
+                        schedule.setSurveySubmittedAt(response.getSubmittedAt());
+                        schedule.setSurveyResponseId(response.getId());
+                    }
+                } else {
+                    schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
+                    schedule.setSurveySubmittedAt(null);
+                    schedule.setSurveyResponseId(null);
+                }
+
+                schedule.setHasSurvey(true);
+
+            } catch (Exception e) {
+                log.debug("Error checking survey status for schedule {}: {}", schedule.getId(), e.getMessage());
+                schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
+                schedule.setHasSurvey(false);
+            }
+        }
+    }
+
+    private void addSurveyStatusToSchedule(ScheduleResponseDto schedule) {
+        try {
+            UserEntity currentUser = securityUtils.getCurrentUser();
+            if (isStudent(currentUser)) {
+                // Check if user has completed survey for this schedule
+                Boolean hasCompleted = surveyService.hasUserCompletedSurvey(currentUser.getId(), schedule.getId());
+
+                if (hasCompleted) {
+                    schedule.setSurveyStatus(SurveyStatus.COMPLETED);
+
+                    // Get survey response details
+                    Optional<com.menghor.ksit.feature.survey.model.SurveyResponseEntity> responseOpt =
+                            surveyResponseRepository.findByUserIdAndScheduleId(currentUser.getId(), schedule.getId());
+
+                    if (responseOpt.isPresent()) {
+                        var response = responseOpt.get();
+                        schedule.setSurveySubmittedAt(response.getSubmittedAt());
+                        schedule.setSurveyResponseId(response.getId());
+                    }
+                } else {
+                    schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
+                }
+
+                schedule.setHasSurvey(true);
+            }
+        } catch (Exception e) {
+            log.debug("Could not add survey status: {}", e.getMessage());
+            schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
+            schedule.setHasSurvey(false);
+        }
     }
 
     private Pageable createSchedulePageable(ScheduleFilterDto filterDto) {

@@ -4,9 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserListResponseDto;
-import com.menghor.ksit.feature.master.dto.response.ClassResponseDto;
-import com.menghor.ksit.feature.master.dto.response.RoomResponseDto;
-import com.menghor.ksit.feature.master.dto.response.SemesterResponseDto;
 import lombok.Data;
 
 import java.time.LocalDateTime;

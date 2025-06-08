@@ -10,19 +10,19 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "survey_answers")
 public class SurveyAnswerEntity extends BaseEntity {
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "response_id", nullable = false)
     private SurveyResponseEntity response;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
     private SurveyQuestionEntity question;
-    
+
     // For TEXT type questions
     @Column(columnDefinition = "TEXT")
     private String textAnswer;
-    
+
     // For RATING type questions
     private Integer ratingAnswer;
 }

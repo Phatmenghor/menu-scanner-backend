@@ -38,6 +38,10 @@ public interface ScheduleMapper {
     @Mapping(target = "course", source = "course")
     @Mapping(target = "room", source = "room")
     @Mapping(target = "semester", source = "semester")
+    @Mapping(target = "surveyStatus", ignore = true)
+    @Mapping(target = "surveySubmittedAt", ignore = true)
+    @Mapping(target = "surveyResponseId", ignore = true)
+    @Mapping(target = "hasSurvey", constant = "true")
     ScheduleResponseDto toResponseDto(ScheduleEntity entity);
 
     // New mapper for list response with IDs instead of full objects
@@ -59,11 +63,9 @@ public interface ScheduleMapper {
     @Mapping(target = "semester", ignore = true)
     void updateEntityFromDto(ScheduleUpdateDto dto, @MappingTarget ScheduleEntity entity);
 
-
     default List<ScheduleResponseDto> toResponseDtoList(List<ScheduleEntity> entities) {
         return entities.stream().map(this::toResponseDto).collect(Collectors.toList());
     }
-
 
     default CustomPaginationResponseDto<ScheduleResponseDto> toScheduleAllResponseDto(Page<ScheduleEntity> page) {
         List<ScheduleResponseDto> content = toResponseDtoList(page.getContent());

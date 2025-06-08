@@ -25,5 +25,4 @@ public interface RequestService {
     RequestHistoryDto getRequestHistoryDetail(Long historyId);
 
     RequestResponseDto deleteRequest(Long id);
-
 }

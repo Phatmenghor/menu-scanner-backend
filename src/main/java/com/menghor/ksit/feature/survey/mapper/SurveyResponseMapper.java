@@ -12,17 +12,17 @@ import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {RequestMapper.class, SurveyAnswerMapper.class})
 public interface SurveyResponseMapper {
-    
+
     @Mapping(target = "surveyId", source = "survey.id")
     @Mapping(target = "user", source = "user")
     @Mapping(target = "answers", source = "answers")
     StudentSurveyResponseDto toStudentResponseDto(SurveyResponseEntity entity);
-    
+
     List<StudentSurveyResponseDto> toStudentResponseDtoList(List<SurveyResponseEntity> entities);
-    
+
     default CustomPaginationResponseDto<StudentSurveyResponseDto> toPaginationResponse(Page<SurveyResponseEntity> page) {
         List<StudentSurveyResponseDto> content = toStudentResponseDtoList(page.getContent());
-        
+
         return CustomPaginationResponseDto.<StudentSurveyResponseDto>builder()
                 .content(content)
                 .pageNo(page.getNumber() + 1)

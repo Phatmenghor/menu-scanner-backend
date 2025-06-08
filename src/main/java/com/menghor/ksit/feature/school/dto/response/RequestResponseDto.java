@@ -1,7 +1,6 @@
 package com.menghor.ksit.feature.school.dto.response;
 
 import com.menghor.ksit.enumations.RequestStatus;
-import com.menghor.ksit.feature.auth.dto.resposne.StudentUserListResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.UserBasicInfoDto;
 import lombok.Data;
 

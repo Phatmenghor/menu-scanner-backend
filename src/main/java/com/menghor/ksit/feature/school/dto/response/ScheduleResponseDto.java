@@ -3,8 +3,8 @@ package com.menghor.ksit.feature.school.dto.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.SurveyStatus;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserListResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 import com.menghor.ksit.feature.master.dto.response.ClassResponseDto;
 import com.menghor.ksit.feature.master.dto.response.RoomResponseDto;
 import com.menghor.ksit.feature.master.dto.response.SemesterResponseDto;
@@ -28,6 +28,12 @@ public class ScheduleResponseDto {
     private CourseResponseMapWithScheduleDto course;
     private RoomResponseDto room;
     private SemesterResponseDto semester;
+
+    // Survey related fields
+    private SurveyStatus surveyStatus;
+    private LocalDateTime surveySubmittedAt;
+    private Long surveyResponseId;
+    private Boolean hasSurvey;
+
     private LocalDateTime createdAt;
 }
-

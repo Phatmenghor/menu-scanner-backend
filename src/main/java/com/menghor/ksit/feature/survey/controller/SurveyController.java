@@ -13,36 +13,46 @@ import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/survey")
+@RequestMapping("/api/v1/surveys")
 @RequiredArgsConstructor
 public class SurveyController {
 
     private final SurveyService surveyService;
 
     /**
-     * Get active survey for a specific schedule
+     * Get main survey for admin management
+     */
+    @GetMapping("/main")
+    public ApiResponse<SurveyResponseDto> getMainSurvey() {
+        log.info("Fetching main survey for admin");
+        SurveyResponseDto response = surveyService.getMainSurvey();
+        log.info("Main survey fetched successfully");
+        return ApiResponse.success("Main survey fetched successfully", response);
+    }
+
+    /**
+     * Get survey for a specific schedule (student view)
      */
     @GetMapping("/schedule/{scheduleId}")
-    public ApiResponse<SurveyResponseDto> getActiveSurveyForSchedule(@PathVariable Long scheduleId) {
-        log.info("Fetching active survey for schedule ID: {}", scheduleId);
-        SurveyResponseDto response = surveyService.getActiveSurveyForSchedule(scheduleId);
-        log.info("Active survey fetched successfully for schedule: {}", scheduleId);
+    public ApiResponse<SurveyResponseDto> getSurveyForSchedule(@PathVariable Long scheduleId) {
+        log.info("Fetching survey for schedule ID: {}", scheduleId);
+        SurveyResponseDto response = surveyService.getSurveyForSchedule(scheduleId);
+        log.info("Survey fetched successfully for schedule: {}", scheduleId);
         return ApiResponse.success("Survey fetched successfully", response);
     }
 
     /**
-     * Update survey content (Admin/Staff only)
+     * Update main survey content (Admin/Staff only)
      */
-    @PutMapping
-    public ApiResponse<SurveyResponseDto> updateSurvey(@Valid @RequestBody SurveyUpdateDto updateDto) {
-        log.info("Updating survey with title: {}", updateDto.getTitle());
-        SurveyResponseDto response = surveyService.updateSurvey(updateDto);
-        log.info("Survey updated successfully");
+    @PutMapping("/main")
+    public ApiResponse<SurveyResponseDto> updateMainSurvey(@Valid @RequestBody SurveyUpdateDto updateDto) {
+        log.info("Updating main survey with title: {}", updateDto.getTitle());
+        SurveyResponseDto response = surveyService.updateMainSurvey(updateDto);
+        log.info("Main survey updated successfully");
         return ApiResponse.success("Survey updated successfully", response);
     }
 
@@ -82,22 +92,7 @@ public class SurveyController {
     }
 
     /**
-     * Get all survey responses (Admin/Staff only)
-     */
-    @GetMapping("/responses")
-    public ApiResponse<CustomPaginationResponseDto<StudentSurveyResponseDto>> getAllResponses(
-            @RequestParam(defaultValue = "1") int pageNo,
-            @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(required = false) Long scheduleId) {
-        log.info("Fetching all survey responses - page: {}, size: {}, scheduleId: {}", pageNo, pageSize, scheduleId);
-        CustomPaginationResponseDto<StudentSurveyResponseDto> response =
-                surveyService.getAllResponses(pageNo, pageSize, scheduleId);
-        log.info("Survey responses fetched successfully. Total elements: {}", response.getTotalElements());
-        return ApiResponse.success("Survey responses fetched successfully", response);
-    }
-
-    /**
-     * Get survey responses for a specific schedule (Admin/Staff only)
+     * Get all survey responses for a specific schedule (Admin/Staff only)
      */
     @GetMapping("/schedule/{scheduleId}/responses")
     public ApiResponse<CustomPaginationResponseDto<StudentSurveyResponseDto>> getScheduleSurveyResponses(
@@ -134,13 +129,13 @@ public class SurveyController {
     }
 
     /**
-     * Initialize default survey (Admin only)
+     * Initialize main survey (Admin only)
      */
     @PostMapping("/initialize")
-    public ApiResponse<String> initializeDefaultSurvey() {
-        log.info("Initializing default survey");
-        surveyService.initializeDefaultSurvey();
-        log.info("Default survey initialized successfully");
-        return ApiResponse.success("Default survey initialized successfully", "Survey is ready for use");
+    public ApiResponse<String> initializeMainSurvey() {
+        log.info("Initializing main survey");
+        surveyService.initializeMainSurvey();
+        log.info("Main survey initialized successfully");
+        return ApiResponse.success("Main survey initialized successfully", "Survey is ready for use");
     }
 }

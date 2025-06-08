@@ -29,4 +29,3 @@ public interface SurveyRepository extends JpaRepository<SurveyEntity, Long> {
             "AND sa.ratingAnswer IS NOT NULL")
     Double getAverageRatingForSchedule(@Param("surveyId") Long surveyId, @Param("scheduleId") Long scheduleId);
 }
-

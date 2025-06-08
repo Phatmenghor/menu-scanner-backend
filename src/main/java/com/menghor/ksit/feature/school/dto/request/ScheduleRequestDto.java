@@ -4,11 +4,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.Status;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data

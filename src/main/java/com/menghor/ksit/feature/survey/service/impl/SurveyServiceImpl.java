@@ -8,7 +8,6 @@ import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
-import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.feature.school.repository.ScheduleRepository;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
@@ -30,8 +29,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -45,42 +42,56 @@ public class SurveyServiceImpl implements SurveyService {
     private final SurveyAnswerRepository surveyAnswerRepository;
     private final SurveySectionRepository surveySectionRepository;
     private final ScheduleRepository scheduleRepository;
-    private final UserRepository userRepository;
     private final SurveyMapper surveyMapper;
     private final SurveyResponseMapper responseMapper;
     private final SecurityUtils securityUtils;
 
     @Override
-    public SurveyResponseDto getActiveSurveyForSchedule(Long scheduleId) {
-        log.info("Fetching active survey for schedule ID: {}", scheduleId);
+    public SurveyResponseDto getMainSurvey() {
+        log.info("Fetching main survey for admin view");
 
-        // Verify schedule exists
+        SurveyEntity mainSurvey = getMainSurveyEntity();
+        SurveyResponseDto responseDto = surveyMapper.toResponseDto(mainSurvey);
+
+        // Add total responses count (across all schedules)
+        responseDto.setTotalResponses(surveyRepository.countResponsesBySurveyId(mainSurvey.getId()));
+        responseDto.setHasUserResponded(false); // Not applicable for admin view
+
+        return responseDto;
+    }
+
+    @Override
+    public SurveyResponseDto getSurveyForSchedule(Long scheduleId) {
+        log.info("Fetching survey for schedule ID: {}", scheduleId);
+
+        // Verify schedule exists and user has access
         ScheduleEntity schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new NotFoundException("Schedule not found with ID: " + scheduleId));
 
-        SurveyEntity survey = getOrCreateActiveSurvey();
-        SurveyResponseDto responseDto = surveyMapper.toResponseDto(survey);
+        UserEntity currentUser = securityUtils.getCurrentUser();
+
+        // Verify student is enrolled in this schedule
+        if (!isStudentEnrolledInSchedule(currentUser.getId(), scheduleId)) {
+            log.info("User {} is not enrolled in schedule {}", currentUser.getId(), scheduleId);
+//            throw new BadRequestException("You are not enrolled in this schedule");
+        }
+
+        SurveyEntity mainSurvey = getMainSurveyEntity();
+        SurveyResponseDto responseDto = surveyMapper.toResponseDto(mainSurvey);
 
         // Add schedule-specific data
-        responseDto.setTotalResponses(surveyRepository.countResponsesBySurveyIdAndScheduleId(survey.getId(), scheduleId));
-
-        // Check if current user has responded for this schedule
-        try {
-            UserEntity currentUser = securityUtils.getCurrentUser();
-            responseDto.setHasUserResponded(
-                    surveyRepository.hasUserRespondedForSchedule(survey.getId(), currentUser.getId(), scheduleId)
-            );
-        } catch (Exception e) {
-            responseDto.setHasUserResponded(false);
-        }
+        responseDto.setTotalResponses(surveyRepository.countResponsesBySurveyIdAndScheduleId(mainSurvey.getId(), scheduleId));
+        responseDto.setHasUserResponded(
+                surveyRepository.hasUserRespondedForSchedule(mainSurvey.getId(), currentUser.getId(), scheduleId)
+        );
 
         return responseDto;
     }
 
     @Override
     @Transactional
-    public SurveyResponseDto updateSurvey(SurveyUpdateDto updateDto) {
-        log.info("Updating survey with title: {}", updateDto.getTitle());
+    public SurveyResponseDto updateMainSurvey(SurveyUpdateDto updateDto) {
+        log.info("Updating main survey with title: {}", updateDto.getTitle());
 
         UserEntity currentUser = securityUtils.getCurrentUser();
 
@@ -93,15 +104,15 @@ public class SurveyServiceImpl implements SurveyService {
             throw new BadRequestException("Only admin/staff can update surveys");
         }
 
-        SurveyEntity survey = getOrCreateActiveSurvey();
+        SurveyEntity mainSurvey = getMainSurveyEntity();
 
         // Update basic fields
-        survey.setTitle(updateDto.getTitle());
-        survey.setDescription(updateDto.getDescription());
+        mainSurvey.setTitle(updateDto.getTitle());
+        mainSurvey.setDescription(updateDto.getDescription());
 
-        // Clear existing sections and questions
-        survey.getSections().clear();
-        surveyRepository.save(survey);
+        // Clear existing sections and questions (cascade will handle deletion)
+        mainSurvey.getSections().clear();
+        surveyRepository.save(mainSurvey);
 
         // Add new sections and questions
         if (updateDto.getSections() != null) {
@@ -112,9 +123,9 @@ public class SurveyServiceImpl implements SurveyService {
                 section.setTitle(sectionDto.getTitle());
                 section.setDescription(sectionDto.getDescription());
                 section.setDisplayOrder(sectionDto.getDisplayOrder() != null ? sectionDto.getDisplayOrder() : i);
-                section.setSurvey(survey);
+                section.setSurvey(mainSurvey);
 
-                survey.getSections().add(section);
+                mainSurvey.getSections().add(section);
 
                 // Create questions for this section
                 if (sectionDto.getQuestions() != null) {
@@ -138,8 +149,8 @@ public class SurveyServiceImpl implements SurveyService {
             }
         }
 
-        SurveyEntity savedSurvey = surveyRepository.save(survey);
-        log.info("Survey updated successfully with ID: {}", savedSurvey.getId());
+        SurveyEntity savedSurvey = surveyRepository.save(mainSurvey);
+        log.info("Main survey updated successfully with ID: {}", savedSurvey.getId());
 
         return surveyMapper.toResponseDto(savedSurvey);
     }
@@ -150,14 +161,14 @@ public class SurveyServiceImpl implements SurveyService {
         log.info("Submitting survey response for schedule ID: {}", scheduleId);
 
         UserEntity currentUser = securityUtils.getCurrentUser();
-        SurveyEntity survey = getOrCreateActiveSurvey();
+        SurveyEntity mainSurvey = getMainSurveyEntity();
 
         // Verify schedule exists
         ScheduleEntity schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new NotFoundException("Schedule not found with ID: " + scheduleId));
 
         // Check if user already responded for this schedule
-        if (surveyRepository.hasUserRespondedForSchedule(survey.getId(), currentUser.getId(), scheduleId)) {
+        if (surveyRepository.hasUserRespondedForSchedule(mainSurvey.getId(), currentUser.getId(), scheduleId)) {
             throw new BadRequestException("You have already responded to the survey for this schedule");
         }
 
@@ -168,7 +179,7 @@ public class SurveyServiceImpl implements SurveyService {
 
         // Create survey response
         SurveyResponseEntity response = new SurveyResponseEntity();
-        response.setSurvey(survey);
+        response.setSurvey(mainSurvey);
         response.setUser(currentUser);
         response.setSchedule(schedule);
         response.setSubmittedAt(LocalDateTime.now());
@@ -200,24 +211,6 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
-    public CustomPaginationResponseDto<StudentSurveyResponseDto> getAllResponses(int pageNo, int pageSize, Long scheduleId) {
-        log.info("Fetching all survey responses - page: {}, size: {}, scheduleId: {}", pageNo, pageSize, scheduleId);
-
-        SurveyEntity survey = getOrCreateActiveSurvey();
-
-        Pageable pageable = PaginationUtils.createPageable(pageNo, pageSize, "submittedAt", "DESC");
-        Page<SurveyResponseEntity> responsePage;
-
-        if (scheduleId != null) {
-            responsePage = surveyResponseRepository.findByScheduleId(scheduleId, pageable);
-        } else {
-            responsePage = surveyResponseRepository.findBySurveyId(survey.getId(), pageable);
-        }
-
-        return responseMapper.toPaginationResponse(responsePage);
-    }
-
-    @Override
     public StudentSurveyResponseDto getMyResponseForSchedule(Long scheduleId) {
         log.info("Fetching current user's survey response for schedule ID: {}", scheduleId);
 
@@ -234,41 +227,26 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
-    public CustomPaginationResponseDto<StudentScheduleWithSurveyDto> getMySchedulesWithSurveyStatus(int pageNo, int pageSize) {
-        log.info("Fetching current student's schedules with survey status - page: {}, size: {}", pageNo, pageSize);
+    public SurveyStatus getSurveyStatusForSchedule(Long scheduleId) {
+        log.info("Getting survey status for schedule ID: {}", scheduleId);
 
         UserEntity currentUser = securityUtils.getCurrentUser();
+        SurveyEntity mainSurvey = getMainSurveyEntity();
 
-        // Verify user is a student
-        boolean isStudent = currentUser.getRoles().stream()
-                .map(Role::getName)
-                .anyMatch(role -> role == RoleEnum.STUDENT);
+        boolean hasResponded = surveyRepository.hasUserRespondedForSchedule(
+                mainSurvey.getId(), currentUser.getId(), scheduleId);
 
-        if (!isStudent) {
-            throw new BadRequestException("Only students can access this endpoint");
-        }
+        return hasResponded ? SurveyStatus.COMPLETED : SurveyStatus.NOT_STARTED;
+    }
 
-        // Get student's schedules
-        Pageable pageable = PaginationUtils.createPageable(pageNo, pageSize, "startDate", "DESC");
-        Page<ScheduleEntity> schedulePage = scheduleRepository.findByStudentId(currentUser.getId(), pageable);
+    @Override
+    public CustomPaginationResponseDto<StudentSurveyResponseDto> getScheduleSurveyResponses(Long scheduleId, int pageNo, int pageSize) {
+        log.info("Fetching survey responses for schedule ID: {} - page: {}, size: {}", scheduleId, pageNo, pageSize);
 
-        // Convert to DTOs with survey status
-        List<StudentScheduleWithSurveyDto> scheduleWithSurveyList = new ArrayList<>();
-        SurveyEntity survey = getOrCreateActiveSurvey();
+        Pageable pageable = PaginationUtils.createPageable(pageNo, pageSize, "submittedAt", "DESC");
+        Page<SurveyResponseEntity> responsePage = surveyResponseRepository.findByScheduleId(scheduleId, pageable);
 
-        for (ScheduleEntity schedule : schedulePage.getContent()) {
-            StudentScheduleWithSurveyDto dto = buildStudentScheduleWithSurveyDto(schedule, currentUser, survey);
-            scheduleWithSurveyList.add(dto);
-        }
-
-        return CustomPaginationResponseDto.<StudentScheduleWithSurveyDto>builder()
-                .content(scheduleWithSurveyList)
-                .pageNo(schedulePage.getNumber() + 1)
-                .pageSize(schedulePage.getSize())
-                .totalElements(schedulePage.getTotalElements())
-                .totalPages(schedulePage.getTotalPages())
-                .last(schedulePage.isLast())
-                .build();
+        return responseMapper.toPaginationResponse(responsePage);
     }
 
     @Override
@@ -287,57 +265,30 @@ public class SurveyServiceImpl implements SurveyService {
         detailDto.setIsCompleted(response.getIsCompleted());
         detailDto.setCreatedAt(response.getCreatedAt());
 
-        // Set student info (you'll need to implement this mapping)
-        // detailDto.setStudent(mapToUserBasicInfo(response.getUser()));
-
-        // Set schedule info (you'll need to implement this mapping)
-        // detailDto.setSchedule(mapToScheduleBasicInfo(response.getSchedule()));
-
         // Set answer details
-        List<SurveyAnswerDetailDto> answerDetails = new ArrayList<>();
-        for (SurveyAnswerEntity answer : response.getAnswers()) {
-            SurveyAnswerDetailDto answerDetailDto = new SurveyAnswerDetailDto();
-            answerDetailDto.setAnswerId(answer.getId());
-            answerDetailDto.setQuestionId(answer.getQuestion().getId());
-            answerDetailDto.setSectionTitle(answer.getQuestion().getSection().getTitle());
-            answerDetailDto.setQuestionText(answer.getQuestion().getQuestionText());
-            answerDetailDto.setQuestionType(answer.getQuestion().getQuestionType());
-            answerDetailDto.setTextAnswer(answer.getTextAnswer());
-            answerDetailDto.setRatingAnswer(answer.getRatingAnswer());
-            answerDetailDto.setMinRating(answer.getQuestion().getMinRating());
-            answerDetailDto.setMaxRating(answer.getQuestion().getMaxRating());
-            answerDetailDto.setLeftLabel(answer.getQuestion().getLeftLabel());
-            answerDetailDto.setRightLabel(answer.getQuestion().getRightLabel());
-            answerDetailDto.setDisplayOrder(answer.getQuestion().getDisplayOrder());
+        var answerDetails = response.getAnswers().stream()
+                .map(answer -> {
+                    SurveyAnswerDetailDto answerDetailDto = new SurveyAnswerDetailDto();
+                    answerDetailDto.setAnswerId(answer.getId());
+                    answerDetailDto.setQuestionId(answer.getQuestion().getId());
+                    answerDetailDto.setSectionTitle(answer.getQuestion().getSection().getTitle());
+                    answerDetailDto.setQuestionText(answer.getQuestion().getQuestionText());
+                    answerDetailDto.setQuestionType(answer.getQuestion().getQuestionType());
+                    answerDetailDto.setTextAnswer(answer.getTextAnswer());
+                    answerDetailDto.setRatingAnswer(answer.getRatingAnswer());
+                    answerDetailDto.setMinRating(answer.getQuestion().getMinRating());
+                    answerDetailDto.setMaxRating(answer.getQuestion().getMaxRating());
+                    answerDetailDto.setLeftLabel(answer.getQuestion().getLeftLabel());
+                    answerDetailDto.setRightLabel(answer.getQuestion().getRightLabel());
+                    answerDetailDto.setDisplayOrder(answer.getQuestion().getDisplayOrder());
+                    return answerDetailDto;
+                })
+                .sorted((a, b) -> Integer.compare(a.getDisplayOrder(), b.getDisplayOrder()))
+                .toList();
 
-            answerDetails.add(answerDetailDto);
-        }
         detailDto.setAnswerDetails(answerDetails);
 
         return detailDto;
-    }
-
-    @Override
-    public CustomPaginationResponseDto<StudentSurveyResponseDto> getScheduleSurveyResponses(Long scheduleId, int pageNo, int pageSize) {
-        log.info("Fetching survey responses for schedule ID: {} - page: {}, size: {}", scheduleId, pageNo, pageSize);
-
-        Pageable pageable = PaginationUtils.createPageable(pageNo, pageSize, "submittedAt", "DESC");
-        Page<SurveyResponseEntity> responsePage = surveyResponseRepository.findByScheduleId(scheduleId, pageable);
-
-        return responseMapper.toPaginationResponse(responsePage);
-    }
-
-    @Override
-    public SurveyStatus getSurveyStatusForSchedule(Long scheduleId) {
-        log.info("Getting survey status for schedule ID: {}", scheduleId);
-
-        UserEntity currentUser = securityUtils.getCurrentUser();
-        SurveyEntity survey = getOrCreateActiveSurvey();
-
-        boolean hasResponded = surveyRepository.hasUserRespondedForSchedule(
-                survey.getId(), currentUser.getId(), scheduleId);
-
-        return hasResponded ? SurveyStatus.COMPLETED : SurveyStatus.NOT_STARTED;
     }
 
     @Override
@@ -347,24 +298,24 @@ public class SurveyServiceImpl implements SurveyService {
         ScheduleEntity schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new NotFoundException("Schedule not found with ID: " + scheduleId));
 
-        SurveyEntity survey = getOrCreateActiveSurvey();
+        SurveyEntity mainSurvey = getMainSurveyEntity();
 
         // Get total students in the schedule
         Integer totalStudents = scheduleRepository.countStudentsByScheduleId(scheduleId);
 
         // Get completed responses
         Integer completedResponses = surveyRepository.countResponsesBySurveyIdAndScheduleId(
-                survey.getId(), scheduleId);
+                mainSurvey.getId(), scheduleId);
 
         // Calculate completion rate
         Double completionRate = totalStudents > 0 ?
                 (completedResponses.doubleValue() / totalStudents.doubleValue()) * 100 : 0.0;
 
         // Get average rating
-        Double averageRating = surveyRepository.getAverageRatingForSchedule(survey.getId(), scheduleId);
+        Double averageRating = surveyRepository.getAverageRatingForSchedule(mainSurvey.getId(), scheduleId);
 
         // Get total questions count
-        Integer totalQuestions = survey.getSections().stream()
+        Integer totalQuestions = mainSurvey.getSections().stream()
                 .mapToInt(section -> section.getQuestions().size())
                 .sum();
 
@@ -383,36 +334,63 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public void initializeDefaultSurvey() {
-        log.info("Initializing default survey if not exists");
+    public void initializeMainSurvey() {
+        log.info("Initializing main survey if not exists");
 
         Optional<SurveyEntity> existingSurvey = surveyRepository.findByStatus(Status.ACTIVE);
         if (existingSurvey.isPresent()) {
-            log.info("Active survey already exists with ID: {}", existingSurvey.get().getId());
+            log.info("Main survey already exists with ID: {}", existingSurvey.get().getId());
             return;
         }
 
-        // Create default survey with system user
-        SurveyEntity defaultSurvey = new SurveyEntity();
-        defaultSurvey.setTitle("Student Feedback Survey");
-        defaultSurvey.setDescription("Please provide your feedback about your learning experience");
-        defaultSurvey.setStatus(Status.ACTIVE);
+        // Create default survey
+        SurveyEntity mainSurvey = new SurveyEntity();
+        mainSurvey.setTitle("Student Course Evaluation Survey");
+        mainSurvey.setDescription("Please provide your feedback about your learning experience in this course");
+        mainSurvey.setStatus(Status.ACTIVE);
 
-        // Set a system user as creator (you might need to adjust this based on your user setup)
+        // Set creator
         try {
-            UserEntity systemUser = securityUtils.getCurrentUser();
-            defaultSurvey.setCreatedBy(systemUser);
+            UserEntity currentUser = securityUtils.getCurrentUser();
+            mainSurvey.setCreatedBy(currentUser);
         } catch (Exception e) {
             log.warn("Could not set current user as survey creator: {}", e.getMessage());
-            // You might want to create a system user or handle this differently
         }
 
+        // Create default sections and questions
+        createDefaultSurveyContent(mainSurvey);
+
+        SurveyEntity savedSurvey = surveyRepository.save(mainSurvey);
+        log.info("Main survey created successfully with ID: {}", savedSurvey.getId());
+    }
+
+    @Override
+    public Boolean hasUserCompletedSurvey(Long userId, Long scheduleId) {
+        SurveyEntity mainSurvey = getMainSurveyEntity();
+        return surveyRepository.hasUserRespondedForSchedule(mainSurvey.getId(), userId, scheduleId);
+    }
+
+    // Private helper methods
+
+    private SurveyEntity getMainSurveyEntity() {
+        return surveyRepository.findByStatus(Status.ACTIVE)
+                .orElseThrow(() -> {
+                    log.error("Main survey not found. Please initialize the survey first.");
+                    return new NotFoundException("Main survey not found. Please contact administrator.");
+                });
+    }
+
+    private boolean isStudentEnrolledInSchedule(Long studentId, Long scheduleId) {
+        return scheduleRepository.existsByIdAndClassesStudentsId(scheduleId, studentId);
+    }
+
+    private void createDefaultSurveyContent(SurveyEntity survey) {
         // Create a default section
         SurveySectionEntity defaultSection = new SurveySectionEntity();
-        defaultSection.setTitle("General Feedback");
-        defaultSection.setDescription("Your general feedback about the course");
+        defaultSection.setTitle("Course Evaluation");
+        defaultSection.setDescription("Please evaluate your experience with this course");
         defaultSection.setDisplayOrder(0);
-        defaultSection.setSurvey(defaultSurvey);
+        defaultSection.setSurvey(survey);
 
         // Create default questions
         SurveyQuestionEntity question1 = new SurveyQuestionEntity();
@@ -427,21 +405,21 @@ public class SurveyServiceImpl implements SurveyService {
         question1.setSection(defaultSection);
 
         SurveyQuestionEntity question2 = new SurveyQuestionEntity();
-        question2.setQuestionText("What aspects of the course did you find most valuable?");
-        question2.setQuestionType(QuestionTypeEnum.TEXT);
-        question2.setRequired(false);
+        question2.setQuestionText("How would you rate the teaching quality?");
+        question2.setQuestionType(QuestionTypeEnum.RATING);
+        question2.setRequired(true);
         question2.setDisplayOrder(1);
+        question2.setMinRating(1);
+        question2.setMaxRating(5);
+        question2.setLeftLabel("Poor");
+        question2.setRightLabel("Excellent");
         question2.setSection(defaultSection);
 
         SurveyQuestionEntity question3 = new SurveyQuestionEntity();
-        question3.setQuestionText("How would you rate the teaching quality?");
-        question3.setQuestionType(QuestionTypeEnum.RATING);
-        question3.setRequired(true);
+        question3.setQuestionText("What aspects of the course did you find most valuable?");
+        question3.setQuestionType(QuestionTypeEnum.TEXT);
+        question3.setRequired(false);
         question3.setDisplayOrder(2);
-        question3.setMinRating(1);
-        question3.setMaxRating(5);
-        question3.setLeftLabel("Poor");
-        question3.setRightLabel("Excellent");
         question3.setSection(defaultSection);
 
         SurveyQuestionEntity question4 = new SurveyQuestionEntity();
@@ -456,73 +434,6 @@ public class SurveyServiceImpl implements SurveyService {
         defaultSection.getQuestions().add(question3);
         defaultSection.getQuestions().add(question4);
 
-        defaultSurvey.getSections().add(defaultSection);
-
-        SurveyEntity savedSurvey = surveyRepository.save(defaultSurvey);
-        log.info("Default survey created successfully with ID: {}", savedSurvey.getId());
-    }
-
-    // Private helper methods
-
-    private SurveyEntity getOrCreateActiveSurvey() {
-        Optional<SurveyEntity> activeSurvey = surveyRepository.findByStatus(Status.ACTIVE);
-        if (activeSurvey.isPresent()) {
-            return activeSurvey.get();
-        }
-
-        // If no active survey exists, initialize one
-        initializeDefaultSurvey();
-        return surveyRepository.findByStatus(Status.ACTIVE)
-                .orElseThrow(() -> new NotFoundException("Could not create or find active survey"));
-    }
-
-    private boolean isStudentEnrolledInSchedule(Long studentId, Long scheduleId) {
-        // Check if the student's class is associated with this schedule
-        return scheduleRepository.existsByIdAndClassesStudentsId(scheduleId, studentId);
-    }
-
-    private StudentScheduleWithSurveyDto buildStudentScheduleWithSurveyDto(
-            ScheduleEntity schedule, UserEntity student, SurveyEntity survey) {
-
-        // Check if student has completed survey for this schedule
-        boolean hasCompleted = surveyRepository.hasUserRespondedForSchedule(
-                survey.getId(), student.getId(), schedule.getId());
-
-        SurveyStatus surveyStatus = hasCompleted ? SurveyStatus.COMPLETED : SurveyStatus.NOT_STARTED;
-
-        // Get survey response details if completed
-        Long surveyResponseId = null;
-        LocalDateTime surveySubmittedDate = null;
-
-        if (hasCompleted) {
-            Optional<SurveyResponseEntity> responseOpt = surveyResponseRepository
-                    .findByUserIdAndScheduleId(student.getId(), schedule.getId());
-            if (responseOpt.isPresent()) {
-                SurveyResponseEntity response = responseOpt.get();
-                surveyResponseId = response.getId();
-                surveySubmittedDate = response.getSubmittedAt();
-            }
-        }
-
-        return StudentScheduleWithSurveyDto.builder()
-                .scheduleId(schedule.getId())
-                .courseName(schedule.getCourse().getCode())
-                .courseCode(schedule.getCourse().getCode())
-                .teacherName(schedule.getUser().getKhmerFirstName() + " " + schedule.getUser().getKhmerLastName())
-                .teacherEmail(schedule.getUser().getEmail())
-                .className(schedule.getClasses().getCode())
-                .roomName(schedule.getRoom().getName())
-                .roomCode(schedule.getRoom().getName())
-                .dayOfWeek(schedule.getDay())
-                .startTime(schedule.getStartTime())
-                .endTime(schedule.getEndTime())
-                .startDate(schedule.getSemester().getStartDate())
-                .endDate(schedule.getSemester().getEndDate())
-                .surveyStatus(surveyStatus)
-                .surveySubmittedDate(surveySubmittedDate)
-                .surveyResponseId(surveyResponseId)
-                .semester(schedule.getSemester() != null ? schedule.getSemester().getSemester().toString() : null)
-                .academicYear(schedule.getSemester().getAcademyYear())
-                .build();
+        survey.getSections().add(defaultSection);
     }
 }

@@ -11,9 +11,9 @@ import java.util.List;
 public class SurveyUpdateDto {
     @NotBlank(message = "Title is required")
     private String title;
-    
+
     private String description;
-    
+
     @Valid
     private List<SurveySectionUpdateDto> sections = new ArrayList<>();
 }
