@@ -40,17 +40,17 @@ public interface SurveyQuestionMapper {
 
     default String generateRatingLabel(int currentValue, int minValue, int maxValue,
                                        String leftLabel, String rightLabel) {
-        // If it's the minimum value and we have a left label
-        if (currentValue == minValue && leftLabel != null && !leftLabel.trim().isEmpty()) {
-            return String.format("(%d) %s", currentValue, leftLabel);
-        }
-        // If it's the maximum value and we have a right label
-        else if (currentValue == maxValue && rightLabel != null && !rightLabel.trim().isEmpty()) {
-            return String.format("(%d) %s", currentValue, rightLabel);
-        }
-        // For middle values or when no labels are provided
-        else {
+//        // If it's the minimum value and we have a left label
+//        if (currentValue == minValue && leftLabel != null && !leftLabel.trim().isEmpty()) {
+//            return String.format("(%d) %s", currentValue, leftLabel);
+//        }
+//        // If it's the maximum value and we have a right label
+//        else if (currentValue == maxValue && rightLabel != null && !rightLabel.trim().isEmpty()) {
+//            return String.format("(%d) %s", currentValue, rightLabel);
+//        }
+//        // For middle values or when no labels are provided
+//        else {
             return String.valueOf(currentValue);
-        }
+//        }
     }
 }
