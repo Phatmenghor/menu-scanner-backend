@@ -23,7 +23,11 @@ public interface AttendanceMapper {
     @Mapping(source = "student.id", target = "studentId")
     @Mapping(source = "student", target = "studentName", qualifiedByName = "mapStudentName")
     @Mapping(source = "student.identifyNumber", target = "identifyNumber")
+    @Mapping(source = "student.gender", target = "gender")
+    @Mapping(source = "student.dateOfBirth", target = "dateOfBirth")
     @Mapping(source = "attendanceSession.id", target = "attendanceSessionId")
+    @Mapping(source = "attendanceSession.teacher.id", target = "teacherId")
+    @Mapping(source = "attendanceSession.teacher", target = "teacherName", qualifiedByName = "mapTeacherName")
     AttendanceDto toDto(AttendanceEntity entity);
 
     @Mapping(source = "schedule.id", target = "scheduleId")

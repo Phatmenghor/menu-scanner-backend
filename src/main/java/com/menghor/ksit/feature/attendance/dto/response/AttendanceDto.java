@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.menghor.ksit.enumations.AttendanceFinalizationStatus;
 import com.menghor.ksit.enumations.AttendanceStatus;
 import com.menghor.ksit.enumations.AttendanceType;
+import com.menghor.ksit.enumations.GenderEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -24,6 +26,10 @@ public class AttendanceDto {
     private LocalDateTime recordedTime;
     private AttendanceFinalizationStatus finalizationStatus;
     private Long studentId;
+    private Long teacherId;
+    private String teacherName;
+    private GenderEnum gender;
+    private LocalDate dateOfBirth;
     private String studentName;
     private Long attendanceSessionId;
     private String createdAt;

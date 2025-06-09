@@ -1,6 +1,5 @@
 package com.menghor.ksit.feature.attendance.controller;
 
-import com.menghor.ksit.enumations.AttendanceStatus;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.attendance.dto.request.AttendanceHistoryFilterDto;
 import com.menghor.ksit.feature.attendance.dto.request.AttendanceSessionRequest;
@@ -14,20 +13,10 @@ import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.database.SecurityUtils;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/attendance")
@@ -47,8 +36,6 @@ public class AttendanceController {
                 attendanceService.findById(id)
         );
     }
-
-
 
     @PutMapping("/update")
     public ApiResponse<AttendanceDto> updateAttendance(@RequestBody AttendanceUpdateRequest request) {

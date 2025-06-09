@@ -20,12 +20,28 @@ public class AttendanceSpecification {
                 return criteriaBuilder.or(
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("identifyNumber")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("username")), searchPattern),
-                        // Class name search
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("classes").get("code")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("englishFirstName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("englishLastName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerFirstName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerLastName")), searchPattern),
 
-                        // Course name search
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("course").get("nameEn")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("schedule").get("course").get("nameKh")),searchPattern)
+                        // FIXED: Use attendanceSession.schedule instead of schedule directly
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("classes").get("code")), searchPattern),
+
+                        // Course name search - FIXED: Use attendanceSession.schedule
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("nameEn")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("nameKH")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("code")), searchPattern),
+
+                        // Teacher name search
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("englishFirstName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("englishLastName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("khmerFirstName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("khmerLastName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("username")), searchPattern),
+
+                        // Room name search
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("room").get("name")), searchPattern)
                 );
             }
             return null;
