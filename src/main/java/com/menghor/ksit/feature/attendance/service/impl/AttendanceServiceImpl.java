@@ -15,6 +15,7 @@ import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AttendanceServiceImpl implements AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
@@ -78,30 +80,26 @@ public class AttendanceServiceImpl implements AttendanceService {
     // Implementation
     @Override
     public CustomPaginationResponseDto<AttendanceDto> findAttendanceHistory(AttendanceHistoryFilterDto filterDto) {
+        log.info("Fetching attendance history with filter: {}", filterDto);
 
         Pageable pageable = PaginationUtils.createPageable(
                 filterDto.getPageNo(),
                 filterDto.getPageSize(),
-                 "recordedTime",
-               "DESC"
+                "recordedTime",
+                "DESC"
         );
 
-        Specification<AttendanceEntity> spec = AttendanceSpecification.combine(
-                filterDto.getSearch(),
-                filterDto.getStatus(),
-                filterDto.getFinalizationStatus(),
-                filterDto.getScheduleId(),
-                filterDto.getClassId(),
-                filterDto.getTeacherId(),
-                filterDto.getStartDate(),
-                filterDto.getEndDate()
-        );
+        // Use the new combine method that accepts AttendanceHistoryFilterDto
+        Specification<AttendanceEntity> spec = AttendanceSpecification.combine(filterDto);
 
         Page<AttendanceEntity> attendancePage = attendanceRepository.findAll(spec, pageable);
 
         List<AttendanceDto> content = attendancePage.getContent().stream()
                 .map(attendanceMapper::toDto)
                 .collect(Collectors.toList());
+
+        log.info("Retrieved {} attendance records (page {}/{})",
+                content.size(), attendancePage.getNumber() + 1, attendancePage.getTotalPages());
 
         return new CustomPaginationResponseDto<>(
                 content,

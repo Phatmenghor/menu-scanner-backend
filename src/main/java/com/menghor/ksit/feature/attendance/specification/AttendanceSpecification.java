@@ -2,6 +2,8 @@ package com.menghor.ksit.feature.attendance.specification;
 
 import com.menghor.ksit.enumations.AttendanceFinalizationStatus;
 import com.menghor.ksit.enumations.AttendanceStatus;
+import com.menghor.ksit.enumations.SemesterEnum;
+import com.menghor.ksit.feature.attendance.dto.request.AttendanceHistoryFilterDto;
 import com.menghor.ksit.feature.attendance.models.AttendanceEntity;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -13,7 +15,7 @@ import java.time.LocalDate;
 public class AttendanceSpecification {
 
     /**
-     * Search by student name
+     * Search by student name, teacher name, course name, class code, room name, etc.
      */
     public static Specification<AttendanceEntity> searchWithAttendance(String search) {
         return (root, query, criteriaBuilder) -> {
@@ -22,10 +24,7 @@ public class AttendanceSpecification {
 
                 // Add null checks for nested entities
                 Join<Object, Object> sessionJoin = root.join("attendanceSession", JoinType.LEFT);
-                Join<Object, Object> scheduleJoin = sessionJoin.join("schedule", JoinType.LEFT);
-                Join<Object, Object> courseJoin = scheduleJoin.join("course", JoinType.LEFT);
-                Join<Object, Object> classJoin = scheduleJoin.join("classes", JoinType.LEFT);
-                Join<Object, Object> roomJoin = scheduleJoin.join("room", JoinType.LEFT);
+
                 Join<Object, Object> teacherJoin = sessionJoin.join("teacher", JoinType.LEFT);
 
                 return criteriaBuilder.or(
@@ -37,21 +36,13 @@ public class AttendanceSpecification {
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerFirstName")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerLastName")), searchPattern),
 
-                        // Course fields
-                        criteriaBuilder.like(criteriaBuilder.lower(courseJoin.get("nameEn")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(courseJoin.get("nameKH")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(courseJoin.get("code")), searchPattern),
-
-                        // Class fields
-                        criteriaBuilder.like(criteriaBuilder.lower(classJoin.get("code")), searchPattern),
-
                         // Teacher fields
+                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("englishFirstName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("englishLastName")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("khmerFirstName")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("khmerLastName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("username")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("username")), searchPattern)
 
-                        // Room fields
-                        criteriaBuilder.like(criteriaBuilder.lower(roomJoin.get("name")), searchPattern)
                 );
             }
             return null;
@@ -143,6 +134,36 @@ public class AttendanceSpecification {
     }
 
     /**
+     * Filter by semester type (SEMESTER_1, SEMESTER_2)
+     */
+    public static Specification<AttendanceEntity> hasSemester(SemesterEnum semester) {
+        return (root, query, criteriaBuilder) -> {
+            if (semester != null) {
+                Join<Object, Object> sessionJoin = root.join("attendanceSession", JoinType.INNER);
+                Join<Object, Object> scheduleJoin = sessionJoin.join("schedule", JoinType.INNER);
+                Join<Object, Object> semesterJoin = scheduleJoin.join("semester", JoinType.INNER);
+                return criteriaBuilder.equal(semesterJoin.get("semester"), semester);
+            }
+            return null;
+        };
+    }
+
+    /**
+     * Filter by academy year
+     */
+    public static Specification<AttendanceEntity> hasAcademyYear(Integer academyYear) {
+        return (root, query, criteriaBuilder) -> {
+            if (academyYear != null) {
+                Join<Object, Object> sessionJoin = root.join("attendanceSession", JoinType.INNER);
+                Join<Object, Object> scheduleJoin = sessionJoin.join("schedule", JoinType.INNER);
+                Join<Object, Object> semesterJoin = scheduleJoin.join("semester", JoinType.INNER);
+                return criteriaBuilder.equal(semesterJoin.get("academyYear"), academyYear);
+            }
+            return null;
+        };
+    }
+
+    /**
      * Filter by recorded date range
      */
     public static Specification<AttendanceEntity> recordedBetween(LocalDate start, LocalDate end) {
@@ -162,7 +183,52 @@ public class AttendanceSpecification {
     }
 
     /**
-     * Combine multiple specifications with AND operator
+     * Combine specifications using AttendanceHistoryFilterDto
+     */
+    public static Specification<AttendanceEntity> combine(AttendanceHistoryFilterDto filterDto) {
+        Specification<AttendanceEntity> result = Specification.where(null);
+
+        if (StringUtils.hasText(filterDto.getSearch())) {
+            result = result.and(searchWithAttendance(filterDto.getSearch()));
+        }
+
+        if (filterDto.getStatus() != null) {
+            result = result.and(hasStatus(filterDto.getStatus()));
+        }
+
+        if (filterDto.getFinalizationStatus() != null) {
+            result = result.and(hasFinalizationStatus(filterDto.getFinalizationStatus()));
+        }
+
+        if (filterDto.getScheduleId() != null) {
+            result = result.and(hasScheduleId(filterDto.getScheduleId()));
+        }
+
+        if (filterDto.getClassId() != null) {
+            result = result.and(hasClassId(filterDto.getClassId()));
+        }
+
+        if (filterDto.getTeacherId() != null) {
+            result = result.and(hasTeacherId(filterDto.getTeacherId()));
+        }
+
+        if (filterDto.getSemester() != null) {
+            result = result.and(hasSemester(filterDto.getSemester()));
+        }
+
+        if (filterDto.getAcademyYear() != null) {
+            result = result.and(hasAcademyYear(filterDto.getAcademyYear()));
+        }
+
+        if (filterDto.getStartDate() != null || filterDto.getEndDate() != null) {
+            result = result.and(recordedBetween(filterDto.getStartDate(), filterDto.getEndDate()));
+        }
+
+        return result;
+    }
+
+    /**
+     * Legacy combine method for backward compatibility
      */
     public static Specification<AttendanceEntity> combine(String search, AttendanceStatus status,
                                                           AttendanceFinalizationStatus finalizationStatus, Long scheduleId, Long classId,
