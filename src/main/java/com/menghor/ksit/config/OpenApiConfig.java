@@ -25,13 +25,14 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("KS-IT School API")
                         .version("1.0")
-                        .description("S-IT School API API Documentation"))
+                        .description("KS-IT School Management API Documentation"))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth",
                                 new SecurityScheme()
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
+                                        .description("JWT token authentication")
                         )
                 )
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
