@@ -3,6 +3,8 @@ package com.menghor.ksit.feature.attendance.specification;
 import com.menghor.ksit.enumations.AttendanceFinalizationStatus;
 import com.menghor.ksit.enumations.AttendanceStatus;
 import com.menghor.ksit.feature.attendance.models.AttendanceEntity;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
@@ -17,7 +19,17 @@ public class AttendanceSpecification {
         return (root, query, criteriaBuilder) -> {
             if (StringUtils.hasText(search)) {
                 String searchPattern = "%" + search.toLowerCase() + "%";
+
+                // Add null checks for nested entities
+                Join<Object, Object> sessionJoin = root.join("attendanceSession", JoinType.LEFT);
+                Join<Object, Object> scheduleJoin = sessionJoin.join("schedule", JoinType.LEFT);
+                Join<Object, Object> courseJoin = scheduleJoin.join("course", JoinType.LEFT);
+                Join<Object, Object> classJoin = scheduleJoin.join("classes", JoinType.LEFT);
+                Join<Object, Object> roomJoin = scheduleJoin.join("room", JoinType.LEFT);
+                Join<Object, Object> teacherJoin = sessionJoin.join("teacher", JoinType.LEFT);
+
                 return criteriaBuilder.or(
+                        // Student fields
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("identifyNumber")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("username")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("englishFirstName")), searchPattern),
@@ -25,23 +37,21 @@ public class AttendanceSpecification {
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerFirstName")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerLastName")), searchPattern),
 
-                        // FIXED: Use attendanceSession.schedule instead of schedule directly
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("classes").get("code")), searchPattern),
+                        // Course fields
+                        criteriaBuilder.like(criteriaBuilder.lower(courseJoin.get("nameEn")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(courseJoin.get("nameKH")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(courseJoin.get("code")), searchPattern),
 
-                        // Course name search - FIXED: Use attendanceSession.schedule
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("nameEn")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("nameKH")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("code")), searchPattern),
+                        // Class fields
+                        criteriaBuilder.like(criteriaBuilder.lower(classJoin.get("code")), searchPattern),
 
-                        // Teacher name search
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("englishFirstName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("englishLastName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("khmerFirstName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("khmerLastName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("username")), searchPattern),
+                        // Teacher fields
+                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("khmerFirstName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("khmerLastName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("username")), searchPattern),
 
-                        // Room name search
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("room").get("name")), searchPattern)
+                        // Room fields
+                        criteriaBuilder.like(criteriaBuilder.lower(roomJoin.get("name")), searchPattern)
                 );
             }
             return null;
