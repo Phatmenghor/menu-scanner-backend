@@ -6,6 +6,7 @@ import com.menghor.ksit.feature.attendance.dto.response.AttendanceSessionDto;
 import com.menghor.ksit.feature.attendance.models.AttendanceEntity;
 import com.menghor.ksit.feature.attendance.models.AttendanceSessionEntity;
 import com.menghor.ksit.feature.auth.models.UserEntity;
+import com.menghor.ksit.feature.school.model.CourseEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -28,6 +29,8 @@ public interface AttendanceMapper {
     @Mapping(source = "attendanceSession.id", target = "attendanceSessionId")
     @Mapping(source = "attendanceSession.teacher.id", target = "teacherId")
     @Mapping(source = "attendanceSession.teacher", target = "teacherName", qualifiedByName = "mapTeacherName")
+    @Mapping(source = "attendanceSession.schedule.id", target = "scheduleId")
+    @Mapping(source = "attendanceSession.schedule.course", target = "courseName", qualifiedByName = "mapCourseName")
     AttendanceDto toDto(AttendanceEntity entity);
 
     @Mapping(source = "schedule.id", target = "scheduleId")
@@ -97,6 +100,29 @@ public interface AttendanceMapper {
 
         // If all names are null, return username or null
         return teacher.getUsername();
+    }
+
+    // Custom method to handle the course name logic
+    @Named("mapCourseName")
+    default String mapCourseName(CourseEntity course) {
+        if (course == null) {
+            return null;
+        }
+
+        // Prefer English name, fallback to Khmer name, then fallback to code
+        if (course.getNameEn() != null && !course.getNameEn().trim().isEmpty()) {
+            return course.getNameEn();
+        }
+
+        if (course.getNameKH() != null && !course.getNameKH().trim().isEmpty()) {
+            return course.getNameKH();
+        }
+
+        if (course.getCode() != null && !course.getCode().trim().isEmpty()) {
+            return course.getCode();
+        }
+
+        return "Course #" + course.getId();
     }
 
     // Count calculation methods

@@ -26,11 +26,19 @@ public class AttendanceDto {
     private LocalDateTime recordedTime;
     private AttendanceFinalizationStatus finalizationStatus;
     private Long studentId;
-    private Long teacherId;
-    private String teacherName;
-    private GenderEnum gender;
-    private LocalDate dateOfBirth;
     private String studentName;
     private Long attendanceSessionId;
     private String createdAt;
+
+    // Teacher information
+    private Long teacherId;
+    private String teacherName;
+
+    // Student personal information
+    private GenderEnum gender;
+    private LocalDate dateOfBirth;
+
+    // Schedule and Course information
+    private Long scheduleId;
+    private String courseName;
 }

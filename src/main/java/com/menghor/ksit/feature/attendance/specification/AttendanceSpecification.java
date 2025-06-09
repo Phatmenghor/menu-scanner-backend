@@ -22,11 +22,6 @@ public class AttendanceSpecification {
             if (StringUtils.hasText(search)) {
                 String searchPattern = "%" + search.toLowerCase() + "%";
 
-                // Add null checks for nested entities
-                Join<Object, Object> sessionJoin = root.join("attendanceSession", JoinType.LEFT);
-
-                Join<Object, Object> teacherJoin = sessionJoin.join("teacher", JoinType.LEFT);
-
                 return criteriaBuilder.or(
                         // Student fields
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("identifyNumber")), searchPattern),
@@ -34,16 +29,8 @@ public class AttendanceSpecification {
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("englishFirstName")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("englishLastName")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerFirstName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerLastName")), searchPattern),
-
-                        // Teacher fields
-                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("englishFirstName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("englishLastName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("khmerFirstName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("khmerLastName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(teacherJoin.get("username")), searchPattern)
-
-                );
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerLastName")), searchPattern)
+                        );
             }
             return null;
         };
