@@ -28,17 +28,26 @@ public class SurveyEntity extends BaseEntity {
     private Status status = Status.ACTIVE;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by")
-    private UserEntity createdBy;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id")
     private ScheduleEntity schedule;
 
-    @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
+    // All sections including deleted ones
+    @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
     @OrderBy("displayOrder ASC, id ASC")
     private List<SurveySectionEntity> sections = new ArrayList<>();
 
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SurveyResponseEntity> responses = new ArrayList<>();
+
+    // Helper method to get only active sections
+    public List<SurveySectionEntity> getActiveSections() {
+        return sections.stream()
+                .filter(section -> section.getStatus() == Status.ACTIVE)
+                .toList();
+    }
+
+    // Helper method to get all sections (including deleted)
+    public List<SurveySectionEntity> getAllSections() {
+        return sections;
+    }
 }

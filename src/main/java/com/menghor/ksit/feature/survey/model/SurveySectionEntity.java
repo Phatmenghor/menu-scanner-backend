@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.survey.model;
 
+import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -23,11 +24,28 @@ public class SurveySectionEntity extends BaseEntity {
     @Column(nullable = false)
     private Integer displayOrder = 1;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Status status = Status.ACTIVE;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_id", nullable = false)
     private SurveyEntity survey;
 
-    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true)
+    // All questions for this section including deleted ones
+    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
     @OrderBy("displayOrder ASC, id ASC")
     private List<SurveyQuestionEntity> questions = new ArrayList<>();
+
+    // Helper method to get only active questions
+    public List<SurveyQuestionEntity> getActiveQuestions() {
+        return questions.stream()
+                .filter(question -> question.getStatus() == Status.ACTIVE)
+                .toList();
+    }
+
+    // Helper method to get all questions (including deleted)
+    public List<SurveyQuestionEntity> getAllQuestions() {
+        return questions;
+    }
 }

@@ -16,6 +16,4 @@ public class SurveyResponseDto {
     private UserBasicInfoDto createdBy;
     private List<SurveySectionResponseDto> sections;
     private LocalDateTime createdAt;
-    private Integer totalResponses;
-    private Boolean hasUserResponded;
 }

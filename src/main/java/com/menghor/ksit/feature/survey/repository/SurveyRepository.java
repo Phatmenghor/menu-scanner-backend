@@ -3,6 +3,7 @@ package com.menghor.ksit.feature.survey.repository;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.feature.survey.model.SurveyEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface SurveyRepository extends JpaRepository<SurveyEntity, Long> {
+public interface SurveyRepository extends JpaRepository<SurveyEntity, Long>, JpaSpecificationExecutor<SurveyEntity> {
 
     // Find the single active survey
     Optional<SurveyEntity> findByStatus(Status status);

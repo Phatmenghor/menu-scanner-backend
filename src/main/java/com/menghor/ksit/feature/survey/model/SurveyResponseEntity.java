@@ -42,7 +42,7 @@ public class SurveyResponseEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String overallComment;
 
-    @OneToMany(mappedBy = "response", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "response", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<SurveyAnswerEntity> answers = new ArrayList<>();
 
     @PrePersist

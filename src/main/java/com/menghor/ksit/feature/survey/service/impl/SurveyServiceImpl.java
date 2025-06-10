@@ -1,6 +1,5 @@
 package com.menghor.ksit.feature.survey.service.impl;
 
-import com.menghor.ksit.enumations.QuestionTypeEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.enumations.SurveyStatus;
 import com.menghor.ksit.exceptoins.error.BadRequestException;
@@ -13,11 +12,11 @@ import com.menghor.ksit.feature.survey.dto.response.*;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
 import com.menghor.ksit.feature.survey.dto.update.SurveySectionUpdateDto;
 import com.menghor.ksit.feature.survey.dto.update.SurveyQuestionUpdateDto;
-import com.menghor.ksit.feature.survey.mapper.SurveyMapper;
-import com.menghor.ksit.feature.survey.mapper.SurveyResponseMapper;
+import com.menghor.ksit.feature.survey.mapper.*;
 import com.menghor.ksit.feature.survey.model.*;
 import com.menghor.ksit.feature.survey.repository.*;
 import com.menghor.ksit.feature.survey.service.SurveyService;
+import com.menghor.ksit.feature.survey.specification.*;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.database.SecurityUtils;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
@@ -28,9 +27,9 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,45 +38,44 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SurveyServiceImpl implements SurveyService {
 
+    // Repositories
     private final SurveyRepository surveyRepository;
     private final SurveyResponseRepository surveyResponseRepository;
     private final SurveyQuestionRepository surveyQuestionRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
     private final SurveySectionRepository surveySectionRepository;
     private final ScheduleRepository scheduleRepository;
+
+    // Mappers - consolidated to essential ones only
     private final SurveyMapper surveyMapper;
+    private final SurveySectionMapper sectionMapper;
+    private final SurveyQuestionMapper questionMapper;
     private final SurveyResponseMapper responseMapper;
+    private final SurveyAnswerMapper answerMapper;
+
+    // Utils
     private final SecurityUtils securityUtils;
 
     @Override
     public SurveyResponseDto getMainSurvey() {
         log.info("Fetching main survey for admin view");
-
         SurveyEntity mainSurvey = getMainSurveyEntity();
-        SurveyResponseDto responseDto = surveyMapper.toResponseDto(mainSurvey);
-
-        responseDto.setTotalResponses(surveyRepository.countResponsesBySurveyId(mainSurvey.getId()));
-        responseDto.setHasUserResponded(false);
-
-        return responseDto;
+        log.info("Main survey fetched successfully with ID: {}", mainSurvey.getId());
+        return surveyMapper.toResponseDto(mainSurvey);
     }
 
     @Override
     @Transactional
     public SurveyResponseDto updateMainSurvey(SurveyUpdateDto updateDto) {
-        log.info("Updating main survey");
+        log.info("Updating main survey with soft delete logic");
 
         SurveyEntity mainSurvey = getMainSurveyEntity();
 
-        if (updateDto.getTitle() != null) {
-            mainSurvey.setTitle(updateDto.getTitle());
-        }
-        if (updateDto.getDescription() != null) {
-            mainSurvey.setDescription(updateDto.getDescription());
-        }
+        // Update basic survey info using consolidated mapper
+        surveyMapper.updateSurveyFromDto(updateDto, mainSurvey);
 
         if (updateDto.getSections() != null) {
-            updateSections(mainSurvey, updateDto.getSections());
+            updateSectionsWithSoftDelete(mainSurvey, updateDto.getSections());
         }
 
         SurveyEntity savedSurvey = surveyRepository.save(mainSurvey);
@@ -86,131 +84,139 @@ public class SurveyServiceImpl implements SurveyService {
         return surveyMapper.toResponseDto(savedSurvey);
     }
 
-    private void updateSections(SurveyEntity survey, List<SurveySectionUpdateDto> sectionDtos) {
-        Map<Long, SurveySectionEntity> existingSectionsMap = survey.getSections().stream()
+    @Transactional
+    protected void updateSectionsWithSoftDelete(SurveyEntity survey, List<SurveySectionUpdateDto> sectionDtos) {
+        // Get all existing sections using repository method instead of entity method
+        List<SurveySectionEntity> allExistingSections = surveySectionRepository.findAllBySurveyId(survey.getId());
+        Map<Long, SurveySectionEntity> existingSectionsMap = allExistingSections.stream()
                 .filter(s -> s.getId() != null)
                 .collect(Collectors.toMap(SurveySectionEntity::getId, s -> s));
 
         Set<Long> sectionsToKeep = new HashSet<>();
-        int maxDisplayOrder = survey.getSections().stream()
-                .mapToInt(s -> s.getDisplayOrder() != null ? s.getDisplayOrder() : 1)
-                .max()
-                .orElse(0);
+        int maxDisplayOrder = surveySectionRepository.getMaxDisplayOrderBySurveyId(survey.getId());
 
         for (SurveySectionUpdateDto sectionDto : sectionDtos) {
             SurveySectionEntity section;
 
             if (sectionDto.getId() != null) {
+                // Updating existing section
                 section = existingSectionsMap.get(sectionDto.getId());
                 if (section == null) {
                     throw new NotFoundException("Section not found with ID: " + sectionDto.getId());
                 }
                 sectionsToKeep.add(sectionDto.getId());
 
-                if (sectionDto.getTitle() != null) {
-                    section.setTitle(sectionDto.getTitle());
+                // Reactivate if it was deleted
+                if (section.getStatus() == Status.DELETED) {
+                    section.setStatus(Status.ACTIVE);
                 }
-                if (sectionDto.getDescription() != null) {
-                    section.setDescription(sectionDto.getDescription());
-                }
-                if (sectionDto.getDisplayOrder() != null) {
-                    section.setDisplayOrder(sectionDto.getDisplayOrder());
-                }
-            } else {
-                section = new SurveySectionEntity();
-                section.setSurvey(survey);
-                survey.getSections().add(section);
 
-                section.setTitle(sectionDto.getTitle());
-                section.setDescription(sectionDto.getDescription());
-                section.setDisplayOrder(sectionDto.getDisplayOrder() != null ?
-                        sectionDto.getDisplayOrder() : (maxDisplayOrder == 0 ? 1 : maxDisplayOrder + 1));
+                // Update using consolidated mapper
+                sectionMapper.updateSectionFromDto(sectionDto, section);
+            } else {
+                // Creating new section using consolidated mapper
+                section = sectionMapper.createSectionFromDto(sectionDto);
+                section.setSurvey(survey);
+
+                if (section.getDisplayOrder() == null) {
+                    section.setDisplayOrder(maxDisplayOrder + 1);
+                }
+
+                // Add to survey's sections list
+                survey.getSections().add(section);
+                surveySectionRepository.save(section);
             }
 
             if (sectionDto.getQuestions() != null) {
-                updateQuestions(section, sectionDto.getQuestions());
+                updateQuestionsWithSoftDelete(section, sectionDto.getQuestions());
             }
         }
 
-        List<SurveySectionEntity> sectionsToRemove = survey.getSections().stream()
-                .filter(section -> section.getId() != null && !sectionsToKeep.contains(section.getId()))
-                .collect(Collectors.toList());
-
-        for (SurveySectionEntity sectionToRemove : sectionsToRemove) {
-            survey.getSections().remove(sectionToRemove);
-            surveySectionRepository.delete(sectionToRemove);
-        }
+        // Mark sections not in the update as deleted (soft delete)
+        markUnusedSectionsAsDeleted(allExistingSections, sectionsToKeep);
     }
 
-    private void updateQuestions(SurveySectionEntity section, List<SurveyQuestionUpdateDto> questionDtos) {
-        Map<Long, SurveyQuestionEntity> existingQuestionsMap = section.getQuestions().stream()
+    @Transactional
+    protected void updateQuestionsWithSoftDelete(SurveySectionEntity section, List<SurveyQuestionUpdateDto> questionDtos) {
+        // Get all existing questions using repository method instead of entity method
+        List<SurveyQuestionEntity> allExistingQuestions = surveyQuestionRepository.findAllBySectionId(section.getId());
+        Map<Long, SurveyQuestionEntity> existingQuestionsMap = allExistingQuestions.stream()
                 .filter(q -> q.getId() != null)
                 .collect(Collectors.toMap(SurveyQuestionEntity::getId, q -> q));
 
         Set<Long> questionsToKeep = new HashSet<>();
-        int maxDisplayOrder = section.getQuestions().stream()
-                .mapToInt(q -> q.getDisplayOrder() != null ? q.getDisplayOrder() : 1)
-                .max()
-                .orElse(0);
+        int maxDisplayOrder = surveyQuestionRepository.getMaxDisplayOrderBySectionId(section.getId());
 
         for (SurveyQuestionUpdateDto questionDto : questionDtos) {
             SurveyQuestionEntity question;
 
             if (questionDto.getId() != null) {
+                // Updating existing question
                 question = existingQuestionsMap.get(questionDto.getId());
                 if (question == null) {
                     throw new NotFoundException("Question not found with ID: " + questionDto.getId());
                 }
                 questionsToKeep.add(questionDto.getId());
 
-                if (questionDto.getQuestionText() != null) {
-                    question.setQuestionText(questionDto.getQuestionText());
+                // Reactivate if it was deleted
+                if (question.getStatus() == Status.DELETED) {
+                    question.setStatus(Status.ACTIVE);
                 }
-                if (questionDto.getQuestionType() != null) {
-                    question.setQuestionType(questionDto.getQuestionType());
-                }
-                if (questionDto.getRequired() != null) {
-                    question.setRequired(questionDto.getRequired());
-                }
-                if (questionDto.getDisplayOrder() != null) {
-                    question.setDisplayOrder(questionDto.getDisplayOrder());
-                }
-                if (questionDto.getMinRating() != null) {
-                    question.setMinRating(questionDto.getMinRating());
-                }
-                if (questionDto.getMaxRating() != null) {
-                    question.setMaxRating(questionDto.getMaxRating());
-                }
-                if (questionDto.getLeftLabel() != null) {
-                    question.setLeftLabel(questionDto.getLeftLabel());
-                }
-                if (questionDto.getRightLabel() != null) {
-                    question.setRightLabel(questionDto.getRightLabel());
-                }
-            } else {
-                question = new SurveyQuestionEntity();
-                question.setSection(section);
-                section.getQuestions().add(question);
 
-                question.setQuestionText(questionDto.getQuestionText());
-                question.setQuestionType(questionDto.getQuestionType());
-                question.setRequired(questionDto.getRequired() != null ? questionDto.getRequired() : false);
-                question.setDisplayOrder(questionDto.getDisplayOrder() != null ?
-                        questionDto.getDisplayOrder() : (maxDisplayOrder == 0 ? 1 : maxDisplayOrder + 1));
-                question.setMinRating(questionDto.getMinRating() != null ? questionDto.getMinRating() : 1);
-                question.setMaxRating(questionDto.getMaxRating() != null ? questionDto.getMaxRating() : 5);
-                question.setLeftLabel(questionDto.getLeftLabel());
-                question.setRightLabel(questionDto.getRightLabel());
+                // Update using consolidated mapper
+                questionMapper.updateQuestionFromDto(questionDto, question);
+            } else {
+                // Creating new question using consolidated mapper
+                question = questionMapper.createQuestionFromDto(questionDto);
+                question.setSection(section);
+
+                if (question.getDisplayOrder() == null) {
+                    question.setDisplayOrder(maxDisplayOrder + 1);
+                }
+
+                // Add to section's questions list
+                section.getQuestions().add(question);
+                surveyQuestionRepository.save(question);
             }
         }
 
-        List<SurveyQuestionEntity> questionsToRemove = section.getQuestions().stream()
-                .filter(question -> question.getId() != null && !questionsToKeep.contains(question.getId()))
-                .collect(Collectors.toList());
+        // Mark questions not in the update as deleted (soft delete)
+        markUnusedQuestionsAsDeleted(allExistingQuestions, questionsToKeep);
+    }
 
-        for (SurveyQuestionEntity questionToRemove : questionsToRemove) {
-            section.getQuestions().remove(questionToRemove);
-            surveyQuestionRepository.delete(questionToRemove);
+    private void markUnusedSectionsAsDeleted(List<SurveySectionEntity> allSections, Set<Long> sectionsToKeep) {
+        for (SurveySectionEntity existingSection : allSections) {
+            if (existingSection.getId() != null &&
+                    !sectionsToKeep.contains(existingSection.getId()) &&
+                    existingSection.getStatus() == Status.ACTIVE) {
+
+                log.info("Soft deleting section with ID: {}", existingSection.getId());
+                existingSection.setStatus(Status.DELETED);
+
+                // Also soft delete all questions in this section
+                markAllQuestionsInSectionAsDeleted(existingSection.getId());
+            }
+        }
+    }
+
+    private void markUnusedQuestionsAsDeleted(List<SurveyQuestionEntity> allQuestions, Set<Long> questionsToKeep) {
+        for (SurveyQuestionEntity existingQuestion : allQuestions) {
+            if (existingQuestion.getId() != null &&
+                    !questionsToKeep.contains(existingQuestion.getId()) &&
+                    existingQuestion.getStatus() == Status.ACTIVE) {
+
+                log.info("Soft deleting question with ID: {}", existingQuestion.getId());
+                existingQuestion.setStatus(Status.DELETED);
+            }
+        }
+    }
+
+    private void markAllQuestionsInSectionAsDeleted(Long sectionId) {
+        List<SurveyQuestionEntity> questions = surveyQuestionRepository.findAllBySectionId(sectionId);
+        for (SurveyQuestionEntity question : questions) {
+            if (question.getStatus() == Status.ACTIVE) {
+                question.setStatus(Status.DELETED);
+            }
         }
     }
 
@@ -225,38 +231,53 @@ public class SurveyServiceImpl implements SurveyService {
         ScheduleEntity schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new NotFoundException("Schedule not found with ID: " + scheduleId));
 
-        if (surveyRepository.hasUserRespondedForSchedule(mainSurvey.getId(), currentUser.getId(), scheduleId)) {
+        // Check if user already responded using specification
+        if (hasUserRespondedToSurvey(currentUser.getId(), scheduleId, mainSurvey.getId())) {
             throw new BadRequestException("You have already responded to the survey for this schedule");
         }
 
-        SurveyResponseEntity response = new SurveyResponseEntity();
+        // Create response using consolidated mapper
+        SurveyResponseEntity response = surveyMapper.createResponseFromDto(submitDto);
         response.setSurvey(mainSurvey);
         response.setUser(currentUser);
         response.setSchedule(schedule);
-        response.setSubmittedAt(LocalDateTime.now());
-        response.setIsCompleted(true);
-        response.setOverallComment(submitDto.getOverallComment());
-        response.setOverallRating(submitDto.getOverallRating());
 
         SurveyResponseEntity savedResponse = surveyResponseRepository.save(response);
 
+        // Process answers
         if (submitDto.getAnswers() != null) {
-            for (var answerDto : submitDto.getAnswers()) {
-                SurveyQuestionEntity question = surveyQuestionRepository.findById(answerDto.getQuestionId())
-                        .orElseThrow(() -> new NotFoundException("Question not found with ID: " + answerDto.getQuestionId()));
-
-                SurveyAnswerEntity answer = new SurveyAnswerEntity();
-                answer.setResponse(savedResponse);
-                answer.setQuestion(question);
-                answer.setTextAnswer(answerDto.getTextAnswer());
-                answer.setRatingAnswer(answerDto.getRatingAnswer());
-
-                surveyAnswerRepository.save(answer);
-                savedResponse.getAnswers().add(answer);
-            }
+            processAnswers(savedResponse, submitDto);
         }
 
         return responseMapper.toStudentResponseDto(savedResponse);
+    }
+
+    private void processAnswers(SurveyResponseEntity response, SurveyResponseSubmitDto submitDto) {
+        for (var answerDto : submitDto.getAnswers()) {
+            // Find active question using specification
+            SurveyQuestionEntity question = findActiveQuestionById(answerDto.getQuestionId());
+
+            // Create answer using consolidated mapper
+            SurveyAnswerEntity answer = answerMapper.createAnswerFromDto(answerDto);
+            answer.setResponse(response);
+            answer.setQuestion(question);
+
+            surveyAnswerRepository.save(answer);
+            response.getAnswers().add(answer);
+        }
+    }
+
+    private SurveyQuestionEntity findActiveQuestionById(Long questionId) {
+        Specification<SurveyQuestionEntity> spec = Specification
+                .where(SurveyQuestionSpecification.hasId(questionId))
+                .and(SurveyQuestionSpecification.isActive());
+
+        return surveyQuestionRepository.findOne(spec)
+                .orElseThrow(() -> new NotFoundException("Active question not found with ID: " + questionId));
+    }
+
+    private boolean hasUserRespondedToSurvey(Long userId, Long scheduleId, Long surveyId) {
+        return surveyResponseRepository.existsByUserIdAndScheduleIdAndSurveyId(userId, scheduleId, surveyId);
     }
 
     @Override
@@ -278,17 +299,20 @@ public class SurveyServiceImpl implements SurveyService {
         UserEntity currentUser = securityUtils.getCurrentUser();
         SurveyEntity mainSurvey = getMainSurveyEntity();
 
-        boolean hasResponded = surveyRepository.hasUserRespondedForSchedule(
-                mainSurvey.getId(), currentUser.getId(), scheduleId);
-
+        boolean hasResponded = hasUserRespondedToSurvey(currentUser.getId(), scheduleId, mainSurvey.getId());
         return hasResponded ? SurveyStatus.COMPLETED : SurveyStatus.NOT_STARTED;
     }
 
     @Override
     public CustomPaginationResponseDto<StudentSurveyResponseDto> getScheduleSurveyResponses(Long scheduleId, int pageNo, int pageSize) {
         Pageable pageable = PaginationUtils.createPageable(pageNo, pageSize, "submittedAt", "DESC");
-        Page<SurveyResponseEntity> responsePage = surveyResponseRepository.findByScheduleId(scheduleId, pageable);
 
+        // Use specification for cleaner querying
+        Specification<SurveyResponseEntity> spec = Specification
+                .where(SurveyResponseSpecification.belongsToSchedule(scheduleId))
+                .and(SurveyResponseSpecification.orderBySubmittedAtDesc());
+
+        Page<SurveyResponseEntity> responsePage = surveyResponseRepository.findAll(spec, pageable);
         return responseMapper.toPaginationResponse(responsePage);
     }
 
@@ -300,13 +324,23 @@ public class SurveyServiceImpl implements SurveyService {
         return responseMapper.toDetailDto(response);
     }
 
+    @Override
+    public Boolean hasUserCompletedSurvey(Long userId, Long scheduleId) {
+        SurveyEntity mainSurvey = getMainSurveyEntity();
+        return hasUserRespondedToSurvey(userId, scheduleId, mainSurvey.getId());
+    }
+
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void initializeSurveyOnStartup() {
         try {
-            Optional<SurveyEntity> existingSurvey = surveyRepository.findByStatus(Status.ACTIVE);
+            // Use specification to find active survey
+            Specification<SurveyEntity> spec = SurveySpecification.isActive();
+            Optional<SurveyEntity> existingSurvey = surveyRepository.findOne(spec);
+
             if (existingSurvey.isEmpty()) {
-                createDefaultSurvey();
+                SurveyEntity defaultSurvey = createDefaultSurvey();
+                surveyRepository.save(defaultSurvey);
                 log.info("Default survey created successfully on application startup");
             }
         } catch (Exception e) {
@@ -314,90 +348,105 @@ public class SurveyServiceImpl implements SurveyService {
         }
     }
 
-    private void createDefaultSurvey() {
-        SurveyEntity mainSurvey = new SurveyEntity();
-        mainSurvey.setTitle("Student Course Evaluation Survey");
-        mainSurvey.setDescription("Please provide your feedback about your learning experience in this course");
-        mainSurvey.setStatus(Status.ACTIVE);
-        mainSurvey.setCreatedBy(null);
-
+    private SurveyEntity createDefaultSurvey() {
+        SurveyEntity mainSurvey = surveyMapper.createDefaultSurvey();
         createDefaultSurveyContent(mainSurvey);
-        surveyRepository.save(mainSurvey);
-    }
-
-    @Override
-    public Boolean hasUserCompletedSurvey(Long userId, Long scheduleId) {
-        SurveyEntity mainSurvey = getMainSurveyEntity();
-        return surveyRepository.hasUserRespondedForSchedule(mainSurvey.getId(), userId, scheduleId);
+        return mainSurvey;
     }
 
     private SurveyEntity getMainSurveyEntity() {
-        return surveyRepository.findByStatus(Status.ACTIVE)
+        Specification<SurveyEntity> spec = SurveySpecification.isActive();
+        return surveyRepository.findOne(spec)
                 .orElseThrow(() -> new NotFoundException("Main survey not found. Please contact administrator."));
     }
 
     private void createDefaultSurveyContent(SurveyEntity survey) {
-        SurveySectionEntity teachingSection = createSection("Teaching Quality",
-                "Please evaluate the teaching quality and methods", 1, survey);
-        SurveySectionEntity contentSection = createSection("Course Content",
-                "Please evaluate the course content and materials", 2, survey);
-        SurveySectionEntity environmentSection = createSection("Learning Environment",
-                "Please evaluate the learning environment and facilities", 3, survey);
-        SurveySectionEntity feedbackSection = createSection("Overall Feedback",
-                "Please provide your overall feedback and suggestions", 4, survey);
+        // Create sections using MapStruct helper methods
+        SurveySectionEntity teachingSection = createDefaultSection(survey, "Teaching Quality",
+                "Please evaluate the teaching quality and methods", 1);
+        SurveySectionEntity contentSection = createDefaultSection(survey, "Course Content",
+                "Please evaluate the course content and materials", 2);
+        SurveySectionEntity environmentSection = createDefaultSection(survey, "Learning Environment",
+                "Please evaluate the learning environment and facilities", 3);
+        SurveySectionEntity feedbackSection = createDefaultSection(survey, "Overall Feedback",
+                "Please provide your overall feedback and suggestions", 4);
 
-        addRatingQuestion(teachingSection, "How would you rate the instructor's knowledge of the subject?", 1);
-        addRatingQuestion(teachingSection, "How clear and well-organized were the lectures?", 2);
-        addRatingQuestion(teachingSection, "How effective was the instructor's teaching method?", 3);
-        addRatingQuestion(teachingSection, "How well did the instructor respond to student questions?", 4);
-
-        addRatingQuestion(contentSection, "How relevant was the course content to your learning objectives?", 1);
-        addRatingQuestion(contentSection, "How appropriate was the difficulty level of the course?", 2);
-        addRatingQuestion(contentSection, "How useful were the course materials and resources?", 3);
-        addRatingQuestion(contentSection, "How well were the learning objectives achieved?", 4);
-
-        addRatingQuestion(environmentSection, "How conducive was the classroom environment for learning?", 1);
-        addRatingQuestion(environmentSection, "How adequate were the facilities and equipment?", 2);
-        addRatingQuestion(environmentSection, "How reasonable was the workload for this course?", 3);
-
-        addRatingQuestion(feedbackSection, "How would you rate your overall learning experience?", 1);
-        addTextQuestion(feedbackSection, "What aspects of the course did you find most valuable?", 2);
-        addTextQuestion(feedbackSection, "What improvements would you suggest for this course?", 3);
-        addTextQuestion(feedbackSection, "Any additional comments or feedback?", 4);
+        // Add questions using MapStruct helper methods
+        addDefaultRatingQuestions(teachingSection);
+        addDefaultContentQuestions(contentSection);
+        addDefaultEnvironmentQuestions(environmentSection);
+        addDefaultFeedbackQuestions(feedbackSection);
 
         survey.getSections().addAll(Arrays.asList(teachingSection, contentSection, environmentSection, feedbackSection));
     }
 
-    private SurveySectionEntity createSection(String title, String description, int order, SurveyEntity survey) {
-        SurveySectionEntity section = new SurveySectionEntity();
-        section.setTitle(title);
-        section.setDescription(description);
-        section.setDisplayOrder(order);
+    private SurveySectionEntity createDefaultSection(SurveyEntity survey, String title, String description, int order) {
+        SurveySectionEntity section = sectionMapper.createSectionWithDefaults(title, description, order);
         section.setSurvey(survey);
         return section;
     }
 
-    private void addRatingQuestion(SurveySectionEntity section, String questionText, int order) {
-        SurveyQuestionEntity question = new SurveyQuestionEntity();
-        question.setQuestionText(questionText);
-        question.setQuestionType(QuestionTypeEnum.RATING);
-        question.setRequired(true);
-        question.setDisplayOrder(order);
-        question.setMinRating(1);
-        question.setMaxRating(5);
-        question.setLeftLabel("Poor");
-        question.setRightLabel("Excellent");
-        question.setSection(section);
-        section.getQuestions().add(question);
+    private void addDefaultRatingQuestions(SurveySectionEntity section) {
+        String[] questions = {
+                "How would you rate the instructor's knowledge of the subject?",
+                "How clear and well-organized were the lectures?",
+                "How effective was the instructor's teaching method?",
+                "How well did the instructor respond to student questions?"
+        };
+
+        for (int i = 0; i < questions.length; i++) {
+            SurveyQuestionEntity question = questionMapper.createRatingQuestion(questions[i], i + 1);
+            question.setSection(section);
+            section.getQuestions().add(question);
+        }
     }
 
-    private void addTextQuestion(SurveySectionEntity section, String questionText, int order) {
-        SurveyQuestionEntity question = new SurveyQuestionEntity();
-        question.setQuestionText(questionText);
-        question.setQuestionType(QuestionTypeEnum.TEXT);
-        question.setRequired(false);
-        question.setDisplayOrder(order);
-        question.setSection(section);
-        section.getQuestions().add(question);
+    private void addDefaultContentQuestions(SurveySectionEntity section) {
+        String[] questions = {
+                "How relevant was the course content to your learning objectives?",
+                "How appropriate was the difficulty level of the course?",
+                "How useful were the course materials and resources?",
+                "How well were the learning objectives achieved?"
+        };
+
+        for (int i = 0; i < questions.length; i++) {
+            SurveyQuestionEntity question = questionMapper.createRatingQuestion(questions[i], i + 1);
+            question.setSection(section);
+            section.getQuestions().add(question);
+        }
+    }
+
+    private void addDefaultEnvironmentQuestions(SurveySectionEntity section) {
+        String[] questions = {
+                "How conducive was the classroom environment for learning?",
+                "How adequate were the facilities and equipment?",
+                "How reasonable was the workload for this course?"
+        };
+
+        for (int i = 0; i < questions.length; i++) {
+            SurveyQuestionEntity question = questionMapper.createRatingQuestion(questions[i], i + 1);
+            question.setSection(section);
+            section.getQuestions().add(question);
+        }
+    }
+
+    private void addDefaultFeedbackQuestions(SurveySectionEntity section) {
+        // Mix of rating and text questions
+        SurveyQuestionEntity ratingQuestion = questionMapper.createRatingQuestion(
+                "How would you rate your overall learning experience?", 1);
+        ratingQuestion.setSection(section);
+        section.getQuestions().add(ratingQuestion);
+
+        String[] textQuestions = {
+                "What aspects of the course did you find most valuable?",
+                "What improvements would you suggest for this course?",
+                "Any additional comments or feedback?"
+        };
+
+        for (int i = 0; i < textQuestions.length; i++) {
+            SurveyQuestionEntity question = questionMapper.createTextQuestion(textQuestions[i], i + 2);
+            question.setSection(section);
+            section.getQuestions().add(question);
+        }
     }
 }
