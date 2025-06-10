@@ -54,16 +54,4 @@ public class StudentScheduleWithSurveyDto {
     // Additional Schedule Info
     private String semester;
     private Integer academicYear;
-    
-    // Computed properties
-    public String getTimeSlot() {
-        if (startTime != null && endTime != null) {
-            return startTime + " - " + endTime;
-        }
-        return null;
-    }
-    
-    public String getDayTimeDisplay() {
-        return dayOfWeek + " " + getTimeSlot();
-    }
 }

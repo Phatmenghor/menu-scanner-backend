@@ -31,9 +31,6 @@ public interface SurveyService {
     // Get detailed survey response (admin/staff)
     SurveyResponseDetailDto getStudentResponseDetail(Long responseId);
 
-    // Get survey statistics for admin
-    SurveyStatisticsDto getSurveyStatistics(Long scheduleId);
-
     // Check if user has completed survey for schedule
     Boolean hasUserCompletedSurvey(Long userId, Long scheduleId);
 }

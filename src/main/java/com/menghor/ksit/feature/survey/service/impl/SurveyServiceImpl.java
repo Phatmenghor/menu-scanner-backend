@@ -300,39 +300,6 @@ public class SurveyServiceImpl implements SurveyService {
         return responseMapper.toDetailDto(response);
     }
 
-    @Override
-    public SurveyStatisticsDto getSurveyStatistics(Long scheduleId) {
-        ScheduleEntity schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new NotFoundException("Schedule not found with ID: " + scheduleId));
-
-        SurveyEntity mainSurvey = getMainSurveyEntity();
-
-        Integer totalStudents = scheduleRepository.countStudentsByScheduleId(scheduleId);
-        Integer completedResponses = surveyRepository.countResponsesBySurveyIdAndScheduleId(
-                mainSurvey.getId(), scheduleId);
-
-        Double completionRate = totalStudents > 0 ?
-                (completedResponses.doubleValue() / totalStudents.doubleValue()) * 100 : 0.0;
-
-        Double averageRating = surveyRepository.getAverageRatingForSchedule(mainSurvey.getId(), scheduleId);
-
-        Integer totalQuestions = mainSurvey.getSections().stream()
-                .mapToInt(section -> section.getQuestions().size())
-                .sum();
-
-        SurveyStatisticsDto statistics = new SurveyStatisticsDto();
-        statistics.setScheduleId(scheduleId);
-        statistics.setScheduleName(schedule.getCourse().getCode() + " - " + schedule.getClasses().getCode());
-        statistics.setTotalStudents(totalStudents);
-        statistics.setCompletedResponses(completedResponses);
-        statistics.setPendingResponses(totalStudents - completedResponses);
-        statistics.setCompletionRate(Math.round(completionRate * 100.0) / 100.0);
-        statistics.setAverageRating(averageRating != null ? Math.round(averageRating * 100.0) / 100.0 : null);
-        statistics.setTotalQuestions(totalQuestions);
-
-        return statistics;
-    }
-
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void initializeSurveyOnStartup() {

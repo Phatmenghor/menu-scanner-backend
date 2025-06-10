@@ -105,15 +105,4 @@ public class SurveyController {
         return ApiResponse.success("Survey response detail fetched successfully", response);
     }
 
-    /**
-     * Get survey statistics for a schedule (Admin/Staff only)
-     */
-    @GetMapping("/schedule/{scheduleId}/statistics")
-    public ApiResponse<SurveyStatisticsDto> getSurveyStatistics(@PathVariable Long scheduleId) {
-        log.info("Fetching survey statistics for schedule ID: {}", scheduleId);
-        SurveyStatisticsDto statistics = surveyService.getSurveyStatistics(scheduleId);
-        log.info("Survey statistics fetched successfully for schedule: {}", scheduleId);
-        return ApiResponse.success("Survey statistics fetched successfully", statistics);
-    }
-
 }
