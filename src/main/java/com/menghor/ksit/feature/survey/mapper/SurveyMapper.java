@@ -6,10 +6,10 @@ import com.menghor.ksit.feature.survey.model.SurveyEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = {RequestMapper.class, SurveySectionMapper.class})
+@Mapper(componentModel = "spring", uses = {SurveySectionMapper.class})
 public interface SurveyMapper {
 
-    @Mapping(target = "createdBy", source = "createdBy")
+    @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "sections", source = "sections")
     @Mapping(target = "totalResponses", ignore = true)
     @Mapping(target = "hasUserResponded", ignore = true)

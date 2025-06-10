@@ -37,14 +37,11 @@ public class SurveyResponseEntity extends BaseEntity {
     private Status status = Status.ACTIVE;
 
     private Boolean isCompleted = false;
-
-    // Overall rating/score if applicable
     private Double overallRating;
 
     @Column(columnDefinition = "TEXT")
     private String overallComment;
 
-    // Individual answers
     @OneToMany(mappedBy = "response", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SurveyAnswerEntity> answers = new ArrayList<>();
 

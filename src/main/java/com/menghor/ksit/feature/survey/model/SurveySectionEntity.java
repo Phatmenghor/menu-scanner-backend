@@ -21,14 +21,13 @@ public class SurveySectionEntity extends BaseEntity {
     private String description;
 
     @Column(nullable = false)
-    private Integer displayOrder = 0;
+    private Integer displayOrder = 1;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_id", nullable = false)
     private SurveyEntity survey;
 
-    // Questions in this section
     @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("displayOrder ASC")
+    @OrderBy("displayOrder ASC, id ASC")
     private List<SurveyQuestionEntity> questions = new ArrayList<>();
 }

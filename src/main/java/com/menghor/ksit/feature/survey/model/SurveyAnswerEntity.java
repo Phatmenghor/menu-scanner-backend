@@ -19,10 +19,8 @@ public class SurveyAnswerEntity extends BaseEntity {
     @JoinColumn(name = "question_id", nullable = false)
     private SurveyQuestionEntity question;
 
-    // For TEXT type questions
     @Column(columnDefinition = "TEXT")
     private String textAnswer;
 
-    // For RATING type questions
     private Integer ratingAnswer;
 }

@@ -13,6 +13,4 @@ public interface SurveyAnswerMapper {
     @Mapping(target = "questionId", source = "question.id")
     @Mapping(target = "questionText", source = "question.questionText")
     StudentSurveyAnswerDto toStudentAnswerDto(SurveyAnswerEntity entity);
-
-    List<StudentSurveyAnswerDto> toStudentAnswerDtoList(List<SurveyAnswerEntity> entities);
 }

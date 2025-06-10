@@ -26,19 +26,17 @@ public class SurveyQuestionEntity extends BaseEntity {
     private Boolean required = false;
 
     @Column(nullable = false)
-    private Integer displayOrder = 0;
+    private Integer displayOrder = 1;
 
-    // For RATING type questions
     private Integer minRating = 1;
     private Integer maxRating = 5;
-    private String leftLabel;  // e.g., "Strongly Disagree"
-    private String rightLabel; // e.g., "Strongly Agree"
+    private String leftLabel;
+    private String rightLabel;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id", nullable = false)
     private SurveySectionEntity section;
 
-    // Answers to this question
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SurveyAnswerEntity> answers = new ArrayList<>();
 }

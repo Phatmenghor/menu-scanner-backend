@@ -34,17 +34,6 @@ public class SurveyController {
     }
 
     /**
-     * Get survey for a specific schedule (student view)
-     */
-    @GetMapping("/schedule/{scheduleId}")
-    public ApiResponse<SurveyResponseDto> getSurveyForSchedule(@PathVariable Long scheduleId) {
-        log.info("Fetching survey for schedule ID: {}", scheduleId);
-        SurveyResponseDto response = surveyService.getSurveyForSchedule(scheduleId);
-        log.info("Survey fetched successfully for schedule: {}", scheduleId);
-        return ApiResponse.success("Survey fetched successfully", response);
-    }
-
-    /**
      * Update main survey content (Admin/Staff only)
      */
     @PutMapping("/main")
@@ -127,25 +116,4 @@ public class SurveyController {
         return ApiResponse.success("Survey statistics fetched successfully", statistics);
     }
 
-    /**
-     * Get all student schedules with survey status
-     */
-    @GetMapping("/my-schedules")
-    public ApiResponse<List<StudentScheduleWithSurveyDto>> getMySchedulesWithSurveyStatus() {
-        log.info("Fetching current user's schedules with survey status");
-        List<StudentScheduleWithSurveyDto> schedules = surveyService.getMySchedulesWithSurveyStatus();
-        log.info("Fetched {} schedules with survey status", schedules.size());
-        return ApiResponse.success("Your schedules with survey status fetched successfully", schedules);
-    }
-
-    /**
-     * Get survey dashboard for admin
-     */
-    @GetMapping("/dashboard")
-    public ApiResponse<SurveyDashboardDto> getSurveyDashboard() {
-        log.info("Fetching survey dashboard data");
-        SurveyDashboardDto dashboard = surveyService.getSurveyDashboard();
-        log.info("Survey dashboard data fetched successfully");
-        return ApiResponse.success("Survey dashboard data fetched successfully", dashboard);
-    }
 }

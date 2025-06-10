@@ -29,7 +29,4 @@ public interface SurveyRepository extends JpaRepository<SurveyEntity, Long> {
             "AND (:scheduleId IS NULL OR sr.schedule.id = :scheduleId) " +
             "AND sa.ratingAnswer IS NOT NULL")
     Double getAverageRatingForSchedule(@Param("surveyId") Long surveyId, @Param("scheduleId") Long scheduleId);
-
-    @Query("SELECT COUNT(DISTINCT sr.user.id) FROM SurveyResponseEntity sr WHERE sr.survey.id = :surveyId")
-    Integer countUniqueRespondents(@Param("surveyId") Long surveyId);
 }

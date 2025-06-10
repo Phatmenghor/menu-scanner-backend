@@ -27,21 +27,18 @@ public class SurveyEntity extends BaseEntity {
     @Column(nullable = false)
     private Status status = Status.ACTIVE;
 
-    // Creator of the survey (typically admin/staff)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false)
+    @JoinColumn(name = "created_by")
     private UserEntity createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id")
     private ScheduleEntity schedule;
 
-    // Survey sections
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("displayOrder ASC")
+    @OrderBy("displayOrder ASC, id ASC")
     private List<SurveySectionEntity> sections = new ArrayList<>();
 
-    // Survey responses
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SurveyResponseEntity> responses = new ArrayList<>();
 }

@@ -13,9 +13,6 @@ public interface SurveyService {
     // Get the main survey (admin view with all details)
     SurveyResponseDto getMainSurvey();
 
-    // Get survey for specific schedule (student view)
-    SurveyResponseDto getSurveyForSchedule(Long scheduleId);
-
     // Update the main survey content (admin only)
     SurveyResponseDto updateMainSurvey(SurveyUpdateDto updateDto);
 
@@ -37,15 +34,6 @@ public interface SurveyService {
     // Get survey statistics for admin
     SurveyStatisticsDto getSurveyStatistics(Long scheduleId);
 
-    // Initialize default survey if not exists
-    void initializeMainSurvey();
-
     // Check if user has completed survey for schedule
     Boolean hasUserCompletedSurvey(Long userId, Long scheduleId);
-
-    // Get student schedules with survey status
-    List<StudentScheduleWithSurveyDto> getMySchedulesWithSurveyStatus();
-
-    // Get survey dashboard for admin
-    SurveyDashboardDto getSurveyDashboard();
 }
