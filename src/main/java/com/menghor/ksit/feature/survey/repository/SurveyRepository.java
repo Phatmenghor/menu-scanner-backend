@@ -25,7 +25,11 @@ public interface SurveyRepository extends JpaRepository<SurveyEntity, Long> {
     Boolean hasUserRespondedForSchedule(@Param("surveyId") Long surveyId, @Param("userId") Long userId, @Param("scheduleId") Long scheduleId);
 
     @Query("SELECT AVG(sa.ratingAnswer) FROM SurveyAnswerEntity sa " +
-            "JOIN sa.response sr WHERE sr.survey.id = :surveyId AND sr.schedule.id = :scheduleId " +
+            "JOIN sa.response sr WHERE sr.survey.id = :surveyId " +
+            "AND (:scheduleId IS NULL OR sr.schedule.id = :scheduleId) " +
             "AND sa.ratingAnswer IS NOT NULL")
     Double getAverageRatingForSchedule(@Param("surveyId") Long surveyId, @Param("scheduleId") Long scheduleId);
+
+    @Query("SELECT COUNT(DISTINCT sr.user.id) FROM SurveyResponseEntity sr WHERE sr.survey.id = :surveyId")
+    Integer countUniqueRespondents(@Param("surveyId") Long surveyId);
 }

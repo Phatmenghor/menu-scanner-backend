@@ -3,10 +3,7 @@ package com.menghor.ksit.feature.survey.controller;
 import com.menghor.ksit.enumations.SurveyStatus;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
-import com.menghor.ksit.feature.survey.dto.response.StudentSurveyResponseDto;
-import com.menghor.ksit.feature.survey.dto.response.SurveyResponseDetailDto;
-import com.menghor.ksit.feature.survey.dto.response.SurveyResponseDto;
-import com.menghor.ksit.feature.survey.dto.response.SurveyStatisticsDto;
+import com.menghor.ksit.feature.survey.dto.response.*;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
 import com.menghor.ksit.feature.survey.service.SurveyService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
@@ -14,6 +11,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -137,5 +136,27 @@ public class SurveyController {
         surveyService.initializeMainSurvey();
         log.info("Main survey initialized successfully");
         return ApiResponse.success("Main survey initialized successfully", "Survey is ready for use");
+    }
+
+    /**
+     * Get all student schedules with survey status
+     */
+    @GetMapping("/my-schedules")
+    public ApiResponse<List<StudentScheduleWithSurveyDto>> getMySchedulesWithSurveyStatus() {
+        log.info("Fetching current user's schedules with survey status");
+        List<StudentScheduleWithSurveyDto> schedules = surveyService.getMySchedulesWithSurveyStatus();
+        log.info("Fetched {} schedules with survey status", schedules.size());
+        return ApiResponse.success("Your schedules with survey status fetched successfully", schedules);
+    }
+
+    /**
+     * Get survey dashboard for admin
+     */
+    @GetMapping("/dashboard")
+    public ApiResponse<SurveyDashboardDto> getSurveyDashboard() {
+        log.info("Fetching survey dashboard data");
+        SurveyDashboardDto dashboard = surveyService.getSurveyDashboard();
+        log.info("Survey dashboard data fetched successfully");
+        return ApiResponse.success("Survey dashboard data fetched successfully", dashboard);
     }
 }

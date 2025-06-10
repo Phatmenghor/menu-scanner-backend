@@ -9,8 +9,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ScheduleRepository extends JpaRepository<ScheduleEntity, Long>, JpaSpecificationExecutor<ScheduleEntity> {
+
     /**
      * Find schedules for a specific student (based on class enrollment)
      */
@@ -18,7 +21,7 @@ public interface ScheduleRepository extends JpaRepository<ScheduleEntity, Long>,
             "JOIN s.classes c " +
             "JOIN c.students st " +
             "WHERE st.id = :studentId " +
-            "ORDER BY s.startTime DESC")
+            "ORDER BY s.day ASC, s.startTime ASC")
     Page<ScheduleEntity> findByStudentId(@Param("studentId") Long studentId, Pageable pageable);
 
     /**
@@ -33,9 +36,27 @@ public interface ScheduleRepository extends JpaRepository<ScheduleEntity, Long>,
     /**
      * Count students in a schedule
      */
-    @Query("SELECT COUNT(st) FROM ScheduleEntity s " +
+    @Query("SELECT COUNT(DISTINCT st.id) FROM ScheduleEntity s " +
             "JOIN s.classes c " +
             "JOIN c.students st " +
             "WHERE s.id = :scheduleId")
     Integer countStudentsByScheduleId(@Param("scheduleId") Long scheduleId);
+
+    /**
+     * Count total students across all schedules
+     */
+    @Query("SELECT COUNT(DISTINCT st.id) FROM ScheduleEntity s " +
+            "JOIN s.classes c " +
+            "JOIN c.students st")
+    Long countTotalStudents();
+
+    /**
+     * Find schedules by student ID
+     */
+    @Query("SELECT s FROM ScheduleEntity s " +
+            "JOIN s.classes c " +
+            "JOIN c.students st " +
+            "WHERE st.id = :studentId " +
+            "ORDER BY s.day, s.startTime")
+    List<ScheduleEntity> findSchedulesByStudentId(@Param("studentId") Long studentId);
 }

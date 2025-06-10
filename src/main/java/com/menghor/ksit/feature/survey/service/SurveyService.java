@@ -6,6 +6,8 @@ import com.menghor.ksit.feature.survey.dto.response.*;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 
+import java.util.List;
+
 public interface SurveyService {
 
     // Get the main survey (admin view with all details)
@@ -40,4 +42,10 @@ public interface SurveyService {
 
     // Check if user has completed survey for schedule
     Boolean hasUserCompletedSurvey(Long userId, Long scheduleId);
+
+    // Get student schedules with survey status
+    List<StudentScheduleWithSurveyDto> getMySchedulesWithSurveyStatus();
+
+    // Get survey dashboard for admin
+    SurveyDashboardDto getSurveyDashboard();
 }

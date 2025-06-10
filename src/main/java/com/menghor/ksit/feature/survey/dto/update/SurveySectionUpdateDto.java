@@ -10,10 +10,7 @@ import java.util.List;
 @Data
 public class SurveySectionUpdateDto {
     private Long id; // For updating existing sections
-
-    @NotBlank(message = "Section title is required")
     private String title;
-
     private String description;
     private Integer displayOrder = 0;
 

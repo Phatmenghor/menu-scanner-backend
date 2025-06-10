@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -27,4 +28,24 @@ public interface SurveyResponseRepository extends JpaRepository<SurveyResponseEn
 
     // Get responses by user
     Page<SurveyResponseEntity> findByUserId(Long userId, Pageable pageable);
+
+    // Count responses by schedule
+    Long countByScheduleId(Long scheduleId);
+
+    // Count completed responses by schedule
+    @Query("SELECT COUNT(sr) FROM SurveyResponseEntity sr WHERE sr.schedule.id = :scheduleId AND sr.isCompleted = :completed")
+    Long countByScheduleIdAndCompletionStatus(@Param("scheduleId") Long scheduleId, @Param("completed") Boolean completed);
+
+    // Get average overall rating by schedule
+    @Query("SELECT AVG(sr.overallRating) FROM SurveyResponseEntity sr WHERE sr.schedule.id = :scheduleId AND sr.overallRating IS NOT NULL")
+    Optional<Double> getAverageOverallRatingByScheduleId(@Param("scheduleId") Long scheduleId);
+
+    // Get all responses for a survey with user and schedule info
+    @Query("SELECT sr FROM SurveyResponseEntity sr " +
+            "JOIN FETCH sr.user u " +
+            "JOIN FETCH sr.schedule s " +
+            "JOIN FETCH s.course c " +
+            "JOIN FETCH s.classes cl " +
+            "WHERE sr.survey.id = :surveyId")
+    List<SurveyResponseEntity> findAllBySurveyIdWithDetails(@Param("surveyId") Long surveyId);
 }

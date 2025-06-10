@@ -6,6 +6,7 @@ import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.enumations.SurveyStatus;
 import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
+import com.menghor.ksit.feature.auth.dto.resposne.UserBasicInfoDto;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.school.model.ScheduleEntity;
@@ -29,7 +30,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -64,18 +67,11 @@ public class SurveyServiceImpl implements SurveyService {
     public SurveyResponseDto getSurveyForSchedule(Long scheduleId) {
         log.info("Fetching survey for schedule ID: {}", scheduleId);
 
-        // Verify schedule exists and user has access
+        // Verify schedule exists
         ScheduleEntity schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new NotFoundException("Schedule not found with ID: " + scheduleId));
 
         UserEntity currentUser = securityUtils.getCurrentUser();
-
-        // Verify student is enrolled in this schedule
-        if (!isStudentEnrolledInSchedule(currentUser.getId(), scheduleId)) {
-            log.info("User {} is not enrolled in schedule {}", currentUser.getId(), scheduleId);
-//            throw new BadRequestException("You are not enrolled in this schedule");
-        }
-
         SurveyEntity mainSurvey = getMainSurveyEntity();
         SurveyResponseDto responseDto = surveyMapper.toResponseDto(mainSurvey);
 
@@ -94,16 +90,6 @@ public class SurveyServiceImpl implements SurveyService {
         log.info("Updating main survey with title: {}", updateDto.getTitle());
 
         UserEntity currentUser = securityUtils.getCurrentUser();
-
-        // Check if user has admin/staff privileges
-        boolean hasAdminRole = currentUser.getRoles().stream()
-                .map(Role::getName)
-                .anyMatch(role -> role == RoleEnum.ADMIN || role == RoleEnum.DEVELOPER || role == RoleEnum.STAFF);
-
-        if (!hasAdminRole) {
-            throw new BadRequestException("Only admin/staff can update surveys");
-        }
-
         SurveyEntity mainSurvey = getMainSurveyEntity();
 
         // Update basic fields
@@ -170,11 +156,6 @@ public class SurveyServiceImpl implements SurveyService {
         // Check if user already responded for this schedule
         if (surveyRepository.hasUserRespondedForSchedule(mainSurvey.getId(), currentUser.getId(), scheduleId)) {
             throw new BadRequestException("You have already responded to the survey for this schedule");
-        }
-
-        // Verify student is enrolled in this schedule
-        if (!isStudentEnrolledInSchedule(currentUser.getId(), scheduleId)) {
-            throw new BadRequestException("You are not enrolled in this schedule");
         }
 
         // Create survey response
@@ -256,7 +237,7 @@ public class SurveyServiceImpl implements SurveyService {
         SurveyResponseEntity response = surveyResponseRepository.findById(responseId)
                 .orElseThrow(() -> new NotFoundException("Survey response not found with ID: " + responseId));
 
-        // Build detailed response DTO
+        // Build detailed response DTO manually for complete control
         SurveyResponseDetailDto detailDto = new SurveyResponseDetailDto();
         detailDto.setId(response.getId());
         detailDto.setSurveyId(response.getSurvey().getId());
@@ -264,6 +245,37 @@ public class SurveyServiceImpl implements SurveyService {
         detailDto.setSubmittedAt(response.getSubmittedAt());
         detailDto.setIsCompleted(response.getIsCompleted());
         detailDto.setCreatedAt(response.getCreatedAt());
+
+        // Map student info
+        UserBasicInfoDto studentInfo = new UserBasicInfoDto();
+        studentInfo.setId(response.getUser().getId());
+        studentInfo.setUsername(response.getUser().getUsername());
+        studentInfo.setEnglishFirstName(response.getUser().getEnglishFirstName());
+        studentInfo.setEnglishLastName(response.getUser().getEnglishLastName());
+        studentInfo.setKhmerFirstName(response.getUser().getKhmerFirstName());
+        studentInfo.setKhmerLastName(response.getUser().getKhmerLastName());
+        studentInfo.setIdentifyNumber(response.getUser().getIdentifyNumber());
+        detailDto.setStudent(studentInfo);
+
+        // Map schedule info
+        ScheduleBasicInfoDto scheduleInfo = new ScheduleBasicInfoDto();
+        scheduleInfo.setId(response.getSchedule().getId());
+        scheduleInfo.setCourseName(response.getSchedule().getCourse().getNameEn());
+        scheduleInfo.setCourseCode(response.getSchedule().getCourse().getCode());
+        scheduleInfo.setClassName(response.getSchedule().getClasses().getCode());
+        scheduleInfo.setRoomName(response.getSchedule().getRoom().getName());
+        scheduleInfo.setDayOfWeek(response.getSchedule().getDay());
+        scheduleInfo.setStartTime(response.getSchedule().getStartTime());
+        scheduleInfo.setEndTime(response.getSchedule().getEndTime());
+
+        // Set teacher name
+        UserEntity teacher = response.getSchedule().getUser();
+        if (teacher != null) {
+            String teacherName = getFormattedUserName(teacher);
+            scheduleInfo.setTeacherName(teacherName);
+        }
+
+        detailDto.setSchedule(scheduleInfo);
 
         // Set answer details
         var answerDetails = response.getAnswers().stream()
@@ -325,8 +337,8 @@ public class SurveyServiceImpl implements SurveyService {
         statistics.setTotalStudents(totalStudents);
         statistics.setCompletedResponses(completedResponses);
         statistics.setPendingResponses(totalStudents - completedResponses);
-        statistics.setCompletionRate(completionRate);
-        statistics.setAverageRating(averageRating);
+        statistics.setCompletionRate(Math.round(completionRate * 100.0) / 100.0);
+        statistics.setAverageRating(averageRating != null ? Math.round(averageRating * 100.0) / 100.0 : null);
         statistics.setTotalQuestions(totalQuestions);
 
         return statistics;
@@ -370,6 +382,100 @@ public class SurveyServiceImpl implements SurveyService {
         return surveyRepository.hasUserRespondedForSchedule(mainSurvey.getId(), userId, scheduleId);
     }
 
+    @Override
+    public List<StudentScheduleWithSurveyDto> getMySchedulesWithSurveyStatus() {
+        log.info("Fetching current user's schedules with survey status");
+
+        UserEntity currentUser = securityUtils.getCurrentUser();
+        SurveyEntity mainSurvey = getMainSurveyEntity();
+
+        // Get user's schedules
+        Pageable pageable = PaginationUtils.createPageable(1, 1000, "startTime", "ASC");
+        Page<ScheduleEntity> schedulePage = scheduleRepository.findByStudentId(currentUser.getId(), pageable);
+
+        return schedulePage.getContent().stream()
+                .map(schedule -> {
+                    StudentScheduleWithSurveyDto dto = new StudentScheduleWithSurveyDto();
+
+                    // Basic schedule info
+                    dto.setScheduleId(schedule.getId());
+                    dto.setCourseName(schedule.getCourse().getNameEn());
+                    dto.setCourseCode(schedule.getCourse().getCode());
+                    dto.setClassName(schedule.getClasses().getCode());
+                    dto.setRoomName(schedule.getRoom().getName());
+                    dto.setDayOfWeek(schedule.getDay());
+                    dto.setStartTime(schedule.getStartTime());
+                    dto.setEndTime(schedule.getEndTime());
+
+                    // Teacher info
+                    UserEntity teacher = schedule.getUser();
+                    if (teacher != null) {
+                        dto.setTeacherName(getFormattedUserName(teacher));
+                        dto.setTeacherEmail(teacher.getEmail());
+                    }
+
+                    // Semester info
+                    if (schedule.getSemester() != null) {
+                        dto.setSemester(schedule.getSemester().getSemester().name());
+                        dto.setAcademicYear(schedule.getSemester().getAcademyYear());
+                        dto.setStartDate(schedule.getSemester().getStartDate());
+                        dto.setEndDate(schedule.getSemester().getEndDate());
+                    }
+
+                    // Survey status
+                    boolean hasResponded = surveyRepository.hasUserRespondedForSchedule(
+                            mainSurvey.getId(), currentUser.getId(), schedule.getId());
+                    dto.setSurveyStatus(hasResponded ? SurveyStatus.COMPLETED : SurveyStatus.NOT_STARTED);
+
+                    // If completed, get submission date and response ID
+                    if (hasResponded) {
+                        Optional<SurveyResponseEntity> responseOpt = surveyResponseRepository
+                                .findByUserIdAndScheduleId(currentUser.getId(), schedule.getId());
+                        if (responseOpt.isPresent()) {
+                            dto.setSurveySubmittedDate(responseOpt.get().getSubmittedAt());
+                            dto.setSurveyResponseId(responseOpt.get().getId());
+                        }
+                    }
+
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public SurveyDashboardDto getSurveyDashboard() {
+        log.info("Fetching survey dashboard data");
+
+        SurveyEntity mainSurvey = getMainSurveyEntity();
+
+        // Get total responses across all schedules
+        Integer totalResponses = surveyRepository.countResponsesBySurveyId(mainSurvey.getId());
+
+        // Get total students across all schedules
+        Long totalStudents = scheduleRepository.countTotalStudents();
+
+        // Calculate overall completion rate
+        Double overallCompletionRate = totalStudents > 0 ?
+                (totalResponses.doubleValue() / totalStudents.doubleValue()) * 100 : 0.0;
+
+        // Get average rating across all responses
+        Double averageRating = surveyRepository.getAverageRatingForSchedule(mainSurvey.getId(), null);
+
+        // Get total schedules
+        Long totalSchedules = scheduleRepository.count();
+
+        SurveyDashboardDto dashboard = new SurveyDashboardDto();
+        dashboard.setSurveyTitle(mainSurvey.getTitle());
+        dashboard.setTotalResponses(totalResponses);
+        dashboard.setTotalStudents(totalStudents.intValue());
+        dashboard.setTotalSchedules(totalSchedules.intValue());
+        dashboard.setOverallCompletionRate(Math.round(overallCompletionRate * 100.0) / 100.0);
+        dashboard.setAverageRating(averageRating != null ? Math.round(averageRating * 100.0) / 100.0 : null);
+        dashboard.setPendingResponses(totalStudents.intValue() - totalResponses);
+
+        return dashboard;
+    }
+
     // Private helper methods
 
     private SurveyEntity getMainSurveyEntity() {
@@ -380,60 +486,95 @@ public class SurveyServiceImpl implements SurveyService {
                 });
     }
 
-    private boolean isStudentEnrolledInSchedule(Long studentId, Long scheduleId) {
-        return scheduleRepository.existsByIdAndClassesStudentsId(scheduleId, studentId);
+    private String getFormattedUserName(UserEntity user) {
+        if (user.getEnglishFirstName() != null && user.getEnglishLastName() != null) {
+            return user.getEnglishFirstName() + " " + user.getEnglishLastName();
+        }
+        if (user.getKhmerFirstName() != null && user.getKhmerLastName() != null) {
+            return user.getKhmerFirstName() + " " + user.getKhmerLastName();
+        }
+        return user.getUsername();
     }
 
     private void createDefaultSurveyContent(SurveyEntity survey) {
-        // Create a default section
-        SurveySectionEntity defaultSection = new SurveySectionEntity();
-        defaultSection.setTitle("Course Evaluation");
-        defaultSection.setDescription("Please evaluate your experience with this course");
-        defaultSection.setDisplayOrder(0);
-        defaultSection.setSurvey(survey);
+        // Create Teaching Quality section
+        SurveySectionEntity teachingSection = new SurveySectionEntity();
+        teachingSection.setTitle("Teaching Quality");
+        teachingSection.setDescription("Please evaluate the teaching quality and methods");
+        teachingSection.setDisplayOrder(0);
+        teachingSection.setSurvey(survey);
 
-        // Create default questions
-        SurveyQuestionEntity question1 = new SurveyQuestionEntity();
-        question1.setQuestionText("How would you rate your overall learning experience?");
-        question1.setQuestionType(QuestionTypeEnum.RATING);
-        question1.setRequired(true);
-        question1.setDisplayOrder(0);
-        question1.setMinRating(1);
-        question1.setMaxRating(5);
-        question1.setLeftLabel("Poor");
-        question1.setRightLabel("Excellent");
-        question1.setSection(defaultSection);
+        // Create Course Content section
+        SurveySectionEntity contentSection = new SurveySectionEntity();
+        contentSection.setTitle("Course Content");
+        contentSection.setDescription("Please evaluate the course content and materials");
+        contentSection.setDisplayOrder(1);
+        contentSection.setSurvey(survey);
 
-        SurveyQuestionEntity question2 = new SurveyQuestionEntity();
-        question2.setQuestionText("How would you rate the teaching quality?");
-        question2.setQuestionType(QuestionTypeEnum.RATING);
-        question2.setRequired(true);
-        question2.setDisplayOrder(1);
-        question2.setMinRating(1);
-        question2.setMaxRating(5);
-        question2.setLeftLabel("Poor");
-        question2.setRightLabel("Excellent");
-        question2.setSection(defaultSection);
+        // Create Learning Environment section
+        SurveySectionEntity environmentSection = new SurveySectionEntity();
+        environmentSection.setTitle("Learning Environment");
+        environmentSection.setDescription("Please evaluate the learning environment and facilities");
+        environmentSection.setDisplayOrder(2);
+        environmentSection.setSurvey(survey);
 
-        SurveyQuestionEntity question3 = new SurveyQuestionEntity();
-        question3.setQuestionText("What aspects of the course did you find most valuable?");
-        question3.setQuestionType(QuestionTypeEnum.TEXT);
-        question3.setRequired(false);
-        question3.setDisplayOrder(2);
-        question3.setSection(defaultSection);
+        // Create Overall Feedback section
+        SurveySectionEntity feedbackSection = new SurveySectionEntity();
+        feedbackSection.setTitle("Overall Feedback");
+        feedbackSection.setDescription("Please provide your overall feedback and suggestions");
+        feedbackSection.setDisplayOrder(3);
+        feedbackSection.setSurvey(survey);
 
-        SurveyQuestionEntity question4 = new SurveyQuestionEntity();
-        question4.setQuestionText("Any additional comments or suggestions?");
-        question4.setQuestionType(QuestionTypeEnum.TEXT);
-        question4.setRequired(false);
-        question4.setDisplayOrder(3);
-        question4.setSection(defaultSection);
+        // Teaching Quality questions
+        addRatingQuestion(teachingSection, "How would you rate the instructor's knowledge of the subject?", 0);
+        addRatingQuestion(teachingSection, "How clear and well-organized were the lectures?", 1);
+        addRatingQuestion(teachingSection, "How effective was the instructor's teaching method?", 2);
+        addRatingQuestion(teachingSection, "How well did the instructor respond to student questions?", 3);
 
-        defaultSection.getQuestions().add(question1);
-        defaultSection.getQuestions().add(question2);
-        defaultSection.getQuestions().add(question3);
-        defaultSection.getQuestions().add(question4);
+        // Course Content questions
+        addRatingQuestion(contentSection, "How relevant was the course content to your learning objectives?", 0);
+        addRatingQuestion(contentSection, "How appropriate was the difficulty level of the course?", 1);
+        addRatingQuestion(contentSection, "How useful were the course materials and resources?", 2);
+        addRatingQuestion(contentSection, "How well were the learning objectives achieved?", 3);
 
-        survey.getSections().add(defaultSection);
+        // Learning Environment questions
+        addRatingQuestion(environmentSection, "How conducive was the classroom environment for learning?", 0);
+        addRatingQuestion(environmentSection, "How adequate were the facilities and equipment?", 1);
+        addRatingQuestion(environmentSection, "How reasonable was the workload for this course?", 2);
+
+        // Overall Feedback questions
+        addRatingQuestion(feedbackSection, "How would you rate your overall learning experience?", 0);
+        addTextQuestion(feedbackSection, "What aspects of the course did you find most valuable?", 1);
+        addTextQuestion(feedbackSection, "What improvements would you suggest for this course?", 2);
+        addTextQuestion(feedbackSection, "Any additional comments or feedback?", 3);
+
+        survey.getSections().add(teachingSection);
+        survey.getSections().add(contentSection);
+        survey.getSections().add(environmentSection);
+        survey.getSections().add(feedbackSection);
+    }
+
+    private void addRatingQuestion(SurveySectionEntity section, String questionText, int order) {
+        SurveyQuestionEntity question = new SurveyQuestionEntity();
+        question.setQuestionText(questionText);
+        question.setQuestionType(QuestionTypeEnum.RATING);
+        question.setRequired(true);
+        question.setDisplayOrder(order);
+        question.setMinRating(1);
+        question.setMaxRating(5);
+        question.setLeftLabel("Poor");
+        question.setRightLabel("Excellent");
+        question.setSection(section);
+        section.getQuestions().add(question);
+    }
+
+    private void addTextQuestion(SurveySectionEntity section, String questionText, int order) {
+        SurveyQuestionEntity question = new SurveyQuestionEntity();
+        question.setQuestionText(questionText);
+        question.setQuestionType(QuestionTypeEnum.TEXT);
+        question.setRequired(false);
+        question.setDisplayOrder(order);
+        question.setSection(section);
+        section.getQuestions().add(question);
     }
 }

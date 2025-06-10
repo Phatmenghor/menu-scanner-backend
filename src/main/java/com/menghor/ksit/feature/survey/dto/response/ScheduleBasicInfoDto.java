@@ -16,4 +16,12 @@ public class ScheduleBasicInfoDto {
     private DayOfWeek dayOfWeek;
     private LocalTime startTime;
     private LocalTime endTime;
+    private String timeSlot;
+    
+    public String getTimeSlot() {
+        if (startTime != null && endTime != null) {
+            return startTime + " - " + endTime;
+        }
+        return timeSlot;
+    }
 }

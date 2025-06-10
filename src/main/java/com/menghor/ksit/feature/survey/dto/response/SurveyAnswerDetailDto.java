@@ -17,4 +17,15 @@ public class SurveyAnswerDetailDto {
     private String leftLabel;
     private String rightLabel;
     private Integer displayOrder;
+    private Integer sectionOrder;
+    
+    // Computed property for display
+    public String getFormattedAnswer() {
+        if (questionType == QuestionTypeEnum.RATING && ratingAnswer != null) {
+            return ratingAnswer + "/5";
+        } else if (questionType == QuestionTypeEnum.TEXT && textAnswer != null) {
+            return textAnswer;
+        }
+        return "No answer provided";
+    }
 }

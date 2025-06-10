@@ -43,15 +43,27 @@ public class StudentScheduleWithSurveyDto {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
 
-    // Survey Status - Only one field needed
+    // Survey Status
     private SurveyStatus surveyStatus;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime surveySubmittedDate;
 
-    private Long surveyResponseId; // For accessing survey response details if completed
+    private Long surveyResponseId;
 
     // Additional Schedule Info
     private String semester;
     private Integer academicYear;
+    
+    // Computed properties
+    public String getTimeSlot() {
+        if (startTime != null && endTime != null) {
+            return startTime + " - " + endTime;
+        }
+        return null;
+    }
+    
+    public String getDayTimeDisplay() {
+        return dayOfWeek + " " + getTimeSlot();
+    }
 }
