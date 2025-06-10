@@ -128,17 +128,6 @@ public class SurveyController {
     }
 
     /**
-     * Initialize main survey (Admin only)
-     */
-    @PostMapping("/initialize")
-    public ApiResponse<String> initializeMainSurvey() {
-        log.info("Initializing main survey");
-        surveyService.initializeMainSurvey();
-        log.info("Main survey initialized successfully");
-        return ApiResponse.success("Main survey initialized successfully", "Survey is ready for use");
-    }
-
-    /**
      * Get all student schedules with survey status
      */
     @GetMapping("/my-schedules")

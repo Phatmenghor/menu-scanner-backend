@@ -14,6 +14,8 @@ import com.menghor.ksit.feature.school.repository.ScheduleRepository;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
 import com.menghor.ksit.feature.survey.dto.response.*;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
+import com.menghor.ksit.feature.survey.dto.update.SurveySectionUpdateDto;
+import com.menghor.ksit.feature.survey.dto.update.SurveyQuestionUpdateDto;
 import com.menghor.ksit.feature.survey.mapper.SurveyMapper;
 import com.menghor.ksit.feature.survey.mapper.SurveyResponseMapper;
 import com.menghor.ksit.feature.survey.model.*;
@@ -25,13 +27,14 @@ import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -89,56 +92,135 @@ public class SurveyServiceImpl implements SurveyService {
     public SurveyResponseDto updateMainSurvey(SurveyUpdateDto updateDto) {
         log.info("Updating main survey with title: {}", updateDto.getTitle());
 
-        UserEntity currentUser = securityUtils.getCurrentUser();
         SurveyEntity mainSurvey = getMainSurveyEntity();
 
         // Update basic fields
-        mainSurvey.setTitle(updateDto.getTitle());
-        mainSurvey.setDescription(updateDto.getDescription());
+        if (updateDto.getTitle() != null) {
+            mainSurvey.setTitle(updateDto.getTitle());
+        }
+        if (updateDto.getDescription() != null) {
+            mainSurvey.setDescription(updateDto.getDescription());
+        }
 
-        // Clear existing sections and questions (cascade will handle deletion)
-        mainSurvey.getSections().clear();
-        surveyRepository.save(mainSurvey);
-
-        // Add new sections and questions
+        // Handle sections update properly
         if (updateDto.getSections() != null) {
-            for (int i = 0; i < updateDto.getSections().size(); i++) {
-                var sectionDto = updateDto.getSections().get(i);
-
-                SurveySectionEntity section = new SurveySectionEntity();
-                section.setTitle(sectionDto.getTitle());
-                section.setDescription(sectionDto.getDescription());
-                section.setDisplayOrder(sectionDto.getDisplayOrder() != null ? sectionDto.getDisplayOrder() : i);
-                section.setSurvey(mainSurvey);
-
-                mainSurvey.getSections().add(section);
-
-                // Create questions for this section
-                if (sectionDto.getQuestions() != null) {
-                    for (int j = 0; j < sectionDto.getQuestions().size(); j++) {
-                        var questionDto = sectionDto.getQuestions().get(j);
-
-                        SurveyQuestionEntity question = new SurveyQuestionEntity();
-                        question.setQuestionText(questionDto.getQuestionText());
-                        question.setQuestionType(questionDto.getQuestionType());
-                        question.setRequired(questionDto.getRequired());
-                        question.setDisplayOrder(questionDto.getDisplayOrder() != null ? questionDto.getDisplayOrder() : j);
-                        question.setMinRating(questionDto.getMinRating());
-                        question.setMaxRating(questionDto.getMaxRating());
-                        question.setLeftLabel(questionDto.getLeftLabel());
-                        question.setRightLabel(questionDto.getRightLabel());
-                        question.setSection(section);
-
-                        section.getQuestions().add(question);
-                    }
-                }
-            }
+            updateSections(mainSurvey, updateDto.getSections());
         }
 
         SurveyEntity savedSurvey = surveyRepository.save(mainSurvey);
         log.info("Main survey updated successfully with ID: {}", savedSurvey.getId());
 
         return surveyMapper.toResponseDto(savedSurvey);
+    }
+
+    private void updateSections(SurveyEntity survey, List<SurveySectionUpdateDto> sectionDtos) {
+        log.info("Updating {} sections for survey ID: {}", sectionDtos.size(), survey.getId());
+
+        // Get existing sections
+        List<SurveySectionEntity> existingSections = new ArrayList<>(survey.getSections());
+
+        // Track which sections to keep
+        Set<Long> sectionsToKeep = new HashSet<>();
+
+        for (int i = 0; i < sectionDtos.size(); i++) {
+            SurveySectionUpdateDto sectionDto = sectionDtos.get(i);
+            SurveySectionEntity section;
+
+            if (sectionDto.getId() != null) {
+                // Update existing section
+                section = existingSections.stream()
+                        .filter(s -> s.getId().equals(sectionDto.getId()))
+                        .findFirst()
+                        .orElseThrow(() -> new NotFoundException("Section not found with ID: " + sectionDto.getId()));
+
+                sectionsToKeep.add(sectionDto.getId());
+                log.debug("Updating existing section with ID: {}", sectionDto.getId());
+            } else {
+                // Create new section
+                section = new SurveySectionEntity();
+                section.setSurvey(survey);
+                survey.getSections().add(section);
+                log.debug("Creating new section: {}", sectionDto.getTitle());
+            }
+
+            // Update section fields
+            if (sectionDto.getTitle() != null) {
+                section.setTitle(sectionDto.getTitle());
+            }
+            if (sectionDto.getDescription() != null) {
+                section.setDescription(sectionDto.getDescription());
+            }
+            section.setDisplayOrder(sectionDto.getDisplayOrder() != null ? sectionDto.getDisplayOrder() : i);
+
+            // Update questions for this section
+            if (sectionDto.getQuestions() != null) {
+                updateQuestions(section, sectionDto.getQuestions());
+            }
+        }
+
+        // Remove sections that are no longer in the update
+        List<SurveySectionEntity> sectionsToRemove = existingSections.stream()
+                .filter(section -> section.getId() != null && !sectionsToKeep.contains(section.getId()))
+                .collect(Collectors.toList());
+
+        for (SurveySectionEntity sectionToRemove : sectionsToRemove) {
+            log.debug("Removing section with ID: {}", sectionToRemove.getId());
+            survey.getSections().remove(sectionToRemove);
+            surveySectionRepository.delete(sectionToRemove);
+        }
+    }
+
+    private void updateQuestions(SurveySectionEntity section, List<SurveyQuestionUpdateDto> questionDtos) {
+        log.debug("Updating {} questions for section ID: {}", questionDtos.size(), section.getId());
+
+        // Get existing questions
+        List<SurveyQuestionEntity> existingQuestions = new ArrayList<>(section.getQuestions());
+
+        // Track which questions to keep
+        Set<Long> questionsToKeep = new HashSet<>();
+
+        for (int i = 0; i < questionDtos.size(); i++) {
+            SurveyQuestionUpdateDto questionDto = questionDtos.get(i);
+            SurveyQuestionEntity question;
+
+            if (questionDto.getId() != null) {
+                // Update existing question
+                question = existingQuestions.stream()
+                        .filter(q -> q.getId().equals(questionDto.getId()))
+                        .findFirst()
+                        .orElseThrow(() -> new NotFoundException("Question not found with ID: " + questionDto.getId()));
+
+                questionsToKeep.add(questionDto.getId());
+                log.debug("Updating existing question with ID: {}", questionDto.getId());
+            } else {
+                // Create new question
+                question = new SurveyQuestionEntity();
+                question.setSection(section);
+                section.getQuestions().add(question);
+                log.debug("Creating new question: {}", questionDto.getQuestionText());
+            }
+
+            // Update question fields
+            question.setQuestionText(questionDto.getQuestionText());
+            question.setQuestionType(questionDto.getQuestionType());
+            question.setRequired(questionDto.getRequired() != null ? questionDto.getRequired() : false);
+            question.setDisplayOrder(questionDto.getDisplayOrder() != null ? questionDto.getDisplayOrder() : i);
+            question.setMinRating(questionDto.getMinRating() != null ? questionDto.getMinRating() : 1);
+            question.setMaxRating(questionDto.getMaxRating() != null ? questionDto.getMaxRating() : 5);
+            question.setLeftLabel(questionDto.getLeftLabel());
+            question.setRightLabel(questionDto.getRightLabel());
+        }
+
+        // Remove questions that are no longer in the update
+        List<SurveyQuestionEntity> questionsToRemove = existingQuestions.stream()
+                .filter(question -> question.getId() != null && !questionsToKeep.contains(question.getId()))
+                .collect(Collectors.toList());
+
+        for (SurveyQuestionEntity questionToRemove : questionsToRemove) {
+            log.debug("Removing question with ID: {}", questionToRemove.getId());
+            section.getQuestions().remove(questionToRemove);
+            surveyQuestionRepository.delete(questionToRemove);
+        }
     }
 
     @Override
@@ -355,25 +437,52 @@ public class SurveyServiceImpl implements SurveyService {
             return;
         }
 
+        createDefaultSurvey();
+    }
+
+    /**
+     * Automatically initialize survey when application starts
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void initializeSurveyOnStartup() {
+        log.info("Checking if main survey needs to be initialized on application startup...");
+
+        try {
+            Optional<SurveyEntity> existingSurvey = surveyRepository.findByStatus(Status.ACTIVE);
+            if (existingSurvey.isEmpty()) {
+                log.info("No active survey found, creating default survey...");
+                createDefaultSurvey();
+                log.info("Default survey created successfully on application startup");
+            } else {
+                log.info("Active survey already exists with ID: {}, skipping initialization", existingSurvey.get().getId());
+            }
+        } catch (Exception e) {
+            log.error("Error during survey initialization on startup: {}", e.getMessage(), e);
+        }
+    }
+
+    private void createDefaultSurvey() {
         // Create default survey
         SurveyEntity mainSurvey = new SurveyEntity();
         mainSurvey.setTitle("Student Course Evaluation Survey");
         mainSurvey.setDescription("Please provide your feedback about your learning experience in this course");
         mainSurvey.setStatus(Status.ACTIVE);
 
-        // Set creator
+        // Set creator (use system user if no authenticated user)
         try {
             UserEntity currentUser = securityUtils.getCurrentUser();
             mainSurvey.setCreatedBy(currentUser);
         } catch (Exception e) {
-            log.warn("Could not set current user as survey creator: {}", e.getMessage());
+            log.warn("Could not set current user as survey creator, will use system default: {}", e.getMessage());
+            // You might want to create a system user or handle this differently
         }
 
         // Create default sections and questions
         createDefaultSurveyContent(mainSurvey);
 
         SurveyEntity savedSurvey = surveyRepository.save(mainSurvey);
-        log.info("Main survey created successfully with ID: {}", savedSurvey.getId());
+        log.info("Default survey created successfully with ID: {}", savedSurvey.getId());
     }
 
     @Override
