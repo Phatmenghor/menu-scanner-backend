@@ -1,6 +1,5 @@
 package com.menghor.ksit.feature.survey.controller;
 
-import com.menghor.ksit.enumations.SurveyStatus;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
 import com.menghor.ksit.feature.survey.dto.response.*;
@@ -11,8 +10,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
