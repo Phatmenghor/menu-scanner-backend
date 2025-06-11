@@ -20,3 +20,4 @@ public interface SurveySectionRepository extends JpaRepository<SurveySectionEnti
     @Query("SELECT COALESCE(MAX(s.displayOrder), 0) FROM SurveySectionEntity s WHERE s.survey.id = :surveyId AND s.status = 'ACTIVE'")
     Integer getMaxDisplayOrderBySurveyId(@Param("surveyId") Long surveyId);
 }
+

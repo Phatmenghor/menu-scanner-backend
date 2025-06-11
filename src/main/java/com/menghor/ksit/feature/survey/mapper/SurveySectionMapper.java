@@ -1,6 +1,6 @@
 package com.menghor.ksit.feature.survey.mapper;
 
-import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.StatusSurvey;
 import com.menghor.ksit.feature.survey.dto.response.SurveySectionResponseDto;
 import com.menghor.ksit.feature.survey.dto.update.SurveySectionUpdateDto;
 import com.menghor.ksit.feature.survey.model.SurveySectionEntity;
@@ -42,7 +42,7 @@ public interface SurveySectionMapper {
         section.setTitle(title);
         section.setDescription(description);
         section.setDisplayOrder(displayOrder);
-        section.setStatus(Status.ACTIVE);
+        section.setStatus(StatusSurvey.ACTIVE);
         return section;
     }
 }

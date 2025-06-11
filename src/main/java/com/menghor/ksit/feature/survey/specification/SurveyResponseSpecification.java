@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.survey.specification;
 
+import com.menghor.ksit.enumations.StatusSurvey;
 import com.menghor.ksit.feature.survey.model.SurveyResponseEntity;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -23,6 +24,11 @@ public class SurveyResponseSpecification {
     public static Specification<SurveyResponseEntity> isCompleted() {
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.equal(root.get("isCompleted"), true);
+    }
+
+    public static Specification<SurveyResponseEntity> isActive() {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("status"), StatusSurvey.ACTIVE);
     }
 
     public static Specification<SurveyResponseEntity> orderBySubmittedAtDesc() {

@@ -1,7 +1,7 @@
 package com.menghor.ksit.feature.survey.model;
 
 import com.menghor.ksit.enumations.QuestionTypeEnum;
-import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.StatusSurvey;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -36,7 +36,7 @@ public class SurveyQuestionEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status = Status.ACTIVE;
+    private StatusSurvey status = StatusSurvey.ACTIVE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id", nullable = false)

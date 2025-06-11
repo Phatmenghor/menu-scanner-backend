@@ -1,6 +1,6 @@
 package com.menghor.ksit.feature.survey.model;
 
-import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.StatusSurvey;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
@@ -34,7 +34,7 @@ public class SurveyResponseEntity extends BaseEntity {
     private LocalDateTime submittedAt;
 
     @Enumerated(EnumType.STRING)
-    private Status status = Status.ACTIVE;
+    private StatusSurvey status = StatusSurvey.ACTIVE;
 
     private Boolean isCompleted = false;
     private Double overallRating;

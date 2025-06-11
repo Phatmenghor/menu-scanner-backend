@@ -39,7 +39,6 @@ public interface CourseMapper {
     @Mapping(target = "subject", source = "subject")
     CourseResponseMapWithScheduleDto toResponseWithScheduleDto(CourseEntity courseEntity);
 
-    // Method for updating an existing entity with non-null values from DTO
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -48,7 +47,6 @@ public interface CourseMapper {
     @Mapping(target = "subject", ignore = true)
     @Mapping(target = "user", ignore = true)
     void updateEntityFromDto(CourseUpdateDto dto, @MappingTarget CourseEntity entity);
-
 
     default List<CourseResponseDto> toResponseDtoList(List<CourseEntity> entities) {
         return entities.stream().map(this::toResponseDto).collect(Collectors.toList());

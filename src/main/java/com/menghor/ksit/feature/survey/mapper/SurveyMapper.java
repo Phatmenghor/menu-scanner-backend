@@ -1,6 +1,6 @@
 package com.menghor.ksit.feature.survey.mapper;
 
-import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.StatusSurvey;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
 import com.menghor.ksit.feature.survey.dto.response.SurveyResponseDto;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
@@ -32,7 +32,7 @@ public interface SurveyMapper {
         SurveyEntity survey = new SurveyEntity();
         survey.setTitle("Student Course Evaluation Survey");
         survey.setDescription("Please provide your feedback about your learning experience in this course");
-        survey.setStatus(Status.ACTIVE);
+        survey.setStatus(StatusSurvey.ACTIVE);
         return survey;
     }
 

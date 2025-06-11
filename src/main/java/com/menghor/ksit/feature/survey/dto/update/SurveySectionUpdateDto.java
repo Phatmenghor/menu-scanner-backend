@@ -1,7 +1,6 @@
 package com.menghor.ksit.feature.survey.dto.update;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.ArrayList;

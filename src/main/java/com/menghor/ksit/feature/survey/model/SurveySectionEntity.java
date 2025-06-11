@@ -1,6 +1,6 @@
 package com.menghor.ksit.feature.survey.model;
 
-import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.StatusSurvey;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -26,7 +26,7 @@ public class SurveySectionEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status = Status.ACTIVE;
+    private StatusSurvey status = StatusSurvey.ACTIVE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_id", nullable = false)
@@ -40,7 +40,7 @@ public class SurveySectionEntity extends BaseEntity {
     // Helper method to get only active questions
     public List<SurveyQuestionEntity> getActiveQuestions() {
         return questions.stream()
-                .filter(question -> question.getStatus() == Status.ACTIVE)
+                .filter(question -> question.getStatus() == StatusSurvey.ACTIVE)
                 .toList();
     }
 

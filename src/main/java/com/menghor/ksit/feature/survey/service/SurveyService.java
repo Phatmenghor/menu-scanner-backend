@@ -13,14 +13,17 @@ public interface SurveyService {
     // Update the main survey content (admin only)
     SurveyResponseDto updateMainSurvey(SurveyUpdateDto updateDto);
 
+    // Delete survey section by setting status to DELETED (admin only)
+    void deleteSurveySection(Long sectionId);
+
+    // Delete survey question by setting status to DELETED (admin only)
+    void deleteSurveyQuestion(Long questionId);
+
     // Submit response to the survey for a specific schedule (students)
     StudentSurveyResponseDto submitSurveyResponseForSchedule(Long scheduleId, SurveyResponseSubmitDto submitDto);
 
     // Get current user's response for a specific schedule (student)
     StudentSurveyResponseDto getMyResponseForSchedule(Long scheduleId);
-
-    // Get all survey responses for a specific schedule (admin/staff)
-    CustomPaginationResponseDto<StudentSurveyResponseDto> getScheduleSurveyResponses(Long scheduleId, int pageNo, int pageSize);
 
     // Get detailed survey response (admin/staff)
     SurveyResponseDetailDto getStudentResponseDetail(Long responseId);

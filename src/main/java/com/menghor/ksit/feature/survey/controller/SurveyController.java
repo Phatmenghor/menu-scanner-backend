@@ -42,6 +42,30 @@ public class SurveyController {
     }
 
     /**
+     * Delete survey section by ID (Admin/Staff only)
+     * This sets the section status to DELETED instead of removing it
+     */
+    @DeleteMapping("/section/{sectionId}")
+    public ApiResponse<String> deleteSurveySection(@PathVariable Long sectionId) {
+        log.info("Deleting survey section with ID: {}", sectionId);
+        surveyService.deleteSurveySection(sectionId);
+        log.info("Survey section deleted successfully with ID: {}", sectionId);
+        return ApiResponse.success("Survey section deleted successfully", "Section has been removed from the survey");
+    }
+
+    /**
+     * Delete survey question by ID (Admin/Staff only)
+     * This sets the question status to DELETED instead of removing it
+     */
+    @DeleteMapping("/question/{questionId}")
+    public ApiResponse<String> deleteSurveyQuestion(@PathVariable Long questionId) {
+        log.info("Deleting survey question with ID: {}", questionId);
+        surveyService.deleteSurveyQuestion(questionId);
+        log.info("Survey question deleted successfully with ID: {}", questionId);
+        return ApiResponse.success("Survey question deleted successfully", "Question has been removed from the survey");
+    }
+
+    /**
      * Submit survey response for a specific schedule
      */
     @PostMapping("/schedule/{scheduleId}/submit")
@@ -66,21 +90,6 @@ public class SurveyController {
     }
 
     /**
-     * Get all survey responses for a specific schedule (Admin/Staff only)
-     */
-    @GetMapping("/schedule/{scheduleId}/responses")
-    public ApiResponse<CustomPaginationResponseDto<StudentSurveyResponseDto>> getScheduleSurveyResponses(
-            @PathVariable Long scheduleId,
-            @RequestParam(defaultValue = "1") int pageNo,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        log.info("Fetching survey responses for schedule {} - page: {}, size: {}", scheduleId, pageNo, pageSize);
-        CustomPaginationResponseDto<StudentSurveyResponseDto> response =
-                surveyService.getScheduleSurveyResponses(scheduleId, pageNo, pageSize);
-        log.info("Schedule survey responses fetched successfully. Total elements: {}", response.getTotalElements());
-        return ApiResponse.success("Schedule survey responses fetched successfully", response);
-    }
-
-    /**
      * Get detailed survey response (Admin/Staff only)
      */
     @GetMapping("/response/{responseId}/detail")
@@ -90,5 +99,4 @@ public class SurveyController {
         log.info("Detailed survey response fetched successfully for ID: {}", responseId);
         return ApiResponse.success("Survey response detail fetched successfully", response);
     }
-
 }

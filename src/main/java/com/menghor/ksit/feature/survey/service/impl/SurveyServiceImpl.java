@@ -1,6 +1,7 @@
+// 23. SurveyServiceImpl.java
 package com.menghor.ksit.feature.survey.service.impl;
 
-import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.StatusSurvey;
 import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.models.UserEntity;
@@ -16,16 +17,12 @@ import com.menghor.ksit.feature.survey.model.*;
 import com.menghor.ksit.feature.survey.repository.*;
 import com.menghor.ksit.feature.survey.service.SurveyService;
 import com.menghor.ksit.feature.survey.specification.*;
-import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.database.SecurityUtils;
-import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -45,7 +42,7 @@ public class SurveyServiceImpl implements SurveyService {
     private final SurveySectionRepository surveySectionRepository;
     private final ScheduleRepository scheduleRepository;
 
-    // Mappers - consolidated to essential ones only
+    // Mappers
     private final SurveyMapper surveyMapper;
     private final SurveySectionMapper sectionMapper;
     private final SurveyQuestionMapper questionMapper;
@@ -83,6 +80,65 @@ public class SurveyServiceImpl implements SurveyService {
         return surveyMapper.toResponseDto(savedSurvey);
     }
 
+    @Override
+    @Transactional
+    public void deleteSurveySection(Long sectionId) {
+        log.info("Deleting survey section with ID: {}", sectionId);
+
+        SurveySectionEntity section = surveySectionRepository.findById(sectionId)
+                .orElseThrow(() -> new NotFoundException("Survey section not found with ID: " + sectionId));
+
+        // Check if section is already deleted
+        if (section.getStatus() == StatusSurvey.DELETED) {
+            throw new BadRequestException("Section is already deleted");
+        }
+
+        // Only allow deletion of ACTIVE sections
+        if (section.getStatus() != StatusSurvey.ACTIVE) {
+            throw new BadRequestException("Only active sections can be deleted");
+        }
+
+        // Set section status to DELETED
+        section.setStatus(StatusSurvey.DELETED);
+
+        // Also mark all active questions in this section as deleted
+        List<SurveyQuestionEntity> questions = surveyQuestionRepository.findAllBySectionId(sectionId);
+        for (SurveyQuestionEntity question : questions) {
+            if (question.getStatus() == StatusSurvey.ACTIVE) {
+                question.setStatus(StatusSurvey.DELETED);
+                surveyQuestionRepository.save(question);
+            }
+        }
+
+        surveySectionRepository.save(section);
+        log.info("Survey section deleted successfully with ID: {}", sectionId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteSurveyQuestion(Long questionId) {
+        log.info("Deleting survey question with ID: {}", questionId);
+
+        SurveyQuestionEntity question = surveyQuestionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("Survey question not found with ID: " + questionId));
+
+        // Check if question is already deleted
+        if (question.getStatus() == StatusSurvey.DELETED) {
+            throw new BadRequestException("Question is already deleted");
+        }
+
+        // Only allow deletion of ACTIVE questions
+        if (question.getStatus() != StatusSurvey.ACTIVE) {
+            throw new BadRequestException("Only active questions can be deleted");
+        }
+
+        // Set question status to DELETED
+        question.setStatus(StatusSurvey.DELETED);
+        surveyQuestionRepository.save(question);
+
+        log.info("Survey question deleted successfully with ID: {}", questionId);
+    }
+
     @Transactional
     protected void updateSectionsWithSoftDelete(SurveyEntity survey, List<SurveySectionUpdateDto> sectionDtos) {
         // Get all existing sections using repository method instead of entity method
@@ -106,8 +162,8 @@ public class SurveyServiceImpl implements SurveyService {
                 sectionsToKeep.add(sectionDto.getId());
 
                 // Reactivate if it was deleted
-                if (section.getStatus() == Status.DELETED) {
-                    section.setStatus(Status.ACTIVE);
+                if (section.getStatus() == StatusSurvey.DELETED) {
+                    section.setStatus(StatusSurvey.ACTIVE);
                 }
 
                 // Update using consolidated mapper
@@ -158,8 +214,8 @@ public class SurveyServiceImpl implements SurveyService {
                 questionsToKeep.add(questionDto.getId());
 
                 // Reactivate if it was deleted
-                if (question.getStatus() == Status.DELETED) {
-                    question.setStatus(Status.ACTIVE);
+                if (question.getStatus() == StatusSurvey.DELETED) {
+                    question.setStatus(StatusSurvey.ACTIVE);
                 }
 
                 // Update using consolidated mapper
@@ -187,10 +243,10 @@ public class SurveyServiceImpl implements SurveyService {
         for (SurveySectionEntity existingSection : allSections) {
             if (existingSection.getId() != null &&
                     !sectionsToKeep.contains(existingSection.getId()) &&
-                    existingSection.getStatus() == Status.ACTIVE) {
+                    existingSection.getStatus() == StatusSurvey.ACTIVE) {
 
                 log.info("Soft deleting section with ID: {}", existingSection.getId());
-                existingSection.setStatus(Status.DELETED);
+                existingSection.setStatus(StatusSurvey.DELETED);
 
                 // Also soft delete all questions in this section
                 markAllQuestionsInSectionAsDeleted(existingSection.getId());
@@ -202,10 +258,10 @@ public class SurveyServiceImpl implements SurveyService {
         for (SurveyQuestionEntity existingQuestion : allQuestions) {
             if (existingQuestion.getId() != null &&
                     !questionsToKeep.contains(existingQuestion.getId()) &&
-                    existingQuestion.getStatus() == Status.ACTIVE) {
+                    existingQuestion.getStatus() == StatusSurvey.ACTIVE) {
 
                 log.info("Soft deleting question with ID: {}", existingQuestion.getId());
-                existingQuestion.setStatus(Status.DELETED);
+                existingQuestion.setStatus(StatusSurvey.DELETED);
             }
         }
     }
@@ -213,8 +269,8 @@ public class SurveyServiceImpl implements SurveyService {
     private void markAllQuestionsInSectionAsDeleted(Long sectionId) {
         List<SurveyQuestionEntity> questions = surveyQuestionRepository.findAllBySectionId(sectionId);
         for (SurveyQuestionEntity question : questions) {
-            if (question.getStatus() == Status.ACTIVE) {
-                question.setStatus(Status.DELETED);
+            if (question.getStatus() == StatusSurvey.ACTIVE) {
+                question.setStatus(StatusSurvey.DELETED);
             }
         }
     }
@@ -294,19 +350,6 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
-    public CustomPaginationResponseDto<StudentSurveyResponseDto> getScheduleSurveyResponses(Long scheduleId, int pageNo, int pageSize) {
-        Pageable pageable = PaginationUtils.createPageable(pageNo, pageSize, "submittedAt", "DESC");
-
-        // Use specification for cleaner querying
-        Specification<SurveyResponseEntity> spec = Specification
-                .where(SurveyResponseSpecification.belongsToSchedule(scheduleId))
-                .and(SurveyResponseSpecification.orderBySubmittedAtDesc());
-
-        Page<SurveyResponseEntity> responsePage = surveyResponseRepository.findAll(spec, pageable);
-        return responseMapper.toPaginationResponse(responsePage);
-    }
-
-    @Override
     public SurveyResponseDetailDto getStudentResponseDetail(Long responseId) {
         SurveyResponseEntity response = surveyResponseRepository.findById(responseId)
                 .orElseThrow(() -> new NotFoundException("Survey response not found with ID: " + responseId));
@@ -363,7 +406,6 @@ public class SurveyServiceImpl implements SurveyService {
 
         survey.getSections().addAll(Arrays.asList(teachingSection, feedbackSection));
     }
-
 
     private SurveySectionEntity createDefaultSection(SurveyEntity survey, String title, String description, int order) {
         SurveySectionEntity section = sectionMapper.createSectionWithDefaults(title, description, order);

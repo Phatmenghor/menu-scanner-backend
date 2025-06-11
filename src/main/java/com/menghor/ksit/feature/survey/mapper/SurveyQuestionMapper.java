@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.survey.mapper;
 
 import com.menghor.ksit.enumations.QuestionTypeEnum;
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.StatusSurvey;
 import com.menghor.ksit.feature.survey.dto.response.RatingOptionDto;
 import com.menghor.ksit.feature.survey.dto.response.SurveyQuestionResponseDto;
 import com.menghor.ksit.feature.survey.dto.update.SurveyQuestionUpdateDto;
@@ -53,7 +54,7 @@ public interface SurveyQuestionMapper {
         question.setMaxRating(5);
         question.setLeftLabel("Poor");
         question.setRightLabel("Excellent");
-        question.setStatus(Status.ACTIVE);
+        question.setStatus(StatusSurvey.ACTIVE);
         return question;
     }
 
@@ -63,11 +64,11 @@ public interface SurveyQuestionMapper {
         question.setQuestionType(QuestionTypeEnum.TEXT);
         question.setRequired(false);
         question.setDisplayOrder(displayOrder);
-        question.setStatus(Status.ACTIVE);
+        question.setStatus(StatusSurvey.ACTIVE);
         return question;
     }
 
-    // Generate rating options (existing method)
+    // Generate rating options
     @Named("generateRatingOptions")
     default List<RatingOptionDto> generateRatingOptions(SurveyQuestionEntity entity) {
         List<RatingOptionDto> options = new ArrayList<>();
