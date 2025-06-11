@@ -11,11 +11,6 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface SurveyAnswerMapper {
 
-    // Response mapping
-    @Mapping(target = "questionId", source = "question.id")
-    @Mapping(target = "questionText", source = "question.questionText")
-    StudentSurveyAnswerDto toStudentAnswerDto(SurveyAnswerEntity entity);
-
     // Entity creation mapping
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "response", ignore = true)

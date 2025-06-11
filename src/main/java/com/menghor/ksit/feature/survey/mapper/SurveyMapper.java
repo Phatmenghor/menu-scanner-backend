@@ -1,7 +1,6 @@
 package com.menghor.ksit.feature.survey.mapper;
 
 import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.feature.school.mapper.RequestMapper;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
 import com.menghor.ksit.feature.survey.dto.response.SurveyResponseDto;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
@@ -15,8 +14,6 @@ public interface SurveyMapper {
     // Response mapping
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "sections", source = "sections")
-    @Mapping(target = "totalResponses", ignore = true)
-    @Mapping(target = "hasUserResponded", ignore = true)
     SurveyResponseDto toResponseDto(SurveyEntity entity);
 
     // Entity update mapping
