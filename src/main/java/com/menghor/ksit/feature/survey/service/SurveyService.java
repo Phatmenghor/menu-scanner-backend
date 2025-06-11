@@ -22,9 +22,6 @@ public interface SurveyService {
     // Get current user's response for a specific schedule (student)
     StudentSurveyResponseDto getMyResponseForSchedule(Long scheduleId);
 
-    // Get survey status for a schedule (for current student)
-    SurveyStatus getSurveyStatusForSchedule(Long scheduleId);
-
     // Get all survey responses for a specific schedule (admin/staff)
     CustomPaginationResponseDto<StudentSurveyResponseDto> getScheduleSurveyResponses(Long scheduleId, int pageNo, int pageSize);
 

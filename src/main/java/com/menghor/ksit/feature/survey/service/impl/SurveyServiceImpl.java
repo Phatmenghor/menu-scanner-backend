@@ -1,7 +1,6 @@
 package com.menghor.ksit.feature.survey.service.impl;
 
 import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.enumations.SurveyStatus;
 import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.models.UserEntity;
@@ -295,15 +294,6 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
-    public SurveyStatus getSurveyStatusForSchedule(Long scheduleId) {
-        UserEntity currentUser = securityUtils.getCurrentUser();
-        SurveyEntity mainSurvey = getMainSurveyEntity();
-
-        boolean hasResponded = hasUserRespondedToSurvey(currentUser.getId(), scheduleId, mainSurvey.getId());
-        return hasResponded ? SurveyStatus.COMPLETED : SurveyStatus.NOT_STARTED;
-    }
-
-    @Override
     public CustomPaginationResponseDto<StudentSurveyResponseDto> getScheduleSurveyResponses(Long scheduleId, int pageNo, int pageSize) {
         Pageable pageable = PaginationUtils.createPageable(pageNo, pageSize, "submittedAt", "DESC");
 
@@ -361,24 +351,19 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     private void createDefaultSurveyContent(SurveyEntity survey) {
-        // Create sections using MapStruct helper methods
-        SurveySectionEntity teachingSection = createDefaultSection(survey, "Teaching Quality",
-                "Please evaluate the teaching quality and methods", 1);
-        SurveySectionEntity contentSection = createDefaultSection(survey, "Course Content",
-                "Please evaluate the course content and materials", 2);
-        SurveySectionEntity environmentSection = createDefaultSection(survey, "Learning Environment",
-                "Please evaluate the learning environment and facilities", 3);
+        // Create only 2 sections
+        SurveySectionEntity teachingSection = createDefaultSection(survey, "Teaching Quality & Course Evaluation",
+                "Please evaluate the teaching quality, methods, and course content", 1);
         SurveySectionEntity feedbackSection = createDefaultSection(survey, "Overall Feedback",
-                "Please provide your overall feedback and suggestions", 4);
+                "Please provide your overall feedback and suggestions", 2);
 
-        // Add questions using MapStruct helper methods
-        addDefaultRatingQuestions(teachingSection);
-        addDefaultContentQuestions(contentSection);
-        addDefaultEnvironmentQuestions(environmentSection);
+        // Add 8 questions to first section and default questions to second section
+        addTeachingQuestionsWithEight(teachingSection);
         addDefaultFeedbackQuestions(feedbackSection);
 
-        survey.getSections().addAll(Arrays.asList(teachingSection, contentSection, environmentSection, feedbackSection));
+        survey.getSections().addAll(Arrays.asList(teachingSection, feedbackSection));
     }
+
 
     private SurveySectionEntity createDefaultSection(SurveyEntity survey, String title, String description, int order) {
         SurveySectionEntity section = sectionMapper.createSectionWithDefaults(title, description, order);
@@ -386,41 +371,16 @@ public class SurveyServiceImpl implements SurveyService {
         return section;
     }
 
-    private void addDefaultRatingQuestions(SurveySectionEntity section) {
+    private void addTeachingQuestionsWithEight(SurveySectionEntity section) {
         String[] questions = {
                 "How would you rate the instructor's knowledge of the subject?",
                 "How clear and well-organized were the lectures?",
                 "How effective was the instructor's teaching method?",
-                "How well did the instructor respond to student questions?"
-        };
-
-        for (int i = 0; i < questions.length; i++) {
-            SurveyQuestionEntity question = questionMapper.createRatingQuestion(questions[i], i + 1);
-            question.setSection(section);
-            section.getQuestions().add(question);
-        }
-    }
-
-    private void addDefaultContentQuestions(SurveySectionEntity section) {
-        String[] questions = {
+                "How well did the instructor respond to student questions?",
                 "How relevant was the course content to your learning objectives?",
                 "How appropriate was the difficulty level of the course?",
                 "How useful were the course materials and resources?",
-                "How well were the learning objectives achieved?"
-        };
-
-        for (int i = 0; i < questions.length; i++) {
-            SurveyQuestionEntity question = questionMapper.createRatingQuestion(questions[i], i + 1);
-            question.setSection(section);
-            section.getQuestions().add(question);
-        }
-    }
-
-    private void addDefaultEnvironmentQuestions(SurveySectionEntity section) {
-        String[] questions = {
-                "How conducive was the classroom environment for learning?",
-                "How adequate were the facilities and equipment?",
-                "How reasonable was the workload for this course?"
+                "How conducive was the classroom environment for learning?"
         };
 
         for (int i = 0; i < questions.length; i++) {

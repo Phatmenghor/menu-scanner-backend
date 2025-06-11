@@ -69,17 +69,6 @@ public class SurveyController {
     }
 
     /**
-     * Get survey status for a specific schedule
-     */
-    @GetMapping("/schedule/{scheduleId}/status")
-    public ApiResponse<SurveyStatus> getSurveyStatusForSchedule(@PathVariable Long scheduleId) {
-        log.info("Getting survey status for schedule ID: {}", scheduleId);
-        SurveyStatus status = surveyService.getSurveyStatusForSchedule(scheduleId);
-        log.info("Survey status retrieved: {} for schedule: {}", status, scheduleId);
-        return ApiResponse.success("Survey status retrieved successfully", status);
-    }
-
-    /**
      * Get all survey responses for a specific schedule (Admin/Staff only)
      */
     @GetMapping("/schedule/{scheduleId}/responses")
