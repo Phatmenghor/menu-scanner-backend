@@ -43,26 +43,26 @@ public class SurveyController {
 
     /**
      * Delete survey section by ID (Admin/Staff only)
-     * This sets the section status to DELETED instead of removing it
+     * This sets the section status to DELETED and returns updated survey
      */
     @DeleteMapping("/section/{sectionId}")
-    public ApiResponse<String> deleteSurveySection(@PathVariable Long sectionId) {
+    public ApiResponse<SurveyResponseDto> deleteSurveySection(@PathVariable Long sectionId) {
         log.info("Deleting survey section with ID: {}", sectionId);
-        surveyService.deleteSurveySection(sectionId);
+        SurveyResponseDto updatedSurvey = surveyService.deleteSurveySectionAndGetUpdatedSurvey(sectionId);
         log.info("Survey section deleted successfully with ID: {}", sectionId);
-        return ApiResponse.success("Survey section deleted successfully", "Section has been removed from the survey");
+        return ApiResponse.success("Survey section deleted successfully", updatedSurvey);
     }
 
     /**
      * Delete survey question by ID (Admin/Staff only)
-     * This sets the question status to DELETED instead of removing it
+     * This sets the question status to DELETED and returns updated survey
      */
     @DeleteMapping("/question/{questionId}")
-    public ApiResponse<String> deleteSurveyQuestion(@PathVariable Long questionId) {
+    public ApiResponse<SurveyResponseDto> deleteSurveyQuestion(@PathVariable Long questionId) {
         log.info("Deleting survey question with ID: {}", questionId);
-        surveyService.deleteSurveyQuestion(questionId);
+        SurveyResponseDto updatedSurvey = surveyService.deleteSurveyQuestionAndGetUpdatedSurvey(questionId);
         log.info("Survey question deleted successfully with ID: {}", questionId);
-        return ApiResponse.success("Survey question deleted successfully", "Question has been removed from the survey");
+        return ApiResponse.success("Survey question deleted successfully", updatedSurvey);
     }
 
     /**

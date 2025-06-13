@@ -21,12 +21,12 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:menghor}
     password: ${SPRING_DATASOURCE_PASSWORD:Hour1819}
     driver-class-name: org.postgresql.Driver
-#    hikari:
-#      maximum-pool-size: 10
-#      minimum-idle: 5
-#      connectionTimeout: 30000
-#      idleTimeout: 600000
-#      maxLifetime: 1800000
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connectionTimeout: 99930000
+      idleTimeout: 99600000
+      maxLifetime: 991800000
 
   mvc:
     static-path-pattern: /static/**

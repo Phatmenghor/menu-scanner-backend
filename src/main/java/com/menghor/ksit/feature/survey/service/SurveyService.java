@@ -13,11 +13,9 @@ public interface SurveyService {
     // Update the main survey content (admin only)
     SurveyResponseDto updateMainSurvey(SurveyUpdateDto updateDto);
 
-    // Delete survey section by setting status to DELETED (admin only)
-    void deleteSurveySection(Long sectionId);
-
-    // Delete survey question by setting status to DELETED (admin only)
-    void deleteSurveyQuestion(Long questionId);
+    // NEW METHODS - Delete and return updated survey
+    SurveyResponseDto deleteSurveySectionAndGetUpdatedSurvey(Long sectionId);
+    SurveyResponseDto deleteSurveyQuestionAndGetUpdatedSurvey(Long questionId);
 
     // Submit response to the survey for a specific schedule (students)
     StudentSurveyResponseDto submitSurveyResponseForSchedule(Long scheduleId, SurveyResponseSubmitDto submitDto);

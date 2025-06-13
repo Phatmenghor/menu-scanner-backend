@@ -82,7 +82,36 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public void deleteSurveySection(Long sectionId) {
+    public SurveyResponseDto deleteSurveySectionAndGetUpdatedSurvey(Long sectionId) {
+        log.info("Deleting survey section with ID: {} and returning updated survey", sectionId);
+
+        // Perform the deletion using existing method
+        deleteSurveySection(sectionId);
+
+        // Return the updated survey (this will automatically filter out deleted items)
+        SurveyResponseDto updatedSurvey = getMainSurvey();
+        log.info("Survey section deleted and updated survey returned for section ID: {}", sectionId);
+
+        return updatedSurvey;
+    }
+
+    @Override
+    @Transactional
+    public SurveyResponseDto deleteSurveyQuestionAndGetUpdatedSurvey(Long questionId) {
+        log.info("Deleting survey question with ID: {} and returning updated survey", questionId);
+
+        // Perform the deletion using existing method
+        deleteSurveyQuestion(questionId);
+
+        // Return the updated survey (this will automatically filter out deleted items)
+        SurveyResponseDto updatedSurvey = getMainSurvey();
+        log.info("Survey question deleted and updated survey returned for question ID: {}", questionId);
+
+        return updatedSurvey;
+    }
+
+    @Transactional
+    private void deleteSurveySection(Long sectionId) {
         log.info("Deleting survey section with ID: {}", sectionId);
 
         SurveySectionEntity section = surveySectionRepository.findById(sectionId)
@@ -114,9 +143,8 @@ public class SurveyServiceImpl implements SurveyService {
         log.info("Survey section deleted successfully with ID: {}", sectionId);
     }
 
-    @Override
     @Transactional
-    public void deleteSurveyQuestion(Long questionId) {
+    private void deleteSurveyQuestion(Long questionId) {
         log.info("Deleting survey question with ID: {}", questionId);
 
         SurveyQuestionEntity question = surveyQuestionRepository.findById(questionId)
