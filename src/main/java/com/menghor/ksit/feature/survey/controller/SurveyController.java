@@ -5,12 +5,12 @@ import com.menghor.ksit.feature.survey.dto.filter.SurveyReportFilterDto;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
 import com.menghor.ksit.feature.survey.dto.response.*;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
+import com.menghor.ksit.feature.survey.service.SurveyReportService;
 import com.menghor.ksit.feature.survey.service.SurveyService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,10 +22,8 @@ import java.util.List;
 public class SurveyController {
 
     private final SurveyService surveyService;
+    private final SurveyReportService surveyReportService;
 
-    /**
-     * Get main survey for admin management
-     */
     @GetMapping("/main")
     public ApiResponse<SurveyResponseDto> getMainSurvey() {
         log.info("Fetching main survey for admin");
@@ -34,9 +32,6 @@ public class SurveyController {
         return ApiResponse.success("Main survey fetched successfully", response);
     }
 
-    /**
-     * Update main survey content (Admin/Staff only)
-     */
     @PutMapping("/main")
     public ApiResponse<SurveyResponseDto> updateMainSurvey(@Valid @RequestBody SurveyUpdateDto updateDto) {
         log.info("Updating main survey with title: {}", updateDto.getTitle());
@@ -45,10 +40,6 @@ public class SurveyController {
         return ApiResponse.success("Survey updated successfully", response);
     }
 
-    /**
-     * Delete survey section by ID (Admin/Staff only)
-     * This sets the section status to DELETED and returns updated survey
-     */
     @DeleteMapping("/section/{sectionId}")
     public ApiResponse<SurveyResponseDto> deleteSurveySection(@PathVariable Long sectionId) {
         log.info("Deleting survey section with ID: {}", sectionId);
@@ -57,10 +48,6 @@ public class SurveyController {
         return ApiResponse.success("Survey section deleted successfully", updatedSurvey);
     }
 
-    /**
-     * Delete survey question by ID (Admin/Staff only)
-     * This sets the question status to DELETED and returns updated survey
-     */
     @DeleteMapping("/question/{questionId}")
     public ApiResponse<SurveyResponseDto> deleteSurveyQuestion(@PathVariable Long questionId) {
         log.info("Deleting survey question with ID: {}", questionId);
@@ -69,9 +56,6 @@ public class SurveyController {
         return ApiResponse.success("Survey question deleted successfully", updatedSurvey);
     }
 
-    /**
-     * Submit survey response for a specific schedule
-     */
     @PostMapping("/schedule/{scheduleId}/submit")
     public ApiResponse<StudentSurveyResponseDto> submitSurveyResponse(
             @PathVariable Long scheduleId,
@@ -82,9 +66,6 @@ public class SurveyController {
         return ApiResponse.success("Survey response submitted successfully", response);
     }
 
-    /**
-     * Get my response for a specific schedule
-     */
     @GetMapping("/schedule/{scheduleId}/my-response")
     public ApiResponse<StudentSurveyResponseDto> getMyResponseForSchedule(@PathVariable Long scheduleId) {
         log.info("Fetching current user's survey response for schedule ID: {}", scheduleId);
@@ -93,9 +74,6 @@ public class SurveyController {
         return ApiResponse.success("Your survey response fetched successfully", response);
     }
 
-    /**
-     * Get detailed survey response (Admin/Staff only)
-     */
     @GetMapping("/response/{responseId}/detail")
     public ApiResponse<SurveyResponseDetailDto> getStudentResponseDetail(@PathVariable Long responseId) {
         log.info("Fetching detailed survey response for ID: {}", responseId);
@@ -104,42 +82,55 @@ public class SurveyController {
         return ApiResponse.success("Survey response detail fetched successfully", response);
     }
 
-//    /**
-//     * Get survey responses report with pagination (for web table preview)
-//     * Admin/Staff only
-//     */
-//    @PostMapping("/reports/preview")
-//    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DEVELOPER')")
-//    public ApiResponse<SurveyReportResponseDto> getSurveyReportPreview(
-//            @Valid @RequestBody SurveyReportFilterDto filterDto) {
-//        log.info("Fetching survey report preview with filters: {}", filterDto);
-//        SurveyReportResponseDto response = surveyReportService.getSurveyReportWithPagination(filterDto);
-//        log.info("Survey report preview fetched successfully. Total: {}", response.getTotalElements());
-//        return ApiResponse.success("Survey report preview fetched successfully", response);
-//    }
-//
-//    /**
-//     * Get all survey responses for export/preview (same data structure)
-//     * Admin/Staff only
-//     */
-//    @PostMapping("/reports/export")
-//    public ApiResponse<List<SurveyReportRowDto>> getSurveyReportForExport(
-//            @Valid @RequestBody SurveyReportFilterDto filterDto) {
-//        log.info("Fetching survey report for export with filters: {}", filterDto);
-//        List<SurveyReportRowDto> response = surveyReportService.getSurveyReportForExport(filterDto);
-//        log.info("Survey report for export fetched successfully. Total rows: {}", response.size());
-//        return ApiResponse.success("Survey report for export fetched successfully", response);
-//    }
-//
-//    /**
-//     * Get survey report headers (for dynamic table structure)
-//     * Admin/Staff only
-//     */
-//    @GetMapping("/reports/headers")
-//    public ApiResponse<List<SurveyReportHeaderDto>> getSurveyReportHeaders() {
-//        log.info("Fetching survey report headers");
-//        List<SurveyReportHeaderDto> headers = surveyReportService.getSurveyReportHeaders();
-//        log.info("Survey report headers fetched successfully. Total: {}", headers.size());
-//        return ApiResponse.success("Survey report headers fetched successfully", headers);
-//    }
+    @PostMapping("/reports/preview")
+    public ApiResponse<CustomPaginationResponseDto<SurveyReportRowDto>> getSurveyReportPreview(
+            @Valid @RequestBody SurveyReportFilterDto filterDto) {
+        log.info("Fetching survey report preview with filters: {}", filterDto);
+        CustomPaginationResponseDto<SurveyReportRowDto> response = surveyReportService.getSurveyReportWithPagination(filterDto);
+        log.info("Survey report preview fetched successfully. Total: {}", response.getTotalElements());
+        return ApiResponse.success("Survey report preview fetched successfully", response);
+    }
+
+    @PostMapping("/reports/export")
+    public ApiResponse<List<SurveyReportRowDto>> getSurveyReportForExport(
+            @Valid @RequestBody SurveyReportFilterDto filterDto) {
+        log.info("Fetching survey report for export with filters: {}", filterDto);
+        List<SurveyReportRowDto> response = surveyReportService.getSurveyReportForExport(filterDto);
+        log.info("Survey report for export fetched successfully. Total rows: {}", response.size());
+        return ApiResponse.success("Survey report for export fetched successfully", response);
+    }
+
+    @GetMapping("/reports/headers")
+    public ApiResponse<List<SurveyReportHeaderDto>> getSurveyReportHeaders() {
+        log.info("Fetching survey report headers");
+        List<SurveyReportHeaderDto> headers = surveyReportService.getSurveyReportHeaders();
+        log.info("Survey report headers fetched successfully. Total: {}", headers.size());
+        return ApiResponse.success("Survey report headers fetched successfully", headers);
+    }
+
+    @PostMapping("/reports/active/preview")
+    public ApiResponse<CustomPaginationResponseDto<SurveyReportRowDto>> getSurveyReportActivePreview(
+            @Valid @RequestBody SurveyReportFilterDto filterDto) {
+        log.info("Fetching survey report preview with active questions only, filters: {}", filterDto);
+        CustomPaginationResponseDto<SurveyReportRowDto> response = surveyReportService.getSurveyReportWithPaginationActiveOnly(filterDto);
+        log.info("Survey report active preview fetched successfully. Total: {}", response.getTotalElements());
+        return ApiResponse.success("Survey report active preview fetched successfully", response);
+    }
+
+    @PostMapping("/reports/active/export")
+    public ApiResponse<List<SurveyReportRowDto>> getSurveyReportActiveForExport(
+            @Valid @RequestBody SurveyReportFilterDto filterDto) {
+        log.info("Fetching survey report for export with active questions only, filters: {}", filterDto);
+        List<SurveyReportRowDto> response = surveyReportService.getSurveyReportForExportActiveOnly(filterDto);
+        log.info("Survey report active export fetched successfully. Total rows: {}", response.size());
+        return ApiResponse.success("Survey report active export fetched successfully", response);
+    }
+
+    @GetMapping("/reports/active/headers")
+    public ApiResponse<List<SurveyReportHeaderDto>> getSurveyReportActiveHeaders() {
+        log.info("Fetching survey report headers for active questions only");
+        List<SurveyReportHeaderDto> headers = surveyReportService.getSurveyReportHeadersActiveOnly();
+        log.info("Survey report active headers fetched successfully. Total: {}", headers.size());
+        return ApiResponse.success("Survey report active headers fetched successfully", headers);
+    }
 }
