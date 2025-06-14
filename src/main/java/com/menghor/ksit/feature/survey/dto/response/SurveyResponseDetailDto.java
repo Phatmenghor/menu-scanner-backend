@@ -11,10 +11,14 @@ public class SurveyResponseDetailDto {
     private Long id;
     private Long surveyId;
     private String surveyTitle;
+    private String surveyDescription;
     private UserBasicInfoDto student;
     private ScheduleBasicInfoDto schedule;
     private LocalDateTime submittedAt;
     private Boolean isCompleted;
-    private List<SurveyAnswerDetailDto> answerDetails;
+
+    // Full survey structure as it was when submitted
+    private List<SurveyResponseSectionDto> sections;
+
     private LocalDateTime createdAt;
 }

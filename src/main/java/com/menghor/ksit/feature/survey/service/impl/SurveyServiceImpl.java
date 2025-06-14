@@ -314,16 +314,17 @@ public class SurveyServiceImpl implements SurveyService {
         ScheduleEntity schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new NotFoundException("Schedule not found with ID: " + scheduleId));
 
-        // Check if user already responded using specification
-        if (hasUserRespondedToSurvey(currentUser.getId(), scheduleId, mainSurvey.getId())) {
-            throw new BadRequestException("You have already responded to the survey for this schedule");
-        }
-
         // Create response using consolidated mapper
         SurveyResponseEntity response = surveyMapper.createResponseFromDto(submitDto);
         response.setSurvey(mainSurvey);
         response.setUser(currentUser);
         response.setSchedule(schedule);
+
+        // Create and store survey snapshot
+        String surveySnapshot = responseMapper.createSurveySnapshot(mainSurvey);
+        response.setSurveySnapshot(surveySnapshot);
+        response.setSurveyTitleSnapshot(mainSurvey.getTitle());
+        response.setSurveyDescriptionSnapshot(mainSurvey.getDescription());
 
         SurveyResponseEntity savedResponse = surveyResponseRepository.save(response);
 

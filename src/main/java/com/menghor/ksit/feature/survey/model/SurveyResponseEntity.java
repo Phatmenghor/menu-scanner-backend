@@ -15,8 +15,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-@Table(name = "survey_responses",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"survey_id", "user_id", "schedule_id"}))
+@Table(name = "survey_responses")
 public class SurveyResponseEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -41,6 +40,16 @@ public class SurveyResponseEntity extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String overallComment;
+
+    // Store survey snapshot as JSON when submitted
+    @Column(name = "survey_snapshot", columnDefinition = "TEXT")
+    private String surveySnapshot;
+
+    @Column(name = "survey_title_snapshot")
+    private String surveyTitleSnapshot;
+
+    @Column(name = "survey_description_snapshot", columnDefinition = "TEXT")
+    private String surveyDescriptionSnapshot;
 
     @OneToMany(mappedBy = "response", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<SurveyAnswerEntity> answers = new ArrayList<>();

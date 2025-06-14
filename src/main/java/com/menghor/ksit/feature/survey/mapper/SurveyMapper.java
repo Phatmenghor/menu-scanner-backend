@@ -70,7 +70,7 @@ public interface SurveyMapper {
                 .collect(Collectors.toList());
     }
 
-    // Helper method to map question to DTO
+    // Helper method to map question to DTO with simple rating labels
     default SurveyQuestionResponseDto mapQuestionToDto(SurveyQuestionEntity question) {
         SurveyQuestionResponseDto dto = new SurveyQuestionResponseDto();
         dto.setId(question.getId());
@@ -90,37 +90,13 @@ public interface SurveyMapper {
             int maxRating = question.getMaxRating() != null ? question.getMaxRating() : 5;
 
             for (int i = minRating; i <= maxRating; i++) {
-                String label = generateRatingLabel(i, minRating, maxRating,
-                        question.getLeftLabel(), question.getRightLabel());
-                options.add(new RatingOptionDto(i, label));
+                // Simple rating labels - just numbers
+                options.add(new RatingOptionDto(i, String.valueOf(i)));
             }
             dto.setRatingOptions(options);
         }
 
         return dto;
-    }
-
-    // Rating label generation method
-    default String generateRatingLabel(int currentValue, int minValue, int maxValue,
-                                       String leftLabel, String rightLabel) {
-        if (maxValue == 5 && minValue == 1) {
-            return switch (currentValue) {
-                case 1 -> "1 - Poor";
-                case 2 -> "2 - Fair";
-                case 3 -> "3 - Good";
-                case 4 -> "4 - Very Good";
-                case 5 -> "5 - Excellent";
-                default -> String.valueOf(currentValue);
-            };
-        }
-
-        if (currentValue == minValue && leftLabel != null && !leftLabel.trim().isEmpty()) {
-            return currentValue + " - " + leftLabel;
-        } else if (currentValue == maxValue && rightLabel != null && !rightLabel.trim().isEmpty()) {
-            return currentValue + " - " + rightLabel;
-        } else {
-            return String.valueOf(currentValue);
-        }
     }
 
     // Entity update mapping
@@ -152,6 +128,9 @@ public interface SurveyMapper {
     @Mapping(target = "status", constant = "ACTIVE")
     @Mapping(target = "isCompleted", constant = "true")
     @Mapping(target = "answers", ignore = true)
+    @Mapping(target = "surveySnapshot", ignore = true)
+    @Mapping(target = "surveyTitleSnapshot", ignore = true)
+    @Mapping(target = "surveyDescriptionSnapshot", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     SurveyResponseEntity createResponseFromDto(SurveyResponseSubmitDto dto);

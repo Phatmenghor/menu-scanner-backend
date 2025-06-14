@@ -10,9 +10,14 @@ import java.util.List;
 public class StudentSurveyResponseDto {
     private Long id;
     private Long surveyId;
+    private String surveyTitle;
+    private String surveyDescription;
     private UserBasicInfoDto user;
     private LocalDateTime submittedAt;
     private Boolean isCompleted;
-    private List<StudentSurveyAnswerDto> answers;
+    
+    // Full survey structure as it was when submitted
+    private List<SurveyResponseSectionDto> sections;
+    
     private LocalDateTime createdAt;
 }
