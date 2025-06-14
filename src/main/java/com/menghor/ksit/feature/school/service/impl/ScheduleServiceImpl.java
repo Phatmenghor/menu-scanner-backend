@@ -24,6 +24,7 @@ import com.menghor.ksit.feature.school.repository.CourseRepository;
 import com.menghor.ksit.feature.school.repository.ScheduleRepository;
 import com.menghor.ksit.feature.school.service.ScheduleService;
 import com.menghor.ksit.feature.school.specification.ScheduleSpecification;
+import com.menghor.ksit.feature.survey.model.SurveyResponseEntity;
 import com.menghor.ksit.feature.survey.repository.SurveyResponseRepository;
 import com.menghor.ksit.feature.survey.service.SurveyService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
@@ -234,7 +235,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         CustomPaginationResponseDto<ScheduleResponseDto> response = scheduleMapper.toScheduleAllResponseDto(schedulePage);
 
-        // Add survey status for student
+        // ALWAYS add survey status for student - this is critical for frontend alerts
         addSurveyStatusToSchedules(response.getContent(), student.getId());
 
         log.info("Retrieved {} schedules for student (page {}/{})",
@@ -244,37 +245,53 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     private void addSurveyStatusToSchedules(List<ScheduleResponseDto> schedules, Long userId) {
+        log.info("Adding survey status for {} schedules for user ID: {}", schedules.size(), userId);
+
         for (ScheduleResponseDto schedule : schedules) {
             try {
                 // Check if user has completed survey for this schedule
-                Boolean hasCompleted = surveyService.hasUserCompletedSurvey(userId, schedule.getId());
+                Optional<SurveyResponseEntity> responseOpt =
+                        surveyResponseRepository.findByUserIdAndScheduleId(userId, schedule.getId());
 
-                if (hasCompleted) {
+                if (responseOpt.isPresent()) {
+                    // Student has completed the survey
+                    SurveyResponseEntity response = responseOpt.get();
                     schedule.setSurveyStatus(SurveyStatus.COMPLETED);
+                    schedule.setSurveySubmittedAt(response.getSubmittedAt());
+                    schedule.setSurveyResponseId(response.getId());
 
-                    // Get survey response details
-                    Optional<com.menghor.ksit.feature.survey.model.SurveyResponseEntity> responseOpt =
-                            surveyResponseRepository.findByUserIdAndScheduleId(userId, schedule.getId());
-
-                    if (responseOpt.isPresent()) {
-                        var response = responseOpt.get();
-                        schedule.setSurveySubmittedAt(response.getSubmittedAt());
-                        schedule.setSurveyResponseId(response.getId());
-                    }
+                    log.debug("Schedule ID: {} - Survey COMPLETED at: {}",
+                            schedule.getId(), response.getSubmittedAt());
                 } else {
+                    // Student has not taken the survey yet
                     schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
                     schedule.setSurveySubmittedAt(null);
                     schedule.setSurveyResponseId(null);
+
+                    log.debug("Schedule ID: {} - Survey NOT_STARTED", schedule.getId());
                 }
 
-                schedule.setHasSurvey(true);
-
             } catch (Exception e) {
-                log.debug("Error checking survey status for schedule {}: {}", schedule.getId(), e.getMessage());
+                log.error("Error checking survey status for schedule {} and user {}: {}",
+                        schedule.getId(), userId, e.getMessage());
+
+                // Set default values on error
                 schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
-                schedule.setHasSurvey(false);
+                schedule.setSurveySubmittedAt(null);
+                schedule.setSurveyResponseId(null);
             }
         }
+
+        // Log summary for debugging
+        long completedCount = schedules.stream()
+                .mapToLong(s -> s.getSurveyStatus() == SurveyStatus.COMPLETED ? 1 : 0)
+                .sum();
+        long notStartedCount = schedules.stream()
+                .mapToLong(s -> s.getSurveyStatus() == SurveyStatus.NOT_STARTED ? 1 : 0)
+                .sum();
+
+        log.info("Survey status summary for user {}: {} completed, {} not started",
+                userId, completedCount, notStartedCount);
     }
 
     private void addSurveyStatusToSchedule(ScheduleResponseDto schedule) {
@@ -282,30 +299,36 @@ public class ScheduleServiceImpl implements ScheduleService {
             UserEntity currentUser = securityUtils.getCurrentUser();
             if (isStudent(currentUser)) {
                 // Check if user has completed survey for this schedule
-                Boolean hasCompleted = surveyService.hasUserCompletedSurvey(currentUser.getId(), schedule.getId());
+                Optional<SurveyResponseEntity> responseOpt =
+                        surveyResponseRepository.findByUserIdAndScheduleId(currentUser.getId(), schedule.getId());
 
-                if (hasCompleted) {
+                if (responseOpt.isPresent()) {
+                    SurveyResponseEntity response = responseOpt.get();
                     schedule.setSurveyStatus(SurveyStatus.COMPLETED);
+                    schedule.setSurveySubmittedAt(response.getSubmittedAt());
+                    schedule.setSurveyResponseId(response.getId());
 
-                    // Get survey response details
-                    Optional<com.menghor.ksit.feature.survey.model.SurveyResponseEntity> responseOpt =
-                            surveyResponseRepository.findByUserIdAndScheduleId(currentUser.getId(), schedule.getId());
-
-                    if (responseOpt.isPresent()) {
-                        var response = responseOpt.get();
-                        schedule.setSurveySubmittedAt(response.getSubmittedAt());
-                        schedule.setSurveyResponseId(response.getId());
-                    }
+                    log.info("User {} has COMPLETED survey for schedule {}",
+                            currentUser.getId(), schedule.getId());
                 } else {
                     schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
-                }
+                    schedule.setSurveySubmittedAt(null);
+                    schedule.setSurveyResponseId(null);
 
-                schedule.setHasSurvey(true);
+                    log.info("User {} has NOT_STARTED survey for schedule {}",
+                            currentUser.getId(), schedule.getId());
+                }
+            } else {
+                // For non-students, surveys are not applicable
+                schedule.setSurveyStatus(null);
+                schedule.setSurveySubmittedAt(null);
+                schedule.setSurveyResponseId(null);
             }
         } catch (Exception e) {
             log.debug("Could not add survey status: {}", e.getMessage());
             schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
-            schedule.setHasSurvey(false);
+            schedule.setSurveySubmittedAt(null);
+            schedule.setSurveyResponseId(null);
         }
     }
 

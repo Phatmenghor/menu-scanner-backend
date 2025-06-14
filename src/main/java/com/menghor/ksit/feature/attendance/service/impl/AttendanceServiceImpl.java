@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +77,38 @@ public class AttendanceServiceImpl implements AttendanceService {
         return attendanceMapper.toDto(attendanceRepository.save(attendance));
     }
 
+    @Override
+    public List<AttendanceDto> findAllAttendanceHistory(AttendanceHistoryFilterDto filterDto) {
+        log.info("Fetching all attendance history (no pagination) with filter: {}", filterDto);
+
+        Specification<AttendanceEntity> spec = AttendanceSpecification.combine(filterDto);
+
+        // Sort by recordedTime descending for consistency
+        Sort sort = Sort.by(Sort.Direction.DESC, "recordedTime");
+
+        List<AttendanceEntity> attendanceList = attendanceRepository.findAll(spec, sort);
+
+        List<AttendanceDto> result = attendanceList.stream()
+                .map(attendanceMapper::toDto)
+                .collect(Collectors.toList());
+
+        log.info("Retrieved {} total attendance records without pagination", result.size());
+
+        return result;
+    }
+
+    @Override
+    public Long countAttendanceHistory(AttendanceHistoryFilterDto filterDto) {
+        log.info("Counting attendance history with filter: {}", filterDto);
+
+        Specification<AttendanceEntity> spec = AttendanceSpecification.combine(filterDto);
+
+        Long count = attendanceRepository.count(spec);
+
+        log.info("Found {} total attendance records matching filter criteria", count);
+
+        return count;
+    }
 
     // Implementation
     @Override
@@ -89,7 +122,6 @@ public class AttendanceServiceImpl implements AttendanceService {
                 "DESC"
         );
 
-        // Use the new combine method that accepts AttendanceHistoryFilterDto
         Specification<AttendanceEntity> spec = AttendanceSpecification.combine(filterDto);
 
         Page<AttendanceEntity> attendancePage = attendanceRepository.findAll(spec, pageable);

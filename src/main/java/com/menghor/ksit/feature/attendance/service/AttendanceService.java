@@ -8,6 +8,8 @@ import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 
 public interface AttendanceService {
     AttendanceDto findById(Long id);
@@ -16,6 +18,10 @@ public interface AttendanceService {
                                  Pageable pageable);
 
     AttendanceDto updateAttendance(AttendanceUpdateRequest request);
+
+    List<AttendanceDto> findAllAttendanceHistory(AttendanceHistoryFilterDto filterDto);
+
+    Long countAttendanceHistory(AttendanceHistoryFilterDto filterDto);
 
     CustomPaginationResponseDto<AttendanceDto> findAttendanceHistory(AttendanceHistoryFilterDto filterDto);
 }

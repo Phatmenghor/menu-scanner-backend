@@ -41,7 +41,6 @@ public interface ScheduleMapper {
     @Mapping(target = "surveyStatus", ignore = true)
     @Mapping(target = "surveySubmittedAt", ignore = true)
     @Mapping(target = "surveyResponseId", ignore = true)
-    @Mapping(target = "hasSurvey", constant = "true")
     ScheduleResponseDto toResponseDto(ScheduleEntity entity);
 
     // New mapper for list response with IDs instead of full objects

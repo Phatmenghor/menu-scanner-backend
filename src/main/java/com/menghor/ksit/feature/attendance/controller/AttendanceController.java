@@ -18,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/attendance")
 @RequiredArgsConstructor
@@ -78,6 +80,32 @@ public class AttendanceController {
                 "success",
                 "Attendance history retrieved successfully",
                 response
+        );
+    }
+
+    @PostMapping("/history/all")
+    public ApiResponse<List<AttendanceDto>> getAllAttendanceHistory(
+            @RequestBody AttendanceHistoryFilterDto filterDto) {
+        log.info("Fetching all attendance history (no pagination) with filter: {}", filterDto);
+        List<AttendanceDto> response = attendanceService.findAllAttendanceHistory(filterDto);
+        log.info("Retrieved {} attendance records without pagination", response.size());
+        return new ApiResponse<>(
+                "success",
+                "All attendance history retrieved successfully",
+                response
+        );
+    }
+
+    @PostMapping("/history/count")
+    public ApiResponse<Long> getAttendanceHistoryCount(
+            @RequestBody AttendanceHistoryFilterDto filterDto) {
+        log.info("Fetching attendance history count with filter: {}", filterDto);
+        Long count = attendanceService.countAttendanceHistory(filterDto);
+        log.info("Found {} total attendance records matching filter criteria", count);
+        return new ApiResponse<>(
+                "success",
+                "Attendance history count retrieved successfully",
+                count
         );
     }
 
