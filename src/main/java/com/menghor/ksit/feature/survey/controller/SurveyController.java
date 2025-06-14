@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.survey.controller;
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
+import com.menghor.ksit.feature.survey.dto.filter.SurveyReportFilterDto;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
 import com.menghor.ksit.feature.survey.dto.response.*;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
@@ -9,7 +10,10 @@ import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -99,4 +103,43 @@ public class SurveyController {
         log.info("Detailed survey response fetched successfully for ID: {}", responseId);
         return ApiResponse.success("Survey response detail fetched successfully", response);
     }
+
+//    /**
+//     * Get survey responses report with pagination (for web table preview)
+//     * Admin/Staff only
+//     */
+//    @PostMapping("/reports/preview")
+//    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DEVELOPER')")
+//    public ApiResponse<SurveyReportResponseDto> getSurveyReportPreview(
+//            @Valid @RequestBody SurveyReportFilterDto filterDto) {
+//        log.info("Fetching survey report preview with filters: {}", filterDto);
+//        SurveyReportResponseDto response = surveyReportService.getSurveyReportWithPagination(filterDto);
+//        log.info("Survey report preview fetched successfully. Total: {}", response.getTotalElements());
+//        return ApiResponse.success("Survey report preview fetched successfully", response);
+//    }
+//
+//    /**
+//     * Get all survey responses for export/preview (same data structure)
+//     * Admin/Staff only
+//     */
+//    @PostMapping("/reports/export")
+//    public ApiResponse<List<SurveyReportRowDto>> getSurveyReportForExport(
+//            @Valid @RequestBody SurveyReportFilterDto filterDto) {
+//        log.info("Fetching survey report for export with filters: {}", filterDto);
+//        List<SurveyReportRowDto> response = surveyReportService.getSurveyReportForExport(filterDto);
+//        log.info("Survey report for export fetched successfully. Total rows: {}", response.size());
+//        return ApiResponse.success("Survey report for export fetched successfully", response);
+//    }
+//
+//    /**
+//     * Get survey report headers (for dynamic table structure)
+//     * Admin/Staff only
+//     */
+//    @GetMapping("/reports/headers")
+//    public ApiResponse<List<SurveyReportHeaderDto>> getSurveyReportHeaders() {
+//        log.info("Fetching survey report headers");
+//        List<SurveyReportHeaderDto> headers = surveyReportService.getSurveyReportHeaders();
+//        log.info("Survey report headers fetched successfully. Total: {}", headers.size());
+//        return ApiResponse.success("Survey report headers fetched successfully", headers);
+//    }
 }
