@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.survey.controller;
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.survey.dto.filter.SurveyReportFilterDto;
+import com.menghor.ksit.feature.survey.dto.filter.SurveyReportHeaderFilterDto;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
 import com.menghor.ksit.feature.survey.dto.response.*;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
@@ -100,10 +101,10 @@ public class SurveyController {
         return ApiResponse.success("Survey report for export fetched successfully", response);
     }
 
-    @GetMapping("/reports/headers")
-    public ApiResponse<List<SurveyReportHeaderDto>> getSurveyReportHeaders() {
+    @PostMapping("/reports/headers")
+    public ApiResponse<List<SurveyReportHeaderDto>> getSurveyReportHeaders(@Valid @RequestBody SurveyReportHeaderFilterDto headerFilterDto) {
         log.info("Fetching survey report headers");
-        List<SurveyReportHeaderDto> headers = surveyReportService.getSurveyReportHeaders();
+        List<SurveyReportHeaderDto> headers = surveyReportService.getFilteredSurveyReportHeaders(headerFilterDto);
         log.info("Survey report headers fetched successfully. Total: {}", headers.size());
         return ApiResponse.success("Survey report headers fetched successfully", headers);
     }
@@ -126,10 +127,10 @@ public class SurveyController {
         return ApiResponse.success("Survey report active export fetched successfully", response);
     }
 
-    @GetMapping("/reports/active/headers")
-    public ApiResponse<List<SurveyReportHeaderDto>> getSurveyReportActiveHeaders() {
+    @PostMapping("/reports/active/headers")
+    public ApiResponse<List<SurveyReportHeaderDto>> getSurveyReportActiveHeaders(@Valid @RequestBody SurveyReportHeaderFilterDto headerFilterDto) {
         log.info("Fetching survey report headers for active questions only");
-        List<SurveyReportHeaderDto> headers = surveyReportService.getSurveyReportHeadersActiveOnly();
+        List<SurveyReportHeaderDto> headers = surveyReportService.getFilteredSurveyReportHeadersActiveOnly(headerFilterDto);
         log.info("Survey report active headers fetched successfully. Total: {}", headers.size());
         return ApiResponse.success("Survey report active headers fetched successfully", headers);
     }

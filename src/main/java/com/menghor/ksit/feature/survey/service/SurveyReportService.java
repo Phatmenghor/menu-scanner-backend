@@ -1,8 +1,8 @@
 package com.menghor.ksit.feature.survey.service;
 
 import com.menghor.ksit.feature.survey.dto.filter.SurveyReportFilterDto;
+import com.menghor.ksit.feature.survey.dto.filter.SurveyReportHeaderFilterDto;
 import com.menghor.ksit.feature.survey.dto.response.SurveyReportHeaderDto;
-import com.menghor.ksit.feature.survey.dto.response.SurveyReportResponseDto;
 import com.menghor.ksit.feature.survey.dto.response.SurveyReportRowDto;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 
@@ -25,6 +25,12 @@ public interface SurveyReportService {
      */
     List<SurveyReportHeaderDto> getSurveyReportHeaders();
 
+    /**
+     * Get filtered headers based on hiddenHeaders only - SIMPLIFIED
+     */
+    List<SurveyReportHeaderDto> getFilteredSurveyReportHeaders(SurveyReportHeaderFilterDto filterDto);
+
+
     // ===== NEW ACTIVE-ONLY REPORT METHODS (ONLY ACTIVE QUESTIONS) =====
 
     /**
@@ -44,4 +50,9 @@ public interface SurveyReportService {
      * Excludes deleted questions from the headers
      */
     List<SurveyReportHeaderDto> getSurveyReportHeadersActiveOnly();
+
+    /**
+     * Get filtered headers for ACTIVE QUESTIONS with hiddenHeaders filter - SIMPLIFIED
+     */
+    List<SurveyReportHeaderDto> getFilteredSurveyReportHeadersActiveOnly(SurveyReportHeaderFilterDto filterDto);
 }

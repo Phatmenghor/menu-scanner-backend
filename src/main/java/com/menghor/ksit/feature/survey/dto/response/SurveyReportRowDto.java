@@ -12,7 +12,7 @@ public class SurveyReportRowDto {
     // Student Information
     private Long responseId;
     private Long studentId;
-    private String studentCode;
+    private String identifyNumber;
     private String studentNameEnglish;
     private String studentNameKhmer;
     private String studentEmail;

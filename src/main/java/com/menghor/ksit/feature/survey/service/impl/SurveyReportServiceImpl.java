@@ -6,6 +6,7 @@ import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.feature.survey.dto.filter.SurveyReportFilterDto;
+import com.menghor.ksit.feature.survey.dto.filter.SurveyReportHeaderFilterDto;
 import com.menghor.ksit.feature.survey.dto.response.SurveyReportHeaderDto;
 import com.menghor.ksit.feature.survey.dto.response.SurveyReportRowDto;
 import com.menghor.ksit.feature.survey.model.*;
@@ -103,6 +104,20 @@ public class SurveyReportServiceImpl implements SurveyReportService {
         return headers;
     }
 
+    @Override
+    public List<SurveyReportHeaderDto> getFilteredSurveyReportHeaders(SurveyReportHeaderFilterDto filterDto) {
+        log.info("Generating FILTERED survey report headers - ALL QUESTIONS with filter: {}", filterDto);
+
+        // Get all headers first
+        List<SurveyReportHeaderDto> allHeaders = getSurveyReportHeaders();
+
+        // Apply SIMPLIFIED filtering logic - only hiddenHeaders
+        List<SurveyReportHeaderDto> filteredHeaders = applySimplifiedHeaderFilter(allHeaders, filterDto);
+
+        log.info("Filtered headers count: {} from total: {}", filteredHeaders.size(), allHeaders.size());
+        return filteredHeaders;
+    }
+
     // ===== NEW ACTIVE-ONLY REPORT METHODS =====
 
     @Override
@@ -170,6 +185,48 @@ public class SurveyReportServiceImpl implements SurveyReportService {
 
         log.info("Survey report headers (active only) generated successfully. Total headers: {}", headers.size());
         return headers;
+    }
+
+    @Override
+    public List<SurveyReportHeaderDto> getFilteredSurveyReportHeadersActiveOnly(SurveyReportHeaderFilterDto filterDto) {
+        log.info("Generating FILTERED survey report headers - ACTIVE QUESTIONS ONLY with filter: {}", filterDto);
+
+        // Get active headers first
+        List<SurveyReportHeaderDto> activeHeaders = getSurveyReportHeadersActiveOnly();
+
+        // Apply SIMPLIFIED filtering logic - only hiddenHeaders
+        List<SurveyReportHeaderDto> filteredHeaders = applySimplifiedHeaderFilter(activeHeaders, filterDto);
+
+        log.info("Filtered active headers count: {} from total: {}", filteredHeaders.size(), activeHeaders.size());
+        return filteredHeaders;
+    }
+
+    /**
+     * SIMPLIFIED header filtering - only supports hiddenHeaders
+     * Much cleaner and easier to use
+     */
+    private List<SurveyReportHeaderDto> applySimplifiedHeaderFilter(List<SurveyReportHeaderDto> allHeaders,
+                                                                    SurveyReportHeaderFilterDto filterDto) {
+        // If no filter provided, return all headers
+        if (filterDto == null || filterDto.getHiddenHeaders() == null || filterDto.getHiddenHeaders().isEmpty()) {
+            log.info("No hidden headers specified, returning all {} headers", allHeaders.size());
+            return allHeaders;
+        }
+
+        // Convert hidden headers to Set for faster lookup
+        Set<String> hiddenHeadersSet = new HashSet<>(filterDto.getHiddenHeaders());
+
+        log.info("Filtering out {} hidden headers: {}", hiddenHeadersSet.size(), hiddenHeadersSet);
+
+        // Filter out hidden headers
+        List<SurveyReportHeaderDto> filteredHeaders = allHeaders.stream()
+                .filter(header -> !hiddenHeadersSet.contains(header.getKey()))
+                .collect(Collectors.toList());
+
+        log.info("Filtered headers: {} hidden, {} remaining",
+                hiddenHeadersSet.size(), filteredHeaders.size());
+
+        return filteredHeaders;
     }
 
     // ===== HELPER METHODS FOR ALL QUESTIONS (ORIGINAL FUNCTIONALITY) =====
@@ -243,32 +300,14 @@ public class SurveyReportServiceImpl implements SurveyReportService {
     }
 
     private List<SurveyQuestionEntity> getAllQuestionsFromMainSurvey() {
-        // Get main survey
         SurveyEntity mainSurvey = getMainSurveyEntity();
-
-        // Collect ALL questions from ALL sections (including deleted ones)
         List<SurveyQuestionEntity> allQuestions = new ArrayList<>();
 
         for (SurveySectionEntity section : mainSurvey.getAllSections()) {
             allQuestions.addAll(section.getAllQuestions());
         }
 
-        // Sort by section display order, then question display order
-        allQuestions.sort((q1, q2) -> {
-            int sectionCompare = Integer.compare(
-                    q1.getSection().getDisplayOrder() != null ? q1.getSection().getDisplayOrder() : 0,
-                    q2.getSection().getDisplayOrder() != null ? q2.getSection().getDisplayOrder() : 0
-            );
-
-            if (sectionCompare != 0) {
-                return sectionCompare;
-            }
-
-            return Integer.compare(
-                    q1.getDisplayOrder() != null ? q1.getDisplayOrder() : 0,
-                    q2.getDisplayOrder() != null ? q2.getDisplayOrder() : 0
-            );
-        });
+        allQuestions.sort(Comparator.comparingInt((SurveyQuestionEntity q) -> q.getSection().getDisplayOrder() != null ? q.getSection().getDisplayOrder() : 0).thenComparingInt(q -> q.getDisplayOrder() != null ? q.getDisplayOrder() : 0));
 
         return allQuestions;
     }
@@ -360,21 +399,7 @@ public class SurveyReportServiceImpl implements SurveyReportService {
         }
 
         // Sort by section display order, then question display order
-        activeQuestions.sort((q1, q2) -> {
-            int sectionCompare = Integer.compare(
-                    q1.getSection().getDisplayOrder() != null ? q1.getSection().getDisplayOrder() : 0,
-                    q2.getSection().getDisplayOrder() != null ? q2.getSection().getDisplayOrder() : 0
-            );
-
-            if (sectionCompare != 0) {
-                return sectionCompare;
-            }
-
-            return Integer.compare(
-                    q1.getDisplayOrder() != null ? q1.getDisplayOrder() : 0,
-                    q2.getDisplayOrder() != null ? q2.getDisplayOrder() : 0
-            );
-        });
+        activeQuestions.sort(Comparator.comparingInt((SurveyQuestionEntity q) -> q.getSection().getDisplayOrder() != null ? q.getSection().getDisplayOrder() : 0).thenComparingInt(q -> q.getDisplayOrder() != null ? q.getDisplayOrder() : 0));
 
         return activeQuestions;
     }
@@ -399,7 +424,7 @@ public class SurveyReportServiceImpl implements SurveyReportService {
         UserEntity student = response.getUser();
         if (student != null) {
             row.setStudentId(student.getId());
-            row.setStudentCode(student.getIdentifyNumber());
+            row.setIdentifyNumber(student.getIdentifyNumber());
             row.setStudentNameEnglish(getFormattedEnglishName(student));
             row.setStudentNameKhmer(getFormattedKhmerName(student));
             row.setStudentEmail(student.getEmail());
@@ -462,7 +487,7 @@ public class SurveyReportServiceImpl implements SurveyReportService {
 
         // Student info headers
         headers.add(createHeader("studentId", "Student ID", "NUMBER", "STUDENT", null, order++));
-        headers.add(createHeader("studentCode", "Student Code", "TEXT", "STUDENT", null, order++));
+        headers.add(createHeader("identifyNumber", "Identify Number", "TEXT", "STUDENT", null, order++));
         headers.add(createHeader("studentNameEnglish", "Student Name (English)", "TEXT", "STUDENT", null, order++));
         headers.add(createHeader("studentNameKhmer", "Student Name (Khmer)", "TEXT", "STUDENT", null, order++));
         headers.add(createHeader("studentEmail", "Student Email", "TEXT", "STUDENT", null, order++));

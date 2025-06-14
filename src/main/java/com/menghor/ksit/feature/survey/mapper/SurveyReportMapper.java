@@ -21,7 +21,7 @@ public interface SurveyReportMapper {
     // Map response entity to report row
     @Mapping(target = "responseId", source = "id")
     @Mapping(target = "studentId", source = "user.id")
-    @Mapping(target = "studentCode", source = "user.identifyNumber")
+    @Mapping(target = "identifyNumber", source = "user.identifyNumber")
     @Mapping(target = "studentNameEnglish", source = "user", qualifiedByName = "mapEnglishName")
     @Mapping(target = "studentNameKhmer", source = "user", qualifiedByName = "mapKhmerName")
     @Mapping(target = "studentEmail", source = "user.email")
