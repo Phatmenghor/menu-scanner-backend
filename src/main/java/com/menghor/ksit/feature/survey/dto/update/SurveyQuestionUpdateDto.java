@@ -9,7 +9,6 @@ import lombok.Data;
 public class SurveyQuestionUpdateDto {
     private Long id; // For updating existing questions
 
-    @NotBlank(message = "Question text is required")
     private String questionText;
 
     @NotNull(message = "Question type is required")

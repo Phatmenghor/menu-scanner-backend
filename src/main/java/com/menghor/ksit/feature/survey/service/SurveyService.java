@@ -15,6 +15,7 @@ public interface SurveyService {
 
     // NEW METHODS - Delete and return updated survey
     SurveyResponseDto deleteSurveySectionAndGetUpdatedSurvey(Long sectionId);
+
     SurveyResponseDto deleteSurveyQuestionAndGetUpdatedSurvey(Long questionId);
 
     // Submit response to the survey for a specific schedule (students)
