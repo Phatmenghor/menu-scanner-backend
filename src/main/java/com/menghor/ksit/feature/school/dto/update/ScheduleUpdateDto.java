@@ -3,7 +3,9 @@ package com.menghor.ksit.feature.school.dto.update;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.YearLevelEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -19,6 +21,7 @@ public class ScheduleUpdateDto {
     private LocalTime endTime;
     private DayOfWeek day;
     private Long classId;
+    private YearLevelEnum yearLevel;
     private Long teacherId;
     private Long courseId;
     private Long roomId;

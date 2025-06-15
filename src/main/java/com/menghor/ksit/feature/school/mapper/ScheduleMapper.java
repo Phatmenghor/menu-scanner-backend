@@ -49,7 +49,7 @@ public interface ScheduleMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "classes", ignore = true)
-    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "user", ignore = true) add
     @Mapping(target = "course", ignore = true)
     @Mapping(target = "room", ignore = true)
     @Mapping(target = "semester", ignore = true)
