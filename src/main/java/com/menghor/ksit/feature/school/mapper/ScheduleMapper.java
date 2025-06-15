@@ -43,14 +43,6 @@ public interface ScheduleMapper {
     @Mapping(target = "surveyResponseId", ignore = true)
     ScheduleResponseDto toResponseDto(ScheduleEntity entity);
 
-    // New mapper for list response with IDs instead of full objects
-    @Mapping(target = "classId", source = "classes.id")
-    @Mapping(target = "courseId", source = "course.id")
-    @Mapping(target = "roomId", source = "room.id")
-    @Mapping(target = "teacher", source = "user")
-    @Mapping(target = "semesterId", source = "semester.id")
-    ScheduleResponseListDto toResponseListDto(ScheduleEntity entity);
-
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

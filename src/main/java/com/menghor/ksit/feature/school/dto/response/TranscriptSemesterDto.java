@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.school.dto.response;
 
 import com.menghor.ksit.enumations.SemesterEnum;
+import com.menghor.ksit.enumations.YearLevelEnum;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -11,17 +12,13 @@ public class TranscriptSemesterDto {
     private Integer academyYear;
     private SemesterEnum semester;
     private String semesterName; // e.g., "Semester 1, 2024"
+    private YearLevelEnum yearLevel; // Year 1, 2, 3, 4
 
-    // Semester statistics
-    private Integer semesterCreditsEarned;
-    private Integer semesterCreditsAttempted;
-    private BigDecimal semesterGPA;
+    // Semester totals
+    private Integer totalCredits;
+    private BigDecimal gpa;
+    private BigDecimal gpax; // Cumulative GPA up to this semester
 
     // Courses in this semester
     private List<TranscriptCourseDto> courses;
-
-    // Running totals up to this semester
-    private Integer cumulativeCreditsEarned;
-    private Integer cumulativeCreditsAttempted;
-    private BigDecimal cumulativeGPA;
 }

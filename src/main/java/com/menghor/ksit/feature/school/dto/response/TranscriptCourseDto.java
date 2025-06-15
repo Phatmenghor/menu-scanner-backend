@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.school.dto.response;
 
+import com.menghor.ksit.enumations.CourseStatusEnum;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -11,9 +12,8 @@ public class TranscriptCourseDto {
     private String courseName;
     private String courseNameKH;
 
-    // Credit breakdown (detailed course info)
-    private Integer credits; // Main credit for calculation
-    private Integer credit;  // Original credit field
+    // Course details
+    private Integer credit; // Single credit field
     private Integer theory;  // Theory hours
     private Integer execute; // Execute/practical hours
     private Integer apply;   // Applied hours
@@ -28,9 +28,9 @@ public class TranscriptCourseDto {
 
     // Score information
     private BigDecimal totalScore; // Out of 100
-    private String letterGrade; // A, B, C, D, F
+    private String letterGrade; // A, B, C, D, F or "---" for in progress
     private BigDecimal gradePoints; // For GPA calculation
-    private String status; // COMPLETED, IN_PROGRESS
+    private CourseStatusEnum status; // COMPLETED, IN_PROGRESS
 
     // Score breakdown
     private BigDecimal attendanceScore;

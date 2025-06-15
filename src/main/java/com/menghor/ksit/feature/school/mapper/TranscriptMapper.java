@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.school.mapper;
 
+import com.menghor.ksit.enumations.CourseStatusEnum;
 import com.menghor.ksit.feature.attendance.models.StudentScoreEntity;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.school.dto.response.TranscriptCourseDto;
@@ -19,9 +20,12 @@ public interface TranscriptMapper {
     @Mapping(target = "className", source = "classes.code")
     @Mapping(target = "majorName", source = ".", qualifiedByName = "mapMajorName")
     @Mapping(target = "departmentName", source = ".", qualifiedByName = "mapDepartmentName")
-    @Mapping(target = "totalCreditsEarned", ignore = true)
-    @Mapping(target = "totalCreditsAttempted", ignore = true)
-    @Mapping(target = "overallGPA", ignore = true)
+    @Mapping(target = "dateOfBirth", source = "dateOfBirth")
+    @Mapping(target = "degree", source = "classes.degree")
+    @Mapping(target = "numberOfCreditsStudied", ignore = true)
+    @Mapping(target = "numberOfCreditsTransferred", ignore = true)
+    @Mapping(target = "totalNumberOfCreditsEarned", ignore = true)
+    @Mapping(target = "cumulativeGradePointAverage", ignore = true)
     @Mapping(target = "academicStatus", ignore = true)
     @Mapping(target = "semesters", ignore = true)
     @Mapping(target = "generatedAt", ignore = true)
@@ -31,7 +35,6 @@ public interface TranscriptMapper {
     @Mapping(target = "courseCode", source = "course.code")
     @Mapping(target = "courseName", source = "course.nameEn")
     @Mapping(target = "courseNameKH", source = "course.nameKH")
-    @Mapping(target = "credits", source = "course.credit")
     @Mapping(target = "credit", source = "course.credit")
     @Mapping(target = "theory", source = "course.theory")
     @Mapping(target = "execute", source = "course.execute")
@@ -53,7 +56,8 @@ public interface TranscriptMapper {
     TranscriptCourseDto toCourseDto(ScheduleEntity schedule);
 
     @Mapping(target = "totalScore", source = "totalScore")
-    @Mapping(target = "letterGrade", source = "grade")
+    @Mapping(target = "letterGrade", source = ".", qualifiedByName = "mapLetterGrade")
+    @Mapping(target = "status", constant = "COMPLETED")
     @Mapping(target = "attendanceScore", source = "attendanceScore")
     @Mapping(target = "assignmentScore", source = "assignmentScore")
     @Mapping(target = "midtermScore", source = "midtermScore")
@@ -108,5 +112,22 @@ public interface TranscriptMapper {
             return teacher.getKhmerFirstName() + " " + teacher.getKhmerLastName();
         }
         return teacher.getUsername();
+    }
+
+    @Named("mapLetterGrade")
+    default String mapLetterGrade(StudentScoreEntity score) {
+        if (score.getGrade() != null && !score.getGrade().isEmpty()) {
+            return score.getGrade();
+        }
+        // If no grade available, determine based on total score
+        if (score.getTotalScore() != null) {
+            double totalScore = score.getTotalScore().doubleValue();
+            if (totalScore >= 90) return "A";
+            else if (totalScore >= 80) return "B";
+            else if (totalScore >= 70) return "C";
+            else if (totalScore >= 60) return "D";
+            else return "F";
+        }
+        return null; // Default for no score
     }
 }

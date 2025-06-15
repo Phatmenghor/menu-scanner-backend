@@ -1,7 +1,6 @@
 package com.menghor.ksit.feature.school.service.impl;
 
-import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.enumations.SubmissionStatus;
+import com.menghor.ksit.enumations.*;
 import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.attendance.models.ScoreSessionEntity;
@@ -79,8 +78,8 @@ public class TranscriptServiceImpl implements TranscriptService {
         // Build complete transcript response
         TranscriptResponseDto transcript = buildCompleteTranscript(student, groupedSchedules);
 
-        log.info("Complete transcript generated for student {} with {} semesters, {} total credits",
-                student.getId(), transcript.getSemesters().size(), transcript.getTotalCreditsAttempted());
+        log.info("Complete transcript generated for student {} with {} semesters",
+                student.getId(), transcript.getSemesters().size());
 
         return transcript;
     }
@@ -113,37 +112,47 @@ public class TranscriptServiceImpl implements TranscriptService {
         List<TranscriptSemesterDto> semesters = new ArrayList<>();
 
         // Running totals for cumulative calculation
-        int cumulativeCreditsEarned = 0;
-        int cumulativeCreditsAttempted = 0;
+        int totalCreditsStudied = 0;
+        int totalCreditsEarned = 0;
         BigDecimal cumulativeGradePoints = BigDecimal.ZERO;
 
         // Sort semesters chronologically
         List<String> sortedKeys = groupedSchedules.keySet().stream()
                 .sorted(this::compareSemesterKeys)
-                .collect(Collectors.toList());
+                .toList();
 
         for (String semesterKey : sortedKeys) {
             List<ScheduleEntity> semesterSchedules = groupedSchedules.get(semesterKey);
 
             TranscriptSemesterDto semesterDto = buildSemesterDto(student, semesterSchedules);
 
-            // Update cumulative totals
-            cumulativeCreditsEarned += semesterDto.getSemesterCreditsEarned();
-            cumulativeCreditsAttempted += semesterDto.getSemesterCreditsAttempted();
+            // Update running totals
+            totalCreditsStudied += semesterDto.getTotalCredits();
 
-            // Calculate cumulative grade points
-            BigDecimal semesterGradePoints = calculateSemesterGradePoints(semesterDto.getCourses());
+            // Only count earned credits for completed courses
+            int semesterCreditsEarned = semesterDto.getCourses().stream()
+                    .filter(course -> course.getStatus() == CourseStatusEnum.COMPLETED &&
+                            isPassingGrade(course.getLetterGrade()))
+                    .mapToInt(course -> course.getCredit() != null ? course.getCredit() : 0)
+                    .sum();
+
+            totalCreditsEarned += semesterCreditsEarned;
+
+            // Calculate cumulative grade points for completed courses only
+            BigDecimal semesterGradePoints = calculateSemesterGradePoints(
+                    semesterDto.getCourses().stream()
+                            .filter(course -> course.getStatus() == CourseStatusEnum.COMPLETED)
+                            .collect(Collectors.toList())
+            );
             cumulativeGradePoints = cumulativeGradePoints.add(semesterGradePoints);
 
-            // Calculate cumulative GPA
-            BigDecimal cumulativeGPA = cumulativeCreditsAttempted > 0 ?
-                    cumulativeGradePoints.divide(BigDecimal.valueOf(cumulativeCreditsAttempted), 2, RoundingMode.HALF_UP) :
+            // Calculate cumulative GPA (GPAX)
+            BigDecimal cumulativeGPA = totalCreditsStudied > 0 ?
+                    cumulativeGradePoints.divide(BigDecimal.valueOf(totalCreditsStudied), 2, RoundingMode.HALF_UP) :
                     BigDecimal.ZERO;
 
-            // Set cumulative values
-            semesterDto.setCumulativeCreditsEarned(cumulativeCreditsEarned);
-            semesterDto.setCumulativeCreditsAttempted(cumulativeCreditsAttempted);
-            semesterDto.setCumulativeGPA(cumulativeGPA);
+            // Set GPAX
+            semesterDto.setGpax(cumulativeGPA);
 
             semesters.add(semesterDto);
         }
@@ -151,12 +160,13 @@ public class TranscriptServiceImpl implements TranscriptService {
         transcript.setSemesters(semesters);
 
         // Set overall totals
-        transcript.setTotalCreditsEarned(cumulativeCreditsEarned);
-        transcript.setTotalCreditsAttempted(cumulativeCreditsAttempted);
-        transcript.setOverallGPA(cumulativeCreditsAttempted > 0 ?
-                cumulativeGradePoints.divide(BigDecimal.valueOf(cumulativeCreditsAttempted), 2, RoundingMode.HALF_UP) :
+        transcript.setNumberOfCreditsStudied(totalCreditsStudied);
+        transcript.setNumberOfCreditsTransferred(0); // Default to 0, can be configured later
+        transcript.setTotalNumberOfCreditsEarned(totalCreditsEarned);
+        transcript.setCumulativeGradePointAverage(totalCreditsStudied > 0 ?
+                cumulativeGradePoints.divide(BigDecimal.valueOf(totalCreditsStudied), 2, RoundingMode.HALF_UP) :
                 BigDecimal.ZERO);
-        transcript.setAcademicStatus(determineAcademicStatus(transcript.getOverallGPA()));
+        transcript.setAcademicStatus(determineAcademicStatus(transcript.getCumulativeGradePointAverage()));
         transcript.setGeneratedAt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
         return transcript;
@@ -174,6 +184,15 @@ public class TranscriptServiceImpl implements TranscriptService {
                 semesterDto.setSemesterName(firstSchedule.getSemester().getSemester().name() +
                         ", " + firstSchedule.getSemester().getAcademyYear());
             }
+
+            // Set year level from schedule or derive from academy year
+            if (firstSchedule.getYearLevel() != null) {
+                semesterDto.setYearLevel(firstSchedule.getYearLevel());
+            } else {
+                // Derive year level from academy year if not set
+                assert firstSchedule.getSemester() != null;
+                semesterDto.setYearLevel(deriveYearLevel(firstSchedule.getSemester().getAcademyYear()));
+            }
         }
 
         // Build course list
@@ -184,24 +203,27 @@ public class TranscriptServiceImpl implements TranscriptService {
 
         semesterDto.setCourses(courses);
 
-        // Calculate semester totals (use credits field for calculation)
-        int semesterCreditsEarned = courses.stream()
-                .filter(course -> isPassingGrade(course.getLetterGrade()))
-                .mapToInt(course -> course.getCredits() != null ? course.getCredits() : 0)
+        // Calculate semester totals
+        int totalCredits = courses.stream()
+                .mapToInt(course -> course.getCredit() != null ? course.getCredit() : 0)
                 .sum();
 
-        int semesterCreditsAttempted = courses.stream()
-                .mapToInt(course -> course.getCredits() != null ? course.getCredits() : 0)
+        // Calculate GPA for completed courses only
+        List<TranscriptCourseDto> completedCourses = courses.stream()
+                .filter(course -> course.getStatus() == CourseStatusEnum.COMPLETED)
+                .collect(Collectors.toList());
+
+        BigDecimal semesterGradePoints = calculateSemesterGradePoints(completedCourses);
+        int completedCredits = completedCourses.stream()
+                .mapToInt(course -> course.getCredit() != null ? course.getCredit() : 0)
                 .sum();
 
-        BigDecimal semesterGradePoints = calculateSemesterGradePoints(courses);
-        BigDecimal semesterGPA = semesterCreditsAttempted > 0 ?
-                semesterGradePoints.divide(BigDecimal.valueOf(semesterCreditsAttempted), 2, RoundingMode.HALF_UP) :
+        BigDecimal semesterGPA = completedCredits > 0 ?
+                semesterGradePoints.divide(BigDecimal.valueOf(completedCredits), 2, RoundingMode.HALF_UP) :
                 BigDecimal.ZERO;
 
-        semesterDto.setSemesterCreditsEarned(semesterCreditsEarned);
-        semesterDto.setSemesterCreditsAttempted(semesterCreditsAttempted);
-        semesterDto.setSemesterGPA(semesterGPA);
+        semesterDto.setTotalCredits(totalCredits);
+        semesterDto.setGpa(semesterGPA);
 
         return semesterDto;
     }
@@ -219,13 +241,13 @@ public class TranscriptServiceImpl implements TranscriptService {
             // Calculate grade points for GPA
             BigDecimal gradePoints = calculateGradePoints(courseDto.getLetterGrade());
             courseDto.setGradePoints(gradePoints);
-            courseDto.setStatus("COMPLETED");
+            courseDto.setStatus(CourseStatusEnum.COMPLETED);
         } else {
-            // No score found - set defaults
+            // No score found - set defaults for in progress
             courseDto.setTotalScore(BigDecimal.ZERO);
-            courseDto.setLetterGrade("IP"); // In Progress
+            courseDto.setLetterGrade(null); // Show null instead of ---
             courseDto.setGradePoints(BigDecimal.ZERO);
-            courseDto.setStatus("IN_PROGRESS");
+            courseDto.setStatus(CourseStatusEnum.IN_PROGRESS);
             courseDto.setAttendanceScore(BigDecimal.ZERO);
             courseDto.setAssignmentScore(BigDecimal.ZERO);
             courseDto.setMidtermScore(BigDecimal.ZERO);
@@ -263,6 +285,21 @@ public class TranscriptServiceImpl implements TranscriptService {
         return Optional.empty();
     }
 
+    private YearLevelEnum deriveYearLevel(Integer academyYear) {
+        // This is a simple derivation - you might want to implement more complex logic
+        // based on your school's academic calendar
+        int currentYear = LocalDateTime.now().getYear();
+        int yearDifference = currentYear - academyYear;
+
+        return switch (yearDifference) {
+            case 0 -> YearLevelEnum.FIRST_YEAR;
+            case 1 -> YearLevelEnum.SECOND_YEAR;
+            case 2 -> YearLevelEnum.THIRD_YEAR;
+            case 3 -> YearLevelEnum.FOURTH_YEAR;
+            default -> YearLevelEnum.FIRST_YEAR; // Default
+        };
+    }
+
     private BigDecimal calculateGradePoints(String letterGrade) {
         if (letterGrade == null) return BigDecimal.ZERO;
 
@@ -279,21 +316,21 @@ public class TranscriptServiceImpl implements TranscriptService {
             case "D" -> BigDecimal.valueOf(1.0);
             case "D-" -> BigDecimal.valueOf(0.7);
             case "F" -> BigDecimal.ZERO;
-            default -> BigDecimal.ZERO; // IP, etc.
+            default -> BigDecimal.ZERO;
         };
     }
 
     private boolean isPassingGrade(String letterGrade) {
         if (letterGrade == null) return false;
-        return !letterGrade.equals("F") && !letterGrade.equals("IP");
+        return !letterGrade.equals("F");
     }
 
     private BigDecimal calculateSemesterGradePoints(List<TranscriptCourseDto> courses) {
         return courses.stream()
                 .filter(course -> course.getGradePoints() != null &&
-                        course.getCredits() != null && // Use credits for calculation
-                        !course.getLetterGrade().equals("IP"))
-                .map(course -> course.getGradePoints().multiply(BigDecimal.valueOf(course.getCredits())))
+                        course.getCredit() != null &&
+                        course.getLetterGrade() != null)
+                .map(course -> course.getGradePoints().multiply(BigDecimal.valueOf(course.getCredit())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -314,9 +351,10 @@ public class TranscriptServiceImpl implements TranscriptService {
     private TranscriptResponseDto createEmptyTranscript(UserEntity student) {
         TranscriptResponseDto transcript = transcriptMapper.toTranscriptResponse(student);
         transcript.setSemesters(new ArrayList<>());
-        transcript.setTotalCreditsEarned(0);
-        transcript.setTotalCreditsAttempted(0);
-        transcript.setOverallGPA(BigDecimal.ZERO);
+        transcript.setNumberOfCreditsStudied(0);
+        transcript.setNumberOfCreditsTransferred(0);
+        transcript.setTotalNumberOfCreditsEarned(0);
+        transcript.setCumulativeGradePointAverage(BigDecimal.ZERO);
         transcript.setAcademicStatus("No Records");
         transcript.setGeneratedAt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         return transcript;

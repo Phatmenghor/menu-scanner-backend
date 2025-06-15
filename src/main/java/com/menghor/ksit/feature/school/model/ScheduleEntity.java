@@ -2,9 +2,12 @@ package com.menghor.ksit.feature.school.model;
 
 import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.YearLevelEnum;
 import com.menghor.ksit.feature.auth.models.UserEntity;
-import com.menghor.ksit.feature.master.model.*;
-import com.menghor.ksit.feature.survey.model.SurveyEntity; // Import SurveyEntity
+import com.menghor.ksit.feature.master.model.ClassEntity;
+import com.menghor.ksit.feature.master.model.RoomEntity;
+import com.menghor.ksit.feature.master.model.SemesterEntity;
+import com.menghor.ksit.feature.survey.model.SurveyEntity;
 import com.menghor.ksit.utils.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -29,6 +32,9 @@ public class ScheduleEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private DayOfWeek day;
+    
+    @Enumerated(EnumType.STRING)
+    private YearLevelEnum yearLevel;
 
     @ManyToOne
     @JoinColumn(name = "classes_id")
