@@ -37,6 +37,7 @@ public interface ScheduleMapper {
     @Mapping(target = "teacher", source = "user")
     @Mapping(target = "course", source = "course")
     @Mapping(target = "room", source = "room")
+    @Mapping(target = "yearLevel", source = "yearLevel")
     @Mapping(target = "semester", source = "semester")
     @Mapping(target = "surveyStatus", ignore = true)
     @Mapping(target = "surveySubmittedAt", ignore = true)

@@ -3,6 +3,7 @@ package com.menghor.ksit.feature.school.dto.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.enumations.YearLevelEnum;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserListResponseDto;
 import lombok.Data;
 
@@ -20,6 +21,7 @@ public class ScheduleResponseListDto {
     private DayOfWeek day;
     private Status status;
     private Long classId;
+    private YearLevelEnum yearLevel;
     private StaffUserListResponseDto teacher;
     private Long courseId;
     private Long roomId;

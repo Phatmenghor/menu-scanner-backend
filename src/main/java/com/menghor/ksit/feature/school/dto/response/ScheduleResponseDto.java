@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.enumations.SurveyStatus;
+import com.menghor.ksit.enumations.YearLevelEnum;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserListResponseDto;
 import com.menghor.ksit.feature.master.dto.response.ClassResponseDto;
 import com.menghor.ksit.feature.master.dto.response.RoomResponseDto;
@@ -31,6 +32,8 @@ public class ScheduleResponseDto {
 
     @Schema(description = "Academic year")
     private Integer academyYear;
+
+    private YearLevelEnum yearLevel;
 
     @Schema(description = "Day of the week")
     private DayOfWeek day;
