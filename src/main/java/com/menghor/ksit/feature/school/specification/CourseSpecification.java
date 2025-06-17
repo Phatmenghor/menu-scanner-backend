@@ -29,22 +29,7 @@ public class CourseSpecification {
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("nameKH")), term));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("nameEn")), term));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), term));
-
-            // Also search in department and subject names if joined
-            try {
-                Join<CourseEntity, DepartmentEntity> departmentJoin = root.join("department", JoinType.LEFT);
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(departmentJoin.get("name")), term));
-            } catch (IllegalArgumentException e) {
-                // Department join failed, ignore this part of the search
-            }
-
-            try {
-                Join<CourseEntity, SubjectEntity> subjectJoin = root.join("subject", JoinType.LEFT);
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(subjectJoin.get("name")), term));
-            } catch (IllegalArgumentException e) {
-                // Subject join failed, ignore this part of the search
-            }
-
+            
             return criteriaBuilder.or(predicates.toArray(new Predicate[0]));
         };
     }

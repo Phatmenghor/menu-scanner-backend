@@ -1,10 +1,12 @@
 package com.menghor.ksit.feature.auth.dto.resposne;
 
 import com.menghor.ksit.enumations.GenderEnum;
+import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.feature.school.dto.response.ClassBasicInfoDto;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class UserBasicInfoDto {
@@ -25,5 +27,7 @@ public class UserBasicInfoDto {
     private String majorName;
     private String departmentName;
     private ClassBasicInfoDto userClass;
+    private List<RoleEnum> roles;
+    private Boolean isStudent;
     private String createdAt;
 }

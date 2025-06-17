@@ -2,6 +2,7 @@ package com.menghor.ksit.feature.school.mapper;
 
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.feature.auth.dto.resposne.UserBasicInfoDto;
+import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.school.dto.request.RequestCreateDto;
@@ -16,11 +17,12 @@ import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface RequestMapper {
 
-    // === BASIC MAPPINGS WITHOUT QUALIFIERS ===
+    // === BASIC MAPPINGS ===
 
     // Main entity to response DTO mapping
     RequestResponseDto toResponseDto(RequestEntity entity);
@@ -43,11 +45,13 @@ public interface RequestMapper {
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntityFromDto(RequestUpdateDto updateDto, @MappingTarget RequestEntity entity);
 
-    // User to User Basic Info mapping
+    // User to User Basic Info mapping with role information
     @Mapping(target = "userClass", source = "classes", qualifiedByName = "mapUserClass")
     @Mapping(target = "departmentName", source = ".", qualifiedByName = "extractDepartmentName")
     @Mapping(target = "degree", source = "classes.degree", qualifiedByName = "mapDegreeToString")
     @Mapping(target = "majorName", source = ".", qualifiedByName = "extractMajor")
+    @Mapping(target = "roles", source = ".", qualifiedByName = "extractUserRoles")
+    @Mapping(target = "isStudent", source = ".", qualifiedByName = "checkIfUserIsStudent")
     UserBasicInfoDto toUserBasicInfo(UserEntity user);
 
     @Named("mapUserClass")
@@ -97,15 +101,34 @@ public interface RequestMapper {
         return null;
     }
 
-    // UPDATED: History mapping methods with proper action user and request owner mapping
+    // Extract user roles
+    @Named("extractUserRoles")
+    default List<RoleEnum> extractUserRoles(UserEntity user) {
+        if (user == null || user.getRoles() == null) {
+            return List.of();
+        }
+        return user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toList());
+    }
 
-// Updated mapper methods for RequestMapper
+    // Check if user is a student
+    @Named("checkIfUserIsStudent")
+    default Boolean checkIfUserIsStudent(UserEntity user) {
+        if (user == null || user.getRoles() == null) {
+            return false;
+        }
+        return user.getRoles().stream()
+                .anyMatch(role -> role.getName() == RoleEnum.STUDENT);
+    }
+
+    // History mapping methods
 
     @Named("mapToBasicHistoryDto")
     @Mapping(target = "requestId", source = "request.id")
     @Mapping(target = "requestCreatedAt", source = "request.createdAt")
     @Mapping(target = "actionUser", source = "actionUser")
-    @Mapping(target = "requestOwner", source = "request.user") // Get request owner through request.user
+    @Mapping(target = "requestOwner", source = "request.user")
     RequestHistoryDto mapToBasicHistoryDto(RequestHistoryEntity entity);
 
     @Named("mapToDetailedHistoryDto")
@@ -113,7 +136,7 @@ public interface RequestMapper {
     @Mapping(target = "requestId", source = "request.id")
     @Mapping(target = "requestCreatedAt", source = "request.createdAt")
     @Mapping(target = "actionUser", source = "actionUser")
-    @Mapping(target = "requestOwner", source = "request.user") // Get request owner through request.user
+    @Mapping(target = "requestOwner", source = "request.user")
     RequestHistoryDto mapToDetailedHistoryDto(RequestHistoryEntity entity);
 
     // List mappings
