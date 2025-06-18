@@ -148,8 +148,10 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
 
-        // Skip filter for public endpoints
-        return path.startsWith("/api/v1/auth/") ||
+        // ONLY skip filter for PUBLIC endpoints that don't need authentication
+        // DO NOT skip the token endpoints - they need authentication!
+        return path.equals("/api/v1/auth/login") ||
+                path.equals("/api/v1/auth/refresh-token") ||
                 path.startsWith("/v3/api-docs") ||
                 path.startsWith("/swagger-ui") ||
                 path.startsWith("/webjars/") ||
