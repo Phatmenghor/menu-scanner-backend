@@ -15,7 +15,14 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-@Table(name = "survey_responses")
+@Table(name = "survey_responses",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {"user_id", "schedule_id"},
+                        name = "uk_survey_response_user_schedule"
+                )
+        })
+
 public class SurveyResponseEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
