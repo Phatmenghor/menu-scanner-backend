@@ -57,20 +57,20 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     public ScoreSessionResponseDto initializeScoreSession(ScoreSessionRequestDto requestDto) {
         log.info("Starting score session initialization for scheduleId={}", requestDto.getScheduleId());
 
+        // Check if ANY score session exists for this schedule (regardless of status)
         Specification<ScoreSessionEntity> existingSessionSpec = ScoreSessionSpecification
-                .hasScheduleId(requestDto.getScheduleId())
-                .and(ScoreSessionSpecification.hasStatus(SubmissionStatus.DRAFT));
+                .hasScheduleId(requestDto.getScheduleId());
 
         // Use PaginationUtils to get the latest session (page 1, size 1, sorted by createdAt DESC)
         Pageable latestFirst = PaginationUtils.createPageable(1, 1, "createdAt", "DESC");
         Page<ScoreSessionEntity> existingSessionsPage = scoreSessionRepository.findAll(existingSessionSpec, latestFirst);
 
         if (!existingSessionsPage.isEmpty()) {
-            // Use the latest session
+            // Use the latest session regardless of its status
             ScoreSessionEntity latestSession = existingSessionsPage.getContent().get(0);
 
-            log.info("Found existing DRAFT session for scheduleId={}, using sessionId={}",
-                    requestDto.getScheduleId(), latestSession.getId());
+            log.info("Found existing session for scheduleId={}, using sessionId={}, status={}",
+                    requestDto.getScheduleId(), latestSession.getId(), latestSession.getStatus());
 
             return handleExistingSession(latestSession);
         } else {
@@ -79,7 +79,7 @@ public class ScoreSessionServiceImpl implements ScoreSessionService {
     }
 
     private ScoreSessionResponseDto handleExistingSession(ScoreSessionEntity session) {
-        log.info("Handling existing score session sessionId={}", session.getId());
+        log.info("Handling existing score session sessionId={}, status={}", session.getId(), session.getStatus());
 
         ScheduleEntity schedule = session.getSchedule();
         Long classId = schedule.getClasses().getId();
