@@ -25,13 +25,13 @@ public class StaffCreateRequestDto {
     private String username;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must have at least 6 characters")
+    @Size(min = 3, message = "Password must have at least 3 characters")
     private String password;
-
-    private String email;
 
     // Multiple roles support
     private List<RoleEnum> roles;
+
+    private String email;
 
     // Common personal info
     private String khmerFirstName;

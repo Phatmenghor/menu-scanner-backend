@@ -30,7 +30,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -54,19 +53,19 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponseDto login(LoginRequestDto loginRequestDto) {
-        log.info("Attempting login for email: {}", loginRequestDto.getEmail());
+        log.info("Attempting login for email: {}", loginRequestDto.getUsername());
 
         // Validate input
-        if (!StringUtils.hasText(loginRequestDto.getEmail()) || !StringUtils.hasText(loginRequestDto.getPassword())) {
+        if (!StringUtils.hasText(loginRequestDto.getUsername()) || !StringUtils.hasText(loginRequestDto.getPassword())) {
             log.warn("Login attempt with missing credentials");
             throw new BadRequestException("Email and password are required");
         }
 
         try {
             // Check if user exists and is active before authentication
-            UserEntity user = userRepository.findByUsername(loginRequestDto.getEmail())
+            UserEntity user = userRepository.findByUsername(loginRequestDto.getUsername())
                     .orElseThrow(() -> {
-                        log.warn("Login attempt with non-existent email: {}", loginRequestDto.getEmail());
+                        log.warn("Login attempt with non-existent email: {}", loginRequestDto.getUsername());
                         return new BadCredentialsException("Invalid email or password");
                     });
 
@@ -76,7 +75,7 @@ public class AuthServiceImpl implements AuthService {
             // Attempt authentication
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            loginRequestDto.getEmail(),
+                            loginRequestDto.getUsername(),
                             loginRequestDto.getPassword()));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -87,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
                     .map(Role::getName)
                     .collect(Collectors.toList());
 
-            log.info("Login successful for email: {} with roles: {}", loginRequestDto.getEmail(), roles);
+            log.info("Login successful for email: {} with roles: {}", loginRequestDto.getUsername(), roles);
 
             // Use builder to create response with user information
             return AuthResponseDto.builder()
@@ -100,16 +99,16 @@ public class AuthServiceImpl implements AuthService {
                     .build();
 
         } catch (BadCredentialsException ex) {
-            log.warn("Authentication failed for email: {} - Invalid credentials", loginRequestDto.getEmail());
+            log.warn("Authentication failed for email: {} - Invalid credentials", loginRequestDto.getUsername());
             throw new BadCredentialsException("Invalid email or password. Please check your credentials and try again.");
         } catch (DisabledException ex) {
-            log.warn("Authentication failed for email: {} - Account disabled", loginRequestDto.getEmail());
+            log.warn("Authentication failed for email: {} - Account disabled", loginRequestDto.getUsername());
             throw new DisabledException("Your account has been disabled. Please contact administrator for assistance.");
         } catch (LockedException ex) {
-            log.warn("Authentication failed for email: {} - Account locked", loginRequestDto.getEmail());
+            log.warn("Authentication failed for email: {} - Account locked", loginRequestDto.getUsername());
             throw new LockedException("Your account has been locked. Please contact administrator for assistance.");
         } catch (AuthenticationException ex) {
-            log.warn("Authentication failed for email: {} - {}", loginRequestDto.getEmail(), ex.getMessage());
+            log.warn("Authentication failed for email: {} - {}", loginRequestDto.getUsername(), ex.getMessage());
             throw new BadCredentialsException("Authentication failed. Please check your credentials and try again.");
         }
     }

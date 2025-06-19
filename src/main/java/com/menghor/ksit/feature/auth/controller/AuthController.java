@@ -18,7 +18,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,9 +37,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResponse<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
-        log.info("Attempting login for username: {}", loginRequestDto.getEmail());
+        log.info("Attempting login for username: {}", loginRequestDto.getUsername());
         AuthResponseDto authResponse = authService.login(loginRequestDto);
-        log.info("Login successful for username: {}", loginRequestDto.getEmail());
+        log.info("Login successful for username: {}", loginRequestDto.getUsername());
         return new ApiResponse<>("success", "Login successful", authResponse);
     }
 

@@ -22,7 +22,6 @@ import java.util.List;
 @NoArgsConstructor
 public class StudentUpdateRequestDto {
 
-    private String email;
     private String khmerFirstName;
     private String khmerLastName;
     private String englishFirstName;
@@ -32,6 +31,7 @@ public class StudentUpdateRequestDto {
     private String phoneNumber;
     private String currentAddress;
     private String nationality;
+    private String email;
     private String ethnicity;
     private String placeOfBirth;
     private String profileUrl;
