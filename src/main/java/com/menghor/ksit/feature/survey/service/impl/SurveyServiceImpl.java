@@ -311,6 +311,13 @@ public class SurveyServiceImpl implements SurveyService {
         UserEntity currentUser = securityUtils.getCurrentUser();
         SurveyEntity mainSurvey = getMainSurveyEntity();
 
+        Optional<SurveyResponseEntity> existingResponse = surveyResponseRepository
+                .findByUserIdAndScheduleId(currentUser.getId(), scheduleId);
+
+        if (existingResponse.isPresent()) {
+            throw new BadRequestException("You have already submitted a survey response for this schedule");
+        }
+
         ScheduleEntity schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new NotFoundException("Schedule not found with ID: " + scheduleId));
 

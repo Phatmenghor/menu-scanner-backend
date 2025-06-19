@@ -13,6 +13,8 @@ import com.menghor.ksit.feature.auth.mapper.StudentMapper;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.service.AuthService;
 import com.menghor.ksit.feature.auth.service.LogoutService;
+import com.menghor.ksit.feature.auth.service.StaffService;
+import com.menghor.ksit.feature.auth.service.StudentService;
 import com.menghor.ksit.utils.database.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -32,8 +34,8 @@ public class AuthController {
     private final AuthService authService;
     private final LogoutService logoutService;
     private final SecurityUtils securityUtils;
-    private final StudentMapper studentMapper;
-    private final StaffMapper staffMapper;
+    private final StudentService studentService;
+    private final StaffService staffService;
 
     @PostMapping("/login")
     public ApiResponse<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
@@ -50,7 +52,6 @@ public class AuthController {
         return new ApiResponse<>("success", SuccessMessages.PASSWORD_CHANGED_SUCCESSFULLY, user);
     }
 
-
     @PostMapping("/change-password")
     public ApiResponse<StaffUserResponseDto> changePasswordStaff(@Valid @RequestBody ChangePasswordRequestDto changePasswordDto) {
         log.info("Changing password for user staff");
@@ -60,20 +61,28 @@ public class AuthController {
 
     @PostMapping("/student/token")
     public ApiResponse<StudentUserResponseDto> getStudentByToken() {
-        log.info("get user student by token");
+        log.info("Getting detailed student user information by token");
+
         final UserEntity currentEntity = securityUtils.getCurrentUser();
-        StudentUserResponseDto user = studentMapper.toStudentUserDto(currentEntity);
-        log.info("get user student by token successfully");
-        return new ApiResponse<>("success", "User student get by token response successfully", user);
+
+        // Use the service to get detailed information instead of just mapping
+        StudentUserResponseDto user = studentService.getStudentUserById(currentEntity.getId());
+
+        log.info("Detailed student user information retrieved successfully for user ID: {}", currentEntity.getId());
+        return new ApiResponse<>("success", "Detailed student user information retrieved successfully", user);
     }
 
     @PostMapping("/staff/token")
     public ApiResponse<StaffUserResponseDto> getStaffByToken() {
-        log.info("get user staff by token");
+        log.info("Getting detailed staff user information by token");
+
         final UserEntity currentEntity = securityUtils.getCurrentUser();
-        StaffUserResponseDto user = staffMapper.toStaffUserDto(currentEntity);
-        log.info("get user staff by token successfully");
-        return new ApiResponse<>("success", "User staff get by token response successfully", user);
+
+        // Use the service to get detailed information instead of just mapping
+        StaffUserResponseDto user = staffService.getStaffUserById(currentEntity.getId());
+
+        log.info("Detailed staff user information retrieved successfully for user ID: {}", currentEntity.getId());
+        return new ApiResponse<>("success", "Detailed staff user information retrieved successfully", user);
     }
 
     @PostMapping("/refresh-token")

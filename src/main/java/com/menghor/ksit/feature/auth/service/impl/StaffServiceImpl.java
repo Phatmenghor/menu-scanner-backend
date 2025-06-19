@@ -325,17 +325,6 @@ public class StaffServiceImpl implements StaffService {
                     return new NotFoundException("User not found with ID: " + id);
                 });
 
-        // Verify user is staff type (not a student)
-        if (user.isStudent()) {
-            throw new BadRequestException("User with ID " + id + " is a student, not a staff user");
-        }
-
-        // Ensure status is set
-        if (user.getStatus() == null) {
-            user.setStatus(Status.ACTIVE);
-            userRepository.save(user);
-        }
-
         return staffMapper.toStaffUserDto(user);
     }
 

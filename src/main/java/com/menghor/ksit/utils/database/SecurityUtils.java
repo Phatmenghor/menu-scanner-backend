@@ -57,5 +57,4 @@ public class SecurityUtils {
             throw new NotFoundException("Authentication principal is not of expected type.");
         }
     }
-
 }

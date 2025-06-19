@@ -30,11 +30,37 @@ public abstract class SurveyResponseMapper {
     @Autowired
     private ObjectMapper objectMapper;
 
+    // UPDATE THIS MAPPING TO INCLUDE COURSE AND SCHEDULE INFO
     @Mapping(target = "surveyId", source = "survey.id")
     @Mapping(target = "surveyTitle", source = "surveyTitleSnapshot")
     @Mapping(target = "surveyDescription", source = "surveyDescriptionSnapshot")
     @Mapping(target = "user", source = "user", qualifiedByName = "mapUserBasicInfo")
     @Mapping(target = "sections", source = ".", qualifiedByName = "mapSurveySnapshot")
+    // NEW MAPPINGS FOR COURSE INFO ⬇️
+    @Mapping(target = "scheduleId", source = "schedule.id")
+    @Mapping(target = "courseName", source = "schedule.course.nameEn")
+    @Mapping(target = "courseCode", source = "schedule.course.code")
+    @Mapping(target = "credit", source = "schedule.course.credit")
+    @Mapping(target = "theory", source = "schedule.course.theory")
+    @Mapping(target = "execute", source = "schedule.course.execute")
+    @Mapping(target = "apply", source = "schedule.course.apply")
+    @Mapping(target = "totalHour", source = "schedule.course.totalHour")
+    @Mapping(target = "courseDescription", source = "schedule.course.description")
+    // NEW MAPPINGS FOR TEACHER INFO ⬇️
+    @Mapping(target = "teacherId", source = "schedule.user.id")
+    @Mapping(target = "teacherName", source = "schedule.user", qualifiedByName = "mapTeacherName")
+    @Mapping(target = "teacherEmail", source = "schedule.user.email")
+    // NEW MAPPINGS FOR SCHEDULE INFO ⬇️
+    @Mapping(target = "dayOfWeek", source = "schedule.day")
+    @Mapping(target = "startTime", source = "schedule.startTime")
+    @Mapping(target = "endTime", source = "schedule.endTime")
+    @Mapping(target = "timeSlot", source = "schedule", qualifiedByName = "mapTimeSlot")
+    @Mapping(target = "roomName", source = "schedule.room.name")
+    @Mapping(target = "className", source = "schedule.classes.code")
+    // NEW MAPPINGS FOR SEMESTER INFO ⬇️
+    @Mapping(target = "semesterName", source = "schedule.semester.semester")
+    @Mapping(target = "academyYear", source = "schedule.semester.academyYear")
+    @Mapping(target = "semesterDisplay", source = "schedule.semester", qualifiedByName = "mapSemesterDisplay")
     public abstract StudentSurveyResponseDto toStudentResponseDto(SurveyResponseEntity entity);
 
     @Mapping(target = "id", source = "id")
@@ -60,6 +86,48 @@ public abstract class SurveyResponseMapper {
                 .last(page.isLast())
                 .build();
     }
+
+    // ADD NEW MAPPING METHODS ⬇️
+
+    @Named("mapTeacherName")
+    public String mapTeacherName(UserEntity teacher) {
+        if (teacher == null) return null;
+
+        if (teacher.getEnglishFirstName() != null && teacher.getEnglishLastName() != null) {
+            return teacher.getEnglishFirstName() + " " + teacher.getEnglishLastName();
+        }
+
+        if (teacher.getKhmerFirstName() != null && teacher.getKhmerLastName() != null) {
+            return teacher.getKhmerFirstName() + " " + teacher.getKhmerLastName();
+        }
+
+        return teacher.getUsername();
+    }
+
+    @Named("mapTimeSlot")
+    public String mapTimeSlot(com.menghor.ksit.feature.school.model.ScheduleEntity schedule) {
+        if (schedule == null || schedule.getStartTime() == null || schedule.getEndTime() == null) {
+            return null;
+        }
+        return schedule.getStartTime() + " - " + schedule.getEndTime();
+    }
+
+    @Named("mapSemesterDisplay")
+    public String mapSemesterDisplay(com.menghor.ksit.feature.master.model.SemesterEntity semester) {
+        if (semester == null) return null;
+
+        String semesterName = "";
+        if (semester.getSemester() != null) {
+            semesterName = semester.getSemester().name().replace("SEMESTER_", "Semester ");
+        }
+
+        if (semester.getAcademyYear() != null) {
+            return semesterName + ", " + semester.getAcademyYear();
+        }
+
+        return semesterName;
+    }
+
 
     @Named("mapUserBasicInfo")
     public UserBasicInfoDto mapUserBasicInfo(UserEntity user) {

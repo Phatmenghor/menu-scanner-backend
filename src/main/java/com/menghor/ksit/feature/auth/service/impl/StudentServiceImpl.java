@@ -284,17 +284,6 @@ public class StudentServiceImpl implements StudentService {
                     return new NotFoundException("User not found with ID: " + id);
                 });
 
-        // Verify user is a student
-        if (!user.isStudent()) {
-            throw new BadRequestException("User with ID " + id + " is not a student");
-        }
-
-        // Ensure status is set
-        if (user.getStatus() == null) {
-            user.setStatus(Status.ACTIVE);
-            userRepository.save(user);
-        }
-
         return studentMapper.toStudentUserDto(user);
     }
 
