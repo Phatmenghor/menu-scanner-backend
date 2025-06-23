@@ -47,5 +47,5 @@ public class SurveyReportFilterDto {
 
     // Pagination (only for web preview)
     private Integer pageNo = 1;
-    private Integer pageSize = 20;
+    private Integer pageSize = 10;
 }
