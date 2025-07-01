@@ -46,7 +46,7 @@ public class ScheduleController {
         );
     }
 
-    @PostMapping("/all-simple")
+    @PostMapping("/all-list")
     public ApiResponse<List<ScheduleResponseDto>> getAllSchedulesSimple(@RequestBody ScheduleFilterDto filterDto) {
         log.info("REST request to get all schedules without pagination with filter: {}", filterDto);
         List<ScheduleResponseDto> responseDto = scheduleService.getAllSchedulesSimple(filterDto);
@@ -70,7 +70,7 @@ public class ScheduleController {
         );
     }
 
-    @PostMapping("/my-schedules-simple")
+    @PostMapping("/my-schedules-list")
     public ApiResponse<List<ScheduleResponseDto>> getMySchedulesSimple(@RequestBody ScheduleFilterDto filterDto) {
         log.info("REST request to get user-specific schedules without pagination with filter: {}", filterDto);
         List<ScheduleResponseDto> responseDto = scheduleService.getMySchedulesSimple(filterDto);
