@@ -6,6 +6,8 @@ import com.menghor.ksit.feature.auth.repository.BlacklistedTokenRepository;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,12 +20,15 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.security.SignatureException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +57,8 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 // Check if token is blacklisted
                 if (blacklistedTokenRepository.existsByToken(token)) {
                     log.warn("Attempted to use blacklisted token");
-                    handleAuthenticationError(response, "Token has been invalidated. Please login again.",
+                    handleAuthenticationError(response,
+                            "Your session has been invalidated. Please login again to continue.",
                             HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }
@@ -70,15 +76,29 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (ExpiredJwtException ex) {
             log.warn("JWT token expired for request to: {}", request.getRequestURI());
-            handleAuthenticationError(response, "Your session has expired. Please login again to continue.",
+            handleAuthenticationError(response,
+                    "Your session has expired. Please login again to continue accessing the system.",
+                    HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (MalformedJwtException ex) {
+            log.warn("Malformed JWT token for request to: {}", request.getRequestURI());
+            handleAuthenticationError(response,
+                    "Invalid authentication token format. Please login again.",
+                    HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (UnsupportedJwtException ex) {
+            log.warn("Unsupported JWT token for request to: {}", request.getRequestURI());
+            handleAuthenticationError(response,
+                    "Unsupported authentication token type. Please login again.",
                     HttpServletResponse.SC_UNAUTHORIZED);
         } catch (JwtException ex) {
             log.warn("JWT error for request to {}: {}", request.getRequestURI(), ex.getMessage());
-            handleAuthenticationError(response, "Invalid authentication token. Please login again.",
+            handleAuthenticationError(response,
+                    "Authentication token is invalid or corrupted. Please login again.",
                     HttpServletResponse.SC_UNAUTHORIZED);
         } catch (Exception ex) {
-            log.error("Authentication processing failed for request to {}: {}", request.getRequestURI(), ex.getMessage());
-            handleAuthenticationError(response, "Authentication failed. Please try again.",
+            log.error("Authentication processing failed for request to {}: {}",
+                    request.getRequestURI(), ex.getMessage());
+            handleAuthenticationError(response,
+                    "An authentication error occurred. Please try again or contact support if the problem persists.",
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
@@ -106,16 +126,19 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
             log.debug("Successfully authenticated user: {}", username);
 
+        } catch (UsernameNotFoundException ex) {
+            log.warn("User not found during token authentication: {}", username);
+            throw new UsernameNotFoundException("User account no longer exists. Please login again.");
         } catch (DisabledException ex) {
             log.warn("Account disabled for user {}: {}", username, ex.getMessage());
-            throw new DisabledException("Your account has been disabled. Please contact administrator.");
+            throw ex; // Re-throw with specific message from CustomUserDetailsService
         } catch (LockedException ex) {
             log.warn("Account locked for user {}: {}", username, ex.getMessage());
-            throw new LockedException("Your account has been locked. Please contact administrator.");
+            throw ex; // Re-throw with specific message from CustomUserDetailsService
         } catch (Exception ex) {
             log.error("Authentication failed for user {}: {}", username, ex.getMessage());
             SecurityContextHolder.clearContext();
-            throw ex;
+            throw new RuntimeException("Authentication processing failed: " + ex.getMessage());
         }
     }
 
@@ -128,7 +151,15 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("status", "error");
         errorResponse.put("message", message);
-        errorResponse.put("timestamp", System.currentTimeMillis());
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("statusCode", statusCode);
+
+        // Add additional context for different error types
+        if (statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+            errorResponse.put("action", "Please login again to continue");
+        } else if (statusCode == HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
+            errorResponse.put("action", "Please try again or contact support");
+        }
 
         String jsonResponse = objectMapper.writeValueAsString(errorResponse);
         response.getWriter().write(jsonResponse);

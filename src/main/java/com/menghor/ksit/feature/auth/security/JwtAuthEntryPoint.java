@@ -42,11 +42,13 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
 
         // Determine appropriate error message based on the exception and request
         String errorMessage = determineErrorMessage(authException, request);
+        String actionMessage = determineActionMessage(request);
 
         // Create detailed JSON response
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("status", "error");
         errorResponse.put("message", errorMessage);
+        errorResponse.put("action", actionMessage);
         errorResponse.put("timestamp", LocalDateTime.now().toString());
         errorResponse.put("path", requestURI);
         errorResponse.put("statusCode", HttpServletResponse.SC_UNAUTHORIZED);
@@ -55,6 +57,7 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
         if (isDevelopmentMode()) {
             errorResponse.put("method", method);
             errorResponse.put("exception", authException.getClass().getSimpleName());
+            errorResponse.put("exceptionMessage", authException.getMessage());
         }
 
         String jsonResponse = objectMapper.writeValueAsString(errorResponse);
@@ -66,22 +69,47 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
 
         // No Authorization header provided
         if (authHeader == null || authHeader.trim().isEmpty()) {
-            return "Authentication required. Please provide a valid authentication token to access this resource.";
+            return "Authentication required. You must be logged in to access this resource.";
         }
 
         // Invalid Authorization header format
         if (!authHeader.startsWith("Bearer ")) {
-            return "Invalid authentication format. Please provide a Bearer token in the Authorization header.";
+            return "Invalid authentication format. Please provide a valid Bearer token in the Authorization header.";
         }
 
         // Authorization header present but token is invalid/expired
         String token = authHeader.substring(7).trim();
         if (token.isEmpty()) {
-            return "Authentication token is missing. Please provide a valid token.";
+            return "Authentication token is missing from the request.";
         }
 
-        // Token present but authentication failed
+        // Token present but authentication failed - could be expired, invalid, etc.
+        if (authException.getMessage() != null) {
+            String message = authException.getMessage().toLowerCase();
+
+            if (message.contains("expired")) {
+                return "Your session has expired. Please login again to continue.";
+            } else if (message.contains("invalid") || message.contains("malformed")) {
+                return "Your authentication token is invalid or corrupted. Please login again.";
+            } else if (message.contains("signature")) {
+                return "Authentication token signature is invalid. Please login again.";
+            }
+        }
+
+        // Generic token authentication failure
         return "Authentication failed. Your session may have expired or the token is invalid. Please login again.";
+    }
+
+    private String determineActionMessage(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || authHeader.trim().isEmpty()) {
+            return "Please login to access this resource";
+        } else if (!authHeader.startsWith("Bearer ")) {
+            return "Please provide a valid authentication token";
+        } else {
+            return "Please login again to continue";
+        }
     }
 
     private boolean isDevelopmentMode() {
