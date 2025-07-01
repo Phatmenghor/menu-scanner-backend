@@ -6,6 +6,8 @@ import com.menghor.ksit.feature.school.dto.response.ScheduleResponseDto;
 import com.menghor.ksit.feature.school.dto.update.ScheduleUpdateDto;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 
+import java.util.List;
+
 public interface ScheduleService {
 
     ScheduleResponseDto createSchedule(ScheduleRequestDto requestDto);
@@ -19,4 +21,8 @@ public interface ScheduleService {
     CustomPaginationResponseDto<ScheduleResponseDto> getAllSchedules(ScheduleFilterDto filterDto);
 
     CustomPaginationResponseDto<ScheduleResponseDto> getMySchedules(ScheduleFilterDto filterDto);
+
+    List<ScheduleResponseDto> getAllSchedulesSimple(ScheduleFilterDto filterDto);
+
+    List<ScheduleResponseDto> getMySchedulesSimple(ScheduleFilterDto filterDto);
 }

@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/v1/schedules")
@@ -44,11 +46,35 @@ public class ScheduleController {
         );
     }
 
+    @PostMapping("/all-simple")
+    public ApiResponse<List<ScheduleResponseDto>> getAllSchedulesSimple(@RequestBody ScheduleFilterDto filterDto) {
+        log.info("REST request to get all schedules without pagination with filter: {}", filterDto);
+        List<ScheduleResponseDto> responseDto = scheduleService.getAllSchedulesSimple(filterDto);
+        log.info("All schedules retrieved successfully: {}", responseDto.size());
+        return new ApiResponse<>(
+                "success",
+                "All schedules retrieved successfully",
+                responseDto
+        );
+    }
+
     @PostMapping("/my-schedules")
     public ApiResponse<CustomPaginationResponseDto<ScheduleResponseDto>> getMySchedules(@RequestBody ScheduleFilterDto filterDto) {
         log.info("REST request to get user-specific schedules with filter: {}", filterDto);
         CustomPaginationResponseDto<ScheduleResponseDto> responseDto = scheduleService.getMySchedules(filterDto);
         log.info("User schedules all retrieved successfully: {}", responseDto.getTotalElements());
+        return new ApiResponse<>(
+                "success",
+                "User schedules retrieved successfully",
+                responseDto
+        );
+    }
+
+    @PostMapping("/my-schedules-simple")
+    public ApiResponse<List<ScheduleResponseDto>> getMySchedulesSimple(@RequestBody ScheduleFilterDto filterDto) {
+        log.info("REST request to get user-specific schedules without pagination with filter: {}", filterDto);
+        List<ScheduleResponseDto> responseDto = scheduleService.getMySchedulesSimple(filterDto);
+        log.info("User schedules all retrieved successfully: {}", responseDto.size());
         return new ApiResponse<>(
                 "success",
                 "User schedules retrieved successfully",
@@ -91,5 +117,4 @@ public class ScheduleController {
                 responseDto
         );
     }
-
 }

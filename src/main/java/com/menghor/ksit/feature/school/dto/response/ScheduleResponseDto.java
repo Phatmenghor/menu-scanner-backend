@@ -29,44 +29,16 @@ public class ScheduleResponseDto {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     @Schema(description = "End time of the schedule", example = "10:00")
     private LocalTime endTime;
-
-    @Schema(description = "Academic year")
-    private Integer academyYear;
-
     private YearLevelEnum yearLevel;
-
-    @Schema(description = "Day of the week")
     private DayOfWeek day;
-
-    @Schema(description = "Schedule status")
     private Status status;
-
-    @Schema(description = "Class information")
     private ClassResponseDto classes;
-
-    @Schema(description = "Teacher information")
     private StaffUserListResponseDto teacher;
-
-    @Schema(description = "Course information")
     private CourseResponseMapWithScheduleDto course;
-
-    @Schema(description = "Room information")
     private RoomResponseDto room;
-
-    @Schema(description = "Semester information")
     private SemesterResponseDto semester;
-
-    // Survey related fields - CRITICAL for frontend alerts
-    @Schema(description = "Survey completion status for current student",
-            example = "NOT_STARTED or COMPLETED")
     private SurveyStatus surveyStatus;
-
-    @Schema(description = "When the survey was submitted (only if completed)")
     private LocalDateTime surveySubmittedAt;
-
-    @Schema(description = "Survey response ID (only if completed)")
     private Long surveyResponseId;
-
-    @Schema(description = "Schedule creation timestamp")
     private LocalDateTime createdAt;
 }

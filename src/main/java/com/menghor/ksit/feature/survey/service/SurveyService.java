@@ -3,7 +3,6 @@ package com.menghor.ksit.feature.survey.service;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
 import com.menghor.ksit.feature.survey.dto.response.*;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
-import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 
 public interface SurveyService {
 

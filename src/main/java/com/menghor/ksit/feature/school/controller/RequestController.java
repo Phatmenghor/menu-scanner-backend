@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/requests")
 @RequiredArgsConstructor
 public class RequestController {
-    
+
     private final RequestService requestService;
-    
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<RequestResponseDto> createRequest(
@@ -33,7 +33,7 @@ public class RequestController {
         log.info("Request created successfully with ID: {}", response.getId());
         return ApiResponse.success("Request created successfully", response);
     }
-    
+
     @PutMapping("/{id}")
     public ApiResponse<RequestResponseDto> updateRequest(
             @PathVariable Long id,
@@ -52,7 +52,7 @@ public class RequestController {
         log.info("Request fetched successfully with ID: {}", id);
         return ApiResponse.success("Request fetched successfully", response);
     }
-    
+
     @PostMapping("/all")
     public ApiResponse<CustomPaginationResponseDto<RequestResponseDto>> getAllRequests(
             @RequestBody RequestFilterDto filterDto) {
@@ -91,7 +91,7 @@ public class RequestController {
         log.info("Request history detail fetched successfully with ID: {}", historyId);
         return ApiResponse.success("Request history detail fetched successfully", response);
     }
-    
+
     @DeleteMapping("/{id}")
     public ApiResponse<RequestResponseDto> deleteRequest(
             @Parameter(description = "Request ID") @PathVariable Long id) {

@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.school.service.impl;
 
+import com.menghor.ksit.enumations.DayOfWeek;
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.enumations.SurveyStatus;
@@ -35,9 +36,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -56,7 +59,6 @@ public class ScheduleServiceImpl implements ScheduleService {
     private final ScheduleMapper scheduleMapper;
     private final SecurityUtils securityUtils;
     private final ScheduleFilterHelper filterHelper;
-    private final SurveyService surveyService;
 
     @Override
     @Transactional
@@ -149,20 +151,81 @@ public class ScheduleServiceImpl implements ScheduleService {
         // Convert to response DTO using MapStruct and add survey status
         CustomPaginationResponseDto<ScheduleResponseDto> response = scheduleMapper.toScheduleAllResponseDto(schedulePage);
 
+        // Apply custom sorting to ensure proper day-time order
+        response.setContent(applySortingToSchedules(response.getContent()));
+
         // Add survey status to each schedule for current user (if user is a student)
         try {
             UserEntity currentUser = securityUtils.getCurrentUser();
-            if (isStudent(currentUser)) {
-                addSurveyStatusToSchedules(response.getContent(), currentUser.getId());
-            }
+            addSurveyStatusToSchedules(response.getContent(), currentUser.getId());
         } catch (Exception e) {
             log.debug("Could not determine current user or add survey status: {}", e.getMessage());
+            // Set all schedules to NONE status when no user context
+            response.getContent().forEach(schedule -> {
+                schedule.setSurveyStatus(SurveyStatus.NONE);
+                schedule.setSurveySubmittedAt(null);
+                schedule.setSurveyResponseId(null);
+            });
         }
 
         log.info("Retrieved {} schedules (page {}/{})",
                 response.getContent().size(), response.getPageNo(), response.getTotalPages());
 
         return response;
+    }
+
+    @Override
+    public List<ScheduleResponseDto> getAllSchedulesSimple(ScheduleFilterDto filterDto) {
+        log.info("Fetching all schedules without pagination with filter: {}", filterDto);
+
+        // Create specification using the helper
+        Specification<ScheduleEntity> spec = ScheduleSpecification.createSpecification(filterDto, userRepository);
+
+        // Execute query without pagination first (we'll sort manually)
+        List<ScheduleEntity> schedules = scheduleRepository.findAll(spec);
+
+        // DEBUG: Log what days we have in the data
+        Map<DayOfWeek, Long> dayCount = schedules.stream()
+                .filter(s -> s.getDay() != null)
+                .collect(Collectors.groupingBy(
+                        ScheduleEntity::getDay,
+                        Collectors.counting()
+                ));
+
+        log.info("Schedule distribution by day: {}", dayCount);
+        log.info("Total schedules found: {}", schedules.size());
+
+        // Convert to response DTOs
+        List<ScheduleResponseDto> responseDtos = scheduleMapper.toResponseDtoList(schedules);
+
+        // Apply custom sorting: Monday to Sunday, then by time
+        responseDtos = applySortingToSchedules(responseDtos);
+
+        // DEBUG: Log the actual sorting result
+        responseDtos.forEach(schedule ->
+                log.debug("Schedule ID: {}, Day: {}, Time: {} - {}",
+                        schedule.getId(),
+                        schedule.getDay(),
+                        schedule.getStartTime(),
+                        schedule.getEndTime())
+        );
+
+        // Add survey status to each schedule for current user (if user is a student)
+        try {
+            UserEntity currentUser = securityUtils.getCurrentUser();
+            addSurveyStatusToSchedules(responseDtos, currentUser.getId());
+        } catch (Exception e) {
+            log.debug("Could not determine current user or add survey status: {}", e.getMessage());
+            // Set all schedules to NONE status when no user context
+            responseDtos.forEach(schedule -> {
+                schedule.setSurveyStatus(SurveyStatus.NONE);
+                schedule.setSurveySubmittedAt(null);
+                schedule.setSurveyResponseId(null);
+            });
+        }
+
+        log.info("Retrieved {} schedules without pagination", responseDtos.size());
+        return responseDtos;
     }
 
     @Override
@@ -190,7 +253,60 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
     }
 
+    @Override
+    public List<ScheduleResponseDto> getMySchedulesSimple(ScheduleFilterDto filterDto) {
+        log.info("Fetching user-specific schedules without pagination with filter: {}", filterDto);
+
+        UserEntity currentUser = securityUtils.getCurrentUser();
+        log.info("Current user: {} with roles: {}", currentUser.getUsername(),
+                currentUser.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toList()));
+
+        // Determine user access level
+        if (hasAdminAccess(currentUser)) {
+            log.info("User has admin access, returning all schedules");
+            return getAllSchedulesSimple(filterDto);
+        } else if (isTeacherOrStaff(currentUser)) {
+            log.info("User is teacher/staff, filtering by teacher ID: {}", currentUser.getId());
+            return getSchedulesForTeacherSimple(currentUser.getId(), filterDto);
+        } else if (isStudent(currentUser)) {
+            log.info("User is student, filtering by class ID: {}",
+                    currentUser.getClasses() != null ? currentUser.getClasses().getId() : "none");
+            return getSchedulesForStudentSimple(currentUser, filterDto);
+        } else {
+            log.warn("User {} has unknown or no roles, returning empty schedules", currentUser.getUsername());
+            return new ArrayList<>();
+        }
+    }
+
     // ===== Private Helper Methods =====
+
+    /**
+     * Apply custom sorting: Monday to Sunday, then 12 AM to 12 PM
+     * This method ensures proper ordering regardless of database sorting
+     */
+    private List<ScheduleResponseDto> applySortingToSchedules(List<ScheduleResponseDto> schedules) {
+        // Define the day order explicitly
+        Map<DayOfWeek, Integer> dayOrder = Map.of(
+                DayOfWeek.MONDAY, 1,
+                DayOfWeek.TUESDAY, 2,
+                DayOfWeek.WEDNESDAY, 3,
+                DayOfWeek.THURSDAY, 4,
+                DayOfWeek.FRIDAY, 5,
+                DayOfWeek.SATURDAY, 6,
+                DayOfWeek.SUNDAY, 7
+        );
+
+        return schedules.stream()
+                .sorted(Comparator
+                        .comparing((ScheduleResponseDto s) ->
+                                dayOrder.getOrDefault(s.getDay(), 999)) // Monday=1, Tuesday=2, ..., Sunday=7
+                        .thenComparing(s ->
+                                s.getStartTime() != null ? s.getStartTime() : LocalTime.MAX) // 00:00 to 23:59
+                        .thenComparing(s ->
+                                s.getEndTime() != null ? s.getEndTime() : LocalTime.MAX) // For same start times
+                )
+                .collect(Collectors.toList());
+    }
 
     private void updateRelationships(ScheduleEntity schedule, ScheduleUpdateDto updateDto) {
         if (updateDto.getClassId() != null) {
@@ -216,10 +332,28 @@ public class ScheduleServiceImpl implements ScheduleService {
         Page<ScheduleEntity> schedulePage = scheduleRepository.findAll(spec, pageable);
 
         CustomPaginationResponseDto<ScheduleResponseDto> response = scheduleMapper.toScheduleAllResponseDto(schedulePage);
+
+        // Apply custom sorting
+        response.setContent(applySortingToSchedules(response.getContent()));
+
         log.info("Retrieved {} schedules for teacher (page {}/{})",
                 response.getContent().size(), response.getPageNo(), response.getTotalPages());
 
         return response;
+    }
+
+    private List<ScheduleResponseDto> getSchedulesForTeacherSimple(Long teacherId, ScheduleFilterDto filterDto) {
+        Specification<ScheduleEntity> spec = ScheduleSpecification.createTeacherSpecification(teacherId, filterDto);
+        List<ScheduleEntity> schedules = scheduleRepository.findAll(spec);
+
+        List<ScheduleResponseDto> responseDtos = scheduleMapper.toResponseDtoList(schedules);
+
+        // Apply custom sorting
+        responseDtos = applySortingToSchedules(responseDtos);
+
+        log.info("Retrieved {} schedules for teacher without pagination", responseDtos.size());
+
+        return responseDtos;
     }
 
     private CustomPaginationResponseDto<ScheduleResponseDto> getSchedulesForStudent(UserEntity student, ScheduleFilterDto filterDto) {
@@ -235,6 +369,9 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         CustomPaginationResponseDto<ScheduleResponseDto> response = scheduleMapper.toScheduleAllResponseDto(schedulePage);
 
+        // Apply custom sorting
+        response.setContent(applySortingToSchedules(response.getContent()));
+
         // ALWAYS add survey status for student - this is critical for frontend alerts
         addSurveyStatusToSchedules(response.getContent(), student.getId());
 
@@ -244,89 +381,161 @@ public class ScheduleServiceImpl implements ScheduleService {
         return response;
     }
 
+    private List<ScheduleResponseDto> getSchedulesForStudentSimple(UserEntity student, ScheduleFilterDto filterDto) {
+        if (student.getClasses() == null) {
+            log.warn("Student {} has no class assigned", student.getUsername());
+            return new ArrayList<>();
+        }
+
+        Specification<ScheduleEntity> spec = ScheduleSpecification.createStudentSpecification(
+                student.getClasses().getId(), filterDto);
+        List<ScheduleEntity> schedules = scheduleRepository.findAll(spec);
+
+        List<ScheduleResponseDto> responseDtos = scheduleMapper.toResponseDtoList(schedules);
+
+        // Apply custom sorting
+        responseDtos = applySortingToSchedules(responseDtos);
+
+        // ALWAYS add survey status for student - this is critical for frontend alerts
+        addSurveyStatusToSchedules(responseDtos, student.getId());
+
+        log.info("Retrieved {} schedules for student without pagination", responseDtos.size());
+        return responseDtos;
+    }
+
     private void addSurveyStatusToSchedules(List<ScheduleResponseDto> schedules, Long userId) {
         log.info("Adding survey status for {} schedules for user ID: {}", schedules.size(), userId);
 
+        // Get current user to check roles and enrollment
+        UserEntity currentUser = null;
+        try {
+            currentUser = securityUtils.getCurrentUser();
+        } catch (Exception e) {
+            log.debug("Could not get current user: {}", e.getMessage());
+        }
+
         for (ScheduleResponseDto schedule : schedules) {
             try {
-                // Check if user has completed survey for this schedule
-                Optional<SurveyResponseEntity> responseOpt =
-                        surveyResponseRepository.findByUserIdAndScheduleId(userId, schedule.getId());
+                // Set survey status based on user role and enrollment
+                SurveyStatus status = determineSurveyStatus(currentUser, schedule, userId);
+                schedule.setSurveyStatus(status);
 
-                if (responseOpt.isPresent()) {
-                    // Student has completed the survey
-                    SurveyResponseEntity response = responseOpt.get();
-                    schedule.setSurveyStatus(SurveyStatus.COMPLETED);
-                    schedule.setSurveySubmittedAt(response.getSubmittedAt());
-                    schedule.setSurveyResponseId(response.getId());
-
-                    log.debug("Schedule ID: {} - Survey COMPLETED at: {}",
-                            schedule.getId(), response.getSubmittedAt());
+                // Set submission details based on status
+                if (status == SurveyStatus.COMPLETED) {
+                    setSurveyCompletionDetails(schedule, userId);
                 } else {
-                    // Student has not taken the survey yet
-                    schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
+                    // Clear submission details for non-completed surveys
                     schedule.setSurveySubmittedAt(null);
                     schedule.setSurveyResponseId(null);
-
-                    log.debug("Schedule ID: {} - Survey NOT_STARTED", schedule.getId());
                 }
+
+                log.debug("Schedule ID: {} - Survey Status: {}", schedule.getId(), status);
 
             } catch (Exception e) {
                 log.error("Error checking survey status for schedule {} and user {}: {}",
                         schedule.getId(), userId, e.getMessage());
 
                 // Set default values on error
-                schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
+                schedule.setSurveyStatus(SurveyStatus.NONE);
                 schedule.setSurveySubmittedAt(null);
                 schedule.setSurveyResponseId(null);
             }
         }
 
         // Log summary for debugging
-        long completedCount = schedules.stream()
-                .mapToLong(s -> s.getSurveyStatus() == SurveyStatus.COMPLETED ? 1 : 0)
-                .sum();
-        long notStartedCount = schedules.stream()
-                .mapToLong(s -> s.getSurveyStatus() == SurveyStatus.NOT_STARTED ? 1 : 0)
-                .sum();
+        Map<SurveyStatus, Long> statusCount = schedules.stream()
+                .collect(Collectors.groupingBy(
+                        ScheduleResponseDto::getSurveyStatus,
+                        Collectors.counting()
+                ));
 
-        log.info("Survey status summary for user {}: {} completed, {} not started",
-                userId, completedCount, notStartedCount);
+        log.info("Survey status summary for user {}: {}", userId, statusCount);
+    }
+
+    /**
+     * Determine survey status based on user role and enrollment
+     */
+    private SurveyStatus determineSurveyStatus(UserEntity currentUser, ScheduleResponseDto schedule, Long userId) {
+        // Case 1: No current user or user is not a student
+        if (currentUser == null || !isStudent(currentUser)) {
+            log.debug("User {} is not a student, setting survey status to NONE", userId);
+            return SurveyStatus.NONE;
+        }
+
+        // Case 2: Student is not enrolled in this schedule's class
+        if (!isStudentEnrolledInSchedule(currentUser, schedule)) {
+            log.debug("Student {} is not enrolled in schedule {}, setting survey status to NONE",
+                    userId, schedule.getId());
+            return SurveyStatus.NONE;
+        }
+
+        // Case 3: Student is enrolled - check if they completed the survey
+        Optional<SurveyResponseEntity> responseOpt =
+                surveyResponseRepository.findByUserIdAndScheduleId(userId, schedule.getId());
+
+        if (responseOpt.isPresent()) {
+            log.debug("Student {} has completed survey for schedule {}", userId, schedule.getId());
+            return SurveyStatus.COMPLETED;
+        } else {
+            log.debug("Student {} has not started survey for schedule {}", userId, schedule.getId());
+            return SurveyStatus.NOT_STARTED;
+        }
+    }
+
+    /**
+     * Check if student is enrolled in the schedule's class
+     */
+    private boolean isStudentEnrolledInSchedule(UserEntity student, ScheduleResponseDto schedule) {
+        if (student.getClasses() == null || schedule.getClasses() == null) {
+            return false;
+        }
+
+        return student.getClasses().getId().equals(schedule.getClasses().getId());
+    }
+
+    /**
+     * Set survey completion details for completed surveys
+     */
+    private void setSurveyCompletionDetails(ScheduleResponseDto schedule, Long userId) {
+        Optional<SurveyResponseEntity> responseOpt =
+                surveyResponseRepository.findByUserIdAndScheduleId(userId, schedule.getId());
+
+        if (responseOpt.isPresent()) {
+            SurveyResponseEntity response = responseOpt.get();
+            schedule.setSurveySubmittedAt(response.getSubmittedAt());
+            schedule.setSurveyResponseId(response.getId());
+
+            log.debug("Set survey completion details for schedule {}: submitted at {}, response ID {}",
+                    schedule.getId(), response.getSubmittedAt(), response.getId());
+        }
     }
 
     private void addSurveyStatusToSchedule(ScheduleResponseDto schedule) {
         try {
             UserEntity currentUser = securityUtils.getCurrentUser();
-            if (isStudent(currentUser)) {
-                // Check if user has completed survey for this schedule
-                Optional<SurveyResponseEntity> responseOpt =
-                        surveyResponseRepository.findByUserIdAndScheduleId(currentUser.getId(), schedule.getId());
 
-                if (responseOpt.isPresent()) {
-                    SurveyResponseEntity response = responseOpt.get();
-                    schedule.setSurveyStatus(SurveyStatus.COMPLETED);
-                    schedule.setSurveySubmittedAt(response.getSubmittedAt());
-                    schedule.setSurveyResponseId(response.getId());
+            // Determine survey status based on user role and enrollment
+            SurveyStatus status = determineSurveyStatus(currentUser, schedule, currentUser.getId());
+            schedule.setSurveyStatus(status);
 
-                    log.info("User {} has COMPLETED survey for schedule {}",
-                            currentUser.getId(), schedule.getId());
-                } else {
-                    schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
-                    schedule.setSurveySubmittedAt(null);
-                    schedule.setSurveyResponseId(null);
-
-                    log.info("User {} has NOT_STARTED survey for schedule {}",
-                            currentUser.getId(), schedule.getId());
-                }
+            // Set submission details based on status
+            if (status == SurveyStatus.COMPLETED) {
+                setSurveyCompletionDetails(schedule, currentUser.getId());
+                log.info("User {} has COMPLETED survey for schedule {}",
+                        currentUser.getId(), schedule.getId());
             } else {
-                // For non-students, surveys are not applicable
-                schedule.setSurveyStatus(null);
+                // Clear submission details for non-completed surveys
                 schedule.setSurveySubmittedAt(null);
                 schedule.setSurveyResponseId(null);
+
+                log.info("User {} survey status for schedule {}: {}",
+                        currentUser.getId(), schedule.getId(), status);
             }
+
         } catch (Exception e) {
-            log.debug("Could not add survey status: {}", e.getMessage());
-            schedule.setSurveyStatus(SurveyStatus.NOT_STARTED);
+            log.debug("Could not determine survey status: {}", e.getMessage());
+            // Default to NONE for any errors
+            schedule.setSurveyStatus(SurveyStatus.NONE);
             schedule.setSurveySubmittedAt(null);
             schedule.setSurveyResponseId(null);
         }
