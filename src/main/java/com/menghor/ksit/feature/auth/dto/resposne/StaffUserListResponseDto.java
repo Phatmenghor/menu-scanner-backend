@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -34,6 +35,6 @@ public class StaffUserListResponseDto {
     private String phoneNumber;
     private String identifyNumber;
     private String staffId;
-    private String createdAt;
+    private LocalDateTime createdAt;
 
 }

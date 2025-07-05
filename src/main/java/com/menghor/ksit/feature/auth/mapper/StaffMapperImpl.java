@@ -181,7 +181,7 @@ public class StaffMapperImpl implements StaffMapper {
                 .phoneNumber(user.getPhoneNumber())
                 .identifyNumber(user.getIdentifyNumber())
                 .staffId(user.getStaffId())
-                .createdAt(user.getCreatedAt().toString())
+                .createdAt(user.getCreatedAt())
                 .profileUrl(user.getProfileUrl());
 
         // Map department

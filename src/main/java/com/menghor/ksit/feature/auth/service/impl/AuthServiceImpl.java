@@ -265,10 +265,6 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
 
-        if (user.getStatus() == null) {
-            user.setStatus(Status.ACTIVE);
-        }
-
         UserEntity updatedUser = userRepository.save(user);
         log.info("Password changed successfully for user ID: {}", user.getId());
 
@@ -276,7 +272,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public StudentUserResponseDto changePasswordStudentByAdmin(ChangePasswordByAdminRequestDto requestDto) {
+    public StudentUserResponseDto changePasswordByAdmin(ChangePasswordByAdminRequestDto requestDto) {
         log.info("Admin changing password for user ID: {}", requestDto.getId());
 
         validateAdminPasswordChangeRequest(requestDto);
@@ -293,12 +289,6 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("The new password and confirmation password do not match. Please ensure both passwords are identical.");
         }
 
-        // Check if user is actually a student
-        if (!user.isStudent()) {
-            log.warn("Attempt to change password for non-student user ID: {}", requestDto.getId());
-            throw new BadRequestException("The specified user is not a student. Only student passwords can be changed using this method.");
-        }
-
         // Check if new password is same as current password
         if (passwordEncoder.matches(requestDto.getNewPassword(), user.getPassword())) {
             log.warn("Admin tried to set same password as current for user ID: {}", requestDto.getId());
@@ -306,10 +296,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         user.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
-
-        if (user.getStatus() == null) {
-            user.setStatus(Status.ACTIVE);
-        }
 
         UserEntity updatedUser = userRepository.save(user);
         log.info("Password changed successfully by admin for user ID: {}", requestDto.getId());

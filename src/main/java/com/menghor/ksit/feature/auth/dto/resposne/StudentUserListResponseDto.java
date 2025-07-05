@@ -36,5 +36,5 @@ public class StudentUserListResponseDto {
     private LocalDate dateOfBirth;
     private String phoneNumber;
     private String identifyNumber;
-    private String createdAt;
+    private LocalDateTime createdAt;
 }

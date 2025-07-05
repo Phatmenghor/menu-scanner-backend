@@ -8,8 +8,6 @@ import com.menghor.ksit.feature.auth.dto.resposne.AuthResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.dto.request.LoginRequestDto;
-import com.menghor.ksit.feature.auth.mapper.StaffMapper;
-import com.menghor.ksit.feature.auth.mapper.StudentMapper;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.service.AuthService;
 import com.menghor.ksit.feature.auth.service.LogoutService;
@@ -48,14 +46,14 @@ public class AuthController {
     @PostMapping("/change-password-by-admin")
     public ApiResponse<StudentUserResponseDto> changePasswordStudentByAdmin(@Valid @RequestBody ChangePasswordByAdminRequestDto changePasswordDto) {
         log.info("Admin changing password for user student ID: {}", changePasswordDto.getId());
-        StudentUserResponseDto user = authService.changePasswordStudentByAdmin(changePasswordDto);
+        StudentUserResponseDto user = authService.changePasswordByAdmin(changePasswordDto);
         return new ApiResponse<>("success", SuccessMessages.PASSWORD_CHANGED_SUCCESSFULLY, user);
     }
 
     @PostMapping("/change-password")
     public ApiResponse<StaffUserResponseDto> changePasswordStaff(@Valid @RequestBody ChangePasswordRequestDto changePasswordDto) {
         log.info("Changing password for user staff");
-        StaffUserResponseDto user = authService.changePasswordStaff(changePasswordDto);
+            StaffUserResponseDto user = authService.changePasswordStaff(changePasswordDto);
         return new ApiResponse<>("success", SuccessMessages.PASSWORD_CHANGED_SUCCESSFULLY, user);
     }
 

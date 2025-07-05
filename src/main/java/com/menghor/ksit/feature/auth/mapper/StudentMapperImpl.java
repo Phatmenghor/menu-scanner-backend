@@ -104,7 +104,7 @@ public class StudentMapperImpl implements StudentMapper {
                 .gender(user.getGender())
                 .dateOfBirth(user.getDateOfBirth())
                 .phoneNumber(user.getPhoneNumber())
-                .createdAt(user.getCreatedAt().toString())
+                .createdAt(user.getCreatedAt())
                 .profileUrl(user.getProfileUrl())
                 .identifyNumber(user.getIdentifyNumber());
 

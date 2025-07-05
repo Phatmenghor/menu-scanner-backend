@@ -21,7 +21,7 @@ public interface AuthService {
     /**
      * Change user's student password (by admin)
      */
-    StudentUserResponseDto changePasswordStudentByAdmin(ChangePasswordByAdminRequestDto requestDto);
+    StudentUserResponseDto changePasswordByAdmin(ChangePasswordByAdminRequestDto requestDto);
 
     /**
      * Token refresh mechanism
