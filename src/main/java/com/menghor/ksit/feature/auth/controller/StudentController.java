@@ -9,7 +9,9 @@ import com.menghor.ksit.feature.auth.dto.filter.StudentUserFilterRequestDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserAllResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
+import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.service.StudentService;
+import com.menghor.ksit.utils.database.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import java.util.List;
 public class StudentController {
 
     private final StudentService studentService;
+    private final SecurityUtils securityUtils;
 
     /**
      * Register a new student
@@ -79,6 +82,18 @@ public class StudentController {
     public ApiResponse<StudentUserResponseDto> updateStudentUser(@PathVariable Long id, @Valid @RequestBody StudentUpdateRequestDto updateDto) {
         log.info("Updating student user with ID: {}", id);
         StudentUserResponseDto updatedUser = studentService.updateStudentUser(id, updateDto);
+        log.info("Student user updated successfully with ID: {}", updatedUser.getId());
+        return new ApiResponse<>("'success'", "Student user updated successfully", updatedUser);
+    }
+
+    /**
+     * Update student token user
+     */
+    @PutMapping("token")
+    public ApiResponse<StudentUserResponseDto> updateStudentTokenUser( @Valid @RequestBody StudentUpdateRequestDto updateDto) {
+        final UserEntity currentEntity = securityUtils.getCurrentUser();
+        log.info("Updating student user with ID: {}", currentEntity.getId());
+        StudentUserResponseDto updatedUser = studentService.updateStudentUser(currentEntity.getId(), updateDto);
         log.info("Student user updated successfully with ID: {}", updatedUser.getId());
         return new ApiResponse<>("'success'", "Student user updated successfully", updatedUser);
     }
