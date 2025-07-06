@@ -29,8 +29,27 @@ public class AttendanceSpecification {
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("englishFirstName")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("englishLastName")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerFirstName")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerLastName")), searchPattern)
-                        );
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("student").get("khmerLastName")), searchPattern),
+
+                        // Teacher fields (through attendance session)
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("englishFirstName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("englishLastName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("khmerFirstName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("khmerLastName")), searchPattern),
+
+                        // Course fields (through schedule)
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("nameEn")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("nameKH")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("code")), searchPattern),
+
+                        // Class fields
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("classes").get("code")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("classes").get("nameEn")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("classes").get("nameKH")), searchPattern),
+
+                        // Room fields
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("room").get("name")), searchPattern)
+                );
             }
             return null;
         };
@@ -177,6 +196,10 @@ public class AttendanceSpecification {
 
         if (StringUtils.hasText(filterDto.getSearch())) {
             result = result.and(searchWithAttendance(filterDto.getSearch()));
+        }
+
+        if (filterDto.getStudentId() != null) {
+            result = result.and(hasStudentId(filterDto.getStudentId()));
         }
 
         if (filterDto.getStatus() != null) {

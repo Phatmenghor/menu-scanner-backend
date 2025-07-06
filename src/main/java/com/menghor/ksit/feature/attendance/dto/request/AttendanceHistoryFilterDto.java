@@ -14,6 +14,7 @@ public class AttendanceHistoryFilterDto {
     private Long scheduleId;
     private Long classId;
     private Long teacherId;
+    private Long studentId;
     private AttendanceFinalizationStatus finalizationStatus;
     private AttendanceStatus status;
     private SemesterEnum semester;

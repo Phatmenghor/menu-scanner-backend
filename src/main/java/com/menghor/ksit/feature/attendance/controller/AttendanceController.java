@@ -1,5 +1,6 @@
 package com.menghor.ksit.feature.attendance.controller;
 
+import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.attendance.dto.request.AttendanceHistoryFilterDto;
 import com.menghor.ksit.feature.attendance.dto.request.AttendanceSessionRequest;
@@ -9,6 +10,7 @@ import com.menghor.ksit.feature.attendance.dto.response.AttendanceSessionDto;
 import com.menghor.ksit.feature.attendance.dto.update.AttendanceUpdateRequest;
 import com.menghor.ksit.feature.attendance.service.AttendanceService;
 import com.menghor.ksit.feature.attendance.service.AttendanceSessionService;
+import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
 import com.menghor.ksit.utils.database.SecurityUtils;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -108,6 +111,51 @@ public class AttendanceController {
                 count
         );
     }
+
+    @PostMapping("/history/token")
+    public ApiResponse<CustomPaginationResponseDto<AttendanceDto>> getMyAttendanceHistory(
+            @RequestBody AttendanceHistoryFilterDto filterDto) {
+        log.info("Fetching attendance history for current user with filter: {}", filterDto);
+
+        UserEntity currentUser = securityUtils.getCurrentUser();
+        log.info("User {} requesting their attendance history", currentUser.getUsername());
+
+        // Check if user has STUDENT role
+        boolean isStudent = currentUser.getRoles().stream()
+                .map(Role::getName)
+                .anyMatch(role -> role == RoleEnum.STUDENT);
+
+        if (!isStudent) {
+            log.info("User {} is not a student, returning empty list", currentUser.getUsername());
+            CustomPaginationResponseDto<AttendanceDto> emptyResponse = new CustomPaginationResponseDto<>(
+                    Collections.emptyList(),
+                    filterDto.getPageNo() != null ? filterDto.getPageNo() : 1,
+                    filterDto.getPageSize() != null ? filterDto.getPageSize() : 10,
+                    0L,
+                    0,
+                    true
+            );
+            return new ApiResponse<>(
+                    "success",
+                    "Access restricted to students only",
+                    emptyResponse
+            );
+        }
+
+        // Set the current user's ID as student ID in the filter
+        filterDto.setStudentId(currentUser.getId());
+
+        CustomPaginationResponseDto<AttendanceDto> response =
+                attendanceService.findAttendanceHistory(filterDto);
+        log.info("Retrieved {} attendance records for current user", response.getContent().size());
+        return new ApiResponse<>(
+                "success",
+                "My attendance history retrieved successfully",
+                response
+        );
+    }
+
+
 
     @PostMapping("/initialize")
     public ApiResponse<AttendanceSessionDto> generateSession(
