@@ -1,6 +1,7 @@
 package com.menghor.ksit.feature.auth.controller;
 
 import com.menghor.ksit.constants.SuccessMessages;
+import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.auth.dto.request.ChangePasswordByAdminRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.ChangePasswordRequestDto;
@@ -9,6 +10,7 @@ import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
 import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.dto.request.LoginRequestDto;
 import com.menghor.ksit.feature.auth.models.UserEntity;
+import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.auth.service.AuthService;
 import com.menghor.ksit.feature.auth.service.LogoutService;
 import com.menghor.ksit.feature.auth.service.StaffService;
@@ -34,6 +36,7 @@ public class AuthController {
     private final SecurityUtils securityUtils;
     private final StudentService studentService;
     private final StaffService staffService;
+    private final UserRepository userRepository;
 
     @PostMapping("/login")
     public ApiResponse<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
@@ -53,7 +56,7 @@ public class AuthController {
     @PostMapping("/change-password")
     public ApiResponse<StaffUserResponseDto> changePasswordStaff(@Valid @RequestBody ChangePasswordRequestDto changePasswordDto) {
         log.info("Changing password for user staff");
-            StaffUserResponseDto user = authService.changePasswordStaff(changePasswordDto);
+        StaffUserResponseDto user = authService.changePasswordStaff(changePasswordDto);
         return new ApiResponse<>("success", SuccessMessages.PASSWORD_CHANGED_SUCCESSFULLY, user);
     }
 
@@ -81,6 +84,18 @@ public class AuthController {
 
         log.info("Detailed staff user information retrieved successfully for user ID: {}", currentEntity.getId());
         return new ApiResponse<>("success", "Detailed staff user information retrieved successfully", user);
+    }
+
+    @PostMapping("/delete-account/token")
+    public ApiResponse<StaffUserResponseDto> deleteAccountToken() {
+        log.info("Deleting account by token");
+        UserEntity currentEntity = securityUtils.getCurrentUser();
+
+        currentEntity.setStatus(Status.DELETED);
+        userRepository.save(currentEntity);
+
+        log.info("Account deleted successfully for user ID: {}", currentEntity.getId());
+        return new ApiResponse<>("success", "Detailed account successfully", null);
     }
 
     @PostMapping("/refresh-token")
