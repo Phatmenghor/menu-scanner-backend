@@ -115,10 +115,10 @@ public class AttendanceController {
     @PostMapping("/history/token")
     public ApiResponse<CustomPaginationResponseDto<AttendanceDto>> getMyAttendanceHistory(
             @RequestBody AttendanceHistoryFilterDto filterDto) {
-        log.info("Fetching attendance history for current user with filter: {}", filterDto);
+        log.info("Fetching enhanced attendance history for current user with filter: {}", filterDto);
 
         UserEntity currentUser = securityUtils.getCurrentUser();
-        log.info("User {} requesting their attendance history", currentUser.getUsername());
+        log.info("User {} requesting their enhanced attendance history", currentUser.getUsername());
 
         // Check if user has STUDENT role
         boolean isStudent = currentUser.getRoles().stream()
@@ -147,15 +147,25 @@ public class AttendanceController {
 
         CustomPaginationResponseDto<AttendanceDto> response =
                 attendanceService.findAttendanceHistory(filterDto);
-        log.info("Retrieved {} attendance records for current user", response.getContent().size());
+
+        log.info("Retrieved {} enhanced attendance records for current user with complete details", response.getContent().size());
+
+        // Log enhanced details for student
+        if (!response.getContent().isEmpty()) {
+            AttendanceDto sample = response.getContent().get(0);
+            log.info("Student enhanced attendance - Course: {} ({} credits, {}/{}/{} hours), Day: {}, Time: {}-{}, Room: {}, Semester: {}",
+                    sample.getCourseName(), sample.getCredit(),
+                    sample.getTheory(), sample.getExecute(), sample.getApply(),
+                    sample.getDay(), sample.getStartTime(), sample.getEndTime(),
+                    sample.getRoomName(), sample.getSemesterName());
+        }
+
         return new ApiResponse<>(
                 "success",
-                "My attendance history retrieved successfully",
+                "My attendance history retrieved successfully with complete course and schedule details",
                 response
         );
     }
-
-
 
     @PostMapping("/initialize")
     public ApiResponse<AttendanceSessionDto> generateSession(

@@ -84,7 +84,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         Specification<AttendanceEntity> spec = AttendanceSpecification.combine(filterDto);
 
         // Sort by recordedTime descending for consistency
-        Sort sort = Sort.by(Sort.Direction.DESC, "recordedTime");
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
 
         List<AttendanceEntity> attendanceList = attendanceRepository.findAll(spec, sort);
 
@@ -118,7 +118,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         Pageable pageable = PaginationUtils.createPageable(
                 filterDto.getPageNo(),
                 filterDto.getPageSize(),
-                "recordedTime",
+                "createdAt",
                 "DESC"
         );
 

@@ -15,7 +15,8 @@ import java.time.LocalDate;
 public class AttendanceSpecification {
 
     /**
-     * Search by student name, teacher name, course name, class code, room name, etc.
+     * Enhanced search by student name, teacher name, course name, class code, room name,
+     * course code, semester info, etc.
      */
     public static Specification<AttendanceEntity> searchWithAttendance(String search) {
         return (root, query, criteriaBuilder) -> {
@@ -36,19 +37,31 @@ public class AttendanceSpecification {
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("englishLastName")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("khmerFirstName")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("khmerLastName")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("teacher").get("username")), searchPattern),
 
-                        // Course fields (through schedule)
+                        // Course fields (through schedule) - Enhanced
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("nameEn")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("nameKH")), searchPattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("course").get("code")), searchPattern),
 
-                        // Class fields
+                        // Class fields - Enhanced
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("classes").get("code")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("classes").get("nameEn")), searchPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("classes").get("nameKH")), searchPattern),
 
-                        // Room fields
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("room").get("name")), searchPattern)
+                        // Room fields - Enhanced
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("room").get("name")), searchPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("room").get("code")), searchPattern),
+
+                        // Semester fields - NEW
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("semester").get("description")), searchPattern),
+
+                        // Day of week search - NEW
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("day").as(String.class)), searchPattern),
+
+                        // Year level search - NEW
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("yearLevel").as(String.class)), searchPattern),
+
+                        // Academy year search - NEW
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("attendanceSession").get("schedule").get("semester").get("academyYear").as(String.class)), searchPattern)
                 );
             }
             return null;
@@ -189,7 +202,7 @@ public class AttendanceSpecification {
     }
 
     /**
-     * Combine specifications using AttendanceHistoryFilterDto
+     * Enhanced combine specifications using AttendanceHistoryFilterDto
      */
     public static Specification<AttendanceEntity> combine(AttendanceHistoryFilterDto filterDto) {
         Specification<AttendanceEntity> result = Specification.where(null);
