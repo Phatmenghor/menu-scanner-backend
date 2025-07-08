@@ -9,6 +9,7 @@ import com.menghor.ksit.feature.school.dto.response.RequestResponseDto;
 import com.menghor.ksit.feature.school.dto.update.RequestUpdateDto;
 import com.menghor.ksit.feature.school.service.RequestService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
+import com.menghor.ksit.utils.database.SecurityUtils;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class RequestController {
 
     private final RequestService requestService;
+    private final SecurityUtils securityUtils;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -60,6 +62,16 @@ public class RequestController {
         CustomPaginationResponseDto<RequestResponseDto> response = requestService.getAllRequests(filterDto);
         log.info("Requests fetched successfully. Total elements: {}", response.getTotalElements());
         return ApiResponse.success("Requests fetched successfully", response);
+    }
+
+    @PostMapping("/all/token")
+    public ApiResponse<CustomPaginationResponseDto<RequestResponseDto>> getAllMyRequests(
+            @RequestBody RequestFilterDto filterDto) {
+        log.info("Fetching all my requests with filter: {}", filterDto);
+        filterDto.setUserId(securityUtils.getCurrentUser().getId());
+        CustomPaginationResponseDto<RequestResponseDto> response = requestService.getAllRequests(filterDto);
+        log.info("My requests fetched successfully. Total elements: {}", response.getTotalElements());
+        return ApiResponse.success("My requests fetched successfully", response);
     }
 
     @PostMapping("/history")
