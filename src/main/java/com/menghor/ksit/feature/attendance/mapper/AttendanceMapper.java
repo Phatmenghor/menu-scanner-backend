@@ -52,6 +52,8 @@ public interface AttendanceMapper {
     @Mapping(source = "attendanceSession.schedule.day", target = "day")
     @Mapping(source = "attendanceSession.schedule.yearLevel", target = "yearLevel")
 
+    @Mapping(source = "attendanceSession.schedule.course.department.urlLogo", target = "departmentImageUrl")
+
     // Room Information
     @Mapping(source = "attendanceSession.schedule.room.id", target = "roomId")
     @Mapping(source = "attendanceSession.schedule.room.name", target = "roomName")

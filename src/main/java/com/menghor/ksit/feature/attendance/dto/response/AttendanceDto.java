@@ -48,6 +48,8 @@ public class AttendanceDto {
     private Integer apply;
     private Integer totalHour;
 
+    private String departmentImageUrl;
+
     // Enhanced Schedule Details
     private LocalTime startTime;
     private LocalTime endTime;

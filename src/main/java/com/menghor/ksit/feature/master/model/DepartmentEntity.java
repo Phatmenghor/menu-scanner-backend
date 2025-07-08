@@ -18,10 +18,10 @@
     @Table(name = "departments")
     public class DepartmentEntity extends BaseEntity {
 
-        @Column(name = "code", nullable = false) // Remove unique=true
+        @Column(name = "code", nullable = false)
         private String code;
 
-        @Column(name = "name", nullable = false) // Remove unique=true
+        @Column(name = "name", nullable = false)
         private String name;
 
         private String urlLogo;
