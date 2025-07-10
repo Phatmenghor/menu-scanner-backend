@@ -14,7 +14,9 @@ import com.menghor.ksit.feature.master.repository.ClassRepository;
 import com.menghor.ksit.feature.master.repository.RoomRepository;
 import com.menghor.ksit.feature.master.repository.SemesterRepository;
 import com.menghor.ksit.feature.school.dto.filter.ScheduleFilterDto;
+import com.menghor.ksit.feature.school.dto.request.ScheduleBulkDuplicateRequestDto;
 import com.menghor.ksit.feature.school.dto.request.ScheduleRequestDto;
+import com.menghor.ksit.feature.school.dto.response.ScheduleBulkDuplicateResponseDto;
 import com.menghor.ksit.feature.school.dto.response.ScheduleResponseDto;
 import com.menghor.ksit.feature.school.dto.update.ScheduleUpdateDto;
 import com.menghor.ksit.feature.school.helper.ScheduleFilterHelper;
@@ -251,6 +253,144 @@ public class ScheduleServiceImpl implements ScheduleService {
             log.warn("User {} has unknown or no roles, returning empty schedules", currentUser.getUsername());
             return filterHelper.createEmptyResponse(filterDto);
         }
+    }
+
+    // Add to ScheduleServiceImpl.java implementation
+    @Override
+    @Transactional
+    public ScheduleBulkDuplicateResponseDto bulkDuplicateSchedules(ScheduleBulkDuplicateRequestDto requestDto) {
+        log.info("Starting bulk duplication from class: {} semester: {} to class: {} semester: {}",
+                requestDto.getSourceClassId(), requestDto.getSourceSemesterId(),
+                requestDto.getTargetClassId(), requestDto.getTargetSemesterId());
+
+        // Validate source and target entities
+        ClassEntity sourceClass = findClassById(requestDto.getSourceClassId());
+        SemesterEntity sourceSemester = findSemesterById(requestDto.getSourceSemesterId());
+        ClassEntity targetClass = findClassById(requestDto.getTargetClassId());
+        SemesterEntity targetSemester = findSemesterById(requestDto.getTargetSemesterId());
+
+        // Find all schedules for source class and semester
+        List<ScheduleEntity> sourceSchedules = scheduleRepository.findAll((root, query, criteriaBuilder) ->
+                criteriaBuilder.and(
+                        criteriaBuilder.equal(root.get("classes").get("id"), requestDto.getSourceClassId()),
+                        criteriaBuilder.equal(root.get("semester").get("id"), requestDto.getSourceSemesterId()),
+                        criteriaBuilder.equal(root.get("status"), Status.ACTIVE)
+                ));
+
+        log.info("Found {} schedules to duplicate", sourceSchedules.size());
+
+        if (sourceSchedules.isEmpty()) {
+            return createEmptyDuplicateResponse(requestDto, sourceClass, sourceSemester, targetClass, targetSemester);
+        }
+
+        List<ScheduleResponseDto> duplicatedSchedules = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        int successCount = 0;
+        int skippedCount = 0;
+        int failedCount = 0;
+
+        for (ScheduleEntity sourceSchedule : sourceSchedules) {
+            try {
+                // Check if similar schedule already exists in target
+                boolean exists = checkIfScheduleExists(sourceSchedule, requestDto.getTargetClassId(),
+                        requestDto.getTargetSemesterId());
+
+                if (exists) {
+                    log.info("Schedule already exists for day: {} time: {}-{}, skipping",
+                            sourceSchedule.getDay(), sourceSchedule.getStartTime(), sourceSchedule.getEndTime());
+                    skippedCount++;
+                    continue;
+                }
+
+                // Create new schedule
+                ScheduleEntity newSchedule = createDuplicateSchedule(sourceSchedule, targetClass, targetSemester);
+                ScheduleEntity savedSchedule = scheduleRepository.save(newSchedule);
+
+                ScheduleResponseDto duplicatedDto = scheduleMapper.toResponseDto(savedSchedule);
+                duplicatedSchedules.add(duplicatedDto);
+                successCount++;
+
+                log.info("Successfully duplicated schedule ID: {} to new ID: {}",
+                        sourceSchedule.getId(), savedSchedule.getId());
+
+            } catch (Exception e) {
+                failedCount++;
+                String error = String.format("Failed to duplicate schedule ID %d: %s",
+                        sourceSchedule.getId(), e.getMessage());
+                errors.add(error);
+                log.error("Error duplicating schedule ID: {}", sourceSchedule.getId(), e);
+            }
+        }
+
+        // Create response using MapStruct
+        ScheduleBulkDuplicateResponseDto response = scheduleMapper.toBulkDuplicateResponse(
+                requestDto.getSourceClassId(), sourceClass, requestDto.getSourceSemesterId(), sourceSemester,
+                requestDto.getTargetClassId(), targetClass, requestDto.getTargetSemesterId(), targetSemester
+        );
+
+        // Set the count fields
+        response.setTotalSourceSchedules(sourceSchedules.size());
+        response.setSuccessfullyDuplicated(successCount);
+        response.setSkipped(skippedCount);
+        response.setFailed(failedCount);
+        response.setDuplicatedSchedules(duplicatedSchedules);
+        response.setErrors(errors);
+
+        String message = String.format("Bulk duplication completed: %d/%d schedules duplicated from %s %s %d to %s %s %d. %d skipped, %d failed.",
+                successCount, sourceSchedules.size(),
+                sourceClass.getCode(), sourceSemester.getSemester().name(), sourceSemester.getAcademyYear(),
+                targetClass.getCode(), targetSemester.getSemester().name(), targetSemester.getAcademyYear(),
+                skippedCount, failedCount);
+        response.setMessage(message);
+
+        log.info("Bulk duplication completed: {}", message);
+        return response;
+    }
+
+    private boolean checkIfScheduleExists(ScheduleEntity sourceSchedule, Long targetClassId, Long targetSemesterId) {
+        return scheduleRepository.exists((root, query, criteriaBuilder) ->
+                criteriaBuilder.and(
+                        criteriaBuilder.equal(root.get("classes").get("id"), targetClassId),
+                        criteriaBuilder.equal(root.get("semester").get("id"), targetSemesterId),
+                        criteriaBuilder.equal(root.get("day"), sourceSchedule.getDay()),
+                        criteriaBuilder.equal(root.get("startTime"), sourceSchedule.getStartTime()),
+                        criteriaBuilder.equal(root.get("endTime"), sourceSchedule.getEndTime()),
+                        criteriaBuilder.equal(root.get("room").get("id"), sourceSchedule.getRoom().getId()),
+                        criteriaBuilder.equal(root.get("status"), Status.ACTIVE)
+                ));
+    }
+
+    private ScheduleEntity createDuplicateSchedule(ScheduleEntity sourceSchedule, ClassEntity targetClass,
+                                                   SemesterEntity targetSemester) {
+        // Use MapStruct to duplicate the schedule
+        ScheduleEntity newSchedule = scheduleMapper.duplicateSchedule(sourceSchedule);
+
+        // Set the new class and semester (MapStruct ignores these)
+        newSchedule.setClasses(targetClass);
+        newSchedule.setSemester(targetSemester);
+
+        return newSchedule;
+    }
+
+    private ScheduleBulkDuplicateResponseDto createEmptyDuplicateResponse(ScheduleBulkDuplicateRequestDto requestDto,
+                                                                          ClassEntity sourceClass, SemesterEntity sourceSemester,
+                                                                          ClassEntity targetClass, SemesterEntity targetSemester) {
+        // Use MapStruct to create base response
+        ScheduleBulkDuplicateResponseDto response = scheduleMapper.toBulkDuplicateResponse(
+                requestDto.getSourceClassId(), sourceClass, requestDto.getSourceSemesterId(), sourceSemester,
+                requestDto.getTargetClassId(), targetClass, requestDto.getTargetSemesterId(), targetSemester
+        );
+
+        // Set the remaining fields
+        response.setTotalSourceSchedules(0);
+        response.setSuccessfullyDuplicated(0);
+        response.setSkipped(0);
+        response.setFailed(0);
+        response.setDuplicatedSchedules(new ArrayList<>());
+        response.setErrors(new ArrayList<>());
+        response.setMessage("No schedules found to duplicate");
+
+        return response;
     }
 
     @Override

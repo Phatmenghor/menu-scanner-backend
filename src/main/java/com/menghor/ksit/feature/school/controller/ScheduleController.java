@@ -2,7 +2,9 @@ package com.menghor.ksit.feature.school.controller;
 
 import com.menghor.ksit.exceptoins.response.ApiResponse;
 import com.menghor.ksit.feature.school.dto.filter.ScheduleFilterDto;
+import com.menghor.ksit.feature.school.dto.request.ScheduleBulkDuplicateRequestDto;
 import com.menghor.ksit.feature.school.dto.request.ScheduleRequestDto;
+import com.menghor.ksit.feature.school.dto.response.ScheduleBulkDuplicateResponseDto;
 import com.menghor.ksit.feature.school.dto.response.ScheduleResponseDto;
 import com.menghor.ksit.feature.school.dto.update.ScheduleUpdateDto;
 import com.menghor.ksit.feature.school.service.ScheduleService;
@@ -45,6 +47,24 @@ public class ScheduleController {
                 responseDto
         );
     }
+
+    @PostMapping("/bulk-duplicate")
+    public ApiResponse<ScheduleBulkDuplicateResponseDto> bulkDuplicateSchedules(
+            @Valid @RequestBody ScheduleBulkDuplicateRequestDto requestDto) {
+        log.info("REST request to bulk duplicate schedules from class: {} semester: {} to class: {} semester: {}",
+                requestDto.getSourceClassId(), requestDto.getSourceSemesterId(),
+                requestDto.getTargetClassId(), requestDto.getTargetSemesterId());
+
+        ScheduleBulkDuplicateResponseDto responseDto = scheduleService.bulkDuplicateSchedules(requestDto);
+        log.info("Bulk duplication completed: {} schedules duplicated", responseDto.getSuccessfullyDuplicated());
+
+        return new ApiResponse<>(
+                "success",
+                "Schedules duplicated successfully",
+                responseDto
+        );
+    }
+
 
     @PostMapping("/all-list")
     public ApiResponse<List<ScheduleResponseDto>> getAllSchedulesSimple(@RequestBody ScheduleFilterDto filterDto) {
