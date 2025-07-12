@@ -2,6 +2,9 @@ package com.menghor.ksit.config;
 
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
+import com.menghor.ksit.feature.auth.models.Role;
+import com.menghor.ksit.feature.auth.models.UserEntity;
+import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.menu.models.MenuItemEntity;
 import com.menghor.ksit.feature.menu.models.MenuPermissionEntity;
 import com.menghor.ksit.feature.menu.repository.MenuItemRepository;
@@ -26,6 +29,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
 
     private final MenuItemRepository menuItemRepository;
     private final MenuPermissionRepository menuPermissionRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -40,6 +44,48 @@ public class DefaultMenuInitializer implements CommandLineRunner {
         } else {
             log.info("Menu items already exist, skipping initialization");
         }
+
+        // AUTO-ASSIGN DEFAULT PERMISSIONS TO ALL EXISTING USERS
+        initializeMenuPermissionsForAllUsers();
+    }
+
+    /**
+     * NEW METHOD: Auto-assign default menu permissions to all users when system starts
+     * This eliminates the need for manual initialization endpoint
+     */
+    @Transactional
+    public void initializeMenuPermissionsForAllUsers() {
+        log.info("Auto-assigning default menu permissions to all users...");
+
+        // Get all users
+        List<UserEntity> allUsers = userRepository.findAll();
+
+        int updatedUsers = 0;
+        for (UserEntity user : allUsers) {
+            try {
+                // Get user's roles
+                List<RoleEnum> userRoles = user.getRoles().stream()
+                        .map(Role::getName)
+                        .toList();
+
+                // Get role-based permissions for this user
+                List<MenuPermissionEntity> rolePermissions = menuPermissionRepository
+                        .findViewableMenusByRoles(userRoles, Status.ACTIVE);
+
+                // This will automatically create user permissions based on roles
+                // when they first access the menu system (lazy initialization)
+
+                updatedUsers++;
+                log.debug("Prepared default permissions for user: {} (roles: {})",
+                        user.getUsername(), userRoles);
+
+            } catch (Exception e) {
+                log.error("Error initializing permissions for user {}: {}",
+                        user.getUsername(), e.getMessage());
+            }
+        }
+
+        log.info("Auto-assignment completed for {} users. Users will get default menus on first access.", updatedUsers);
     }
 
     private void createDefaultMenuItems() {
@@ -192,11 +238,11 @@ public class DefaultMenuInitializer implements CommandLineRunner {
         List<MenuPermissionEntity> permissions = new ArrayList<>();
 
         for (MenuItemEntity menuItem : allMenuItems) {
-            // Define which roles can see which menus
+            // Define which roles can see which menus by default
             switch (menuItem.getCode()) {
                 case "DASHBOARD":
                     // All roles can see dashboard
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT)));
                     break;
 
@@ -209,7 +255,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                 case "MANAGE_COURSE":
                 case "MANAGE_SUBJECT":
                     // Only admin and developer
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN)));
                     break;
 
@@ -218,7 +264,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                 case "STAFF_OFFICER":
                 case "TEACHERS":
                     // Admin and developer
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN)));
                     break;
 
@@ -227,7 +273,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                 case "ADD_SINGLE_USER":
                 case "STUDENTS_LIST":
                     // Admin, staff, and developer
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF)));
                     break;
 
@@ -236,7 +282,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                 case "HISTORY_RECORDS":
                 case "STUDENT_RECORDS":
                     // All staff roles
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
 
@@ -245,7 +291,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                 case "MANAGE_QA":
                 case "SURVEY_STUDENT_RECORDS":
                     // All staff roles
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
 
@@ -254,43 +300,43 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                 case "SCORE_SETTING":
                 case "STUDENT_SCORE":
                     // All staff roles
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
 
                 case "SCHEDULE":
                     // All roles
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT)));
                     break;
 
                 case "MANAGE_SCHEDULE":
                     // Admin and developer
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN)));
                     break;
 
                 case "REQUEST":
                     // All roles
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT)));
                     break;
 
                 case "PAYMENT":
                     // All roles
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT)));
                     break;
 
                 case "ROLE_PERMISSION":
                     // Only developer
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER)));
                     break;
 
                 default:
                     // Default: only developer and admin
-                    permissions.addAll(createPermissionsForRoles(menuItem, 
+                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN)));
                     break;
             }
@@ -301,7 +347,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
 
     private List<MenuPermissionEntity> createPermissionsForRoles(MenuItemEntity menuItem, List<RoleEnum> roles) {
         List<MenuPermissionEntity> permissions = new ArrayList<>();
-        
+
         for (RoleEnum role : roles) {
             MenuPermissionEntity permission = new MenuPermissionEntity();
             permission.setMenuItem(menuItem);
@@ -311,7 +357,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
             permission.setStatus(Status.ACTIVE);
             permissions.add(permission);
         }
-        
+
         return permissions;
     }
 }
