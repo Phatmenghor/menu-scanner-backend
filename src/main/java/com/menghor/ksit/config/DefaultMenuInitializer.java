@@ -9,6 +9,7 @@ import com.menghor.ksit.feature.menu.models.MenuItemEntity;
 import com.menghor.ksit.feature.menu.models.MenuPermissionEntity;
 import com.menghor.ksit.feature.menu.repository.MenuItemRepository;
 import com.menghor.ksit.feature.menu.repository.MenuPermissionRepository;
+import com.menghor.ksit.feature.menu.service.MenuService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
     private final MenuItemRepository menuItemRepository;
     private final MenuPermissionRepository menuPermissionRepository;
     private final UserRepository userRepository;
+    private final MenuService menuService; // Add this to call initialization
 
     @Override
     @Transactional
@@ -45,122 +47,86 @@ public class DefaultMenuInitializer implements CommandLineRunner {
             log.info("Menu items already exist, skipping initialization");
         }
 
-        // AUTO-ASSIGN DEFAULT PERMISSIONS TO ALL EXISTING USERS
+        // Initialize menu permissions for all existing users
         initializeMenuPermissionsForAllUsers();
     }
 
     /**
-     * NEW METHOD: Auto-assign default menu permissions to all users when system starts
-     * This eliminates the need for manual initialization endpoint
+     * AUTO-ASSIGN DEFAULT PERMISSIONS TO ALL EXISTING USERS
      */
     @Transactional
     public void initializeMenuPermissionsForAllUsers() {
-        log.info("Auto-assigning default menu permissions to all users...");
+        log.info("Auto-initializing menu permissions for all existing users...");
 
-        // Get all users
-        List<UserEntity> allUsers = userRepository.findAll();
-
-        int updatedUsers = 0;
-        for (UserEntity user : allUsers) {
-            try {
-                // Get user's roles
-                List<RoleEnum> userRoles = user.getRoles().stream()
-                        .map(Role::getName)
-                        .toList();
-
-                // Get role-based permissions for this user
-                List<MenuPermissionEntity> rolePermissions = menuPermissionRepository
-                        .findViewableMenusByRoles(userRoles, Status.ACTIVE);
-
-                // This will automatically create user permissions based on roles
-                // when they first access the menu system (lazy initialization)
-
-                updatedUsers++;
-                log.debug("Prepared default permissions for user: {} (roles: {})",
-                        user.getUsername(), userRoles);
-
-            } catch (Exception e) {
-                log.error("Error initializing permissions for user {}: {}",
-                        user.getUsername(), e.getMessage());
-            }
+        try {
+            // Call the service method to handle all existing users
+            menuService.initializeMenuPermissionsForAllExistingUsers();
+            log.info("Menu permission initialization completed for all existing users");
+        } catch (Exception e) {
+            log.error("Error during menu permission initialization: {}", e.getMessage(), e);
         }
-
-        log.info("Auto-assignment completed for {} users. Users will get default menus on first access.", updatedUsers);
     }
 
+    // ... rest of the existing createDefaultMenuItems() and other methods remain the same
     private void createDefaultMenuItems() {
+        // Same implementation as before...
         List<MenuItemEntity> menuItems = new ArrayList<>();
         Map<String, MenuItemEntity> menuMap = new HashMap<>();
 
-        // Create main menu items based on your existing routes
+        // Create main menu items
         MenuItemEntity dashboard = createMenuItem("DASHBOARD", "Dashboard", "/", "Home", 1, false);
         menuItems.add(dashboard);
         menuMap.put("DASHBOARD", dashboard);
 
-        // Master Data (Parent)
         MenuItemEntity masterData = createMenuItem("MASTER_DATA", "Master data", null, "Master_Data", 2, true);
         menuItems.add(masterData);
         menuMap.put("MASTER_DATA", masterData);
 
-        // Users (Parent)
         MenuItemEntity users = createMenuItem("USERS", "Users", null, "Users", 3, true);
         menuItems.add(users);
         menuMap.put("USERS", users);
 
-        // Students (Parent)
         MenuItemEntity students = createMenuItem("STUDENTS", "Students", null, "Students", 4, true);
         menuItems.add(students);
         menuMap.put("STUDENTS", students);
 
-        // Attendance (Parent)
         MenuItemEntity attendance = createMenuItem("ATTENDANCE", "Attendance", null, "Attendance", 5, true);
         menuItems.add(attendance);
         menuMap.put("ATTENDANCE", attendance);
 
-        // Survey (Parent)
         MenuItemEntity survey = createMenuItem("SURVEY", "Survey", null, "Survey", 6, true);
         menuItems.add(survey);
         menuMap.put("SURVEY", survey);
 
-        // Score Submitted (Parent)
         MenuItemEntity scoreSubmitted = createMenuItem("SCORE_SUBMITTED", "Score submitted", null, "Scores_Submitted", 7, true);
         menuItems.add(scoreSubmitted);
         menuMap.put("SCORE_SUBMITTED", scoreSubmitted);
 
-        // Student Score
         MenuItemEntity studentScore = createMenuItem("STUDENT_SCORE", "Student score", "/student-score", "Student_Scores", 8, false);
         menuItems.add(studentScore);
         menuMap.put("STUDENT_SCORE", studentScore);
 
-        // Schedule
         MenuItemEntity schedule = createMenuItem("SCHEDULE", "Schedule", "/schedule", "Schedule", 9, false);
         menuItems.add(schedule);
         menuMap.put("SCHEDULE", schedule);
 
-        // Manage Schedule
         MenuItemEntity manageSchedule = createMenuItem("MANAGE_SCHEDULE", "Manage schedule", "/manage-schedule/department", "Manage_Schedule", 10, false);
         menuItems.add(manageSchedule);
         menuMap.put("MANAGE_SCHEDULE", manageSchedule);
 
-        // Request
         MenuItemEntity request = createMenuItem("REQUEST", "Request", "/requests", "Request", 11, false);
         menuItems.add(request);
         menuMap.put("REQUEST", request);
 
-        // Payment
         MenuItemEntity payment = createMenuItem("PAYMENT", "Payment", "/student-payment", "Payment", 12, false);
         menuItems.add(payment);
         menuMap.put("PAYMENT", payment);
 
-        // Role & User Permission
         MenuItemEntity rolePermission = createMenuItem("ROLE_PERMISSION", "Role&User permission", "/permissions", "Role_Permission", 13, false);
         menuItems.add(rolePermission);
         menuMap.put("ROLE_PERMISSION", rolePermission);
 
-        // Save all parent items first
         menuItemRepository.saveAll(menuItems);
-
-        // Create children items
         createChildMenuItems(menuMap);
     }
 
@@ -238,14 +204,12 @@ public class DefaultMenuInitializer implements CommandLineRunner {
         List<MenuPermissionEntity> permissions = new ArrayList<>();
 
         for (MenuItemEntity menuItem : allMenuItems) {
-            // Define which roles can see which menus by default
+            // Create role-based permissions (same as before)
             switch (menuItem.getCode()) {
                 case "DASHBOARD":
-                    // All roles can see dashboard
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT)));
                     break;
-
                 case "MASTER_DATA":
                 case "MANAGE_CLASS":
                 case "MANAGE_SEMESTER":
@@ -254,88 +218,62 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                 case "MANAGE_ROOM":
                 case "MANAGE_COURSE":
                 case "MANAGE_SUBJECT":
-                    // Only admin and developer
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN)));
                     break;
-
                 case "USERS":
                 case "ADMIN":
                 case "STAFF_OFFICER":
                 case "TEACHERS":
-                    // Admin and developer
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN)));
                     break;
-
                 case "STUDENTS":
                 case "ADD_MULTIPLE_USERS":
                 case "ADD_SINGLE_USER":
                 case "STUDENTS_LIST":
-                    // Admin, staff, and developer
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF)));
                     break;
-
                 case "ATTENDANCE":
                 case "CLASS_SCHEDULE":
                 case "HISTORY_RECORDS":
                 case "STUDENT_RECORDS":
-                    // All staff roles
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
-
                 case "SURVEY":
                 case "RESULT_LIST":
                 case "MANAGE_QA":
                 case "SURVEY_STUDENT_RECORDS":
-                    // All staff roles
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
-
                 case "SCORE_SUBMITTED":
                 case "SUBMITTED_LIST":
                 case "SCORE_SETTING":
                 case "STUDENT_SCORE":
-                    // All staff roles
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
-
                 case "SCHEDULE":
-                    // All roles
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT)));
                     break;
-
                 case "MANAGE_SCHEDULE":
-                    // Admin and developer
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN)));
                     break;
-
                 case "REQUEST":
-                    // All roles
-                    permissions.addAll(createPermissionsForRoles(menuItem,
-                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT)));
-                    break;
-
                 case "PAYMENT":
-                    // All roles
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT)));
                     break;
-
                 case "ROLE_PERMISSION":
-                    // Only developer
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER)));
                     break;
-
                 default:
-                    // Default: only developer and admin
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN)));
                     break;
@@ -351,7 +289,8 @@ public class DefaultMenuInitializer implements CommandLineRunner {
         for (RoleEnum role : roles) {
             MenuPermissionEntity permission = new MenuPermissionEntity();
             permission.setMenuItem(menuItem);
-            permission.setRole(role);
+            permission.setRole(role); // Role-based permission
+            permission.setUser(null);  // No user = role-based
             permission.setCanView(true);
             permission.setDisplayOrder(menuItem.getDisplayOrder());
             permission.setStatus(Status.ACTIVE);
