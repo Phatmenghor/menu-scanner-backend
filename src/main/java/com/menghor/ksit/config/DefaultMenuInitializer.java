@@ -2,9 +2,6 @@ package com.menghor.ksit.config;
 
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.feature.auth.models.Role;
-import com.menghor.ksit.feature.auth.models.UserEntity;
-import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.menu.models.MenuItemEntity;
 import com.menghor.ksit.feature.menu.models.MenuPermissionEntity;
 import com.menghor.ksit.feature.menu.repository.MenuItemRepository;
@@ -30,8 +27,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
 
     private final MenuItemRepository menuItemRepository;
     private final MenuPermissionRepository menuPermissionRepository;
-    private final UserRepository userRepository;
-    private final MenuService menuService; // Add this to call initialization
+    private final MenuService menuService;
 
     @Override
     @Transactional
@@ -67,9 +63,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
         }
     }
 
-    // ... rest of the existing createDefaultMenuItems() and other methods remain the same
     private void createDefaultMenuItems() {
-        // Same implementation as before...
         List<MenuItemEntity> menuItems = new ArrayList<>();
         Map<String, MenuItemEntity> menuMap = new HashMap<>();
 
@@ -204,7 +198,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
         List<MenuPermissionEntity> permissions = new ArrayList<>();
 
         for (MenuItemEntity menuItem : allMenuItems) {
-            // Create role-based permissions (same as before)
+            // Create role-based permissions for fallback
             switch (menuItem.getCode()) {
                 case "DASHBOARD":
                     permissions.addAll(createPermissionsForRoles(menuItem,
@@ -233,28 +227,28 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                 case "ADD_SINGLE_USER":
                 case "STUDENTS_LIST":
                     permissions.addAll(createPermissionsForRoles(menuItem,
-                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF)));
+                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
                 case "ATTENDANCE":
                 case "CLASS_SCHEDULE":
                 case "HISTORY_RECORDS":
                 case "STUDENT_RECORDS":
                     permissions.addAll(createPermissionsForRoles(menuItem,
-                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
+                            List.of(RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
                 case "SURVEY":
                 case "RESULT_LIST":
                 case "MANAGE_QA":
                 case "SURVEY_STUDENT_RECORDS":
                     permissions.addAll(createPermissionsForRoles(menuItem,
-                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
+                            List.of(RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
                 case "SCORE_SUBMITTED":
                 case "SUBMITTED_LIST":
                 case "SCORE_SETTING":
                 case "STUDENT_SCORE":
                     permissions.addAll(createPermissionsForRoles(menuItem,
-                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
+                            List.of(RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
                 case "SCHEDULE":
                     permissions.addAll(createPermissionsForRoles(menuItem,
@@ -265,6 +259,9 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN)));
                     break;
                 case "REQUEST":
+                    permissions.addAll(createPermissionsForRoles(menuItem,
+                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN)));
+                    break;
                 case "PAYMENT":
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT)));

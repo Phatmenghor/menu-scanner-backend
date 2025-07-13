@@ -77,7 +77,7 @@ public interface MenuPermissionRepository extends JpaRepository<MenuPermissionEn
            "WHERE mp.menuItem.id = :menuItemId " +
            "AND mp.status = :status " +
            "ORDER BY mp.displayOrder ASC")
-    List<MenuPermissionEntity> findByMenuItemIdAndStatus(@Param("menuItemId") Long menuItemId, 
+    List<MenuPermissionEntity> findByMenuItemIdAndStatus(@Param("menuItemId") Long menuItemId,
                                                          @Param("status") Status status);
 
     /**

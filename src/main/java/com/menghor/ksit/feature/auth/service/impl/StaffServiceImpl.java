@@ -19,6 +19,7 @@ import com.menghor.ksit.feature.auth.service.StaffService;
 import com.menghor.ksit.feature.auth.specification.UserSpecification;
 import com.menghor.ksit.feature.master.model.DepartmentEntity;
 import com.menghor.ksit.feature.master.repository.DepartmentRepository;
+import com.menghor.ksit.feature.menu.service.MenuService;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,7 @@ public class StaffServiceImpl implements StaffService {
     private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final StaffMapper staffMapper;
+    private final MenuService menuService;
 
     // Required repositories for handling child entities
     private final TeachersProfessionalRankRepository teachersProfessionalRankRepository;
@@ -175,6 +177,14 @@ public class StaffServiceImpl implements StaffService {
 
         // Save the user first to get the ID
         UserEntity savedStaff = userRepository.save(staff);
+
+        try {
+            menuService.initializeMenuPermissionsForNewUser(savedStaff.getId());
+            log.info("Menu permissions initialized for new staff user: {}", savedStaff.getId());
+        } catch (Exception e) {
+            log.error("Failed to initialize menu permissions for staff user {}: {}", savedStaff.getId(), e.getMessage());
+        }
+
 
         // Handle related entity lists
         if (requestDto.getTeachersProfessionalRanks() != null && !requestDto.getTeachersProfessionalRanks().isEmpty()) {

@@ -24,6 +24,7 @@ import com.menghor.ksit.feature.auth.service.StudentService;
 import com.menghor.ksit.feature.auth.specification.UserSpecification;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.master.repository.ClassRepository;
+import com.menghor.ksit.feature.menu.service.MenuService;
 import com.menghor.ksit.utils.pagiantion.PaginationUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +54,7 @@ public class StudentServiceImpl implements StudentService {
     private final StudentMapper studentMapper;
     private final StaffMapper staffMapper;
     private final StudentIdentifierGenerator identifierGenerator;
+    private final MenuService menuService;
 
     // Child entity repositories
     private final StudentStudiesHistoryRepository studentStudiesHistoryRepository;
@@ -131,6 +133,13 @@ public class StudentServiceImpl implements StudentService {
 
         // Save the student first to get the ID
         UserEntity savedStudent = userRepository.save(student);
+
+        try {
+            menuService.initializeMenuPermissionsForNewUser(savedStudent.getId());
+            log.info("Menu permissions initialized for new student user: {}", savedStudent.getId());
+        } catch (Exception e) {
+            log.error("Failed to initialize menu permissions for student user {}: {}", savedStudent.getId(), e.getMessage());
+        }
 
         // Handle student studies history
         if (requestDto.getStudentStudiesHistories() != null && !requestDto.getStudentStudiesHistories().isEmpty()) {
@@ -236,6 +245,13 @@ public class StudentServiceImpl implements StudentService {
                         log.info("Batch created student #{} with ID: {}, username: {}, identifyNumber: {}",
                                 (i + 1), savedStudent.getId(), savedStudent.getUsername(),
                                 savedStudent.getIdentifyNumber());
+
+                        try {
+                            menuService.initializeMenuPermissionsForNewUser(savedStudent.getId());
+                            log.debug("Menu permissions initialized for batch student #{}: {}", (i + 1), savedStudent.getId());
+                        } catch (Exception e) {
+                            log.error("Failed to initialize menu permissions for batch student #{}: {}", (i + 1), e.getMessage());
+                        }
 
                         return studentMapper.toStudentBatchDto(savedStudent, plainTextPassword);
                     } catch (Exception e) {

@@ -29,5 +29,3 @@ public interface MenuMapper {
 
     List<UserMenuResponseDto> toUserMenuResponseList(List<MenuItemEntity> entities);
 }
-
-
