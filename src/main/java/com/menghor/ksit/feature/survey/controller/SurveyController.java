@@ -6,6 +6,7 @@ import com.menghor.ksit.feature.survey.dto.filter.SurveyReportHeaderFilterDto;
 import com.menghor.ksit.feature.survey.dto.request.SurveyResponseSubmitDto;
 import com.menghor.ksit.feature.survey.dto.response.*;
 import com.menghor.ksit.feature.survey.dto.update.SurveyUpdateDto;
+import com.menghor.ksit.feature.survey.service.SurveyProgressService;
 import com.menghor.ksit.feature.survey.service.SurveyReportService;
 import com.menghor.ksit.feature.survey.service.SurveyService;
 import com.menghor.ksit.utils.database.CustomPaginationResponseDto;
@@ -24,6 +25,7 @@ public class SurveyController {
 
     private final SurveyService surveyService;
     private final SurveyReportService surveyReportService;
+    private final SurveyProgressService surveyProgressService;
 
     @GetMapping("/main")
     public ApiResponse<SurveyResponseDto> getMainSurvey() {
@@ -47,6 +49,15 @@ public class SurveyController {
         SurveyResponseDto updatedSurvey = surveyService.deleteSurveySectionAndGetUpdatedSurvey(sectionId);
         log.info("Survey section deleted successfully with ID: {}", sectionId);
         return ApiResponse.success("Survey section deleted successfully", updatedSurvey);
+    }
+
+    @GetMapping("/schedule/{scheduleId}/students-progress")
+    public ApiResponse<ScheduleStudentsProgressDto> getScheduleStudentsProgress(@PathVariable Long scheduleId) {
+        log.info("Fetching students survey progress for schedule ID: {}", scheduleId);
+        ScheduleStudentsProgressDto response = surveyProgressService.getScheduleStudentsProgress(scheduleId);
+        log.info("Students survey progress fetched successfully for schedule: {}. Completion: {}/{} students",
+                scheduleId, response.getCompletedSurveys(), response.getTotalStudents());
+        return ApiResponse.success("Students survey progress fetched successfully", response);
     }
 
     @DeleteMapping("/question/{questionId}")
