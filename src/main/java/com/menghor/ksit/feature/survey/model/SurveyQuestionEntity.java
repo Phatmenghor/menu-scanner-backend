@@ -16,17 +16,17 @@ import java.util.List;
 @Table(name = "survey_questions")
 public class SurveyQuestionEntity extends BaseEntity {
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "text") // Fixed: lowercase 'text'
     private String questionText;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = true) // Changed: Allow null temporarily for existing data
     private QuestionTypeEnum questionType;
 
     @Column(nullable = false)
     private Boolean required = false;
 
-    @Column(nullable = false)
+    @Column(nullable = true) // Changed: Allow null temporarily for existing data
     private Integer displayOrder = 1;
 
     private Integer minRating = 1;

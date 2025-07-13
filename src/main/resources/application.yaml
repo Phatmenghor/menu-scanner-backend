@@ -1,4 +1,4 @@
-# Option 1: Updated application.yaml with better JPA configuration
+# Updated application.yaml with proper Hibernate naming strategy
 spring:
   application:
     name: ks-it-school
@@ -6,30 +6,30 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
-      # Add this to suppress warnings on first run
       naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
-    show-sql: false  # Set to false in production
+        # Use snake_case for database columns (PostgreSQL standard)
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        # Add these properties to handle schema creation better
         hbm2ddl:
           auto: update
-          # This helps with constraint handling
           halt_on_error: false
         jdbc:
           lob:
             non_contextual_creation: true
         temp:
           use_jdbc_metadata_defaults: false
-        # Suppress SQL warnings for constraint operations
-        globally_quoted_identifiers: true
-        # Better handling of schema updates
+        # Better PostgreSQL compatibility
+        globally_quoted_identifiers: false
         order_inserts: true
         order_updates: true
         batch_size: 20
+        # Handle schema updates gracefully
+        schema_update:
+          unique_constraint_strategy: RECREATE_QUIETLY
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://143.198.93.97:5434/ks_it_school}
@@ -39,17 +39,22 @@ spring:
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
-      connectionTimeout: 99930000
-      idleTimeout: 99600000
-      maxLifetime: 991800000
+      connectionTimeout: 30000
+      idleTimeout: 600000
+      maxLifetime: 1800000
 
-# Logging configuration to suppress warnings
+# Enhanced logging configuration
 logging:
   level:
     org.hibernate.SQL: INFO
-    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: ERROR  # This suppresses the warnings
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: ERROR
     org.hibernate.orm.deprecation: WARN
+    org.hibernate.tool.schema.spi.CommandAcceptanceException: ERROR
+    org.hibernate.tool.schema: ERROR
     com.zaxxer.hikari: INFO
+    org.postgresql: WARN
+    # Add this to see the actual SQL being generated
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     root: INFO
 
 server:

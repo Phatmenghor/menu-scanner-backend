@@ -19,7 +19,7 @@ public class SurveyAnswerEntity extends BaseEntity {
     @JoinColumn(name = "question_id", nullable = false)
     private SurveyQuestionEntity question;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text") // Fixed: lowercase 'text'
     private String textAnswer;
 
     private Integer ratingAnswer;

@@ -45,17 +45,17 @@ public class SurveyResponseEntity extends BaseEntity {
     private Boolean isCompleted = false;
     private Double overallRating;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text") // Fixed: lowercase 'text'
     private String overallComment;
 
     // Store survey snapshot as JSON when submitted
-    @Column(name = "survey_snapshot", columnDefinition = "TEXT")
+    @Column(name = "survey_snapshot", columnDefinition = "text") // Fixed: lowercase 'text'
     private String surveySnapshot;
 
     @Column(name = "survey_title_snapshot")
     private String surveyTitleSnapshot;
 
-    @Column(name = "survey_description_snapshot", columnDefinition = "TEXT")
+    @Column(name = "survey_description_snapshot", columnDefinition = "text") // Fixed: lowercase 'text'
     private String surveyDescriptionSnapshot;
 
     @OneToMany(mappedBy = "response", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

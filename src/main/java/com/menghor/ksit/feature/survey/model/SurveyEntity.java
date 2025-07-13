@@ -19,7 +19,7 @@ public class SurveyEntity extends BaseEntity {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text") // Fixed: lowercase 'text'
     private String description;
 
     @Enumerated(EnumType.STRING)

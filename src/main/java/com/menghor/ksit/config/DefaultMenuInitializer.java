@@ -7,12 +7,13 @@ import com.menghor.ksit.feature.menu.models.MenuPermissionEntity;
 import com.menghor.ksit.feature.menu.repository.MenuItemRepository;
 import com.menghor.ksit.feature.menu.repository.MenuPermissionRepository;
 import com.menghor.ksit.feature.menu.service.MenuService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +23,7 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@Order(3) // Run after roles and users are initialized
+@Order(3) // Run after roles and users are initialized, but before data migration
 public class DefaultMenuInitializer implements CommandLineRunner {
 
     private final MenuItemRepository menuItemRepository;
@@ -30,36 +31,43 @@ public class DefaultMenuInitializer implements CommandLineRunner {
     private final MenuService menuService;
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void run(String... args) {
         log.info("Initializing default menu items and permissions...");
 
-        if (menuItemRepository.count() == 0) {
-            log.info("No menu items found, creating default menu structure");
-            createDefaultMenuItems();
-            createDefaultMenuPermissions();
-            log.info("Default menu items and permissions created successfully");
-        } else {
-            log.info("Menu items already exist, skipping initialization");
-        }
+        try {
+            if (menuItemRepository.count() == 0) {
+                log.info("No menu items found, creating default menu structure");
+                createDefaultMenuItems();
+                createDefaultMenuPermissions();
+                log.info("Default menu items and permissions created successfully");
+            } else {
+                log.info("Menu items already exist, skipping initialization");
+            }
 
-        // Initialize menu permissions for all existing users
-        initializeMenuPermissionsForAllUsers();
+            // Initialize menu permissions for all existing users (with error handling)
+            initializeMenuPermissionsForAllUsersWithErrorHandling();
+
+        } catch (Exception e) {
+            log.error("Critical error during menu initialization: {}", e.getMessage(), e);
+            // Don't re-throw to prevent application startup failure
+        }
     }
 
     /**
-     * AUTO-ASSIGN DEFAULT PERMISSIONS TO ALL EXISTING USERS
+     * AUTO-ASSIGN DEFAULT PERMISSIONS TO ALL EXISTING USERS WITH ERROR HANDLING
      */
-    @Transactional
-    public void initializeMenuPermissionsForAllUsers() {
-        log.info("Auto-initializing menu permissions for all existing users...");
-
+    private void initializeMenuPermissionsForAllUsersWithErrorHandling() {
         try {
-            // Call the service method to handle all existing users
+            log.info("Auto-initializing menu permissions for all existing users...");
+
+            // Use a separate transaction to avoid rollback issues
             menuService.initializeMenuPermissionsForAllExistingUsers();
             log.info("Menu permission initialization completed for all existing users");
+
         } catch (Exception e) {
-            log.error("Error during menu permission initialization: {}", e.getMessage(), e);
+            log.error("Error during menu permission initialization: {}", e.getMessage());
+            // Continue without throwing exception to allow application to start
         }
     }
 

@@ -18,10 +18,10 @@ public class SurveySectionEntity extends BaseEntity {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text") // Fixed: lowercase 'text'
     private String description;
 
-    @Column(nullable = false)
+    @Column(nullable = true) // Changed: Allow null temporarily for existing data
     private Integer displayOrder = 1;
 
     @Enumerated(EnumType.STRING)

@@ -1,3 +1,4 @@
+// Updated UserEntity.java with explicit column mappings to fix naming issues
 package com.menghor.ksit.feature.auth.models;
 
 import com.menghor.ksit.enumations.GenderEnum;
@@ -36,201 +37,213 @@ public class UserEntity extends BaseEntity {
     private Status status = Status.ACTIVE; // Default status is ACTIVE
 
     @Column(unique = true)
-    //    teacher , student
     private String username; // Email address
-    //    teacher , student
+
     private String password; // Password
-    //    teacher
-    @Column(unique = true)
+
+    @Column(unique = true, name = "identify_number")
     private String identifyNumber; // National ID or other identification number
 
-    //    teacher
     @ManyToOne
     @JoinColumn(name = "department_id")
     private DepartmentEntity department;
 
-    //    student
     @ManyToOne
     @JoinColumn(name = "class_id")
     private ClassEntity classes;
 
-    //    teacher , student
+    @Column(name = "khmer_first_name")
     private String khmerFirstName;  // ជាអក្សរខ្មែរ
-    //    teacher , student
+
+    @Column(name = "khmer_last_name")
     private String khmerLastName; // ជាអក្សរខ្មែរ
-    //    teacher , student
+
+    @Column(name = "english_first_name")
     private String englishFirstName; // ជាអក្សរឡាតាំង
-    //    teacher , student
+
+    @Column(name = "english_last_name")
     private String englishLastName; // ជាអក្សរឡាតាំង
 
+    @Column(name = "profile_url")
     private String profileUrl; // URL of the image
 
-    //    teacher , student
     @Enumerated(EnumType.STRING)
     private GenderEnum gender; // ភេទ
 
-    //    teacher , student
+    @Column(name = "date_of_birth")
     private LocalDate dateOfBirth; // ថ្ងៃខែឆ្នាំកំណើត
-    //    teacher , student
+
     private String nationality; // សញ្ជាតិ
-    //    teacher , student
     private String ethnicity; // ជនជាតិ
-    //    teacher
     private String disability; // ពិការ
-    //    teacher
+
+    @Column(name = "staff_id")
     private String staffId; // អត្តលេខមន្ត្រី
-    //    teacher
+
+    @Column(name = "national_id")
     private String nationalId; // លេខអត្តសញ្ញាណបណ្ណ
-    //    teacher , student
+
+    @Column(name = "place_of_birth")
     private String placeOfBirth; // ទីកន្លែងកំណើត
-    //    teacher
+
+    @Column(name = "payroll_account_number")
     private String payrollAccountNumber; // លេខគណនីបៀវត្ស
-    //    teacher
+
+    @Column(name = "cpp_membership_number")
     private String cppMembershipNumber; // លេខសមាជិកបសបខ
 
-    //    teacher
+    @Column(name = "start_work_date")
     private LocalDate startWorkDate;  // ថ្ងៃខែឆ្នាំចូលបម្រើការងារ
-    //    teacher
+
+    @Column(name = "current_position_date")
     private LocalDate currentPositionDate; // ថ្ងៃខែឆ្នាំតែងតាំងស៊ុប
-    //    teacher
+
+    @Column(name = "employee_work")
     private String employeeWork; // អង្គភាពបម្រើការងារ
 
     // Address Information
-    //    teacher
     private String province; // ខេត្ត
-    //    teacher
     private String district; // ស្រុក
-    //    teacher
     private String commune; // ឃុំ
-    //    teacher
     private String village; // ភូមិ
-    //    teacher
+
+    @Column(name = "office_name")
     private String officeName; // ការិយាល័យ
 
-    //    teacher
+    @Column(name = "current_position")
     private String currentPosition; // មុខដំណែង
-    //    teacher
+
+    @Column(name = "decree_final")
     private String decreeFinal; // ប្រកាស
 
-    //    teacher
+    @Column(name = "rank_and_class")
     private String rankAndClass; // ឋាននន្តរស័ក្តិ និងថ្នាក់
-    //    teacher
+
+    @Column(name = "reference_note")
     private String referenceNote; // យោង
-    //    teacher
+
+    @Column(name = "serial_number")
     private String serialNumber; // លេខរៀង
-    //    teacher
+
+    @Column(name = "last_salary_increment_date")
     private LocalDate lastSalaryIncrementDate; // ថ្ងៃខែឡើងការប្រាក់ចុងក្រោយ
-    //    teacher
+
+    @Column(name = "issued_date")
     private LocalDate issuedDate; // ចុះថ្ងៃទី
-    //    teacher
+
+    @Column(name = "academic_year_taught")
     private String academicYearTaught; // បង្រៀននៅឆ្នាំសិក្សា
 
-    //    teacher
+    @Column(name = "taught_english")
     private String taughtEnglish; // បង្រៀនភាសាអង់គ្លេស
-    //    teacher
+
+    @Column(name = "three_level_class")
     private String threeLevelClass; // ថ្នាក់គួបបីកម្រិត
-    //    teacher
+
+    @Column(name = "technical_team_leader")
     private String technicalTeamLeader; // ប្រធានក្រុមបច្ចេកទេស
-    //    teacher
+
+    @Column(name = "assist_in_teaching")
     private String assistInTeaching; // ជួយបង្រៀន
-    //    teacher
+
+    @Column(name = "two_level_class")
     private String twoLevelClass; // ពីរថ្នាក់ណីរពេល
-    //    teacher
+
+    @Column(name = "class_responsibility")
     private String classResponsibility; // ទទួលបន្ទុកថ្នាក់
-    //    teacher
+
+    @Column(name = "teach_across_schools")
     private String teachAcrossSchools; // បង្រៀនឆ្លងសាលា
-    //    teacher
+
+    @Column(name = "overtime_hours")
     private String overtimeHours; // ម៉ោងលើស
-    //    teacher
+
+    @Column(name = "suitable_class")
     private String suitableClass; // ថ្នាក់គួប
-    //    teacher
+
     private String bilingual; // ពីរភាសា
-    //    teacher
 
     // Work History
-    //    teacher
+    @Column(name = "work_history")
     private String workHistory; // ស្ថានភាព
 
     // Family Information
-    //    teacher
+    @Column(name = "marital_status")
     private String maritalStatus; // ស្ថានភាពគ្រួសារ
-    //    teacher
+
+    @Column(name = "must_be")
     private String mustBe; // ត្រូវជា
-    //    teacher
+
+    @Column(name = "affiliated_profession")
     private String affiliatedProfession; // មុខរបរសហព័ទ្ធ
-    //    teacher
+
+    @Column(name = "federation_name")
     private String federationName; // ឈ្មោះសហទ័ព្ធ
-    //    teacher
+
+    @Column(name = "affiliated_organization")
     private String affiliatedOrganization; // អង្គភាពសហព័ទ្ធ
-    //    teacher
+
+    @Column(name = "federation_establishment_date")
     private LocalDate federationEstablishmentDate; // ថ្ងៃខែឆ្នាំកំណើតសហព័ទ្ធ
-    //    teacher
+
+    @Column(name = "wives_salary")
     private String wivesSalary; // ប្រាក់ខែប្រពន្ធ
 
     // Contact Information
-    //    teacher , student
+    @Column(name = "phone_number")
     private String phoneNumber; // លេខទូរស័ព្ទ
-    //    teacher , student
+
     private String email; // អ៊ីមែល
-    //    teacher , student
+
+    @Column(name = "current_address")
     private String currentAddress; // អាសយដ្ឋានបច្ចុប្បន្ន
 
-    //    student
+    @Column(name = "member_siblings")
     private String memberSiblings; // ចំនួនសមាជិកបងប្អូន
-    //    student
+
+    @Column(name = "number_of_siblings")
     private String numberOfSiblings; // ចំនួនបងប្អូនស្រី
 
-    //    teacher
     // ឋានៈវិជ្ជាជីវៈគ្រូបង្រៀន
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeachersProfessionalRankEntity> teachersProfessionalRank = new ArrayList<>();
 
-    //    teacher
     // ប្រវត្តិការងារបន្តបន្ទាប់
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeacherExperienceEntity> teacherExperience = new ArrayList<>();
 
-    //    teacher
     // ការសរសើរ/ ស្តីបន្ទោស
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeacherPraiseOrCriticismEntity> teacherPraiseOrCriticism = new ArrayList<>();
 
-    //    teacher
     // កម្រិតវប្បធម៌
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeacherEducationEntity> teacherEducation = new ArrayList<>();
 
-    //    teacher
     // វគ្គគរុកោសល្យ
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeacherVocationalEntity> teacherVocational = new ArrayList<>();
 
-    //    teacher
     // វគ្គខ្លីៗ
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeacherShortCourseEntity> teacherShortCourse = new ArrayList<>();
 
-    //    teacher
     // ភាសាបរទេស
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeacherLanguageEntity> teacherLanguage = new ArrayList<>();
 
-    //    teacher
     // ស្ថានភាពគ្រួសារ
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeacherFamilyEntity> teacherFamily = new ArrayList<>();
 
-    //    student
     // ប្រវត្តិការសិក្សា
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentStudiesHistoryEntity> studentStudiesHistory = new ArrayList<>();
 
-    //    student
     // ព័ត៌មានគ្រួសារ
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentParentEntity> studentParent = new ArrayList<>();
 
-    //    student
     // សមាជិកគ្រួសារ
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentSiblingEntity> studentSibling = new ArrayList<>();

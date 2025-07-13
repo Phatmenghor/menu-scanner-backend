@@ -47,9 +47,9 @@ public class DefaultUserInitializer implements CommandLineRunner {
 
     private void createDeveloperUser() {
         UserEntity developer = new UserEntity();
-        developer.setUsername("developer@ksit.com");
-        developer.setEmail("developer@ksit.com");
-        developer.setPassword(passwordEncoder.encode("developer123"));
+        developer.setUsername("phatmenghor19@gmail.com");
+        developer.setEmail("phatmenghor19@gmail.com");
+        developer.setPassword(passwordEncoder.encode("88889999"));
         developer.setStatus(Status.ACTIVE);
 
         Role devRole = roleRepository.findByName(RoleEnum.DEVELOPER)
@@ -64,7 +64,7 @@ public class DefaultUserInitializer implements CommandLineRunner {
         UserEntity admin = new UserEntity();
         admin.setUsername("admin@ksit.com");
         admin.setEmail("admin@ksit.com");
-        admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setPassword(passwordEncoder.encode("88889999"));
         admin.setStatus(Status.ACTIVE);
 
         Role adminRole = roleRepository.findByName(RoleEnum.ADMIN)
@@ -79,7 +79,7 @@ public class DefaultUserInitializer implements CommandLineRunner {
         UserEntity staff = new UserEntity();
         staff.setUsername("staff@ksit.com");
         staff.setEmail("staff@ksit.com");
-        staff.setPassword(passwordEncoder.encode("staff123"));
+        staff.setPassword(passwordEncoder.encode("88889999"));
         staff.setStatus(Status.ACTIVE);
 
         Role staffRole = roleRepository.findByName(RoleEnum.STAFF)
@@ -94,7 +94,7 @@ public class DefaultUserInitializer implements CommandLineRunner {
         UserEntity teacher = new UserEntity();
         teacher.setUsername("teacher@ksit.com");
         teacher.setEmail("teacher@ksit.com");
-        teacher.setPassword(passwordEncoder.encode("teacher123"));
+        teacher.setPassword(passwordEncoder.encode("88889999"));
         teacher.setStatus(Status.ACTIVE);
 
         Role teacherRole = roleRepository.findByName(RoleEnum.TEACHER)
@@ -109,7 +109,7 @@ public class DefaultUserInitializer implements CommandLineRunner {
         UserEntity student = new UserEntity();
         student.setUsername("student@ksit.com");
         student.setEmail("student@ksit.com");
-        student.setPassword(passwordEncoder.encode("student123"));
+        student.setPassword(passwordEncoder.encode("88889999"));
         student.setStatus(Status.ACTIVE);
 
         Role studentRole = roleRepository.findByName(RoleEnum.STUDENT)
@@ -124,13 +124,13 @@ public class DefaultUserInitializer implements CommandLineRunner {
         UserEntity headTeacher = new UserEntity();
         headTeacher.setUsername("headteacher@ksit.com");
         headTeacher.setEmail("headteacher@ksit.com");
-        headTeacher.setPassword(passwordEncoder.encode("headteacher123"));
+        headTeacher.setPassword(passwordEncoder.encode("88889999"));
         headTeacher.setStatus(Status.ACTIVE);
 
         Role staffRole = roleRepository.findByName(RoleEnum.STAFF)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.STAFF));
         Role adminRole = roleRepository.findByName(RoleEnum.ADMIN)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.ADMIN));
+                .orElseThrow(() -> new RuntimeException("Role not found: " + RoleEnum.TEACHER));
         headTeacher.setRoles(Arrays.asList(staffRole, adminRole));
 
         userRepository.save(headTeacher);
