@@ -168,6 +168,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
         childItems.add(createChildMenuItem("RESULT_LIST", "Result List", "/survey-result", survey, 1));
         childItems.add(createChildMenuItem("MANAGE_QA", "Manage Q&As", "/manage-question", survey, 2));
         childItems.add(createChildMenuItem("SURVEY_STUDENT_RECORDS", "Student Records", "/survey/student-records", survey, 3));
+        childItems.add(createChildMenuItem("SURVEY_STUDENT", "Student", "/survey/student", survey, 4));
 
         // Score Submitted children
         MenuItemEntity scoreSubmitted = menuMap.get("SCORE_SUBMITTED");
@@ -250,6 +251,9 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                 case "SURVEY_STUDENT_RECORDS":
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.STAFF, RoleEnum.TEACHER)));
+                case "SURVEY_STUDENT":
+                    permissions.addAll(createPermissionsForRoles(menuItem,
+                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
                 case "SCORE_SUBMITTED":
                 case "SUBMITTED_LIST":
