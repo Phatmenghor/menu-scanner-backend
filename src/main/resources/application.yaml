@@ -45,8 +45,10 @@ jwt:
 # Swagger Configuration
 springdoc:
   swagger-ui:
-    path: /swagger-ui/index.html
+    path: /swagger-ui/swagger-ui/index.html
     enabled: true
+    url: /v3/api-docs
+    config-url: /v3/api-docs/swagger-config
   api-docs:
     path: /v3/api-docs
     enabled: true
