@@ -158,6 +158,6 @@
 				</configuration>
 			</plugin>
 		</plugins>
-		<finalName>school_ksit</finalName>
+		<finalName>ks-it-school</finalName>
 	</build>
 </project>
