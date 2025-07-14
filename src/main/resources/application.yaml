@@ -1,80 +1,71 @@
-# Updated application.yaml with proper Hibernate naming strategy
+# Simple Spring Boot Configuration - No Size Limits
 spring:
   application:
     name: ks-it-school
+
+  profiles:
+    active: prod
+
+  # File uploads - No limits
+  servlet:
+    multipart:
+      max-file-size: -1
+      max-request-size: -1
+
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://152.42.219.13:5432/ks_it_school
+    username: admin
+    password: Hour1819
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 100
+      minimum-idle: 10
+      connection-timeout: 60000
+
+  # JPA Configuration
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
-      naming:
-        # Use snake_case for database columns (PostgreSQL standard)
-        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
-        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        hbm2ddl:
-          auto: update
-          halt_on_error: false
-        jdbc:
-          lob:
-            non_contextual_creation: true
-        temp:
-          use_jdbc_metadata_defaults: false
-        # Better PostgreSQL compatibility
-        globally_quoted_identifiers: false
-        order_inserts: true
-        order_updates: true
-        batch_size: 20
-        # Handle schema updates gracefully
-        schema_update:
-          unique_constraint_strategy: RECREATE_QUIETLY
 
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://143.198.93.97:5434/ks_it_school}
-    username: ${SPRING_DATASOURCE_USERNAME:menghor}
-    password: ${SPRING_DATASOURCE_PASSWORD:Hour1819}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      connectionTimeout: 30000
-      idleTimeout: 600000
-      maxLifetime: 1800000
-
-# Enhanced logging configuration
-logging:
-  level:
-    org.hibernate.SQL: INFO
-    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: ERROR
-    org.hibernate.orm.deprecation: WARN
-    org.hibernate.tool.schema.spi.CommandAcceptanceException: ERROR
-    org.hibernate.tool.schema: ERROR
-    com.zaxxer.hikari: INFO
-    org.postgresql: WARN
-    # Add this to see the actual SQL being generated
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    root: INFO
-
+# Server Configuration
 server:
-  port: ${APP_PORT:8080}
+  port: 8080
 
+# JWT Configuration
 jwt:
   secret:
     key: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
-  expiration-min: 1440000000000
+  expiration-min: 1440
 
-profiles:
-  active: ${SPRING_PROFILES_ACTIVE:dev}
-
+# Swagger Configuration
 springdoc:
   swagger-ui:
     path: /swagger-ui/index.html
     enabled: true
-    url: /v3/api-docs
-    config-url: /v3/api-docs/swagger-config
   api-docs:
     path: /v3/api-docs
     enabled: true
   packagesToScan: com.menghor.ksit
+
+# Logging Configuration
+logging:
+  level:
+    com.menghor.ksit: INFO
+    org.springframework: INFO
+    org.hibernate: WARN
+    lombok: DEBUG
+    lombok.extern.slf4j: DEBUG
+    root: INFO
+
+  # File logging
+  file:
+    name: logs/ks-it-school.log
+
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

@@ -113,10 +113,7 @@ public class MenuServiceImpl implements MenuService {
 
     /**
      * Determine default permission for a menu based on user roles
-     * Based on your exact requirements:
-     * - Admin + Developer: Full access (including Request)
-     * - Staff + Teacher: Dashboard, Attendance, Survey, Student score, Schedule, Payment (NO Request)
-     * - Student: Dashboard, Schedule, Payment only (NO Request, NO Attendance, NO Survey)
+     * FIXED: Admin and Developer now have full access to all operational modules
      */
     private boolean determineDefaultPermissionForMenu(String menuCode, List<RoleEnum> userRoles) {
         // Define menu permissions based on user type
@@ -131,11 +128,9 @@ public class MenuServiceImpl implements MenuService {
     }
 
     /**
-     * Define which roles can access which menus
-     * Based on your exact requirements:
-     * - Admin + Developer: Full access (including Request)
-     * - Staff + Teacher: Dashboard, Attendance, Survey, Student score, Schedule, Payment (NO Request)
-     * - Student: Dashboard, Schedule, Payment only (NO Request, NO Attendance, NO Survey)
+     * FIXED: Define which roles can access which menus
+     * Admin and Developer now have full access to all modules including:
+     * - Attendance, Survey, Score Management, Student Score
      */
     private Set<RoleEnum> getMenuAllowedRoles(String menuCode) {
         // Define role groups
@@ -143,47 +138,47 @@ public class MenuServiceImpl implements MenuService {
         Set<RoleEnum> staffTeacher = Set.of(RoleEnum.STAFF, RoleEnum.TEACHER);
         Set<RoleEnum> studentOnly = Set.of(RoleEnum.STUDENT);
         Set<RoleEnum> allStaffTypes = Set.of(RoleEnum.ADMIN, RoleEnum.DEVELOPER, RoleEnum.STAFF, RoleEnum.TEACHER);
-
-        // Students get very limited access
-        Set<RoleEnum> studentLimitedAccess = Set.of(RoleEnum.ADMIN, RoleEnum.DEVELOPER, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT);
-        Set<RoleEnum> staffTeacherAndAdmin = Set.of(RoleEnum.ADMIN, RoleEnum.DEVELOPER, RoleEnum.STAFF, RoleEnum.TEACHER);
+        Set<RoleEnum> allUsers = Set.of(RoleEnum.ADMIN, RoleEnum.DEVELOPER, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT);
 
         return switch (menuCode) {
-            // Dashboard - accessible by all (Student: ✓, Staff/Teacher: ✓, Admin/Developer: ✓)
-            case "DASHBOARD" -> studentLimitedAccess;
+            // Dashboard - accessible by all users
+            case "DASHBOARD" -> allUsers;
 
-            // Master Data - Admin/Developer only (Student: ✗, Staff/Teacher: ✗, Admin/Developer: ✓)
+            // Master Data - Admin/Developer only
             case "MASTER_DATA", "MANAGE_CLASS", "MANAGE_SEMESTER", "MANAGE_MAJOR",
                  "MANAGE_DEPARTMENT", "MANAGE_ROOM", "MANAGE_COURSE", "MANAGE_SUBJECT" -> adminDeveloper;
 
-            // Users management - Admin/Developer only (Student: ✗, Staff/Teacher: ✗, Admin/Developer: ✓)
+            // Users management - Admin/Developer only
             case "USERS", "ADMIN", "STAFF_OFFICER", "TEACHERS" -> adminDeveloper;
 
-            // Students management - Admin/Developer/Staff/Teacher (Student: ✗, Staff/Teacher: ✓, Admin/Developer: ✓)
+            // Students management - All staff types (Admin/Developer/Staff/Teacher)
             case "STUDENTS", "ADD_MULTIPLE_USERS", "ADD_SINGLE_USER", "STUDENTS_LIST" -> allStaffTypes;
 
-            // Attendance - Staff/Teacher access only (Student: ✗, Staff/Teacher: ✓, Admin/Developer: ✗)
-            case "ATTENDANCE", "CLASS_SCHEDULE", "HISTORY_RECORDS", "STUDENT_RECORDS" -> staffTeacher;
+            // ✅ FIXED: Attendance - All staff types (including Admin/Developer)
+            case "ATTENDANCE", "CLASS_SCHEDULE", "HISTORY_RECORDS", "STUDENT_RECORDS" -> allStaffTypes;
 
-            // Survey - Staff/Teacher access only (Student: ✗, Staff/Teacher: ✓, Admin/Developer: ✗)
-            case "SURVEY", "RESULT_LIST", "MANAGE_QA", "SURVEY_STUDENT_RECORDS" -> staffTeacher;
+            // ✅ FIXED: Survey - All staff types (including Admin/Developer)
+            case "SURVEY", "RESULT_LIST", "MANAGE_QA", "SURVEY_STUDENT_RECORDS" -> allStaffTypes;
 
-            // Score management - Staff/Teacher access only (Student: ✗, Staff/Teacher: ✓, Admin/Developer: ✗)
-            case "SCORE_SUBMITTED", "SUBMITTED_LIST", "SCORE_SETTING", "STUDENT_SCORE" -> staffTeacher;
+            // Survey Student - All users can access
+            case "SURVEY_STUDENT" -> allUsers;
 
-            // Schedule - All users can view (Student: ✓, Staff/Teacher: ✓, Admin/Developer: ✓)
-            case "SCHEDULE" -> studentLimitedAccess;
+            // ✅ FIXED: Score management - All staff types (including Admin/Developer)
+            case "SCORE_SUBMITTED", "SUBMITTED_LIST", "SCORE_SETTING", "STUDENT_SCORE" -> allStaffTypes;
 
-            // Manage Schedule - Admin/Developer only (Student: ✗, Staff/Teacher: ✗, Admin/Developer: ✓)
+            // Schedule - All users can view
+            case "SCHEDULE" -> allUsers;
+
+            // Manage Schedule - Admin/Developer only
             case "MANAGE_SCHEDULE" -> adminDeveloper;
 
-            // Request - Admin/Developer only (Student: ✗, Staff/Teacher: ✗, Admin/Developer: ✓)
+            // Request - Admin/Developer only
             case "REQUEST" -> adminDeveloper;
 
-            // Payment - All users (Student: ✓, Staff/Teacher: ✓, Admin/Developer: ✓)
-            case "PAYMENT" -> studentLimitedAccess;
+            // Payment - All users
+            case "PAYMENT" -> allUsers;
 
-            // Role Permission - Developer only (Student: ✗, Staff/Teacher: ✗, Admin/Developer: ✓)
+            // Role Permission - Developer only
             case "ROLE_PERMISSION" -> Set.of(RoleEnum.DEVELOPER);
 
             // Default - no access

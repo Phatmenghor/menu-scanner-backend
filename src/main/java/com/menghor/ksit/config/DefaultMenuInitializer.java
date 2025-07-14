@@ -207,7 +207,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
         List<MenuPermissionEntity> permissions = new ArrayList<>();
 
         for (MenuItemEntity menuItem : allMenuItems) {
-            // Create role-based permissions for fallback
+            // Create role-based permissions for fallback with FIXED permissions
             switch (menuItem.getCode()) {
                 case "DASHBOARD":
                     permissions.addAll(createPermissionsForRoles(menuItem,
@@ -238,29 +238,33 @@ public class DefaultMenuInitializer implements CommandLineRunner {
                     permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
+                // ✅ FIXED: Admin and Developer now get Attendance access
                 case "ATTENDANCE":
                 case "CLASS_SCHEDULE":
                 case "HISTORY_RECORDS":
                 case "STUDENT_RECORDS":
                     permissions.addAll(createPermissionsForRoles(menuItem,
-                            List.of(RoleEnum.STAFF, RoleEnum.TEACHER)));
+                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
+                // ✅ FIXED: Admin and Developer now get Survey access
                 case "SURVEY":
                 case "RESULT_LIST":
                 case "MANAGE_QA":
                 case "SURVEY_STUDENT_RECORDS":
                     permissions.addAll(createPermissionsForRoles(menuItem,
-                            List.of(RoleEnum.STAFF, RoleEnum.TEACHER)));
-                case "SURVEY_STUDENT":
-                    permissions.addAll(createPermissionsForRoles(menuItem,
                             List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
+                case "SURVEY_STUDENT":
+                    permissions.addAll(createPermissionsForRoles(menuItem,
+                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER, RoleEnum.STUDENT)));
+                    break;
+                // ✅ FIXED: Admin and Developer now get Score access
                 case "SCORE_SUBMITTED":
                 case "SUBMITTED_LIST":
                 case "SCORE_SETTING":
                 case "STUDENT_SCORE":
                     permissions.addAll(createPermissionsForRoles(menuItem,
-                            List.of(RoleEnum.STAFF, RoleEnum.TEACHER)));
+                            List.of(RoleEnum.DEVELOPER, RoleEnum.ADMIN, RoleEnum.STAFF, RoleEnum.TEACHER)));
                     break;
                 case "SCHEDULE":
                     permissions.addAll(createPermissionsForRoles(menuItem,
@@ -290,6 +294,7 @@ public class DefaultMenuInitializer implements CommandLineRunner {
         }
 
         menuPermissionRepository.saveAll(permissions);
+        log.info("Created {} default role-based menu permissions", permissions.size());
     }
 
     private List<MenuPermissionEntity> createPermissionsForRoles(MenuItemEntity menuItem, List<RoleEnum> roles) {
