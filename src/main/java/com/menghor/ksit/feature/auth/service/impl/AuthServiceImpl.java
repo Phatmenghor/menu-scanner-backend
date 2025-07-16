@@ -1,18 +1,12 @@
 package com.menghor.ksit.feature.auth.service.impl;
 
-import com.menghor.ksit.constants.ErrorMessages;
 import com.menghor.ksit.enumations.RoleEnum;
 import com.menghor.ksit.enumations.Status;
 import com.menghor.ksit.exceptoins.error.BadRequestException;
 import com.menghor.ksit.exceptoins.error.NotFoundException;
 import com.menghor.ksit.feature.auth.dto.request.ChangePasswordByAdminRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.ChangePasswordRequestDto;
-import com.menghor.ksit.feature.auth.dto.resposne.AuthResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.dto.request.LoginRequestDto;
-import com.menghor.ksit.feature.auth.mapper.StaffMapper;
-import com.menghor.ksit.feature.auth.mapper.StudentMapper;
 import com.menghor.ksit.feature.auth.models.Role;
 import com.menghor.ksit.feature.auth.models.UserEntity;
 import com.menghor.ksit.feature.auth.repository.UserRepository;
@@ -48,8 +42,6 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JWTGenerator jwtGenerator;
     private final SecurityUtils securityUtils;
-    private final StudentMapper studentMapper;
-    private final StaffMapper staffMapper;
 
     @Override
     public AuthResponseDto login(LoginRequestDto loginRequestDto) {
@@ -268,7 +260,7 @@ public class AuthServiceImpl implements AuthService {
         UserEntity updatedUser = userRepository.save(user);
         log.info("Password changed successfully for user ID: {}", user.getId());
 
-        return staffMapper.toStaffUserDto(updatedUser);
+        return null;
     }
 
     @Override
@@ -300,7 +292,7 @@ public class AuthServiceImpl implements AuthService {
         UserEntity updatedUser = userRepository.save(user);
         log.info("Password changed successfully by admin for user ID: {}", requestDto.getId());
 
-        return studentMapper.toStudentUserDto(updatedUser);
+        return null;
     }
 
     // Enhanced validation methods with better error messages

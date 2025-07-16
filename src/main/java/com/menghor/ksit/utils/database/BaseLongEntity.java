@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @MappedSuperclass
 @Data
-public abstract class BaseEntity {
+public abstract class BaseLongEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

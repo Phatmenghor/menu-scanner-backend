@@ -1,7 +1,6 @@
 package com.menghor.ksit.feature.auth.dto.update;
 
 import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.enumations.StudentTypePayment;
 import lombok.Data;
 
 import java.time.LocalDate;

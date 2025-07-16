@@ -1,7 +1,5 @@
 package com.menghor.ksit.config;
 
-import com.menghor.ksit.enumations.QuestionTypeEnum;
-import com.menghor.ksit.enumations.StatusSurvey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

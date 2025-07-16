@@ -1,6 +1,6 @@
 package com.menghor.ksit.feature.auth.models;
 
-import com.menghor.ksit.utils.database.BaseEntity;
+import com.menghor.ksit.utils.database.BaseLongEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BlacklistedTokenEntity extends BaseEntity {
+public class BlacklistedTokenEntity extends BaseLongEntity {
 
     @Column(unique = true, nullable = false)
     private String token;

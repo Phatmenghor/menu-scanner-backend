@@ -1,8 +1,6 @@
 package com.menghor.ksit.feature.auth.specification;
 
 import com.menghor.ksit.enumations.Status;
-import com.menghor.ksit.enumations.StudentTypePayment;
-import com.menghor.ksit.feature.auth.models.PaymentEntity;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;

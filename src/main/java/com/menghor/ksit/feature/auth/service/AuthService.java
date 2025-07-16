@@ -2,9 +2,6 @@ package com.menghor.ksit.feature.auth.service;
 
 import com.menghor.ksit.feature.auth.dto.request.ChangePasswordByAdminRequestDto;
 import com.menghor.ksit.feature.auth.dto.request.ChangePasswordRequestDto;
-import com.menghor.ksit.feature.auth.dto.resposne.AuthResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.StaffUserResponseDto;
-import com.menghor.ksit.feature.auth.dto.resposne.StudentUserResponseDto;
 import com.menghor.ksit.feature.auth.dto.request.LoginRequestDto;
 
 public interface AuthService {
