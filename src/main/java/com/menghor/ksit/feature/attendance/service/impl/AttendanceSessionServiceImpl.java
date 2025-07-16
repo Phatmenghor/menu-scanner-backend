@@ -19,10 +19,12 @@ import com.menghor.ksit.feature.auth.repository.UserRepository;
 import com.menghor.ksit.feature.master.model.ClassEntity;
 import com.menghor.ksit.feature.school.model.ScheduleEntity;
 import com.menghor.ksit.feature.school.repository.ScheduleRepository;
+import com.menghor.ksit.utils.database.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -41,6 +43,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
     private final UserRepository userRepository;
     private final ScheduleRepository scheduleRepository;
     private final AttendanceMapper attendanceMapper;
+    private final SecurityUtils securityUtils;
 
     @Override
     public AttendanceSessionDto findById(Long id) {
@@ -54,10 +57,27 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
     public AttendanceSessionDto generateAttendanceSession(AttendanceSessionRequest request) {
         log.info("Generating attendance session for schedule ID: {}", request.getScheduleId());
 
+        // Get current authenticated user
+        UserEntity currentUser = securityUtils.getCurrentUser();
+        log.info("Current user attempting to generate session: {} (ID: {})",
+                currentUser.getUsername(), currentUser.getId());
+
         // Validate schedule exists
         ScheduleEntity schedule = scheduleRepository.findById(request.getScheduleId())
                 .orElseThrow(() -> new EntityNotFoundException("Schedule not found with id: " + request.getScheduleId()));
 
+        // Check if current user is the teacher assigned to this schedule
+        if (!schedule.getUser().getId().equals(currentUser.getId())) {
+            log.warn("Access denied: User {} (ID: {}) is not the teacher assigned to schedule {} (Assigned teacher ID: {})",
+                    currentUser.getUsername(), currentUser.getId(),
+                    request.getScheduleId(), schedule.getUser().getId());
+
+            throw new AccessDeniedException("You are not authorized to generate attendance sessions for this schedule. " +
+                    "Only the assigned teacher can perform this action.");
+        }
+
+        log.info("Authorization successful: User {} is the assigned teacher for schedule {}",
+                currentUser.getUsername(), request.getScheduleId());
 
         // Get current date/time
         LocalDateTime now = LocalDateTime.now();
@@ -85,8 +105,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         session.setSchedule(schedule);
         session.setStatus(Status.ACTIVE);
         session.setFinalizationStatus(AttendanceFinalizationStatus.DRAFT);
-        session.setTeacher(userRepository.findById(schedule.getUser().getId())
-                .orElseThrow(() -> new EntityNotFoundException("Teacher not found with id: " + schedule.getUser().getId())));
+        session.setTeacher(currentUser); // Use the authenticated user as the teacher
 
         // Generate QR code
         session.setQrCode(UUID.randomUUID().toString());
