@@ -73,4 +73,4 @@ http://localhost:8080/swagger-ui/index.html
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.# menu-scanner-backend

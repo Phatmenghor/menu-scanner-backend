@@ -1,6 +1,5 @@
 package com.menghor.ksit.feature.setting.dto.request;
 
-import com.menghor.ksit.enumations.PositionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
