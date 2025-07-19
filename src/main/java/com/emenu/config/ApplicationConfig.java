@@ -4,9 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -24,10 +21,9 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 
 @Configuration
-@EnableCaching
 @EnableAsync
 @EnableScheduling
-@EnableJpaAuditing(auditorAwareRef = "auditorProvider")
+@EnableJpaAuditing(auditorAwareRef = "auditorProvider")  // ← Keep this one (has auditorProvider)
 @RequiredArgsConstructor
 public class ApplicationConfig {
 
@@ -45,12 +41,7 @@ public class ApplicationConfig {
         return new RestTemplate();
     }
 
-    @Bean
-    public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
-        cacheManager.setCacheNames("users", "currentUser", "roles", "businesses");
-        return cacheManager;
-    }
+    // REMOVED: CacheManager bean - using CacheConfig.java instead
 
     @Bean(name = "taskExecutor")
     public Executor taskExecutor() {
@@ -74,8 +65,8 @@ public class ApplicationConfig {
         @Override
         public Optional<String> getCurrentAuditor() {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null || !authentication.isAuthenticated() || 
-                "anonymousUser".equals(authentication.getPrincipal())) {
+            if (authentication == null || !authentication.isAuthenticated() ||
+                    "anonymousUser".equals(authentication.getPrincipal())) {
                 return Optional.of("SYSTEM");
             }
             return Optional.of(authentication.getName());

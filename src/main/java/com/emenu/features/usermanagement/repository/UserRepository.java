@@ -200,4 +200,14 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 
     @Query("SELECT u FROM User u WHERE u.lastActive < :threshold AND u.accountStatus = 'ACTIVE' AND u.isDeleted = false")
     List<User> findUsersInactiveForDays(@Param("threshold") LocalDateTime threshold);
+
+    @Query("SELECT u FROM User u WHERE u.lastActive BETWEEN :start AND :end AND u.isDeleted = false")
+    List<User> findByLastActiveBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.accountStatus = :status AND u.isDeleted = false")
+    long countByAccountStatusAndIsDeletedFalse(@Param("status") AccountStatus status);
+
+    // Alternative method name that exists
+    @Query("SELECT COUNT(u) FROM User u WHERE u.accountStatus = :status AND u.isDeleted = false")
+    long countByAccountStatus(@Param("status") AccountStatus status);
 }

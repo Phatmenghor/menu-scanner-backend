@@ -1,3 +1,5 @@
+package com.emenu.features.usermanagement.tasks;
+
 import com.emenu.enums.AccountStatus;
 import com.emenu.enums.CustomerTier;
 import com.emenu.features.usermanagement.domain.User;

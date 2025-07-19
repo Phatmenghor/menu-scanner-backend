@@ -154,7 +154,7 @@ public class User extends BaseUUIDEntity {
     @Column(name = "total_orders")
     private Integer totalOrders = 0;
 
-    @Column(name = "total_spent", precision = 12, scale = 2)
+    @Column(name = "total_spent")
     private Double totalSpent = 0.0;
 
     @Column(name = "favorite_cuisines", columnDefinition = "TEXT")
@@ -188,11 +188,11 @@ public class User extends BaseUUIDEntity {
     @Column(name = "hire_date")
     private LocalDate hireDate;
 
-    @Column(name = "salary", precision = 12, scale = 2)
+    @Column(name = "salary")
     private Double salary;
 
-    @Column(name = "commission_rate", precision = 5, scale = 4)
-    private Double commissionRate; // For sales staff
+    @Column(name = "commission_rate")
+    private Double commissionRate;
 
     // Subscription & Payment (for business owners)
     @Column(name = "subscription_id")

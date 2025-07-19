@@ -29,6 +29,7 @@ public class UpdateUserRequest {
     private String phoneNumber;
 
     private GenderEnum gender;
+    private List<UUID> accessibleBusinessIds;
 
     @Past(message = "Date of birth must be in the past")
     private LocalDate dateOfBirth;

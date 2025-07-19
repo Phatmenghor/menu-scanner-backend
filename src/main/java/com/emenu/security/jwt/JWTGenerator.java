@@ -68,8 +68,9 @@ public class JWTGenerator {
 
     public String getUsernameFromJWT(String token) {
         try {
-            Claims claims = Jwts.parser()
+            Claims claims = Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
+                    .build()
                     .parseClaimsJws(token)
                     .getBody();
             return claims.getSubject();
@@ -82,8 +83,9 @@ public class JWTGenerator {
     @SuppressWarnings("unchecked")
     public List<String> getRolesFromJWT(String token) {
         try {
-            Claims claims = Jwts.parser()
+            Claims claims = Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
+                    .build()
                     .parseClaimsJws(token)
                     .getBody();
             return (List<String>) claims.get("roles");
@@ -95,8 +97,9 @@ public class JWTGenerator {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
+            Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
+                    .build()
                     .parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
@@ -107,8 +110,9 @@ public class JWTGenerator {
 
     public Date getExpirationDateFromJWT(String token) {
         try {
-            Claims claims = Jwts.parser()
+            Claims claims = Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
+                    .build()
                     .parseClaimsJws(token)
                     .getBody();
             return claims.getExpiration();
@@ -118,25 +122,26 @@ public class JWTGenerator {
         }
     }
 
-    public boolean isTokenExpired(String token) {
-        try {
-            Date expiration = getExpirationDateFromJWT(token);
-            return expiration.before(new Date());
-        } catch (Exception e) {
-            return true;
-        }
-    }
-
     public String getTokenType(String token) {
         try {
-            Claims claims = Jwts.parser()
+            Claims claims = Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
+                    .build()
                     .parseClaimsJws(token)
                     .getBody();
             return (String) claims.get("type");
         } catch (Exception e) {
             log.error("Error extracting token type from JWT: {}", e.getMessage());
             return null;
+        }
+    }
+
+    public boolean isTokenExpired(String token) {
+        try {
+            Date expiration = getExpirationDateFromJWT(token);
+            return expiration.before(new Date());
+        } catch (Exception e) {
+            return true;
         }
     }
 
