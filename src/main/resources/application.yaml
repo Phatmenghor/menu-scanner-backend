@@ -1,9 +1,5 @@
 # application.yml
 spring:
-
-#  main:
-#    allow-bean-definition-overriding: true
-
   application:
     name: emenu-saas-platform
 
@@ -29,20 +25,26 @@ spring:
       idle-timeout: 600000
       max-lifetime: 1800000
 
-  # JPA Configuration
+  # JPA Configuration - Fixed for PostgreSQL
   jpa:
     hibernate:
-      ddl-auto: create-drop # Use 'update' in production
+      ddl-auto: update # Changed from create-drop to update for stability
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-        use_sql_comments: true
+        use_sql_comments: false
         jdbc:
           batch_size: 20
         order_inserts: true
         order_updates: true
+        # PostgreSQL specific settings
+        default_schema: public
+        globally_quoted_identifiers: false
+        # UUID settings for PostgreSQL
+        id:
+          uuid_generator: org.hibernate.id.UUIDGenerator
 
   # Redis Cache Configuration (optional)
   data:
@@ -142,6 +144,12 @@ app:
   version: "1.0.0"
   description: "Complete E-Menu SaaS Platform for Restaurant Management"
 
+  # Data initialization settings
+  init:
+    create-admin: true
+    admin-email: "admin@emenu-platform.com"
+    admin-password: "Admin123!@#"
+
   # Security settings
   security:
     password:
@@ -195,16 +203,21 @@ app:
       access-key: "YOUR_ACCESS_KEY"
       secret-key: "YOUR_SECRET_KEY"
 
+  # CORS Configuration
+  cors:
+    allowed-origins: "http://localhost:3000,http://localhost:4200,https://your-frontend-domain.com"
+
 # Logging Configuration
 logging:
   level:
     com.emenu: DEBUG
-    org.springframework.security: DEBUG
+    org.springframework.security: INFO
     org.springframework.web: INFO
     org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
     org.springframework: INFO
     org.hibernate: WARN
+    org.postgresql: WARN
     root: INFO
 
   # File logging
@@ -226,6 +239,8 @@ spring:
 
   jpa:
     show-sql: true
+    hibernate:
+      ddl-auto: create-drop # In dev, recreate schema each time
     properties:
       hibernate:
         format_sql: true
@@ -243,6 +258,8 @@ logging:
   level:
     com.emenu: TRACE
     org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 ---
 # Production Profile
@@ -252,6 +269,8 @@ spring:
       on-profile: prod
 
   jpa:
+    hibernate:
+      ddl-auto: validate # Don't auto-create in production
     show-sql: false
     properties:
       hibernate:
@@ -268,6 +287,9 @@ app:
   security:
     account:
       max-login-attempts: 3 # Stricter for production
+
+  init:
+    create-admin: false # Don't auto-create admin in production
 
 logging:
   level:
@@ -300,6 +322,10 @@ spring:
 
   cache:
     type: none
+
+app:
+  init:
+    create-admin: true # Create admin for testing
 
 logging:
   level:
