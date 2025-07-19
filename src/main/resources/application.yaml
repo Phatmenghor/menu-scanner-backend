@@ -28,7 +28,7 @@ spring:
   # JPA Configuration - Fixed for PostgreSQL
   jpa:
     hibernate:
-      ddl-auto: update # Changed from create-drop to update for stability
+      ddl-auto: create-drop # Changed from create-drop to update for stability
     show-sql: false
     properties:
       hibernate:
