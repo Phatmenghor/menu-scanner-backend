@@ -147,8 +147,8 @@ app:
   # Data initialization settings
   init:
     create-admin: true
-    admin-email: "admin@emenu-platform.com"
-    admin-password: "Admin123!@#"
+    admin-email: "phatmenghor19@gmail.com"
+    admin-password: "88889999"
 
   # Security settings
   security:
@@ -313,7 +313,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     database-platform: org.hibernate.dialect.H2Dialect
 
   h2:
