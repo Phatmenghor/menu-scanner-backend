@@ -1,7 +1,7 @@
 package com.emenu.config;
 
 import com.emenu.enums.RoleEnum;
-import com.emenu.features.user_management.domain.Role;
+import com.emenu.features.user_management.models.Role;
 import com.emenu.features.user_management.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

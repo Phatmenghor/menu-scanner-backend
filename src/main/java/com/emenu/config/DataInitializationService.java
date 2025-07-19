@@ -1,8 +1,8 @@
 package com.emenu.config;
 
 import com.emenu.enums.*;
-import com.emenu.features.user_management.domain.Role;
-import com.emenu.features.user_management.domain.User;
+import com.emenu.features.user_management.models.Role;
+import com.emenu.features.user_management.models.User;
 import com.emenu.features.user_management.repository.RoleRepository;
 import com.emenu.features.user_management.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -108,20 +108,7 @@ public class DataInitializationService {
                 admin.setFirstName("Platform");
                 admin.setLastName("Administrator");
                 admin.setUserType(UserType.PLATFORM_USER);
-                admin.setAccountStatus(AccountStatus.ACTIVE);
-                admin.setEmailVerified(true);
-                admin.setPhoneVerified(false);
-                admin.setEmployeeId("EMP001");
-                admin.setDepartment("Administration");
-                admin.setHireDate(LocalDate.now());
-                admin.setCompany("E-Menu Platform Inc.");
                 admin.setPosition("Platform Owner");
-                admin.setCountry("United States");
-                admin.setCity("San Francisco");
-                admin.setTimezone("America/Los_Angeles");
-                admin.setLanguage("en");
-                admin.setCurrency("USD");
-                admin.acceptTermsAndPrivacy();
 
                 // Set platform owner role
                 Role platformOwnerRole = roleRepository.findByName(RoleEnum.PLATFORM_OWNER)
@@ -149,25 +136,9 @@ public class DataInitializationService {
                 businessOwner.setLastName("Restaurant Owner");
                 businessOwner.setUserType(UserType.BUSINESS_USER);
                 businessOwner.setAccountStatus(AccountStatus.ACTIVE);
-                businessOwner.setEmailVerified(true);
                 businessOwner.setPhoneNumber("+1234567890");
-                businessOwner.setPhoneVerified(true);
-                businessOwner.setCompany("Demo Restaurant");
                 businessOwner.setPosition("Owner");
-                businessOwner.setCountry("United States");
-                businessOwner.setCity("New York");
-                businessOwner.setState("NY");
-                businessOwner.setPostalCode("10001");
                 businessOwner.setAddress("123 Demo Street");
-                businessOwner.setTimezone("America/New_York");
-                businessOwner.setLanguage("en");
-                businessOwner.setCurrency("USD");
-                businessOwner.acceptTermsAndPrivacy();
-
-                // Set subscription
-                businessOwner.setSubscriptionPlan(SubscriptionPlan.PROFESSIONAL);
-                businessOwner.setSubscriptionStarts(LocalDateTime.now());
-                businessOwner.setSubscriptionEnds(LocalDateTime.now().plusDays(365));
 
                 // Set business owner role
                 Role businessOwnerRole = roleRepository.findByName(RoleEnum.BUSINESS_OWNER)
@@ -195,21 +166,9 @@ public class DataInitializationService {
                 customer.setLastName("Customer");
                 customer.setUserType(UserType.CUSTOMER);
                 customer.setAccountStatus(AccountStatus.ACTIVE);
-                customer.setEmailVerified(true);
                 customer.setPhoneNumber("+1987654321");
-                customer.setPhoneVerified(true);
-                customer.setCountry("United States");
-                customer.setCity("Los Angeles");
-                customer.setState("CA");
-                customer.setPostalCode("90210");
-                customer.setTimezone("America/Los_Angeles");
-                customer.setLanguage("en");
-                customer.setCurrency("USD");
                 customer.setCustomerTier(CustomerTier.GOLD);
                 customer.setLoyaltyPoints(750);
-                customer.setTotalOrders(15);
-                customer.setTotalSpent(450.75);
-                customer.acceptTermsAndPrivacy();
 
                 // Set customer role
                 Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
