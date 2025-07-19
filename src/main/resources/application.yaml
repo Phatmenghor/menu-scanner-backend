@@ -14,7 +14,7 @@ spring:
 
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://152.42.219.13:5432/ks_it_school
+    url: jdbc:postgresql://152.42.219.13:5432/e_menu_platform
     username: admin
     password: Hour1819
     driver-class-name: org.postgresql.Driver
