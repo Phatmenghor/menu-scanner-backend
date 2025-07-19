@@ -25,15 +25,6 @@ public class PaginationUtils {
         }
     }
 
-    public static Pageable createPageable(Integer pageNo, Integer pageSize) {
-        pageNo = (pageNo == null) ? DEFAULT_PAGE_NUMBER : pageNo;
-        pageSize = (pageSize == null) ? DEFAULT_PAGE_SIZE : pageSize;
-        
-        validatePagination(pageNo, pageSize);
-        
-        return PageRequest.of(pageNo, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-    }
-
     public static Pageable createPageable(Integer pageNo, Integer pageSize, String sortBy, String sortDirection) {
         pageNo = (pageNo == null) ? DEFAULT_PAGE_NUMBER : pageNo;
         pageSize = (pageSize == null) ? DEFAULT_PAGE_SIZE : pageSize;

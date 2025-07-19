@@ -21,8 +21,4 @@ public enum PaymentStatus {
     public boolean isSuccessful() {
         return this == COMPLETED;
     }
-
-    public boolean isFinal() {
-        return this == COMPLETED || this == FAILED || this == CANCELLED || this == REFUNDED;
-    }
 }
