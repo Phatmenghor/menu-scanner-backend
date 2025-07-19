@@ -3,7 +3,7 @@ package com.emenu.features.audit.service.impl;
 import com.emenu.features.audit.domain.AuditLog;
 import com.emenu.features.audit.repository.AuditLogRepository;
 import com.emenu.features.audit.service.AuditService;
-import com.emenu.features.usermanagement.domain.User;
+import com.emenu.features.user_management.domain.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,7 @@
 package com.emenu.security;
 
-import com.emenu.features.usermanagement.domain.User;
-import com.emenu.features.usermanagement.repository.UserRepository;
+import com.emenu.features.user_management.domain.User;
+import com.emenu.features.user_management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;

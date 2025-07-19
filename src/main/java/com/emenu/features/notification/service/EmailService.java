@@ -1,6 +1,6 @@
 package com.emenu.features.notification.service;
 
-import com.emenu.features.usermanagement.domain.User;
+import com.emenu.features.user_management.domain.User;
 
 public interface EmailService {
     void sendEmail(String to, String subject, String content);

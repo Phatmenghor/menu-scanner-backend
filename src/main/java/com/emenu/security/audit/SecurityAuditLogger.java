@@ -1,7 +1,7 @@
 package com.emenu.security.audit;
 
 import com.emenu.features.audit.service.AuditService;
-import com.emenu.features.usermanagement.repository.UserRepository;
+import com.emenu.features.user_management.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

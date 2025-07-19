@@ -1,7 +1,7 @@
 package com.emenu.features.notification.service.impl;
 
 import com.emenu.features.notification.service.EmailService;
-import com.emenu.features.usermanagement.domain.User;
+import com.emenu.features.user_management.domain.User;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;

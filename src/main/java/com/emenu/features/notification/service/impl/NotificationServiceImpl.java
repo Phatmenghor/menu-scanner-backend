@@ -4,7 +4,7 @@ import com.emenu.enums.NotificationType;
 import com.emenu.features.notification.service.EmailService;
 import com.emenu.features.notification.service.NotificationService;
 import com.emenu.features.notification.service.TelegramService;
-import com.emenu.features.usermanagement.domain.User;
+import com.emenu.features.user_management.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

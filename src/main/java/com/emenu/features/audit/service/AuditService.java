@@ -1,7 +1,7 @@
 package com.emenu.features.audit.service;
 
 import com.emenu.features.audit.domain.AuditLog;
-import com.emenu.features.usermanagement.domain.User;
+import com.emenu.features.user_management.domain.User;
 
 import java.util.UUID;
 

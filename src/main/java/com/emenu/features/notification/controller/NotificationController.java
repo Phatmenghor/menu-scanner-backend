@@ -1,7 +1,7 @@
 package com.emenu.features.notification.controller;
 
 import com.emenu.features.notification.service.NotificationService;
-import com.emenu.features.usermanagement.service.UserService;
+import com.emenu.features.user_management.service.UserService;
 import com.emenu.shared.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

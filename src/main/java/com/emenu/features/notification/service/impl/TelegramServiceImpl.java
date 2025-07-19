@@ -1,7 +1,7 @@
 package com.emenu.features.notification.service.impl;
 
 import com.emenu.features.notification.service.TelegramService;
-import com.emenu.features.usermanagement.domain.User;
+import com.emenu.features.user_management.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

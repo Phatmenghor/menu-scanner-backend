@@ -1,11 +1,10 @@
 package com.emenu.config;
 
 import com.emenu.enums.*;
-import com.emenu.features.usermanagement.domain.Role;
-import com.emenu.features.usermanagement.domain.User;
-import com.emenu.features.usermanagement.repository.RoleRepository;
-import com.emenu.features.usermanagement.repository.UserRepository;
-import jakarta.annotation.PostConstruct;
+import com.emenu.features.user_management.domain.Role;
+import com.emenu.features.user_management.domain.User;
+import com.emenu.features.user_management.repository.RoleRepository;
+import com.emenu.features.user_management.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
