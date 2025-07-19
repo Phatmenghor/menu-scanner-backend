@@ -1,11 +1,10 @@
 package com.emenu.enums;
 
 public enum UserType {
-    PLATFORM_ADMIN("Platform Administrator - Full system access"),
-    BUSINESS_OWNER("Business Owner - Manage their restaurant"),
-    BUSINESS_STAFF("Business Staff - Limited business access"),
-    CUSTOMER("Customer - Order from businesses"),
-    GUEST("Guest User - Browse without account");
+    PLATFORM_USER("Platform User - Works for the SaaS platform company"),
+    BUSINESS_USER("Business User - Subscribes to use platform for their business"),
+    CUSTOMER("Customer - End user who orders from businesses"),
+    GUEST("Guest - Limited access without full registration");
 
     private final String description;
 

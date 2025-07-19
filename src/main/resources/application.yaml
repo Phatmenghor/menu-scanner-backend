@@ -1,16 +1,16 @@
-# Simple Spring Boot Configuration - No Size Limits
+# application.yml
 spring:
   application:
-    name: ks-it-school
+    name: emenu-saas-platform
 
   profiles:
-    active: prod
+    active: dev
 
-  # File uploads - No limits
+  # File uploads - Reasonable limits for production
   servlet:
     multipart:
-      max-file-size: -1
-      max-request-size: -1
+      max-file-size: 10MB
+      max-request-size: 50MB
 
   # Database Configuration
   datasource:
@@ -19,9 +19,11 @@ spring:
     password: Hour1819
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 100
-      minimum-idle: 10
-      connection-timeout: 60000
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   # JPA Configuration
   jpa:
@@ -31,43 +33,271 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+  # Redis Cache Configuration (optional)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  # Cache Configuration
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=1h
+
+  # Mail Configuration
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        transport:
+          protocol: smtp
+
+  # Async Configuration
+  task:
+    execution:
+      pool:
+        core-size: 5
+        max-size: 20
+        queue-capacity: 100
+      thread-name-prefix: emenu-async-
 
 # Server Configuration
 server:
   port: 9090
+  servlet:
+    context-path: /
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+  http2:
+    enabled: true
 
 # JWT Configuration
 jwt:
-  secret:
-    key: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
-  expiration-min: 1440
+  secret: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
+  expiration: 86400000 # 24 hours in milliseconds
+  refresh-expiration: 2592000000 # 30 days in milliseconds
 
 # Swagger Configuration
 springdoc:
   swagger-ui:
-    path: /swagger-ui/swagger-ui/index.html
+    path: /swagger-ui.html
     enabled: true
-    url: /v3/api-docs
-    config-url: /v3/api-docs/swagger-config
+    operations-sorter: method
+    tags-sorter: alpha
+    doc-expansion: none
+    display-request-duration: true
   api-docs:
     path: /v3/api-docs
     enabled: true
-  packagesToScan: com.menghor.ksit
+  packagesToScan: com.emenu
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+  info:
+    env:
+      enabled: true
+    git:
+      mode: full
+
+# Application specific configuration
+app:
+  name: "E-Menu SaaS Platform"
+  version: "1.0.0"
+  description: "Complete E-Menu SaaS Platform for Restaurant Management"
+
+  # Security settings
+  security:
+    password:
+      min-length: 8
+      require-uppercase: true
+      require-lowercase: true
+      require-numbers: true
+      require-special-chars: true
+    account:
+      max-login-attempts: 5
+      lockout-duration: 30 # minutes
+      verification-token-expiry: 24 # hours
+      password-reset-token-expiry: 1 # hours
+      phone-verification-expiry: 15 # minutes
+
+  # Notification settings
+  notifications:
+    email:
+      enabled: true
+      from: "noreply@emenu-platform.com"
+      templates:
+        welcome: "welcome"
+        verification: "email-verification"
+        password-reset: "password-reset"
+        account-locked: "account-locked"
+    telegram:
+      enabled: true
+      bot-token: "YOUR_TELEGRAM_BOT_TOKEN"
+      api-url: "https://api.telegram.org/bot"
+
+  # Business rules
+  business:
+    free-trial-days: 30
+    subscription:
+      grace-period-days: 7
+      reminder-days: [30, 7, 1] # Days before expiry to send reminders
+    loyalty:
+      points-per-dollar: 1.0
+      tier-upgrade-notification: true
+
+  # File storage
+  storage:
+    type: local # local, s3, cloudinary
+    local:
+      upload-dir: uploads/
+      max-file-size: 10MB
+      allowed-types: [jpg, jpeg, png, gif, pdf, docx]
+    s3:
+      bucket-name: "emenu-platform-files"
+      region: "us-east-1"
+      access-key: "YOUR_ACCESS_KEY"
+      secret-key: "YOUR_SECRET_KEY"
 
 # Logging Configuration
 logging:
   level:
-    com.menghor.ksit: INFO
+    com.emenu: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.springframework: INFO
     org.hibernate: WARN
-    lombok: DEBUG
-    lombok.extern.slf4j: DEBUG
     root: INFO
 
   # File logging
   file:
-    name: logs/ks-it-school.log
+    name: logs/emenu-platform.log
+    max-size: 100MB
+    max-history: 30
 
   pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
+
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  h2:
+    console:
+      enabled: false
+
+app:
+  security:
+    account:
+      max-login-attempts: 10 # More lenient for development
+
+logging:
+  level:
+    com.emenu: TRACE
+    org.springframework.security: DEBUG
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  # Production database with connection pooling
+  datasource:
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+
+# Production security settings
+app:
+  security:
+    account:
+      max-login-attempts: 3 # Stricter for production
+
+logging:
+  level:
+    com.emenu: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+    root: WARN
+
+---
+# Test Profile
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  h2:
+    console:
+      enabled: true
+
+  cache:
+    type: none
+
+logging:
+  level:
+    com.emenu: DEBUG
+    org.springframework.test: DEBUG

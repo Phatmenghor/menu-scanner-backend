@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Authentication", description = "Authentication operations")
+@Tag(name = "Authentication", description = "Authentication and registration operations")
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
@@ -79,10 +80,44 @@ public class AuthenticationController {
         return ResponseEntity.ok(ApiResponse.success("Email verified successfully", null));
     }
 
+    @PostMapping("/resend-verification")
+    @Operation(summary = "Resend verification email", description = "Resend email verification")
+    public ResponseEntity<ApiResponse<Void>> resendVerificationEmail(
+            @Parameter(description = "User email") @RequestParam @Email String email) {
+        log.info("REST request to resend verification email to: {}", email);
+        
+        authenticationService.resendVerificationEmail(email);
+        
+        return ResponseEntity.ok(ApiResponse.success("Verification email sent", null));
+    }
+
+    @PostMapping("/request-phone-verification")
+    @Operation(summary = "Request phone verification", description = "Request phone number verification")
+    public ResponseEntity<ApiResponse<Void>> requestPhoneVerification(
+            @Parameter(description = "User email") @RequestParam @Email String email) {
+        log.info("REST request to verify phone for user: {}", email);
+        
+        authenticationService.requestPhoneVerification(email);
+        
+        return ResponseEntity.ok(ApiResponse.success("Phone verification code sent", null));
+    }
+
+    @PostMapping("/verify-phone")
+    @Operation(summary = "Verify phone", description = "Verify phone number with code")
+    public ResponseEntity<ApiResponse<Void>> verifyPhone(
+            @Parameter(description = "User email") @RequestParam @Email String email,
+            @Parameter(description = "Verification code") @RequestParam String code) {
+        log.info("REST request to verify phone for user: {}", email);
+        
+        authenticationService.verifyPhone(email, code);
+        
+        return ResponseEntity.ok(ApiResponse.success("Phone verified successfully", null));
+    }
+
     @PostMapping("/forgot-password")
     @Operation(summary = "Forgot password", description = "Request password reset")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(
-            @Parameter(description = "User email") @RequestParam String email) {
+            @Parameter(description = "User email") @RequestParam @Email String email) {
         log.info("REST request to reset password for email: {}", email);
         
         authenticationService.forgotPassword(email);

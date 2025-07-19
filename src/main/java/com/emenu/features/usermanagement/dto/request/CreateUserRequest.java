@@ -1,12 +1,11 @@
 package com.emenu.features.usermanagement.dto.request;
 
-import com.emenu.enums.GenderEnum;
-import com.emenu.enums.RoleEnum;
-import com.emenu.enums.UserType;
+import com.emenu.enums.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,15 +39,41 @@ public class CreateUserRequest {
     @NotNull(message = "User type is required")
     private UserType userType;
 
+    private AccountStatus accountStatus = AccountStatus.PENDING_VERIFICATION;
+
+    // Profile
     private String bio;
+    private String company;
+    private String position;
+    
+    // Address
     private String address;
     private String city;
+    private String state;
     private String country;
     private String postalCode;
+    
+    // Preferences
     private String timezone = "UTC";
     private String language = "en";
+    private String currency = "USD";
 
+    // Business relationships
     private UUID businessId;
+    private UUID primaryBusinessId;
+    private List<UUID> accessibleBusinessIds;
+
+    // Platform employee info (for platform users)
+    private String employeeId;
+    private String department;
+    private LocalDate hireDate;
+    private Double salary;
+    private Double commissionRate;
+
+    // Subscription (for business owners)
+    private SubscriptionPlan subscriptionPlan;
+    private LocalDateTime subscriptionStarts;
+    private LocalDateTime subscriptionEnds;
 
     @NotEmpty(message = "At least one role is required")
     private List<RoleEnum> roles;
@@ -58,4 +83,15 @@ public class CreateUserRequest {
     private Boolean telegramNotifications = false;
     private String telegramUserId;
     private Boolean marketingEmails = false;
+    private Boolean platformNotifications = true;
+
+    // Verification
+    private Boolean emailVerified = false;
+    private Boolean phoneVerified = false;
+
+    // Terms
+    private Boolean termsAccepted = false;
+    private Boolean privacyAccepted = false;
+    private Boolean dataProcessingConsent = false;
+    private Boolean marketingConsent = false;
 }

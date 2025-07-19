@@ -1,20 +1,26 @@
 package com.emenu.enums;
 
 public enum BusinessStatus {
-    ACTIVE("Active"),
-    INACTIVE("Inactive"),
-    SUSPENDED("Suspended"),
-    PENDING_APPROVAL("Pending Approval"),
-    TRIAL("Trial Period"),
-    EXPIRED("Subscription Expired");
+    ACTIVE("Active - Business is fully operational"),
+    INACTIVE("Inactive - Business temporarily closed"),
+    SUSPENDED("Suspended - Business suspended by platform"),
+    PENDING_APPROVAL("Pending Approval - Awaiting platform approval"),
+    TRIAL("Trial Period - Using trial subscription"),
+    EXPIRED("Subscription Expired - Payment required"),
+    CANCELLED("Cancelled - Business account cancelled"),
+    BANNED("Banned - Business permanently banned");
 
-    private final String displayName;
+    private final String description;
 
-    BusinessStatus(String displayName) {
-        this.displayName = displayName;
+    BusinessStatus(String description) {
+        this.description = description;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public String getDescription() {
+        return description;
+    }
+
+    public boolean isOperational() {
+        return this == ACTIVE || this == TRIAL;
     }
 }

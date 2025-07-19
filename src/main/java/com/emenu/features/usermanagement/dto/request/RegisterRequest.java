@@ -40,8 +40,15 @@ public class RegisterRequest {
     @NotNull(message = "User type is required")
     private UserType userType;
     
+    private String company;
+    private String position;
     private String city;
     private String country;
+    
+    // Business registration (for business users)
+    private String businessName;
+    private String businessType;
+    private String businessAddress;
     
     // Terms and privacy
     @AssertTrue(message = "You must accept the terms and conditions")
@@ -52,4 +59,13 @@ public class RegisterRequest {
     
     // Marketing preferences
     private boolean acceptMarketing = false;
+    private boolean dataProcessingConsent = false;
+    
+    // Referral
+    private String referralCode;
+    
+    // UTM tracking
+    private String utmSource;
+    private String utmMedium;
+    private String utmCampaign;
 }
