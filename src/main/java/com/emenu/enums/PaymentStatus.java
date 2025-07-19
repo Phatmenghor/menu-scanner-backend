@@ -1,24 +1,21 @@
 package com.emenu.enums;
 
 public enum PaymentStatus {
-    PENDING("Pending Payment"),
-    PROCESSING("Processing Payment"),
-    COMPLETED("Payment Completed"),
-    FAILED("Payment Failed"),
-    CANCELLED("Payment Cancelled"),
-    REFUNDED("Payment Refunded"),
-    PARTIALLY_REFUNDED("Partially Refunded"),
-    EXPIRED("Payment Expired"),
-    DISPUTED("Payment Disputed");
+    PENDING("Pending"),
+    PROCESSING("Processing"),
+    COMPLETED("Completed"),
+    FAILED("Failed"),
+    CANCELLED("Cancelled"),
+    REFUNDED("Refunded");
 
-    private final String displayName;
+    private final String description;
 
-    PaymentStatus(String displayName) {
-        this.displayName = displayName;
+    PaymentStatus(String description) {
+        this.description = description;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public String getDescription() {
+        return description;
     }
 
     public boolean isSuccessful() {

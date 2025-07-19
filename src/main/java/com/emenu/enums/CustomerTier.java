@@ -13,7 +13,8 @@ public enum CustomerTier {
     private final double pointMultiplier;
     private final double discountPercentage;
 
-    CustomerTier(String displayName, int minPoints, int maxPoints, double pointMultiplier, double discountPercentage) {
+    CustomerTier(String displayName, int minPoints, int maxPoints, 
+                double pointMultiplier, double discountPercentage) {
         this.displayName = displayName;
         this.minPoints = minPoints;
         this.maxPoints = maxPoints;

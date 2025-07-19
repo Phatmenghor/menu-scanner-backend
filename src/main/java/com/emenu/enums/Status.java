@@ -1,11 +1,11 @@
 package com.emenu.enums;
 
 public enum Status {
-    ACTIVE("Active - Normal operation"),
-    INACTIVE("Inactive - Temporarily disabled"),
-    PENDING("Pending - Awaiting approval"),
-    SUSPENDED("Suspended - Temporarily blocked"),
-    DELETED("Deleted - Soft deleted");
+    PENDING("Pending verification"),
+    ACTIVE("Active"),
+    INACTIVE("Inactive"),
+    SUSPENDED("Suspended"),
+    DELETED("Deleted");
 
     private final String description;
 
