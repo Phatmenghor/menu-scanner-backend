@@ -1,7 +1,6 @@
 package com.emenu.features.auth.repository;
 
 import com.emenu.enums.PaymentStatus;
-import com.emenu.enums.SubscriptionPlan;
 import com.emenu.features.auth.models.Payment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,9 +40,12 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID>, JpaSpec
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = 'COMPLETED' AND p.paymentDate BETWEEN :start AND :end AND p.isDeleted = false")
     BigDecimal getTotalRevenueInPeriod(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
     
-    @Query("SELECT COUNT(p) FROM Payment p WHERE p.subscriptionPlan = :plan AND p.status = 'COMPLETED' AND p.isDeleted = false")
-    long countCompletedPaymentsByPlan(@Param("plan") SubscriptionPlan plan);
+    @Query("SELECT COUNT(p) FROM Payment p WHERE p.planId = :planId AND p.status = 'COMPLETED' AND p.isDeleted = false")
+    long countCompletedPaymentsByPlan(@Param("planId") UUID planId);
     
     @Query("SELECT COUNT(p) FROM Payment p WHERE p.status = :status AND p.isDeleted = false")
     long countByStatus(@Param("status") PaymentStatus status);
+
+    @Query("SELECT p FROM Payment p WHERE p.planId = :planId AND p.isDeleted = false")
+    List<Payment> findByPlanId(@Param("planId") UUID planId);
 }

@@ -1,7 +1,7 @@
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.BusinessStatus;
-import com.emenu.exception.ValidationException;
+import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.BusinessFilterRequest;
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.BusinessCreateRequest;

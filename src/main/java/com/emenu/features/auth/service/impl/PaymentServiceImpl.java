@@ -8,8 +8,10 @@ import com.emenu.features.auth.mapper.PaymentMapper;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.Payment;
 import com.emenu.features.auth.models.Subscription;
+import com.emenu.features.auth.models.SubscriptionPlan;
 import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.auth.repository.PaymentRepository;
+import com.emenu.features.auth.repository.SubscriptionPlanRepository;
 import com.emenu.features.auth.repository.SubscriptionRepository;
 import com.emenu.features.auth.service.PaymentService;
 import com.emenu.features.auth.specification.PaymentSpecification;
@@ -37,6 +39,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final BusinessRepository businessRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final PaymentMapper paymentMapper;
 
     @Override
@@ -47,7 +50,11 @@ public class PaymentServiceImpl implements PaymentService {
         Business business = businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
-        // ✅ Mapper handles entity creation
+        // Validate plan exists
+        SubscriptionPlan plan = subscriptionPlanRepository.findByIdAndIsDeletedFalse(request.getPlanId())
+                .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
+
+        // Create payment
         Payment payment = paymentMapper.toEntity(request);
         
         // Generate reference number if not provided
@@ -58,14 +65,13 @@ public class PaymentServiceImpl implements PaymentService {
         Payment savedPayment = paymentRepository.save(payment);
         log.info("Payment recorded successfully: {}", savedPayment.getReferenceNumber());
 
-        // Auto-complete payment (in real app, this would be based on payment gateway response)
-        if (savedPayment.getAmount().compareTo(BigDecimal.ZERO) == 0) {
-            // Free plan - auto complete
+        // Auto-complete payment for free plans
+        if (plan.isFree()) {
             savedPayment.markAsCompleted();
             paymentRepository.save(savedPayment);
             
             // Create/extend subscription
-            createOrExtendSubscription(savedPayment);
+            createOrExtendSubscription(savedPayment, plan);
         }
 
         return paymentMapper.toResponse(savedPayment);
@@ -74,7 +80,6 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<PaymentResponse> getPayments(PaymentFilterRequest filter) {
-        // ✅ Specification handles all filtering logic
         Specification<Payment> spec = PaymentSpecification.buildSpecification(filter);
         
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
@@ -83,8 +88,6 @@ public class PaymentServiceImpl implements PaymentService {
         );
 
         Page<Payment> paymentPage = paymentRepository.findAll(spec, pageable);
-
-        // ✅ Mapper handles pagination response conversion
         return paymentMapper.toPaginationResponse(paymentPage);
     }
 
@@ -106,11 +109,15 @@ public class PaymentServiceImpl implements PaymentService {
             throw new RuntimeException("Payment is already completed");
         }
 
+        // Get the plan
+        SubscriptionPlan plan = subscriptionPlanRepository.findByIdAndIsDeletedFalse(payment.getPlanId())
+                .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
+
         payment.markAsCompleted();
         Payment updatedPayment = paymentRepository.save(payment);
 
         // Create/extend subscription
-        createOrExtendSubscription(updatedPayment);
+        createOrExtendSubscription(updatedPayment, plan);
 
         log.info("Payment completed successfully: {}", payment.getReferenceNumber());
         return paymentMapper.toResponse(updatedPayment);
@@ -184,15 +191,12 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.countByStatus(PaymentStatus.PENDING);
     }
 
-    // ============================================================================
-    // PRIVATE HELPER METHODS
-    // ============================================================================
-
+    // Private helper methods
     private String generateReferenceNumber() {
         return "PAY-" + System.currentTimeMillis() + "-" + (int)(Math.random() * 1000);
     }
 
-    private void createOrExtendSubscription(Payment payment) {
+    private void createOrExtendSubscription(Payment payment, SubscriptionPlan plan) {
         try {
             // Check for existing active subscription
             var existingSubscription = subscriptionRepository.findCurrentActiveByBusinessId(
@@ -201,18 +205,19 @@ public class PaymentServiceImpl implements PaymentService {
             if (existingSubscription.isPresent()) {
                 // Extend existing subscription
                 Subscription subscription = existingSubscription.get();
-                subscription.setEndDate(subscription.getEndDate().plusDays(payment.getSubscriptionPlan().getDurationDays()));
+                subscription.extendByDays(plan.getDurationDays());
                 subscriptionRepository.save(subscription);
                 log.info("Extended subscription for business: {}", payment.getBusinessId());
             } else {
                 // Create new subscription
                 Subscription newSubscription = new Subscription();
                 newSubscription.setBusinessId(payment.getBusinessId());
-                newSubscription.setPlan(payment.getSubscriptionPlan());
+                newSubscription.setPlanId(plan.getId());
                 newSubscription.setStartDate(LocalDateTime.now());
-                newSubscription.setEndDate(LocalDateTime.now().plusDays(payment.getSubscriptionPlan().getDurationDays()));
+                newSubscription.setEndDate(LocalDateTime.now().plusDays(plan.getDurationDays()));
                 newSubscription.setIsActive(true);
                 newSubscription.setAutoRenew(false);
+                newSubscription.setIsTrial(plan.getIsTrial());
                 
                 Subscription savedSubscription = subscriptionRepository.save(newSubscription);
                 

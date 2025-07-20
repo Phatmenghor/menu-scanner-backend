@@ -3,8 +3,8 @@ package com.emenu.features.auth.service.impl;
 import com.emenu.enums.AccountStatus;
 import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
-import com.emenu.exception.UserNotFoundException;
-import com.emenu.exception.ValidationException;
+import com.emenu.exception.custom.UserNotFoundException;
+import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.request.LoginRequest;
 import com.emenu.features.auth.dto.request.PasswordChangeRequest;
@@ -29,6 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.security.auth.login.AccountLockedException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -89,20 +90,29 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
 
-        // Authenticate user
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtGenerator.generateAccessToken(authentication);
-
-        // Get user details
+        // First, get user to check account status before authentication
         User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("Invalid email or password"));
 
-        log.info("User logged in successfully: {}", user.getEmail());
-        return createLoginResponse(token, user, "Welcome back!");
+        // Validate account status before attempting authentication
+        validateAccountStatusForLogin(user);
+
+        try {
+            // Authenticate user
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = jwtGenerator.generateAccessToken(authentication);
+
+            log.info("User logged in successfully: {} with status: {}", user.getEmail(), user.getAccountStatus());
+            return createLoginResponse(token, user, "Welcome back!");
+
+        } catch (Exception e) {
+            log.warn("Authentication failed for user: {} - Reason: {}", request.getEmail(), e.getMessage());
+            throw e; // Re-throw to let Spring Security handle it
+        }
     }
 
     @Override
@@ -183,5 +193,30 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return response;
+    }
+
+    private void validateAccountStatusForLogin(User user) {
+        switch (user.getAccountStatus()) {
+            case INACTIVE -> {
+                log.warn("Login attempt blocked - inactive account: {}", user.getEmail());
+                throw new AccountInactiveException("Your account is inactive. Please contact support to reactivate your account.");
+            }
+            case LOCKED -> {
+                log.warn("Login attempt blocked - locked account: {}", user.getEmail());
+                throw new AccountLockedException("Your account has been locked due to security reasons. Please contact support to unlock your account.");
+            }
+            case SUSPENDED -> {
+                log.warn("Login attempt blocked - suspended account: {}", user.getEmail());
+                throw new AccountSuspendedException("Your account has been suspended. Please contact support for account reactivation.");
+            }
+            case ACTIVE -> {
+                // Account is active, allow login
+                log.debug("Account status validated successfully for user: {}", user.getEmail());
+            }
+            default -> {
+                log.error("Unknown account status for user: {} - Status: {}", user.getEmail(), user.getAccountStatus());
+                throw new AccountInactiveException("Account status is invalid. Please contact support.");
+            }
+        }
     }
 }

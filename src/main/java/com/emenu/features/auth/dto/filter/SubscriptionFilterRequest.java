@@ -1,6 +1,5 @@
 package com.emenu.features.auth.dto.filter;
 
-import com.emenu.enums.SubscriptionPlan;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,7 +9,7 @@ import java.util.UUID;
 public class SubscriptionFilterRequest {
     
     private UUID businessId;
-    private SubscriptionPlan plan;
+    private UUID planId;
     private Boolean isActive;
     private Boolean autoRenew;
     private LocalDateTime startDateFrom;
@@ -19,6 +18,7 @@ public class SubscriptionFilterRequest {
     private LocalDateTime endDateTo;
     private Boolean isExpired;
     private Boolean expiringSoon;
+    private Boolean isTrial;
     
     // Pagination
     private Integer pageNo = 1;

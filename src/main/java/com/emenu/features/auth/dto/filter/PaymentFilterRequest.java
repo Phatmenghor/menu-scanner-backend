@@ -2,7 +2,6 @@ package com.emenu.features.auth.dto.filter;
 
 import com.emenu.enums.PaymentMethod;
 import com.emenu.enums.PaymentStatus;
-import com.emenu.enums.SubscriptionPlan;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -14,7 +13,7 @@ public class PaymentFilterRequest {
     
     private UUID businessId;
     private UUID subscriptionId;
-    private SubscriptionPlan subscriptionPlan;
+    private UUID planId;
     private PaymentMethod paymentMethod;
     private PaymentStatus status;
     private BigDecimal minAmount;

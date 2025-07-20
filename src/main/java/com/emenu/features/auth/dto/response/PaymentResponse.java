@@ -2,7 +2,6 @@ package com.emenu.features.auth.dto.response;
 
 import com.emenu.enums.PaymentMethod;
 import com.emenu.enums.PaymentStatus;
-import com.emenu.enums.SubscriptionPlan;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -16,8 +15,12 @@ public class PaymentResponse {
     private UUID businessId;
     private String businessName;
     private UUID subscriptionId;
-    private SubscriptionPlan subscriptionPlan;
-    private String subscriptionPlanDisplay;
+    
+    // Plan information
+    private UUID planId;
+    private String planName;
+    private String planDisplayName;
+    
     private BigDecimal amount;
     private PaymentMethod paymentMethod;
     private PaymentStatus status;

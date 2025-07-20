@@ -1,6 +1,5 @@
 package com.emenu.features.auth.dto.response;
 
-import com.emenu.enums.SubscriptionPlan;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -12,19 +11,35 @@ public class SubscriptionResponse {
     private UUID id;
     private UUID businessId;
     private String businessName;
-    private SubscriptionPlan plan;
+    
+    // Plan information
+    private UUID planId;
+    private String planName;
     private String planDisplayName;
     private Double planPrice;
     private Integer planDurationDays;
-    private Integer maxStaff;
-    private Integer maxMenuItems;
-    private Integer maxTables;
+    
+    // Effective limits (considering custom overrides)
+    private Integer effectiveMaxStaff;
+    private Integer effectiveMaxMenuItems;
+    private Integer effectiveMaxTables;
+    private Integer effectiveDurationDays;
+    
+    // Custom overrides
+    private Integer customMaxStaff;
+    private Integer customMaxMenuItems;
+    private Integer customMaxTables;
+    private Integer customDurationDays;
+    
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Boolean isActive;
     private Boolean isExpired;
     private Long daysRemaining;
     private Boolean autoRenew;
+    private Boolean isTrial;
+    private String notes;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -35,4 +50,8 @@ public class SubscriptionResponse {
     private Boolean canAddStaff;
     private Boolean canAddMenuItem;
     private Boolean canAddTable;
+    
+    // Display information
+    private String displayName;
+    private Boolean hasCustomLimits;
 }

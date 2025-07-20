@@ -1,12 +1,13 @@
 package com.emenu.config;
 
+import com.emenu.enums.AccountStatus;
 import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
-import com.emenu.enums.AccountStatus;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
+import com.emenu.features.auth.service.SubscriptionPlanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +30,7 @@ public class DataInitializationService {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SubscriptionPlanService subscriptionPlanService;
 
     @Value("${app.init.create-admin:true}")
     private boolean createDefaultAdmin;
@@ -44,11 +46,16 @@ public class DataInitializationService {
     public void initializeData() {
         try {
             log.info("Starting data initialization...");
+            
+            // Initialize in order
             ensureRolesExist();
+            initializeSubscriptionPlans();
+            
             if (createDefaultAdmin) {
                 initializeDefaultUsers();
             }
-            log.info("Data initialization completed.");
+            
+            log.info("Data initialization completed successfully.");
         } catch (Exception e) {
             log.error("Error during data initialization: {}", e.getMessage(), e);
         }
@@ -74,12 +81,23 @@ public class DataInitializationService {
         }
     }
 
+    private void initializeSubscriptionPlans() {
+        try {
+            log.info("Initializing subscription plans...");
+            subscriptionPlanService.seedDefaultPlans();
+            log.info("Subscription plans initialization completed.");
+        } catch (Exception e) {
+            log.error("Error initializing subscription plans: {}", e.getMessage(), e);
+        }
+    }
+
     private void initializeDefaultUsers() {
         try {
             log.info("Initializing default users...");
             createPlatformOwner();
             createDemoBusinessOwner();
             createDemoCustomer();
+            createTestAccounts(); // For testing different account statuses
             log.info("Default users initialization completed.");
         } catch (Exception e) {
             log.error("Error initializing default users: {}", e.getMessage(), e);
@@ -165,6 +183,52 @@ public class DataInitializationService {
             }
         } catch (Exception e) {
             log.error("Error creating demo customer: {}", e.getMessage(), e);
+        }
+    }
+
+    private void createTestAccounts() {
+        try {
+            log.info("Creating test accounts with different statuses...");
+
+            // Inactive user
+            createTestUser("inactive-user@emenu-platform.com", "Test", "Inactive", 
+                          AccountStatus.INACTIVE, RoleEnum.CUSTOMER);
+
+            // Locked user
+            createTestUser("locked-user@emenu-platform.com", "Test", "Locked", 
+                          AccountStatus.LOCKED, RoleEnum.CUSTOMER);
+
+            // Suspended user
+            createTestUser("suspended-user@emenu-platform.com", "Test", "Suspended", 
+                          AccountStatus.SUSPENDED, RoleEnum.BUSINESS_OWNER);
+
+        } catch (Exception e) {
+            log.error("Error creating test accounts: {}", e.getMessage(), e);
+        }
+    }
+
+    private void createTestUser(String email, String firstName, String lastName, 
+                               AccountStatus status, RoleEnum roleEnum) {
+        try {
+            if (!userRepository.existsByEmailAndIsDeletedFalse(email)) {
+                User user = new User();
+                user.setEmail(email);
+                user.setPassword(passwordEncoder.encode("Test123!"));
+                user.setFirstName(firstName);
+                user.setLastName(lastName);
+                user.setUserType(roleEnum.isCustomerRole() ? UserType.CUSTOMER : 
+                               roleEnum.isBusinessRole() ? UserType.BUSINESS_USER : UserType.PLATFORM_USER);
+                user.setAccountStatus(status);
+
+                Role role = roleRepository.findByName(roleEnum)
+                        .orElseThrow(() -> new RuntimeException("Role not found: " + roleEnum));
+                user.setRoles(List.of(role));
+
+                userRepository.save(user);
+                log.info("Created test user: {} with status: {}", email, status);
+            }
+        } catch (Exception e) {
+            log.error("Error creating test user {}: {}", email, e.getMessage(), e);
         }
     }
 }

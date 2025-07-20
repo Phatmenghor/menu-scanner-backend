@@ -1,7 +1,6 @@
 package com.emenu.features.auth.dto.request;
 
 import com.emenu.enums.PaymentMethod;
-import com.emenu.enums.SubscriptionPlan;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
@@ -17,8 +16,8 @@ public class PaymentCreateRequest {
     
     private UUID subscriptionId;
     
-    @NotNull(message = "Subscription plan is required")
-    private SubscriptionPlan subscriptionPlan;
+    @NotNull(message = "Subscription plan ID is required")
+    private UUID planId;
     
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")

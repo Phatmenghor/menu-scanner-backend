@@ -28,9 +28,9 @@ public class PaymentSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("subscriptionId"), filter.getSubscriptionId()));
             }
 
-            // Subscription plan filter
-            if (filter.getSubscriptionPlan() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("subscriptionPlan"), filter.getSubscriptionPlan()));
+            // Plan ID filter
+            if (filter.getPlanId() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("planId"), filter.getPlanId()));
             }
 
             // Payment method filter
@@ -98,6 +98,14 @@ public class PaymentSpecification {
             criteriaBuilder.and(
                 criteriaBuilder.equal(root.get("isDeleted"), false),
                 criteriaBuilder.equal(root.get("businessId"), businessId)
+            );
+    }
+
+    public static Specification<Payment> byPlan(java.util.UUID planId) {
+        return (root, query, criteriaBuilder) -> 
+            criteriaBuilder.and(
+                criteriaBuilder.equal(root.get("isDeleted"), false),
+                criteriaBuilder.equal(root.get("planId"), planId)
             );
     }
 

@@ -23,9 +23,9 @@ public class SubscriptionSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("businessId"), filter.getBusinessId()));
             }
 
-            // Plan filter
-            if (filter.getPlan() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("plan"), filter.getPlan()));
+            // Plan ID filter
+            if (filter.getPlanId() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("planId"), filter.getPlanId()));
             }
 
             // Active status filter
@@ -36,6 +36,11 @@ public class SubscriptionSpecification {
             // Auto renew filter
             if (filter.getAutoRenew() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("autoRenew"), filter.getAutoRenew()));
+            }
+
+            // Trial filter
+            if (filter.getIsTrial() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("isTrial"), filter.getIsTrial()));
             }
 
             // Date filters
@@ -103,5 +108,13 @@ public class SubscriptionSpecification {
                 criteriaBuilder.between(root.get("endDate"), now, futureDate)
             );
         };
+    }
+
+    public static Specification<Subscription> byPlan(java.util.UUID planId) {
+        return (root, query, criteriaBuilder) -> 
+            criteriaBuilder.and(
+                criteriaBuilder.equal(root.get("isDeleted"), false),
+                criteriaBuilder.equal(root.get("planId"), planId)
+            );
     }
 }

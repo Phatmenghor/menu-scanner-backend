@@ -21,13 +21,15 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: update # Use 'update' for development, 'validate' for production
-    show-sql: false
+      ddl-auto: create-drop # Changed: This will drop and recreate tables on each startup
+    show-sql: false # Changed: Disable SQL logging during creation
     open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: false # Changed: Disable SQL formatting
+        show_sql: false # Additional: Ensure no SQL output
+        use_sql_comments: false # Changed: Disable SQL comments
 
   # Cache Configuration
   cache:
@@ -73,44 +75,6 @@ cambodia:
   language: "km"
   country: "KH"
 
-  # Subscription Plans (USD - common in Cambodia)
-  plans:
-    free:
-      name: "Free Plan"
-      price: 0.00
-      duration-days: 30
-      max-staff: 1
-      max-menu-items: 10
-      max-tables: 2
-      features: ["Basic Menu", "Basic Orders"]
-
-    basic:
-      name: "Basic Plan"
-      price: 29.99
-      duration-days: 30
-      max-staff: 3
-      max-menu-items: 50
-      max-tables: 10
-      features: ["Advanced Menu", "Order Management", "Basic Analytics"]
-
-    professional:
-      name: "Professional Plan"
-      price: 79.99
-      duration-days: 30
-      max-staff: 10
-      max-menu-items: 200
-      max-tables: 25
-      features: ["Full Menu Management", "Advanced Analytics", "Custom Branding"]
-
-    enterprise:
-      name: "Enterprise Plan"
-      price: 199.99
-      duration-days: 30
-      max-staff: -1 # Unlimited
-      max-menu-items: -1 # Unlimited
-      max-tables: -1 # Unlimited
-      features: ["Everything", "Priority Support", "Custom Integration"]
-
 # Application Configuration
 app:
   name: "Cambodia E-Menu Platform"
@@ -130,14 +94,18 @@ app:
     allowed-headers: "*"
     allow-credentials: true
 
-# Logging Configuration
+# Logging Configuration - Minimal logging during database creation
 logging:
   level:
     com.emenu: INFO
     org.springframework.security: WARN
     org.springframework.web: WARN
-    org.hibernate.SQL: WARN
-    root: INFO
+    org.hibernate.SQL: OFF # Changed: Completely disable Hibernate SQL logging
+    org.hibernate.type: OFF # Changed: Disable parameter logging
+    org.hibernate.engine: OFF # Changed: Disable engine logging
+    org.hibernate.stat: OFF # Changed: Disable statistics logging
+    org.springframework.orm.jpa: WARN # Changed: Reduce JPA logging
+    root: WARN # Changed: Reduce root logging level
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   file:
@@ -153,14 +121,14 @@ spring:
       on-profile: dev
 
   jpa:
-    show-sql: true
+    show-sql: false # Changed: No SQL logging in dev profile
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop # Changed: Drop and recreate for dev
 
 logging:
   level:
-    com.emenu: DEBUG
-    org.hibernate.SQL: DEBUG
+    com.emenu: INFO # Changed: Reduce from DEBUG
+    org.hibernate.SQL: OFF # Changed: No SQL logging in dev
 
 ---
 # Production Profile
@@ -171,7 +139,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: validate # Keep validate for production safety
     show-sql: false
 
   datasource:

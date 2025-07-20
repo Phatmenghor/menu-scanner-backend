@@ -1,4 +1,4 @@
-package com.emenu.exception;
+package com.emenu.exception.custom;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

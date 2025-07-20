@@ -20,6 +20,7 @@ public abstract class SubscriptionMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "business", ignore = true)
+    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "payments", ignore = true)
     @Mapping(target = "startDate", ignore = true)
     @Mapping(target = "endDate", ignore = true)
@@ -35,12 +36,10 @@ public abstract class SubscriptionMapper {
     public abstract Subscription toEntity(SubscriptionCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
+    @Mapping(source = "plan.name", target = "planName")
     @Mapping(source = "plan.displayName", target = "planDisplayName")
     @Mapping(source = "plan.price", target = "planPrice")
     @Mapping(source = "plan.durationDays", target = "planDurationDays")
-    @Mapping(source = "plan.maxStaff", target = "maxStaff")
-    @Mapping(source = "plan.maxMenuItems", target = "maxMenuItems")
-    @Mapping(source = "plan.maxTables", target = "maxTables")
     public abstract SubscriptionResponse toResponse(Subscription subscription);
 
     public abstract List<SubscriptionResponse> toResponseList(List<Subscription> subscriptions);
@@ -49,6 +48,7 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
+    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "payments", ignore = true)
     @Mapping(target = "startDate", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -65,6 +65,14 @@ public abstract class SubscriptionMapper {
     protected void setCalculatedFields(@MappingTarget SubscriptionResponse response, Subscription subscription) {
         response.setIsExpired(subscription.isExpired());
         response.setDaysRemaining(subscription.getDaysRemaining());
+        response.setDisplayName(subscription.getDisplayName());
+        response.setHasCustomLimits(subscription.hasCustomLimits());
+        
+        // Set effective limits
+        response.setEffectiveMaxStaff(subscription.getEffectiveMaxStaff());
+        response.setEffectiveMaxMenuItems(subscription.getEffectiveMaxMenuItems());
+        response.setEffectiveMaxTables(subscription.getEffectiveMaxTables());
+        response.setEffectiveDurationDays(subscription.getEffectiveDurationDays());
         
         // Set usage capabilities (these would be calculated from actual usage)
         response.setCanAddStaff(subscription.canAddStaff(0)); // Pass actual count
@@ -72,7 +80,7 @@ public abstract class SubscriptionMapper {
         response.setCanAddTable(subscription.canAddTable(0)); // Pass actual count
     }
 
-    // ✅ UNIVERSAL PAGINATION MAPPER USAGE
+    // Universal pagination mapper usage
     public PaginationResponse<SubscriptionResponse> toPaginationResponse(Page<Subscription> subscriptionPage) {
         return paginationMapper.toPaginationResponse(subscriptionPage, this::toResponseList);
     }

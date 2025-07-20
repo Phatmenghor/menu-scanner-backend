@@ -1,8 +1,8 @@
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.AccountStatus;
-import com.emenu.exception.UserNotFoundException;
-import com.emenu.exception.ValidationException;
+import com.emenu.exception.custom.UserNotFoundException;
+import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
 import com.emenu.features.auth.dto.response.UserResponse;

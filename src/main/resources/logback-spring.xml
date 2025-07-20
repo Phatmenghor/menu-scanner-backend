@@ -30,18 +30,26 @@
     </appender>
 
     <!-- Application specific logging -->
-    <logger name="com.menghor.ksit" level="TRACE" additivity="false">
+    <logger name="com.menghor.ksit" level="INFO" additivity="false">
         <appender-ref ref="FILE" />
         <appender-ref ref="CONSOLE" />
     </logger>
 
     <!-- Lombok logging -->
-    <logger name="lombok" level="TRACE" />
-    <logger name="lombok.extern.slf4j" level="TRACE" />
+    <logger name="lombok" level="INFO" />
+    <logger name="lombok.extern.slf4j" level="INFO" />
 
-    <!-- Database/SQL logging -->
-    <logger name="org.hibernate.SQL" level="TRACE" />
-    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" />
+    <!-- Database/SQL logging - DISABLED -->
+    <logger name="org.hibernate.SQL" level="OFF" />
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="OFF" />
+    <logger name="org.hibernate.type" level="OFF" />
+    <logger name="org.hibernate.engine" level="OFF" />
+    <logger name="org.hibernate.stat" level="OFF" />
+    <logger name="org.hibernate.hql" level="OFF" />
+    <logger name="org.hibernate.cache" level="OFF" />
+    <logger name="org.hibernate.jdbc" level="OFF" />
+    <logger name="org.hibernate.tool.hbm2ddl" level="OFF" />
+    <logger name="org.hibernate.tool.schema" level="OFF" />
 
     <!-- Third-party library logging levels -->
     <logger name="org.springframework" level="INFO" />
@@ -49,9 +57,11 @@
     <logger name="org.springframework.boot.actuate.autoconfigure" level="WARN" />
     <logger name="org.springframework.context.annotation" level="WARN" />
     <logger name="org.springframework.boot.web.embedded" level="WARN" />
+    <logger name="org.springframework.orm.jpa" level="WARN" />
+    <logger name="org.springframework.transaction" level="WARN" />
     <logger name="org.hibernate" level="WARN" />
     <logger name="org.postgresql" level="WARN" />
-    <logger name="com.zaxxer.hikari" level="INFO" />
+    <logger name="com.zaxxer.hikari" level="WARN" />
     <logger name="org.springframework.security" level="WARN" />
     <logger name="org.springframework.web" level="INFO" />
     <logger name="org.springframework.boot" level="INFO" />
@@ -61,4 +71,24 @@
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
     </root>
+
+    <!-- Profile-specific configurations -->
+    <springProfile name="dev">
+        <!-- Development profile - can enable some logging if needed -->
+        <logger name="com.menghor.ksit" level="DEBUG" additivity="false">
+            <appender-ref ref="FILE" />
+            <appender-ref ref="CONSOLE" />
+        </logger>
+    </springProfile>
+
+    <springProfile name="prod">
+        <!-- Production profile - minimal logging -->
+        <logger name="com.menghor.ksit" level="INFO" additivity="false">
+            <appender-ref ref="FILE" />
+        </logger>
+
+        <root level="WARN">
+            <appender-ref ref="FILE" />
+        </root>
+    </springProfile>
 </configuration>

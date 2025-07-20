@@ -1,6 +1,5 @@
 package com.emenu.features.auth.repository;
 
-import com.emenu.enums.SubscriptionPlan;
 import com.emenu.features.auth.models.Subscription;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,9 +35,12 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
     @Query("SELECT s FROM Subscription s WHERE s.endDate BETWEEN :start AND :end AND s.isActive = true AND s.isDeleted = false")
     List<Subscription> findExpiringSubscriptions(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
     
-    @Query("SELECT COUNT(s) FROM Subscription s WHERE s.plan = :plan AND s.isDeleted = false")
-    long countByPlan(@Param("plan") SubscriptionPlan plan);
+    @Query("SELECT COUNT(s) FROM Subscription s WHERE s.planId = :planId AND s.isDeleted = false")
+    long countByPlan(@Param("planId") UUID planId);
     
     @Query("SELECT COUNT(s) FROM Subscription s WHERE s.isActive = true AND s.isDeleted = false")
     long countActiveSubscriptions();
+
+    @Query("SELECT s FROM Subscription s WHERE s.planId = :planId AND s.isDeleted = false")
+    List<Subscription> findByPlanId(@Param("planId") UUID planId);
 }

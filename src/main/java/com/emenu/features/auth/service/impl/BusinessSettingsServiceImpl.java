@@ -1,6 +1,6 @@
 package com.emenu.features.auth.service.impl;
 
-import com.emenu.exception.ValidationException;
+import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.request.BusinessSettingsRequest;
 import com.emenu.features.auth.dto.response.BusinessSettingsResponse;
 import com.emenu.features.auth.models.Business;

@@ -2,7 +2,6 @@ package com.emenu.features.auth.models;
 
 import com.emenu.enums.PaymentMethod;
 import com.emenu.enums.PaymentStatus;
-import com.emenu.enums.SubscriptionPlan;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -36,9 +35,13 @@ public class Payment extends BaseUUIDEntity {
     @JoinColumn(name = "subscription_id", insertable = false, updatable = false)
     private Subscription subscription;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "subscription_plan", nullable = false)
-    private SubscriptionPlan subscriptionPlan;
+    // Reference to dynamic subscription plan
+    @Column(name = "plan_id", nullable = false)
+    private UUID planId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plan_id", insertable = false, updatable = false)
+    private SubscriptionPlan plan;
 
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
@@ -76,5 +79,18 @@ public class Payment extends BaseUUIDEntity {
 
     public void markAsFailed() {
         this.status = PaymentStatus.FAILED;
+    }
+
+    // Helper methods for plan information
+    public String getPlanName() {
+        return plan != null ? plan.getName() : "Unknown Plan";
+    }
+
+    public String getPlanDisplayName() {
+        return plan != null ? plan.getDisplayName() : "Unknown Plan";
+    }
+
+    public boolean isPlanFree() {
+        return plan != null && plan.isFree();
     }
 }
