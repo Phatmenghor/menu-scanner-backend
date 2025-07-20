@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Data
 public class LoginResponse {
-    
+
     private String accessToken;
     private String tokenType = "Bearer";
     private UUID userId;
