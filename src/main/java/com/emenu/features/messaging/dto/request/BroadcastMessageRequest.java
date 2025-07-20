@@ -1,7 +1,5 @@
 package com.emenu.features.messaging.dto.request;
 
-import com.emenu.enums.MessageType;
-import com.emenu.enums.UserType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 

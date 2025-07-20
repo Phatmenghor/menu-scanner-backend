@@ -28,4 +28,5 @@ public class BusinessResponse {
     private Integer totalTables;
     private Boolean hasActiveSubscription;
     private String currentSubscriptionPlan;
+    private Long daysRemaining;
 }

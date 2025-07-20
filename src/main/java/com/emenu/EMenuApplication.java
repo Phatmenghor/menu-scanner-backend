@@ -16,14 +16,14 @@ public class EMenuApplication {
 		SpringApplication.run(EMenuApplication.class, args);
 		System.out.println("""
             
-            🚀 E-Menu Platform Started Successfully!
+            🇰🇭 Cambodia E-Menu Platform Started Successfully! 🇰🇭
             
-            📱 Simple Features:
-            ✅ Basic User Management (Platform, Business, Customer)
-            ✅ JWT Authentication
-            ✅ Simple Messaging System
-            ✅ Business Management
-            ✅ Customer Management (Simplified)
+            🏗️ Clean Architecture Features:
+            ✅ Universal Pagination Mappers
+            ✅ Specification-Based Filtering
+            ✅ Clean Service Implementations
+            ✅ Cambodia-Specific Configuration
+            ✅ Payment & Subscription System
             
             🌐 Access Points:
             • Application: http://localhost:8080
@@ -32,8 +32,6 @@ public class EMenuApplication {
             
             🔑 Default Credentials:
             • Platform Owner: phatmenghor19@gmail.com / 88889999
-            • Demo Business: demo-business@emenu-platform.com / Business123!
-            • Demo Customer: demo-customer@emenu-platform.com / Customer123!
             
             """);
 	}

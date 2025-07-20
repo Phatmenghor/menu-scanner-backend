@@ -14,5 +14,4 @@ public enum AccountStatus {
     AccountStatus(String description) {
         this.description = description;
     }
-
 }

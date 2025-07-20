@@ -1,8 +1,7 @@
-# application.yml - Simplified Configuration
+# application.yml - Cambodia E-Menu Platform Configuration
 spring:
   application:
-    name: emenu-platform
-
+    name: cambodia-emenu-platform
   profiles:
     active: dev
 
@@ -36,19 +35,6 @@ spring:
     caffeine:
       spec: maximumSize=1000,expireAfterWrite=1h
 
-  # Email Configuration (Optional)
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
 # Server Configuration
 server:
   port: 8080
@@ -58,7 +44,7 @@ server:
 # JWT Configuration
 jwt:
   secret: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
-  expiration: 99999999999 # 24 hours
+  expiration: 86400000 # 24 hours
 
 # API Documentation
 springdoc:
@@ -80,11 +66,56 @@ management:
     health:
       show-details: when-authorized
 
+# Cambodia-Specific Configuration
+cambodia:
+  timezone: "Asia/Phnom_Penh"
+  currency: "USD"
+  language: "km"
+  country: "KH"
+
+  # Subscription Plans (USD - common in Cambodia)
+  plans:
+    free:
+      name: "Free Plan"
+      price: 0.00
+      duration-days: 30
+      max-staff: 1
+      max-menu-items: 10
+      max-tables: 2
+      features: ["Basic Menu", "Basic Orders"]
+
+    basic:
+      name: "Basic Plan"
+      price: 29.99
+      duration-days: 30
+      max-staff: 3
+      max-menu-items: 50
+      max-tables: 10
+      features: ["Advanced Menu", "Order Management", "Basic Analytics"]
+
+    professional:
+      name: "Professional Plan"
+      price: 79.99
+      duration-days: 30
+      max-staff: 10
+      max-menu-items: 200
+      max-tables: 25
+      features: ["Full Menu Management", "Advanced Analytics", "Custom Branding"]
+
+    enterprise:
+      name: "Enterprise Plan"
+      price: 199.99
+      duration-days: 30
+      max-staff: -1 # Unlimited
+      max-menu-items: -1 # Unlimited
+      max-tables: -1 # Unlimited
+      features: ["Everything", "Priority Support", "Custom Integration"]
+
 # Application Configuration
 app:
-  name: "E-Menu Platform"
+  name: "Cambodia E-Menu Platform"
   version: "1.0.0"
-  description: "Simple E-Menu Platform"
+  description: "Restaurant Management Platform for Cambodia"
 
   # Data Initialization
   init:
@@ -99,12 +130,6 @@ app:
     allowed-headers: "*"
     allow-credentials: true
 
-  # Notification Settings
-  notifications:
-    email:
-      enabled: true
-      from: "noreply@emenu-platform.com"
-
 # Logging Configuration
 logging:
   level:
@@ -116,7 +141,7 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   file:
-    name: logs/emenu-platform.log
+    name: logs/cambodia-emenu-platform.log
     max-size: 100MB
     max-history: 30
 
@@ -136,11 +161,6 @@ logging:
   level:
     com.emenu: DEBUG
     org.hibernate.SQL: DEBUG
-
-app:
-  notifications:
-    email:
-      enabled: false # Disable in development
 
 ---
 # Production Profile
@@ -171,4 +191,4 @@ logging:
     com.emenu: INFO
     root: WARN
   file:
-    name: /var/log/emenu-platform/application.log
+    name: /var/log/cambodia-emenu-platform/application.log

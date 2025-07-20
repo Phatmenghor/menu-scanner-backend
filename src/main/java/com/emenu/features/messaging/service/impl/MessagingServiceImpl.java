@@ -1,10 +1,7 @@
 package com.emenu.features.messaging.service.impl;
 
-import com.emenu.enums.MessageStatus;
-import com.emenu.enums.MessageType;
 import com.emenu.exception.UserNotFoundException;
 import com.emenu.features.auth.models.User;
-import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.messaging.dto.filter.MessageFilterRequest;
 import com.emenu.features.messaging.dto.request.BroadcastMessageRequest;
 import com.emenu.features.messaging.dto.request.MessageCreateRequest;
@@ -19,7 +16,7 @@ import com.emenu.features.messaging.service.MessagingService;
 import com.emenu.features.messaging.specication.MessageSpecification;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
-import com.emenu.utils.pagination.PaginationUtils;
+import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

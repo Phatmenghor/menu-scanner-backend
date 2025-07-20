@@ -1,7 +1,5 @@
 package com.emenu.features.messaging.models;
 
-import com.emenu.enums.MessageStatus;
-import com.emenu.enums.MessageType;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

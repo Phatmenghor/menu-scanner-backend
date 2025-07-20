@@ -1,7 +1,5 @@
 package com.emenu.features.messaging.dto.response;
 
-import com.emenu.enums.MessageStatus;
-import com.emenu.enums.MessageType;
 import lombok.Data;
 
 import java.time.LocalDateTime;

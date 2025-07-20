@@ -1,8 +1,6 @@
 package com.emenu.config;
 
-import com.emenu.enums.RoleEnum;
 import com.emenu.features.auth.models.Role;
-import com.emenu.features.auth.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

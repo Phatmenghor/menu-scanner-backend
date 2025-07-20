@@ -40,6 +40,9 @@ public class Business extends BaseUUIDEntity {
     @OneToMany(mappedBy = "business", cascade = CascadeType.ALL)
     private List<User> users;
 
+    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL)
+    private List<Subscription> subscriptions;
+
     public boolean isActive() {
         return BusinessStatus.ACTIVE.equals(status);
     }

@@ -1,11 +1,7 @@
 package com.emenu.features.auth.service;
 
-import com.emenu.features.auth.dto.request.LoginRequest;
-import com.emenu.features.auth.dto.request.PasswordChangeRequest;
-import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
-import com.emenu.features.auth.dto.response.WelcomeMessageRequest;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
 
 public interface AuthService {
@@ -14,10 +10,6 @@ public interface AuthService {
     void logout();
     void changePassword(PasswordChangeRequest request);
     void forgotPassword(String email);
-    void resetPassword(String token, String newPassword);
-    void verifyEmail(String token);
-    void resendVerification(String email);
     UserResponse getCurrentUserProfile();
     UserResponse updateCurrentUserProfile(UserUpdateRequest request);
-    void sendCustomWelcomeMessage(WelcomeMessageRequest request);
 }

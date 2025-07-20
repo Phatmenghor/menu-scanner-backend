@@ -1,13 +1,8 @@
 package com.emenu.features.auth.controller;
 
-import com.emenu.features.auth.dto.request.LoginRequest;
-import com.emenu.features.auth.dto.request.PasswordChangeRequest;
-import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
-import com.emenu.features.auth.dto.response.WelcomeMessageRequest;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
-import com.emenu.features.auth.service.AuthService;
 import com.emenu.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +24,7 @@ public class AuthController {
         log.info("Registration request for email: {}", request.getEmail());
         LoginResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Registration successful. Welcome message sent!", response));
+                .body(ApiResponse.success("Registration successful", response));
     }
 
     @PostMapping("/login")
@@ -57,30 +52,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestParam String email) {
         log.info("Forgot password request for email: {}", email);
         authService.forgotPassword(email);
-        return ResponseEntity.ok(ApiResponse.success("Password reset instructions sent to your email", null));
-    }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(
-            @RequestParam String token,
-            @RequestParam String newPassword) {
-        log.info("Password reset request");
-        authService.resetPassword(token, newPassword);
-        return ResponseEntity.ok(ApiResponse.success("Password reset successfully", null));
-    }
-
-    @GetMapping("/verify-email")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam String token) {
-        log.info("Email verification request");
-        authService.verifyEmail(token);
-        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", null));
-    }
-
-    @PostMapping("/resend-verification")
-    public ResponseEntity<ApiResponse<Void>> resendVerification(@RequestParam String email) {
-        log.info("Resend verification request for email: {}", email);
-        authService.resendVerification(email);
-        return ResponseEntity.ok(ApiResponse.success("Verification email sent", null));
+        return ResponseEntity.ok(ApiResponse.success("Password reset instructions sent", null));
     }
 
     @GetMapping("/profile")
@@ -91,18 +63,9 @@ public class AuthController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<ApiResponse<UserResponse>> updateProfile(
-            @Valid @RequestBody UserUpdateRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> updateProfile(@Valid @RequestBody UserUpdateRequest request) {
         log.info("Update profile request");
         UserResponse profile = authService.updateCurrentUserProfile(request);
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", profile));
-    }
-
-    @PostMapping("/send-welcome-message")
-    public ResponseEntity<ApiResponse<Void>> sendCustomWelcomeMessage(
-            @Valid @RequestBody WelcomeMessageRequest request) {
-        log.info("Sending custom welcome message");
-        authService.sendCustomWelcomeMessage(request);
-        return ResponseEntity.ok(ApiResponse.success("Welcome message sent successfully", null));
     }
 }

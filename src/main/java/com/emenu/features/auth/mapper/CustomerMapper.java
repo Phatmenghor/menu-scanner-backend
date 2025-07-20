@@ -1,15 +1,22 @@
 package com.emenu.features.auth.mapper;
 
-import com.emenu.features.auth.dto.request.CustomerCreateRequest;
-import com.emenu.features.auth.dto.response.CustomerResponse;
-import com.emenu.features.auth.dto.update.CustomerUpdateRequest;
+import com.emenu.features.auth.dto.request.UserCreateRequest;
+import com.emenu.features.auth.dto.response.UserResponse;
+import com.emenu.features.auth.dto.update.UserUpdateRequest;
 import com.emenu.features.auth.models.User;
+import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface CustomerMapper {
+public abstract class CustomerMapper {
+
+    @Autowired
+    protected PaginationMapper paginationMapper;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "userType", constant = "CUSTOMER")
@@ -28,10 +35,10 @@ public interface CustomerMapper {
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "accountStatus", constant = "ACTIVE")
     @Mapping(target = "notes", ignore = true)
-    User toEntity(CustomerCreateRequest request);
+    public abstract User toEntity(UserCreateRequest request);
 
-    CustomerResponse toResponse(User user);
-    List<CustomerResponse> toResponseList(List<User> users);
+    public abstract UserResponse toResponse(User user);
+    public abstract List<UserResponse> toResponseList(List<User> users);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
@@ -52,10 +59,15 @@ public interface CustomerMapper {
     @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "notes", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
-    void updateEntity(CustomerUpdateRequest request, @MappingTarget User user);
+    public abstract void updateEntity(UserUpdateRequest request, @MappingTarget User user);
 
     @AfterMapping
-    default void setFullName(@MappingTarget CustomerResponse response, User user) {
+    protected void setFullName(@MappingTarget UserResponse response, User user) {
         response.setFullName(user.getFullName());
+    }
+
+    // ✅ UNIVERSAL PAGINATION MAPPER USAGE
+    public PaginationResponse<UserResponse> toPaginationResponse(Page<User> customerPage) {
+        return paginationMapper.toPaginationResponse(customerPage, this::toResponseList);
     }
 }

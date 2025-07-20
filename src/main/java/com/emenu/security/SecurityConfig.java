@@ -71,8 +71,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/customers/me/**").hasRole("CUSTOMER")
                         .requestMatchers("/api/v1/customers/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER")
 
-                        // Messaging system
-                        .requestMatchers("/api/v1/messages/**").authenticated()
+                        // Subscription & Payment endpoints
+                        .requestMatchers("/api/v1/subscriptions/**").authenticated()
+                        .requestMatchers("/api/v1/payments/**").authenticated()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()

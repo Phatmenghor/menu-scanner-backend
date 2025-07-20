@@ -1,7 +1,5 @@
 package com.emenu.features.messaging.repository;
 
-import com.emenu.enums.MessageStatus;
-import com.emenu.enums.MessageType;
 import com.emenu.features.messaging.models.Message;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

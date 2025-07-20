@@ -56,4 +56,31 @@ public class SecurityUtils {
             return false;
         }
     }
+
+    public boolean isPlatformUser() {
+        try {
+            User currentUser = getCurrentUser();
+            return currentUser.isPlatformUser();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isBusinessUser() {
+        try {
+            User currentUser = getCurrentUser();
+            return currentUser.isBusinessUser();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isCustomer() {
+        try {
+            User currentUser = getCurrentUser();
+            return currentUser.isCustomer();
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }
