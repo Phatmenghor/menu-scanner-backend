@@ -4,8 +4,7 @@ public enum AccountStatus {
     ACTIVE("Active"),
     INACTIVE("Inactive"),
     LOCKED("Locked"),
-    SUSPENDED("Suspended"),
-    PENDING_VERIFICATION("Pending Verification");
+    SUSPENDED("Suspended");
 
     private final String description;
 

@@ -3,7 +3,7 @@ package com.emenu.features.audit.service.impl;
 import com.emenu.features.audit.domain.AuditLog;
 import com.emenu.features.audit.repository.AuditLogRepository;
 import com.emenu.features.audit.service.AuditService;
-import com.emenu.features.user_management.models.User;
+import com.emenu.features.auth.models.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +31,7 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     @Async
-    public void logUserAction(com.emenu.features.user_management.models.User user, String action, String entityType, UUID entityId, String description, Object oldValues, Object newValues) {
+    public void logUserAction(User user, String action, String entityType, UUID entityId, String description, Object oldValues, Object newValues) {
         try {
             AuditLog auditLog = new AuditLog();
             auditLog.setUserId(user.getId());

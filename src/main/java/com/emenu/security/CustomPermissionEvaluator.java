@@ -1,7 +1,7 @@
 package com.emenu.security;
 
-import com.emenu.features.user_management.models.User;
-import com.emenu.features.user_management.repository.UserRepository;
+import com.emenu.features.auth.models.User;
+import com.emenu.features.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.PermissionEvaluator;
@@ -76,7 +76,7 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
     }
 
     private boolean hasUserPermission(User currentUser, UUID targetUserId, String permission) {
-        // Platform admins can do anything
+        // Platform users can do anything
         if (currentUser.isPlatformUser()) {
             return true;
         }
@@ -87,9 +87,9 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
         }
 
         // Business owners can manage their staff
-        if (currentUser.isBusinessUser()) {
+        if (currentUser.isBusinessUser() && currentUser.hasBusinessAccess()) {
             User targetUser = userRepository.findByIdAndIsDeletedFalse(targetUserId).orElse(null);
-            if (targetUser != null && currentUser.canAccessBusiness(targetUser.getBusinessId())) {
+            if (targetUser != null && currentUser.getBusinessId().equals(targetUser.getBusinessId())) {
                 return permission.startsWith("user:read") || permission.startsWith("user:update");
             }
         }
@@ -98,13 +98,14 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
     }
 
     private boolean hasBusinessPermission(User currentUser, UUID businessId, String permission) {
-        // Platform admins can access all businesses
+        // Platform users can access all businesses
         if (currentUser.isPlatformUser()) {
             return true;
         }
 
         // Business users can access their own business
-        if (currentUser.isBusinessUser() && currentUser.canAccessBusiness(businessId)) {
+        if (currentUser.isBusinessUser() && currentUser.getBusinessId() != null && 
+            currentUser.getBusinessId().equals(businessId)) {
             return true;
         }
 

@@ -1,4 +1,4 @@
-# application.yml
+# application.yml - Simplified Configuration
 spring:
   application:
     name: emenu-saas-platform
@@ -6,206 +6,105 @@ spring:
   profiles:
     active: dev
 
-  # File uploads - Reasonable limits for production
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 50MB
-
-  # Database Configuration
+  # Database Configuration - Simple PostgreSQL setup
   datasource:
     url: jdbc:postgresql://152.42.219.13:5432/e_menu_platform
     username: admin
     password: Hour1819
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 20
+      maximum-pool-size: 10
       minimum-idle: 5
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
 
-  # JPA Configuration - Fixed for PostgreSQL
+  # JPA Configuration - Simple setup
   jpa:
     hibernate:
-      ddl-auto: create-drop # Changed from create-drop to update for stability
+      ddl-auto: create
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-        use_sql_comments: false
-        jdbc:
-          batch_size: 20
-        order_inserts: true
-        order_updates: true
-        # PostgreSQL specific settings
-        default_schema: public
-        globally_quoted_identifiers: false
-        # UUID settings for PostgreSQL
-        id:
-          uuid_generator: org.hibernate.id.UUIDGenerator
 
-  # Redis Cache Configuration (optional)
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      timeout: 2000ms
-      database: 0
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
-
-  # Cache Configuration
+  # Cache Configuration - Simple Caffeine
   cache:
     type: caffeine
     caffeine:
-      spec: maximumSize=1000,expireAfterWrite=1h
+      spec: maximumSize=500,expireAfterWrite=30m
 
-  # Mail Configuration
+  # Mail Configuration - Optional
   mail:
     host: smtp.gmail.com
     port: 587
-    username: your-email@gmail.com
-    password: your-app-password
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-            required: true
-        transport:
-          protocol: smtp
-
-  # Async Configuration
-  task:
-    execution:
-      pool:
-        core-size: 5
-        max-size: 20
-        queue-capacity: 100
-      thread-name-prefix: emenu-async-
 
 # Server Configuration
 server:
   port: 8080
   servlet:
     context-path: /
-  compression:
-    enabled: true
-    mime-types: application/json,application/xml,text/html,text/xml,text/plain
-  http2:
-    enabled: true
 
 # JWT Configuration
 jwt:
   secret: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
-  expiration: 86400000 # 24 hours in milliseconds
-  refresh-expiration: 2592000000 # 30 days in milliseconds
+  expiration: 86400000 # 24 hours
 
 # Swagger Configuration
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
-    operations-sorter: method
-    tags-sorter: alpha
-    doc-expansion: none
-    display-request-duration: true
   api-docs:
     path: /v3/api-docs
     enabled: true
-  packagesToScan: com.emenu
 
 # Management/Actuator Configuration
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,env
+        include: health,info,metrics
       base-path: /actuator
   endpoint:
     health:
       show-details: when-authorized
-      show-components: always
-  info:
-    env:
-      enabled: true
-    git:
-      mode: full
 
-# Application specific configuration
+# Application Configuration
 app:
   name: "E-Menu SaaS Platform"
   version: "1.0.0"
-  description: "Complete E-Menu SaaS Platform for Restaurant Management"
+  description: "Simple E-Menu Platform for Restaurant Management"
 
-  # Data initialization settings
+  # Data initialization
   init:
     create-admin: true
     admin-email: "phatmenghor19@gmail.com"
     admin-password: "88889999"
 
-  # Security settings
-  security:
-    password:
-      min-length: 8
-      require-uppercase: true
-      require-lowercase: true
-      require-numbers: true
-      require-special-chars: true
-    account:
-      max-login-attempts: 5
-      lockout-duration: 30 # minutes
-      verification-token-expiry: 24 # hours
-      password-reset-token-expiry: 1 # hours
-      phone-verification-expiry: 15 # minutes
+  # CORS Configuration
+  cors:
+    allowed-origins: "http://localhost:3000,http://localhost:4200"
 
-  # Notification settings
+  # Simple notification settings
   notifications:
     email:
       enabled: true
       from: "noreply@emenu-platform.com"
-      templates:
-        welcome: "welcome"
-        verification: "email-verification"
-        password-reset: "password-reset"
-        account-locked: "account-locked"
-    telegram:
-      enabled: true
-      bot-token: "YOUR_TELEGRAM_BOT_TOKEN"
-      api-url: "https://api.telegram.org/bot"
 
-  # Business rules
+  # Business settings
   business:
     free-trial-days: 30
-    subscription:
-      grace-period-days: 7
-      reminder-days: [30, 7, 1] # Days before expiry to send reminders
-    loyalty:
-      points-per-dollar: 1.0
-      tier-upgrade-notification: true
-
-  # File storage
-  storage:
-    type: local # local, s3, cloudinary
-    local:
-      upload-dir: uploads/
-      max-file-size: 10MB
-      allowed-types: [jpg, jpeg, png, gif, pdf, docx]
-    s3:
-      bucket-name: "emenu-platform-files"
-      region: "us-east-1"
-      access-key: "YOUR_ACCESS_KEY"
-      secret-key: "YOUR_SECRET_KEY"
-
-  # CORS Configuration
-  cors:
-    allowed-origins: "http://localhost:3000,http://localhost:4200,https://your-frontend-domain.com"
+    default-plan: FREE
 
 # Logging Configuration
 logging:
@@ -213,22 +112,11 @@ logging:
     com.emenu: DEBUG
     org.springframework.security: INFO
     org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: INFO
-    org.springframework: INFO
-    org.hibernate: WARN
-    org.postgresql: WARN
+    org.hibernate.SQL: INFO
     root: INFO
 
-  # File logging
-  file:
-    name: logs/emenu-platform.log
-    max-size: 100MB
-    max-history: 30
-
   pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
 ---
 # Development Profile
@@ -240,26 +128,12 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create-drop # In dev, recreate schema each time
-    properties:
-      hibernate:
-        format_sql: true
-
-  h2:
-    console:
-      enabled: false
-
-app:
-  security:
-    account:
-      max-login-attempts: 10 # More lenient for development
+      ddl-auto: create-drop
 
 logging:
   level:
-    com.emenu: TRACE
-    org.springframework.security: DEBUG
+    com.emenu: DEBUG
     org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 ---
 # Production Profile
@@ -270,64 +144,19 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate # Don't auto-create in production
+      ddl-auto: validate
     show-sql: false
-    properties:
-      hibernate:
-        format_sql: false
 
-  # Production database with connection pooling
   datasource:
     hikari:
-      maximum-pool-size: 50
+      maximum-pool-size: 20
       minimum-idle: 10
 
-# Production security settings
 app:
-  security:
-    account:
-      max-login-attempts: 3 # Stricter for production
-
   init:
-    create-admin: false # Don't auto-create admin in production
+    create-admin: false
 
 logging:
   level:
     com.emenu: INFO
-    org.springframework: WARN
-    org.hibernate: WARN
     root: WARN
-
----
-# Test Profile
-spring:
-  config:
-    activate:
-      on-profile: test
-
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    database-platform: org.hibernate.dialect.H2Dialect
-
-  h2:
-    console:
-      enabled: true
-
-  cache:
-    type: none
-
-app:
-  init:
-    create-admin: true # Create admin for testing
-
-logging:
-  level:
-    com.emenu: DEBUG
-    org.springframework.test: DEBUG

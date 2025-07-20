@@ -1,8 +1,8 @@
 package com.emenu.security;
 
 import com.emenu.exception.UserNotFoundException;
-import com.emenu.features.user_management.models.User;
-import com.emenu.features.user_management.repository.UserRepository;
+import com.emenu.features.auth.models.User;
+import com.emenu.features.auth.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -45,5 +45,15 @@ public class SecurityUtils {
 
     public String getCurrentUserEmail() {
         return getCurrentUser().getEmail();
+    }
+
+    public boolean hasBusinessAccess(UUID businessId) {
+        try {
+            User currentUser = getCurrentUser();
+            return currentUser.getBusinessId() != null && 
+                   currentUser.getBusinessId().equals(businessId);
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

@@ -2,7 +2,7 @@ package com.emenu.enums;
 
 public enum SubscriptionStatus {
     ACTIVE("Active"),
-    PENDING("Pending"),
+    TRIAL("Trial Period"),
     EXPIRED("Expired"),
     CANCELLED("Cancelled"),
     SUSPENDED("Suspended");

@@ -1,10 +1,10 @@
 package com.emenu.config;
 
 import com.emenu.enums.*;
-import com.emenu.features.user_management.models.Role;
-import com.emenu.features.user_management.models.User;
-import com.emenu.features.user_management.repository.RoleRepository;
-import com.emenu.features.user_management.repository.UserRepository;
+import com.emenu.features.auth.models.Role;
+import com.emenu.features.auth.models.User;
+import com.emenu.features.auth.repository.RoleRepository;
+import com.emenu.features.auth.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,8 +15,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
