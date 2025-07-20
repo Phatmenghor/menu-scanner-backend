@@ -29,7 +29,27 @@ public abstract class BusinessMapper {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
-    @Mapping(target = "status", constant = "ACTIVE")
+    @Mapping(target = "status", constant = "PENDING")
+    @Mapping(target = "logoUrl", ignore = true)
+    @Mapping(target = "website", ignore = true)
+    @Mapping(target = "businessType", ignore = true)
+    @Mapping(target = "cuisineType", ignore = true)
+    @Mapping(target = "operatingHours", ignore = true)
+    @Mapping(target = "facebookUrl", ignore = true)
+    @Mapping(target = "instagramUrl", ignore = true)
+    @Mapping(target = "telegramContact", ignore = true)
+    @Mapping(target = "usdToKhrRate", constant = "4000.0")
+    @Mapping(target = "currency", constant = "USD")
+    @Mapping(target = "timezone", constant = "Asia/Phnom_Penh")
+    @Mapping(target = "taxRate", constant = "0.0")
+    @Mapping(target = "serviceChargeRate", constant = "0.0")
+    @Mapping(target = "acceptsOnlinePayment", constant = "false")
+    @Mapping(target = "acceptsCashPayment", constant = "true")
+    @Mapping(target = "acceptsBankTransfer", constant = "false")
+    @Mapping(target = "acceptsMobilePayment", constant = "false")
+    @Mapping(target = "subscriptionStartDate", ignore = true)
+    @Mapping(target = "subscriptionEndDate", ignore = true)
+    @Mapping(target = "isSubscriptionActive", constant = "false")
     public abstract Business toEntity(BusinessCreateRequest request);
 
     public abstract BusinessResponse toResponse(Business business);
@@ -47,7 +67,42 @@ public abstract class BusinessMapper {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
+    @Mapping(target = "logoUrl", ignore = true)
+    @Mapping(target = "website", ignore = true)
+    @Mapping(target = "businessType", ignore = true)
+    @Mapping(target = "cuisineType", ignore = true)
+    @Mapping(target = "operatingHours", ignore = true)
+    @Mapping(target = "facebookUrl", ignore = true)
+    @Mapping(target = "instagramUrl", ignore = true)
+    @Mapping(target = "telegramContact", ignore = true)
+    @Mapping(target = "usdToKhrRate", ignore = true)
+    @Mapping(target = "currency", ignore = true)
+    @Mapping(target = "timezone", ignore = true)
+    @Mapping(target = "taxRate", ignore = true)
+    @Mapping(target = "serviceChargeRate", ignore = true)
+    @Mapping(target = "acceptsOnlinePayment", ignore = true)
+    @Mapping(target = "acceptsCashPayment", ignore = true)
+    @Mapping(target = "acceptsBankTransfer", ignore = true)
+    @Mapping(target = "acceptsMobilePayment", ignore = true)
+    @Mapping(target = "subscriptionStartDate", ignore = true)
+    @Mapping(target = "subscriptionEndDate", ignore = true)
+    @Mapping(target = "isSubscriptionActive", ignore = true)
     public abstract void updateEntity(BusinessUpdateRequest request, @MappingTarget Business business);
+
+    @AfterMapping
+    protected void setCalculatedFields(@MappingTarget BusinessResponse response, Business business) {
+        // Set subscription status
+        response.setHasActiveSubscription(business.hasActiveSubscription());
+        response.setIsExpiringSoon(business.isSubscriptionExpiringSoon(7));
+        
+        // Get current subscription plan
+        if (business.hasActiveSubscription() && business.getSubscriptions() != null) {
+            business.getSubscriptions().stream()
+                    .filter(sub -> sub.getIsActive() && !sub.isExpired())
+                    .findFirst()
+                    .ifPresent(subscription -> response.setCurrentSubscriptionPlan(subscription.getPlan().getDisplayName()));
+        }
+    }
 
     // ✅ UNIVERSAL PAGINATION MAPPER USAGE
     public PaginationResponse<BusinessResponse> toPaginationResponse(Page<Business> businessPage) {

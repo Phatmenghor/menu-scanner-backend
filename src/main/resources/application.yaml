@@ -21,7 +21,7 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: create # Use 'update' for development, 'validate' for production
+      ddl-auto: update # Use 'update' for development, 'validate' for production
     show-sql: false
     open-in-view: false
     properties:
