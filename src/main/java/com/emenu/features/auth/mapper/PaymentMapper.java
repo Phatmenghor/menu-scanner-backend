@@ -35,7 +35,8 @@ public abstract class PaymentMapper {
     public abstract Payment toEntity(PaymentCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
-    @Mapping(source = "subscriptionPlan.displayName", target = "subscriptionPlanDisplay")
+    @Mapping(source = "plan.displayName", target = "planDisplayName")
+    @Mapping(source = "plan.name", target = "planName")
     public abstract PaymentResponse toResponse(Payment payment);
 
     public abstract List<PaymentResponse> toResponseList(List<Payment> payments);

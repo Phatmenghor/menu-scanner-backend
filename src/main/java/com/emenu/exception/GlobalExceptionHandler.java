@@ -1,5 +1,7 @@
 package com.emenu.exception;
 
+import com.emenu.exception.custom.AccountInactiveException;
+import com.emenu.exception.custom.AccountSuspendedException;
 import com.emenu.exception.custom.CustomException;
 import com.emenu.exception.custom.UserNotFoundException;
 import com.emenu.exception.custom.ValidationException;

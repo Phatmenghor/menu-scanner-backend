@@ -3,8 +3,7 @@ package com.emenu.features.auth.service.impl;
 import com.emenu.enums.AccountStatus;
 import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
-import com.emenu.exception.custom.UserNotFoundException;
-import com.emenu.exception.custom.ValidationException;
+import com.emenu.exception.custom.*;
 import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.request.LoginRequest;
 import com.emenu.features.auth.dto.request.PasswordChangeRequest;
@@ -29,7 +28,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.security.auth.login.AccountLockedException;
 import java.util.List;
 import java.util.stream.Collectors;
 

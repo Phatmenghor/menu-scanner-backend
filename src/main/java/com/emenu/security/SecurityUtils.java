@@ -1,6 +1,8 @@
 package com.emenu.security;
 
 import com.emenu.enums.AccountStatus;
+import com.emenu.exception.custom.AccountInactiveException;
+import com.emenu.exception.custom.AccountSuspendedException;
 import com.emenu.exception.custom.UserNotFoundException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.UserRepository;
@@ -33,7 +35,7 @@ public class SecurityUtils {
 
         // Double-check account status for security
         validateAccountStatus(user);
-        
+
         return user;
     }
 
@@ -45,7 +47,11 @@ public class SecurityUtils {
             }
             case LOCKED -> {
                 log.warn("Access attempt by locked user: {}", user.getEmail());
-                throw new AccountLockedException("Account is locked due to security reasons. Please contact support.");
+                try {
+                    throw new AccountLockedException("Account is locked due to security reasons. Please contact support.");
+                } catch (AccountLockedException e) {
+                    throw new RuntimeException(e);
+                }
             }
             case SUSPENDED -> {
                 log.warn("Access attempt by suspended user: {}", user.getEmail());
@@ -81,8 +87,8 @@ public class SecurityUtils {
     public boolean hasBusinessAccess(UUID businessId) {
         try {
             User currentUser = getCurrentUser();
-            return currentUser.getBusinessId() != null && 
-                   currentUser.getBusinessId().equals(businessId);
+            return currentUser.getBusinessId() != null &&
+                    currentUser.getBusinessId().equals(businessId);
         } catch (Exception e) {
             return false;
         }
@@ -116,9 +122,9 @@ public class SecurityUtils {
     }
 
     public boolean canUserLogin(User user) {
-        return user != null && 
-               !user.getIsDeleted() && 
-               AccountStatus.ACTIVE.equals(user.getAccountStatus());
+        return user != null &&
+                !user.getIsDeleted() &&
+                AccountStatus.ACTIVE.equals(user.getAccountStatus());
     }
 
     public String getAccountStatusMessage(AccountStatus status) {
