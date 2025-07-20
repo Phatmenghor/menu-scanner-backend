@@ -1,7 +1,12 @@
 package com.emenu.config;
 
+import com.emenu.enums.RoleEnum;
+import com.emenu.enums.UserType;
+import com.emenu.enums.AccountStatus;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
+import com.emenu.features.auth.repository.RoleRepository;
+import com.emenu.features.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

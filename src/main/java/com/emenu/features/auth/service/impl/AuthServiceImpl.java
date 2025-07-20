@@ -5,6 +5,9 @@ import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
 import com.emenu.exception.UserNotFoundException;
 import com.emenu.exception.ValidationException;
+import com.emenu.features.auth.dto.request.RegisterRequest;
+import com.emenu.features.auth.dto.request.LoginRequest;
+import com.emenu.features.auth.dto.request.PasswordChangeRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
@@ -138,7 +141,7 @@ public class AuthServiceImpl implements AuthService {
         // 1. Generate a password reset token
         // 2. Store it with expiration
         // 3. Send email with reset link
-        
+
         log.info("Password reset requested for: {}", email);
         // For now, just log it
     }

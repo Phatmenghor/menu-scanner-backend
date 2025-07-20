@@ -1,8 +1,12 @@
 package com.emenu.features.auth.controller;
 
+import com.emenu.features.auth.dto.request.RegisterRequest;
+import com.emenu.features.auth.dto.request.LoginRequest;
+import com.emenu.features.auth.dto.request.PasswordChangeRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
+import com.emenu.features.auth.service.AuthService;
 import com.emenu.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

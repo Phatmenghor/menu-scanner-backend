@@ -1,8 +1,10 @@
 package com.emenu.features.auth.mapper;
 
+import com.emenu.enums.RoleEnum;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
+import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
@@ -11,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class CustomerMapper {
@@ -37,7 +40,10 @@ public abstract class CustomerMapper {
     @Mapping(target = "notes", ignore = true)
     public abstract User toEntity(UserCreateRequest request);
 
+    @Mapping(source = "business.name", target = "businessName")
+    @Mapping(source = "roles", target = "roles", qualifiedByName = "rolesToRoleEnums")
     public abstract UserResponse toResponse(User user);
+
     public abstract List<UserResponse> toResponseList(List<User> users);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -60,6 +66,16 @@ public abstract class CustomerMapper {
     @Mapping(target = "notes", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
     public abstract void updateEntity(UserUpdateRequest request, @MappingTarget User user);
+
+    @Named("rolesToRoleEnums")
+    protected List<RoleEnum> rolesToRoleEnums(List<Role> roles) {
+        if (roles == null) {
+            return null;
+        }
+        return roles.stream()
+                .map(Role::getName)
+                .collect(Collectors.toList());
+    }
 
     @AfterMapping
     protected void setFullName(@MappingTarget UserResponse response, User user) {
