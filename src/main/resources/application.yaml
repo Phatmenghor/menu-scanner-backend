@@ -1,4 +1,4 @@
-# application.yml - Simplified Configuration
+# application.yml - Production Ready Configuration
 spring:
   application:
     name: emenu-saas-platform
@@ -6,36 +6,43 @@ spring:
   profiles:
     active: dev
 
-  # Database Configuration - Simple PostgreSQL setup
+  # Database Configuration
   datasource:
     url: jdbc:postgresql://152.42.219.13:5432/e_menu_platform
     username: admin
     password: Hour1819
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 20
       minimum-idle: 5
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
+      leak-detection-threshold: 60000
 
-  # JPA Configuration - Simple setup
+  # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        use_sql_comments: false
+        jdbc:
+          batch_size: 25
+          order_inserts: true
+          order_updates: true
 
-  # Cache Configuration - Simple Caffeine
+  # Cache Configuration
   cache:
     type: caffeine
     caffeine:
-      spec: maximumSize=500,expireAfterWrite=30m
+      spec: maximumSize=1000,expireAfterWrite=1h
 
-  # Mail Configuration - Optional
+  # Email Configuration (Optional)
   mail:
     host: smtp.gmail.com
     port: 587
@@ -47,45 +54,59 @@ spring:
           auth: true
           starttls:
             enable: true
+            required: true
 
 # Server Configuration
 server:
   port: 8080
   servlet:
     context-path: /
+  compression:
+    enabled: true
+  http2:
+    enabled: true
 
 # JWT Configuration
 jwt:
   secret: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
   expiration: 86400000 # 24 hours
 
-# Swagger Configuration
+# API Documentation
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
   api-docs:
     path: /v3/api-docs
     enabled: true
+  show-actuator: false
 
-# Management/Actuator Configuration
+# Actuator Configuration
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
       base-path: /actuator
   endpoint:
     health:
       show-details: when-authorized
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
 
 # Application Configuration
 app:
   name: "E-Menu SaaS Platform"
   version: "1.0.0"
-  description: "Simple E-Menu Platform for Restaurant Management"
+  description: "Complete SaaS Platform for Restaurant Management"
 
-  # Data initialization
+  # Data Initialization
   init:
     create-admin: true
     admin-email: "phatmenghor19@gmail.com"
@@ -93,30 +114,42 @@ app:
 
   # CORS Configuration
   cors:
-    allowed-origins: "http://localhost:3000,http://localhost:4200"
+    allowed-origins: "http://localhost:3000,http://localhost:4200,http://localhost:5173"
+    allowed-methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+    allowed-headers: "*"
+    allow-credentials: true
 
-  # Simple notification settings
+  # Notification Settings
   notifications:
     email:
       enabled: true
       from: "noreply@emenu-platform.com"
+    telegram:
+      enabled: false
+      bot-token: ${TELEGRAM_BOT_TOKEN:}
 
-  # Business settings
+  # Business Settings
   business:
     free-trial-days: 30
     default-plan: FREE
+    max-failed-login-attempts: 5
+    account-lock-duration-minutes: 30
 
 # Logging Configuration
 logging:
   level:
-    com.emenu: DEBUG
-    org.springframework.security: INFO
-    org.springframework.web: INFO
-    org.hibernate.SQL: INFO
+    com.emenu: INFO
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
     root: INFO
-
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/emenu-platform.log
+    max-size: 100MB
+    max-history: 30
 
 ---
 # Development Profile
@@ -128,12 +161,22 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
+
+  h2:
+    console:
+      enabled: false
 
 logging:
   level:
     com.emenu: DEBUG
     org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+app:
+  notifications:
+    email:
+      enabled: false # Disable in development
 
 ---
 # Production Profile
@@ -149,8 +192,11 @@ spring:
 
   datasource:
     hikari:
-      maximum-pool-size: 20
+      maximum-pool-size: 30
       minimum-idle: 10
+
+server:
+  port: 8080
 
 app:
   init:
@@ -160,3 +206,5 @@ logging:
   level:
     com.emenu: INFO
     root: WARN
+  file:
+    name: /var/log/emenu-platform/application.log

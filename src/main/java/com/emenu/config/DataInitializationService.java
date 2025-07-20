@@ -1,11 +1,13 @@
 package com.emenu.config;
 
-import com.emenu.enums.*;
+import com.emenu.enums.AccountStatus;
+import com.emenu.enums.CustomerTier;
+import com.emenu.enums.RoleEnum;
+import com.emenu.enums.UserType;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +16,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,7 +24,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Order(2) // Run after DatabaseInitializer
+@Order(2)
 public class DataInitializationService {
 
     private final RoleRepository roleRepository;
@@ -42,14 +45,10 @@ public class DataInitializationService {
     public void initializeData() {
         try {
             log.info("Starting data initialization...");
-
-            // Ensure roles exist first
             ensureRolesExist();
-
             if (createDefaultAdmin) {
                 initializeDefaultUsers();
             }
-
             log.info("Data initialization completed.");
         } catch (Exception e) {
             log.error("Error during data initialization: {}", e.getMessage(), e);
@@ -59,7 +58,6 @@ public class DataInitializationService {
     private void ensureRolesExist() {
         try {
             log.info("Ensuring system roles exist...");
-
             Arrays.stream(RoleEnum.values()).forEach(roleEnum -> {
                 try {
                     if (!roleRepository.existsByName(roleEnum)) {
@@ -71,7 +69,6 @@ public class DataInitializationService {
                     log.error("Error ensuring role exists {}: {}", roleEnum.name(), e.getMessage());
                 }
             });
-
             log.info("System roles verification completed.");
         } catch (Exception e) {
             log.error("Error during roles verification: {}", e.getMessage(), e);
@@ -81,16 +78,9 @@ public class DataInitializationService {
     private void initializeDefaultUsers() {
         try {
             log.info("Initializing default users...");
-
-            // Create platform owner
             createPlatformOwner();
-
-            // Create demo business owner
             createDemoBusinessOwner();
-
-            // Create demo customer
             createDemoCustomer();
-
             log.info("Default users initialization completed.");
         } catch (Exception e) {
             log.error("Error initializing default users: {}", e.getMessage(), e);
@@ -107,8 +97,9 @@ public class DataInitializationService {
                 admin.setLastName("Administrator");
                 admin.setUserType(UserType.PLATFORM_USER);
                 admin.setPosition("Platform Owner");
+                admin.setAccountStatus(AccountStatus.ACTIVE);
+                admin.setEmailVerified(true);
 
-                // Set platform owner role
                 Role platformOwnerRole = roleRepository.findByName(RoleEnum.PLATFORM_OWNER)
                         .orElseThrow(() -> new RuntimeException("Platform owner role not found"));
                 admin.setRoles(List.of(platformOwnerRole));
@@ -137,8 +128,8 @@ public class DataInitializationService {
                 businessOwner.setPhoneNumber("+1234567890");
                 businessOwner.setPosition("Owner");
                 businessOwner.setAddress("123 Demo Street");
+                businessOwner.setEmailVerified(true);
 
-                // Set business owner role
                 Role businessOwnerRole = roleRepository.findByName(RoleEnum.BUSINESS_OWNER)
                         .orElseThrow(() -> new RuntimeException("Business owner role not found"));
                 businessOwner.setRoles(List.of(businessOwnerRole));
@@ -167,8 +158,8 @@ public class DataInitializationService {
                 customer.setPhoneNumber("+1987654321");
                 customer.setCustomerTier(CustomerTier.GOLD);
                 customer.setLoyaltyPoints(750);
+                customer.setEmailVerified(true);
 
-                // Set customer role
                 Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
                         .orElseThrow(() -> new RuntimeException("Customer role not found"));
                 customer.setRoles(List.of(customerRole));

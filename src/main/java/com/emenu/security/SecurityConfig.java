@@ -53,23 +53,40 @@ public class SecurityConfig {
 
                         // Documentation endpoints
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
 
                         // Actuator endpoints (restricted to localhost and private networks)
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/health/**").permitAll()
                         .requestMatchers("/actuator/**").hasRole("PLATFORM_OWNER")
 
-                        // Platform administration
-                        .requestMatchers("/api/v1/admin/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_MANAGER")
+                        // Platform administration - Complete platform management
+                        .requestMatchers("/api/v1/platform/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN")
+                        .requestMatchers("/api/v1/admin/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN")
 
-                        // User management
-                        .requestMatchers("/api/v1/users/me").authenticated()
-                        .requestMatchers("/api/v1/users/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_MANAGER", "BUSINESS_OWNER")
+                        // User management - Enhanced permissions
+                        .requestMatchers("/api/v1/users/me/**").authenticated()
+                        .requestMatchers("/api/v1/users/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER")
 
-                        // Business management
-                        .requestMatchers("/api/v1/businesses/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_MANAGER", "BUSINESS_OWNER", "BUSINESS_MANAGER")
+                        // Business management - Complete business operations
+                        .requestMatchers("/api/v1/business/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER", "BUSINESS_MANAGER")
+                        .requestMatchers("/api/v1/businesses/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER", "BUSINESS_MANAGER")
 
-                        // Customer endpoints
-                        .requestMatchers("/api/v1/customer/**").hasAnyRole("CUSTOMER", "VIP_CUSTOMER")
+                        // Customer management
+                        .requestMatchers("/api/v1/customers/me/**").hasAnyRole("CUSTOMER", "VIP_CUSTOMER")
+                        .requestMatchers("/api/v1/customers/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER", "BUSINESS_MANAGER")
+
+                        // Messaging system - All authenticated users can access
+                        .requestMatchers("/api/v1/messages/**").authenticated()
+
+                        // Subscription management
+                        .requestMatchers("/api/v1/subscriptions/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER")
+                        .requestMatchers("/api/v1/payments/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER")
+
+                        // Notification system
+                        .requestMatchers("/api/v1/notifications/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN")
+
+                        // Customer tier and loyalty
+                        .requestMatchers("/api/v1/loyalty/**").authenticated()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()

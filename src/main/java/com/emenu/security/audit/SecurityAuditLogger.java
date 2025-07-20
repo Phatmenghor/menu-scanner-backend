@@ -11,6 +11,8 @@ import org.springframework.security.authentication.event.AuthenticationSuccessEv
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -29,10 +31,12 @@ public class SecurityAuditLogger {
 
         auditService.logAuthenticationSuccess(username, ipAddress, userAgent);
 
-        // Update user's last login IP
+        // Update user's last login info and reset failed attempts
         userRepository.findByEmailAndIsDeletedFalse(username)
                 .ifPresent(user -> {
                     user.setLastLoginIp(ipAddress);
+                    user.setLastLoginAt(LocalDateTime.now());
+                    user.resetFailedLoginAttempts();
                     userRepository.save(user);
                 });
     }
@@ -45,23 +49,38 @@ public class SecurityAuditLogger {
         String reason = event.getException().getMessage();
 
         auditService.logAuthenticationFailure(username, ipAddress, userAgent, reason);
+
+        // Increment failed login attempts
+        userRepository.findByEmailAndIsDeletedFalse(username)
+                .ifPresent(user -> {
+                    user.incrementFailedLoginAttempts();
+                    userRepository.save(user);
+                });
     }
 
     private String getClientIpAddress() {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+        try {
+            String xForwardedFor = request.getHeader("X-Forwarded-For");
+            if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+                return xForwardedFor.split(",")[0].trim();
+            }
+            
+            String xRealIp = request.getHeader("X-Real-IP");
+            if (xRealIp != null && !xRealIp.isEmpty()) {
+                return xRealIp;
+            }
+            
+            return request.getRemoteAddr();
+        } catch (Exception e) {
+            return "unknown";
         }
-        
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        
-        return request.getRemoteAddr();
     }
 
     private String getUserAgent() {
-        return request.getHeader("User-Agent");
+        try {
+            return request.getHeader("User-Agent");
+        } catch (Exception e) {
+            return "unknown";
+        }
     }
 }
