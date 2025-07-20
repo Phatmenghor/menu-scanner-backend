@@ -1,7 +1,6 @@
 package com.emenu.features.auth.dto.update;
 
 import com.emenu.enums.AccountStatus;
-import com.emenu.enums.RoleEnum;
 import lombok.Data;
 
 @Data

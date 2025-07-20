@@ -1,8 +1,6 @@
 package com.emenu.config;
 
 import com.emenu.enums.AccountStatus;
-import com.emenu.enums.CustomerTier;
-import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
@@ -98,7 +96,6 @@ public class DataInitializationService {
                 admin.setUserType(UserType.PLATFORM_USER);
                 admin.setPosition("Platform Owner");
                 admin.setAccountStatus(AccountStatus.ACTIVE);
-                admin.setEmailVerified(true);
 
                 Role platformOwnerRole = roleRepository.findByName(RoleEnum.PLATFORM_OWNER)
                         .orElseThrow(() -> new RuntimeException("Platform owner role not found"));
@@ -128,7 +125,6 @@ public class DataInitializationService {
                 businessOwner.setPhoneNumber("+1234567890");
                 businessOwner.setPosition("Owner");
                 businessOwner.setAddress("123 Demo Street");
-                businessOwner.setEmailVerified(true);
 
                 Role businessOwnerRole = roleRepository.findByName(RoleEnum.BUSINESS_OWNER)
                         .orElseThrow(() -> new RuntimeException("Business owner role not found"));
@@ -156,9 +152,6 @@ public class DataInitializationService {
                 customer.setUserType(UserType.CUSTOMER);
                 customer.setAccountStatus(AccountStatus.ACTIVE);
                 customer.setPhoneNumber("+1987654321");
-                customer.setCustomerTier(CustomerTier.GOLD);
-                customer.setLoyaltyPoints(750);
-                customer.setEmailVerified(true);
 
                 Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
                         .orElseThrow(() -> new RuntimeException("Customer role not found"));

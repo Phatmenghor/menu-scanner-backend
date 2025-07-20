@@ -1,6 +1,5 @@
 package com.emenu.features.auth.repository;
 
-import com.emenu.enums.RoleEnum;
 import com.emenu.features.auth.models.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

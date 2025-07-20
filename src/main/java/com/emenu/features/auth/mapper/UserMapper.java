@@ -1,6 +1,5 @@
 package com.emenu.features.auth.mapper;
 
-import com.emenu.enums.RoleEnum;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.response.UserSummaryResponse;

@@ -58,9 +58,6 @@ public class Message extends BaseUUIDEntity {
     @Column(name = "business_id")
     private UUID businessId;
 
-    @Column(name = "priority")
-    private String priority = "NORMAL"; // LOW, NORMAL, HIGH, URGENT
-
     public boolean isRead() {
         return readAt != null;
     }

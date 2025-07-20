@@ -2,7 +2,6 @@ package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.AccountStatus;
 import com.emenu.enums.MessageType;
-import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
 import com.emenu.exception.UserNotFoundException;
 import com.emenu.exception.ValidationException;

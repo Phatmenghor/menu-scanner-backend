@@ -1,7 +1,7 @@
-# application.yml - Production Ready Configuration
+# application.yml - Simplified Configuration
 spring:
   application:
-    name: emenu-saas-platform
+    name: emenu-platform
 
   profiles:
     active: dev
@@ -18,7 +18,6 @@ spring:
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
-      leak-detection-threshold: 60000
 
   # JPA Configuration
   jpa:
@@ -30,11 +29,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-        use_sql_comments: false
-        jdbc:
-          batch_size: 25
-          order_inserts: true
-          order_updates: true
 
   # Cache Configuration
   cache:
@@ -54,17 +48,12 @@ spring:
           auth: true
           starttls:
             enable: true
-            required: true
 
 # Server Configuration
 server:
   port: 8080
   servlet:
     context-path: /
-  compression:
-    enabled: true
-  http2:
-    enabled: true
 
 # JWT Configuration
 jwt:
@@ -76,35 +65,26 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
-    operations-sorter: method
-    tags-sorter: alpha
   api-docs:
     path: /v3/api-docs
     enabled: true
-  show-actuator: false
 
 # Actuator Configuration
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
       base-path: /actuator
   endpoint:
     health:
       show-details: when-authorized
-      probes:
-        enabled: true
-  metrics:
-    export:
-      prometheus:
-        enabled: true
 
 # Application Configuration
 app:
-  name: "E-Menu SaaS Platform"
+  name: "E-Menu Platform"
   version: "1.0.0"
-  description: "Complete SaaS Platform for Restaurant Management"
+  description: "Simple E-Menu Platform"
 
   # Data Initialization
   init:
@@ -124,16 +104,6 @@ app:
     email:
       enabled: true
       from: "noreply@emenu-platform.com"
-    telegram:
-      enabled: false
-      bot-token: ${TELEGRAM_BOT_TOKEN:}
-
-  # Business Settings
-  business:
-    free-trial-days: 30
-    default-plan: FREE
-    max-failed-login-attempts: 5
-    account-lock-duration-minutes: 30
 
 # Logging Configuration
 logging:
@@ -145,7 +115,6 @@ logging:
     root: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   file:
     name: logs/emenu-platform.log
     max-size: 100MB
@@ -163,15 +132,10 @@ spring:
     hibernate:
       ddl-auto: update
 
-  h2:
-    console:
-      enabled: false
-
 logging:
   level:
     com.emenu: DEBUG
     org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 app:
   notifications:

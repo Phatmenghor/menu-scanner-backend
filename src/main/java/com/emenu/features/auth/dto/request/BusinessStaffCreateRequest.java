@@ -1,6 +1,5 @@
 package com.emenu.features.auth.dto.request;
 
-import com.emenu.enums.RoleEnum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

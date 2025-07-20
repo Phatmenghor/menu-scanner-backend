@@ -1,7 +1,6 @@
 package com.emenu.features.auth.models;
 
 import com.emenu.enums.AccountStatus;
-import com.emenu.enums.CustomerTier;
 import com.emenu.enums.UserType;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
@@ -10,7 +9,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -69,33 +67,6 @@ public class User extends BaseUUIDEntity {
     @Column(name = "notes")
     private String notes;
 
-    // Customer specific fields
-    @Enumerated(EnumType.STRING)
-    @Column(name = "customer_tier")
-    private CustomerTier customerTier = CustomerTier.CUSTOMER;
-
-    @Column(name = "loyalty_points")
-    private Integer loyaltyPoints = 0;
-
-    // Security fields
-    @Column(name = "last_login_ip")
-    private String lastLoginIp;
-
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
-
-    @Column(name = "failed_login_attempts")
-    private Integer failedLoginAttempts = 0;
-
-    @Column(name = "locked_until")
-    private LocalDateTime lockedUntil;
-
-    @Column(name = "email_verified")
-    private Boolean emailVerified = false;
-
-    @Column(name = "phone_verified")
-    private Boolean phoneVerified = false;
-
     // Methods
     public String getFullName() {
         return firstName + " " + lastName;
@@ -119,34 +90,5 @@ public class User extends BaseUUIDEntity {
 
     public boolean hasBusinessAccess() {
         return businessId != null && (isBusinessUser() || isPlatformUser());
-    }
-
-    public void resetFailedLoginAttempts() {
-        this.failedLoginAttempts = 0;
-        this.lockedUntil = null;
-    }
-
-    public void incrementFailedLoginAttempts() {
-        this.failedLoginAttempts = (this.failedLoginAttempts == null ? 0 : this.failedLoginAttempts) + 1;
-        
-        // Lock account after 5 failed attempts for 30 minutes
-        if (this.failedLoginAttempts >= 5) {
-            this.accountStatus = AccountStatus.LOCKED;
-            this.lockedUntil = LocalDateTime.now().plusMinutes(30);
-        }
-    }
-
-    public boolean isAccountLocked() {
-        if (AccountStatus.LOCKED.equals(accountStatus)) {
-            if (lockedUntil != null && lockedUntil.isBefore(LocalDateTime.now())) {
-                // Auto-unlock if lock period has expired
-                this.accountStatus = AccountStatus.ACTIVE;
-                this.lockedUntil = null;
-                this.failedLoginAttempts = 0;
-                return false;
-            }
-            return true;
-        }
-        return false;
     }
 }

@@ -12,13 +12,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -28,7 +26,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -55,53 +53,29 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
 
-                        // Actuator endpoints (restricted to localhost and private networks)
+                        // Actuator endpoints
                         .requestMatchers("/actuator/health/**").permitAll()
                         .requestMatchers("/actuator/**").hasRole("PLATFORM_OWNER")
 
-                        // Platform administration - Complete platform management
+                        // Platform administration
                         .requestMatchers("/api/v1/platform/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN")
-                        .requestMatchers("/api/v1/admin/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN")
 
-                        // User management - Enhanced permissions
+                        // User management
                         .requestMatchers("/api/v1/users/me/**").authenticated()
                         .requestMatchers("/api/v1/users/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER")
 
-                        // Business management - Complete business operations
+                        // Business management
                         .requestMatchers("/api/v1/business/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER", "BUSINESS_MANAGER")
-                        .requestMatchers("/api/v1/businesses/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER", "BUSINESS_MANAGER")
 
-                        // Customer management
-                        .requestMatchers("/api/v1/customers/me/**").hasAnyRole("CUSTOMER", "VIP_CUSTOMER")
-                        .requestMatchers("/api/v1/customers/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER", "BUSINESS_MANAGER")
+                        // Customer endpoints
+                        .requestMatchers("/api/v1/customers/me/**").hasRole("CUSTOMER")
+                        .requestMatchers("/api/v1/customers/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER")
 
-                        // Messaging system - All authenticated users can access
+                        // Messaging system
                         .requestMatchers("/api/v1/messages/**").authenticated()
-
-                        // Subscription management
-                        .requestMatchers("/api/v1/subscriptions/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER")
-                        .requestMatchers("/api/v1/payments/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER")
-
-                        // Notification system
-                        .requestMatchers("/api/v1/notifications/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN")
-
-                        // Customer tier and loyalty
-                        .requestMatchers("/api/v1/loyalty/**").authenticated()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
-                )
-                .headers(headers -> headers
-                        // Modern frame options configuration - deny all frames
-                        .frameOptions(frameOptions -> frameOptions.deny())
-                        // Modern content type options - prevent MIME sniffing
-                        .contentTypeOptions(Customizer.withDefaults())
-                        // Modern HSTS configuration - enforce HTTPS for 1 year
-                        .httpStrictTransportSecurity(hstsConfig -> hstsConfig
-                                .maxAgeInSeconds(31536000))
-                        // Modern referrer policy - strict origin when cross-origin
-                        .referrerPolicy(referrerPolicy ->
-                                referrerPolicy.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -115,7 +89,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition", "X-Total-Count"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -130,6 +104,6 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12); // Higher strength for production
+        return new BCryptPasswordEncoder(12);
     }
 }
