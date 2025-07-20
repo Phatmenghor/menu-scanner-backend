@@ -6,7 +6,6 @@ import com.emenu.features.auth.dto.request.BusinessStaffCreateRequest;
 import com.emenu.features.auth.dto.request.CustomerMessageRequest;
 import com.emenu.features.auth.dto.response.BusinessResponse;
 import com.emenu.features.auth.dto.response.BusinessStaffResponse;
-import com.emenu.features.auth.dto.response.BusinessStatsResponse;
 import com.emenu.features.auth.dto.response.CustomerResponse;
 import com.emenu.features.auth.dto.update.BusinessStaffUpdateRequest;
 import com.emenu.features.auth.dto.update.BusinessUpdateRequest;
@@ -62,13 +61,6 @@ public class BusinessController {
         log.info("Deleting business: {}", id);
         businessService.deleteBusiness(id);
         return ResponseEntity.ok(ApiResponse.success("Business deleted successfully", null));
-    }
-
-    @GetMapping("/{id}/stats")
-    public ResponseEntity<ApiResponse<BusinessStatsResponse>> getBusinessStats(@PathVariable UUID id) {
-        log.info("Getting business stats for: {}", id);
-        BusinessStatsResponse stats = businessService.getBusinessStats(id);
-        return ResponseEntity.ok(ApiResponse.success("Business statistics retrieved successfully", stats));
     }
 
     // Staff Management

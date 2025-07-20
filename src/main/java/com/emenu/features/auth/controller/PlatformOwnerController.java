@@ -6,7 +6,6 @@ import com.emenu.features.auth.dto.request.PlatformMessageRequest;
 import com.emenu.features.auth.dto.request.PlatformUserCreateRequest;
 import com.emenu.features.auth.dto.response.BusinessResponse;
 import com.emenu.features.auth.dto.response.CustomerResponse;
-import com.emenu.features.auth.dto.response.PlatformStatsResponse;
 import com.emenu.features.auth.dto.response.PlatformUserResponse;
 import com.emenu.features.auth.dto.update.BusinessUpdateRequest;
 import com.emenu.features.auth.dto.update.CustomerUpdateRequest;
@@ -181,14 +180,6 @@ public class PlatformOwnerController {
         log.info("Deleting message: {}", id);
         platformOwnerService.deleteMessage(id);
         return ResponseEntity.ok(ApiResponse.success("Message deleted successfully", null));
-    }
-
-    // Platform Statistics
-    @GetMapping("/stats")
-    public ResponseEntity<ApiResponse<PlatformStatsResponse>> getPlatformStats() {
-        log.info("Getting platform statistics");
-        PlatformStatsResponse stats = platformOwnerService.getPlatformStats();
-        return ResponseEntity.ok(ApiResponse.success("Platform statistics retrieved successfully", stats));
     }
 
     // System Management

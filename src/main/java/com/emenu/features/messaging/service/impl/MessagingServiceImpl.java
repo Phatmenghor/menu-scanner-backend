@@ -9,7 +9,6 @@ import com.emenu.features.messaging.dto.filter.MessageFilterRequest;
 import com.emenu.features.messaging.dto.request.BroadcastMessageRequest;
 import com.emenu.features.messaging.dto.request.MessageCreateRequest;
 import com.emenu.features.messaging.dto.response.MessageResponse;
-import com.emenu.features.messaging.dto.response.MessageStatsResponse;
 import com.emenu.features.messaging.dto.response.MessageSummaryResponse;
 import com.emenu.features.messaging.dto.update.MessageUpdateRequest;
 import com.emenu.features.messaging.mapper.MessageMapper;
