@@ -52,6 +52,9 @@ public class Message extends BaseUUIDEntity {
     @Column(name = "status")
     private MessageStatus status = MessageStatus.SENT;
 
+    @Column(name = "priority")
+    private String priority = "NORMAL";
+
     @Column(name = "read_at")
     private LocalDateTime readAt;
 

@@ -1,4 +1,3 @@
-
 package com.emenu.features.auth.mapper;
 
 import com.emenu.features.auth.dto.request.CustomerCreateRequest;
@@ -26,6 +25,9 @@ public interface CustomerMapper {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "accountStatus", constant = "ACTIVE")
+    @Mapping(target = "notes", ignore = true)
     User toEntity(CustomerCreateRequest request);
 
     CustomerResponse toResponse(User user);
@@ -48,6 +50,8 @@ public interface CustomerMapper {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
+    @Mapping(target = "notes", ignore = true)
+    @Mapping(target = "accountStatus", ignore = true)
     void updateEntity(CustomerUpdateRequest request, @MappingTarget User user);
 
     @AfterMapping

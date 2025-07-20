@@ -23,12 +23,15 @@ public class OpenApiConfig {
     @Value("${app.version:1.0.0}")
     private String appVersion;
 
+    @Value("${app.description:Simple E-Menu Platform for Restaurant Management}")
+    private String appDescription;
+
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
                         .title(appName + " API")
-                        .description("Complete REST API for E-Menu SaaS Platform")
+                        .description(appDescription)
                         .version(appVersion)
                         .contact(new Contact()
                                 .name("E-Menu Platform Support")

@@ -1,6 +1,7 @@
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.AccountStatus;
+import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
 import com.emenu.exception.UserNotFoundException;
 import com.emenu.exception.ValidationException;
@@ -62,13 +63,13 @@ public class BusinessServiceImpl implements BusinessService {
     public BusinessResponse createBusiness(BusinessCreateRequest request) {
         log.info("Creating business: {}", request.getName());
 
-        if (businessRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
+        if (request.getEmail() != null && businessRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
             throw new ValidationException("Business email already exists");
         }
 
         Business business = businessMapper.toEntity(request);
         Business savedBusiness = businessRepository.save(business);
-        
+
         log.info("Business created successfully: {}", savedBusiness.getName());
         return businessMapper.toResponse(savedBusiness);
     }
@@ -80,11 +81,11 @@ public class BusinessServiceImpl implements BusinessService {
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
         BusinessResponse response = businessMapper.toResponse(business);
-        
+
         // Add statistics
         response.setTotalStaff((int) userRepository.countByBusinessIdAndIsDeletedFalse(id));
         response.setHasActiveSubscription(true); // Simplified for now
-        
+
         return response;
     }
 
@@ -95,7 +96,7 @@ public class BusinessServiceImpl implements BusinessService {
 
         businessMapper.updateEntity(request, business);
         Business updatedBusiness = businessRepository.save(business);
-        
+
         log.info("Business updated successfully: {}", updatedBusiness.getName());
         return businessMapper.toResponse(updatedBusiness);
     }
@@ -107,7 +108,7 @@ public class BusinessServiceImpl implements BusinessService {
 
         business.softDelete();
         businessRepository.save(business);
-        
+
         log.info("Business deleted successfully: {}", business.getName());
     }
 
@@ -115,14 +116,14 @@ public class BusinessServiceImpl implements BusinessService {
     @Transactional(readOnly = true)
     public BusinessStatsResponse getBusinessStats(UUID id) {
         BusinessStatsResponse stats = new BusinessStatsResponse();
-        
+
         stats.setTotalStaff((int) userRepository.countByBusinessIdAndIsDeletedFalse(id));
         stats.setActiveStaff((int) userRepository.countByBusinessIdAndIsDeletedFalse(id)); // Simplified
         stats.setTotalMessages((int) messageRepository.countByBusinessIdAndIsDeletedFalse(id));
         stats.setUnreadMessages((int) messageRepository.countUnreadByBusinessIdAndIsDeletedFalse(id));
         stats.setCurrentPlan("FREE"); // Simplified
         stats.setSubscriptionActive(true);
-        
+
         return stats;
     }
 
@@ -148,11 +149,13 @@ public class BusinessServiceImpl implements BusinessService {
         staff.setAddress(request.getAddress());
         staff.setNotes(request.getNotes());
         staff.setUserType(UserType.BUSINESS_USER);
+        staff.setAccountStatus(AccountStatus.ACTIVE); // ✅ FIXED - Added missing account status
         staff.setBusinessId(businessId);
 
-        // Set role
-        Role role = roleRepository.findByName(request.getRole())
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+        // Set role - use default if not provided
+        RoleEnum roleEnum = request.getRole() != null ? request.getRole() : RoleEnum.BUSINESS_STAFF;
+        Role role = roleRepository.findByName(roleEnum)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleEnum));
         staff.setRoles(List.of(role));
 
         User savedStaff = userRepository.save(staff);
@@ -237,7 +240,7 @@ public class BusinessServiceImpl implements BusinessService {
 
         staff.softDelete();
         userRepository.save(staff);
-        
+
         log.info("Staff deleted successfully: {}", staff.getEmail());
     }
 
@@ -248,7 +251,7 @@ public class BusinessServiceImpl implements BusinessService {
 
         staff.setAccountStatus(AccountStatus.ACTIVE);
         userRepository.save(staff);
-        
+
         log.info("Staff activated successfully: {}", staff.getEmail());
     }
 
@@ -259,7 +262,7 @@ public class BusinessServiceImpl implements BusinessService {
 
         staff.setAccountStatus(AccountStatus.INACTIVE);
         userRepository.save(staff);
-        
+
         log.info("Staff deactivated successfully: {}", staff.getEmail());
     }
 
@@ -267,12 +270,12 @@ public class BusinessServiceImpl implements BusinessService {
     @Override
     public void sendBusinessMessage(UUID businessId, BusinessMessageRequest request) {
         User currentUser = securityUtils.getCurrentUser();
-        
-        if (request.getSendToAllStaff()) {
+
+        if (Boolean.TRUE.equals(request.getSendToAllStaff())) {
             sendMessageToAllStaff(currentUser, businessId, request);
         } else if (request.getStaffIds() != null && !request.getStaffIds().isEmpty()) {
             sendMessageToSpecificStaff(currentUser, request.getStaffIds(), request);
-        } else if (request.getSendToAllCustomers()) {
+        } else if (Boolean.TRUE.equals(request.getSendToAllCustomers())) {
             sendMessageToAllCustomers(currentUser, request);
         } else if (request.getCustomerIds() != null && !request.getCustomerIds().isEmpty()) {
             sendMessageToSpecificCustomers(currentUser, request.getCustomerIds(), request);
@@ -332,7 +335,7 @@ public class BusinessServiceImpl implements BusinessService {
 
         message.markAsRead();
         messageRepository.save(message);
-        
+
         log.info("Message marked as read: {}", messageId);
     }
 

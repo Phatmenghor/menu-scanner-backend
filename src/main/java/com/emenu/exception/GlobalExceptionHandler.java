@@ -1,6 +1,5 @@
 package com.emenu.exception;
 
-import com.emenu.features.audit.service.AuditService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.constants.ErrorCodes;
 import com.emenu.shared.dto.ApiResponse;
@@ -34,20 +33,11 @@ import java.util.UUID;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    private final AuditService auditService;
     private final SecurityUtils securityUtils;
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<Object>> handleCustomException(CustomException ex, HttpServletRequest request) {
         log.error("Custom exception occurred: {} - Path: {}", ex.getMessage(), request.getRequestURI());
-
-        // Log error to audit service
-        try {
-            var currentUser = securityUtils.getCurrentUser();
-            auditService.logError(currentUser, "CUSTOM_EXCEPTION", "SYSTEM", null, ex.getMessage(), ex);
-        } catch (Exception e) {
-            log.debug("Could not log error to audit service: {}", e.getMessage());
-        }
 
         Map<String, Object> errorDetails = new HashMap<>();
         errorDetails.put("errorCode", ex.getErrorCode());
@@ -84,8 +74,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Object>> handleBadCredentialsException(BadCredentialsException ex, HttpServletRequest request) {
         log.warn("Authentication failed: Bad credentials - {}", ex.getMessage());
-
-        auditService.logSecurityEvent("BAD_CREDENTIALS", "Authentication failed with bad credentials", "WARN");
 
         Map<String, Object> errorDetails = new HashMap<>();
         errorDetails.put("errorCode", ErrorCodes.INVALID_CREDENTIALS);
@@ -128,8 +116,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
         log.warn("Access denied for request to {}: {}", request.getRequestURI(), ex.getMessage());
-
-        auditService.logSecurityEvent("ACCESS_DENIED", "Access denied to " + request.getRequestURI(), "WARN");
 
         Map<String, Object> errorDetails = new HashMap<>();
         errorDetails.put("errorCode", ErrorCodes.INSUFFICIENT_PERMISSIONS);
@@ -214,7 +200,7 @@ public class GlobalExceptionHandler {
         errorDetails.put("timestamp", LocalDateTime.now());
         errorDetails.put("path", request.getRequestURI());
         errorDetails.put("parameter", ex.getName());
-        errorDetails.put("expectedType", ex.getRequiredType().getSimpleName());
+        errorDetails.put("expectedType", ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "Unknown");
         errorDetails.put("traceId", UUID.randomUUID().toString());
 
         ApiResponse<Object> response = new ApiResponse<>("error", "Parameter type mismatch", errorDetails);
@@ -242,14 +228,6 @@ public class GlobalExceptionHandler {
         String traceId = UUID.randomUUID().toString();
         log.error("Unexpected exception in request to {} [TraceId: {}]: {}", request.getRequestURI(), traceId, ex.getMessage(), ex);
 
-        // Log error to audit service
-        try {
-            var currentUser = securityUtils.getCurrentUser();
-            auditService.logError(currentUser, "UNEXPECTED_EXCEPTION", "SYSTEM", null, ex.getMessage(), ex);
-        } catch (Exception e) {
-            log.debug("Could not log error to audit service: {}", e.getMessage());
-        }
-
         Map<String, Object> errorDetails = new HashMap<>();
         errorDetails.put("errorCode", ErrorCodes.INTERNAL_SERVER_ERROR);
         errorDetails.put("timestamp", LocalDateTime.now());
@@ -260,4 +238,3 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }
-

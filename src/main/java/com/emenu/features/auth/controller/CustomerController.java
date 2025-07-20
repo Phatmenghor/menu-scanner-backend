@@ -1,11 +1,9 @@
 package com.emenu.features.auth.controller;
 
 import com.emenu.features.auth.dto.request.CustomerCreateRequest;
-import com.emenu.features.auth.dto.request.CustomerMessageRequest;
 import com.emenu.features.auth.dto.response.CustomerResponse;
 import com.emenu.features.auth.dto.update.CustomerUpdateRequest;
 import com.emenu.features.auth.service.CustomerService;
-import com.emenu.features.messaging.dto.response.MessageResponse;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
@@ -67,41 +65,7 @@ public class CustomerController {
         return ResponseEntity.ok(ApiResponse.success("Customer deleted successfully", null));
     }
 
-    @PostMapping("/{id}/activate")
-    public ResponseEntity<ApiResponse<Void>> activateCustomer(@PathVariable UUID id) {
-        log.info("Activating customer: {}", id);
-        customerService.activateCustomer(id);
-        return ResponseEntity.ok(ApiResponse.success("Customer activated successfully", null));
-    }
-
-    @PostMapping("/{id}/deactivate")
-    public ResponseEntity<ApiResponse<Void>> deactivateCustomer(@PathVariable UUID id) {
-        log.info("Deactivating customer: {}", id);
-        customerService.deactivateCustomer(id);
-        return ResponseEntity.ok(ApiResponse.success("Customer deactivated successfully", null));
-    }
-
-    // Customer Messaging
-    @PostMapping("/{id}/messages")
-    public ResponseEntity<ApiResponse<Void>> sendMessageToCustomer(
-            @PathVariable UUID id,
-            @Valid @RequestBody CustomerMessageRequest request) {
-        log.info("Sending message to customer: {}", id);
-        customerService.sendMessageToCustomer(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Message sent successfully", null));
-    }
-
-    @GetMapping("/{id}/messages")
-    public ResponseEntity<ApiResponse<PaginationResponse<MessageResponse>>> getCustomerMessages(
-            @PathVariable UUID id,
-            @RequestParam(defaultValue = "1") int pageNo,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        log.info("Getting messages for customer: {}", id);
-        PaginationResponse<MessageResponse> messages = customerService.getCustomerMessages(id, pageNo, pageSize);
-        return ResponseEntity.ok(ApiResponse.success("Customer messages retrieved successfully", messages));
-    }
-
-    // Customer Self-Service
+    // Customer Self-Service (Simplified)
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<CustomerResponse>> getMyProfile() {
         log.info("Getting my customer profile");
@@ -115,28 +79,5 @@ public class CustomerController {
         log.info("Updating my customer profile");
         CustomerResponse customer = customerService.updateCurrentCustomerProfile(request);
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", customer));
-    }
-
-    @GetMapping("/me/messages")
-    public ResponseEntity<ApiResponse<PaginationResponse<MessageResponse>>> getMyMessages(
-            @RequestParam(defaultValue = "1") int pageNo,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        log.info("Getting my customer messages");
-        PaginationResponse<MessageResponse> messages = customerService.getCurrentCustomerMessages(pageNo, pageSize);
-        return ResponseEntity.ok(ApiResponse.success("Messages retrieved successfully", messages));
-    }
-
-    @PostMapping("/me/messages")
-    public ResponseEntity<ApiResponse<Void>> sendMessage(@Valid @RequestBody CustomerMessageRequest request) {
-        log.info("Sending message from customer");
-        customerService.sendMessageFromCustomer(request);
-        return ResponseEntity.ok(ApiResponse.success("Message sent successfully", null));
-    }
-
-    @PostMapping("/messages/{messageId}/read")
-    public ResponseEntity<ApiResponse<Void>> markMessageAsRead(@PathVariable UUID messageId) {
-        log.info("Marking message as read: {}", messageId);
-        customerService.markMessageAsRead(messageId);
-        return ResponseEntity.ok(ApiResponse.success("Message marked as read", null));
     }
 }

@@ -1,6 +1,6 @@
-
 package com.emenu.features.auth.mapper;
 
+import com.emenu.enums.RoleEnum;
 import com.emenu.features.auth.dto.request.PlatformUserCreateRequest;
 import com.emenu.features.auth.dto.response.PlatformUserResponse;
 import com.emenu.features.auth.dto.update.PlatformUserUpdateRequest;
@@ -26,6 +26,8 @@ public interface PlatformMapper {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "accountStatus", constant = "ACTIVE")
     User toEntity(PlatformUserCreateRequest request);
 
     @Mapping(source = "roles", target = "roles", qualifiedByName = "rolesToRoleEnums")
@@ -52,7 +54,7 @@ public interface PlatformMapper {
     void updateEntity(PlatformUserUpdateRequest request, @MappingTarget User user);
 
     @Named("rolesToRoleEnums")
-    default List<com.emenu.enums.RoleEnum> rolesToRoleEnums(List<Role> roles) {
+    default List<RoleEnum> rolesToRoleEnums(List<Role> roles) {
         if (roles == null) {
             return null;
         }

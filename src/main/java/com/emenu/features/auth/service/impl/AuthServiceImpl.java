@@ -2,6 +2,7 @@ package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.AccountStatus;
 import com.emenu.enums.MessageType;
+import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
 import com.emenu.exception.UserNotFoundException;
 import com.emenu.exception.ValidationException;
@@ -147,7 +148,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Generate reset token (simplified - in production use proper token generation)
         String resetToken = java.util.UUID.randomUUID().toString();
-        
+
         // Send password reset message
         sendPasswordResetMessage(user, resetToken);
 
@@ -158,7 +159,7 @@ public class AuthServiceImpl implements AuthService {
     public void resetPassword(String token, String newPassword) {
         // In production, validate the token properly
         // For now, just find user by token (simplified)
-        
+
         // This is simplified - in production you'd store tokens in database
         log.info("Password reset completed");
     }
@@ -190,10 +191,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserResponse updateCurrentUserProfile(UserUpdateRequest request) {
         User currentUser = securityUtils.getCurrentUser();
-        
+
         userMapper.updateEntity(request, currentUser);
         User updatedUser = userRepository.save(currentUser);
-        
+
         log.info("Profile updated successfully for user: {}", currentUser.getEmail());
         return userMapper.toResponse(updatedUser);
     }
@@ -201,7 +202,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void sendCustomWelcomeMessage(WelcomeMessageRequest request) {
         User currentUser = securityUtils.getCurrentUser();
-        
+
         Message message = new Message();
         message.setSenderId(currentUser.getId());
         message.setSenderEmail(currentUser.getEmail());
@@ -251,9 +252,9 @@ public class AuthServiceImpl implements AuthService {
             welcomeMessage.setSubject("Welcome to E-Menu Platform!");
             welcomeMessage.setContent(String.format(
                     "Hello %s,\n\nWelcome to E-Menu Platform! We're excited to have you join our community.\n\n" +
-                    "Your account has been successfully created and you can now start exploring our features.\n\n" +
-                    "If you have any questions, feel free to contact our support team.\n\n" +
-                    "Best regards,\nE-Menu Platform Team",
+                            "Your account has been successfully created and you can now start exploring our features.\n\n" +
+                            "If you have any questions, feel free to contact our support team.\n\n" +
+                            "Best regards,\nE-Menu Platform Team",
                     user.getFullName()
             ));
             welcomeMessage.setMessageType(MessageType.WELCOME);
@@ -278,9 +279,9 @@ public class AuthServiceImpl implements AuthService {
             resetMessage.setSubject("Password Reset Instructions");
             resetMessage.setContent(String.format(
                     "Hello %s,\n\nWe received a request to reset your password.\n\n" +
-                    "Reset Token: %s\n\n" +
-                    "If you didn't request this, please ignore this message.\n\n" +
-                    "Best regards,\nE-Menu Platform Team",
+                            "Reset Token: %s\n\n" +
+                            "If you didn't request this, please ignore this message.\n\n" +
+                            "Best regards,\nE-Menu Platform Team",
                     user.getFullName(), resetToken
             ));
             resetMessage.setMessageType(MessageType.NOTIFICATION);
@@ -305,8 +306,8 @@ public class AuthServiceImpl implements AuthService {
             verificationMessage.setSubject("Email Verification");
             verificationMessage.setContent(String.format(
                     "Hello %s,\n\nPlease verify your email address by clicking the link below.\n\n" +
-                    "Verification Link: [Click here to verify]\n\n" +
-                    "Best regards,\nE-Menu Platform Team",
+                            "Verification Link: [Click here to verify]\n\n" +
+                            "Best regards,\nE-Menu Platform Team",
                     user.getFullName()
             ));
             verificationMessage.setMessageType(MessageType.NOTIFICATION);

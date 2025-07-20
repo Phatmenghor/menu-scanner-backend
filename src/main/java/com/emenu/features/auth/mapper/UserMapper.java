@@ -1,5 +1,6 @@
 package com.emenu.features.auth.mapper;
 
+import com.emenu.enums.RoleEnum;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.response.UserSummaryResponse;
@@ -25,6 +26,8 @@ public interface UserMapper {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "accountStatus", constant = "ACTIVE")
     User toEntity(UserCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")

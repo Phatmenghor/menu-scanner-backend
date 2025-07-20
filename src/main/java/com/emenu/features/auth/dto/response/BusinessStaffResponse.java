@@ -1,6 +1,7 @@
 package com.emenu.features.auth.dto.response;
 
 import com.emenu.enums.AccountStatus;
+import com.emenu.enums.RoleEnum;
 import lombok.Data;
 
 import java.time.LocalDateTime;

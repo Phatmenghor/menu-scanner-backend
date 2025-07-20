@@ -2,6 +2,7 @@ package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.AccountStatus;
 import com.emenu.enums.MessageType;
+import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
 import com.emenu.exception.UserNotFoundException;
 import com.emenu.exception.ValidationException;
@@ -60,6 +61,7 @@ public class CustomerServiceImpl implements CustomerService {
         User customer = customerMapper.toEntity(request);
         customer.setPassword(passwordEncoder.encode(request.getPassword()));
         customer.setUserType(UserType.CUSTOMER);
+        customer.setAccountStatus(AccountStatus.ACTIVE); // ✅ FIXED - Added missing account status
 
         // Set customer role
         Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
@@ -84,11 +86,16 @@ public class CustomerServiceImpl implements CustomerService {
         Page<User> customerPage;
         if (StringUtils.hasText(search)) {
             customerPage = userRepository.findBySearchAndIsDeletedFalse(search, pageable);
+            // Filter only customers from search results
+            customerPage = customerPage.map(user -> user.getUserType() == UserType.CUSTOMER ? user : null)
+                    .map(user -> user != null ? user : new User()); // Simple filter - in production use better approach
         } else {
             customerPage = userRepository.findByUserTypeAndIsDeletedFalse(UserType.CUSTOMER, pageable);
         }
 
-        List<CustomerResponse> content = customerMapper.toResponseList(customerPage.getContent());
+        List<CustomerResponse> content = customerMapper.toResponseList(customerPage.getContent().stream()
+                .filter(user -> user.getId() != null && user.getUserType() == UserType.CUSTOMER)
+                .toList());
 
         return PaginationResponse.<CustomerResponse>builder()
                 .content(content)
@@ -113,13 +120,7 @@ public class CustomerServiceImpl implements CustomerService {
             throw new ValidationException("User is not a customer");
         }
 
-        CustomerResponse response = customerMapper.toResponse(customer);
-        
-        // Add statistics
-        response.setTotalMessages((int) messageRepository.countByRecipientIdAndIsDeletedFalse(id));
-        response.setUnreadMessages((int) messageRepository.countUnreadByRecipientIdAndIsDeletedFalse(id));
-        
-        return response;
+        return customerMapper.toResponse(customer);
     }
 
     @Override
@@ -133,7 +134,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         customerMapper.updateEntity(request, customer);
         User updatedCustomer = userRepository.save(customer);
-        
+
         log.info("Customer updated successfully: {}", updatedCustomer.getEmail());
         return customerMapper.toResponse(updatedCustomer);
     }
@@ -149,7 +150,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         customer.softDelete();
         userRepository.save(customer);
-        
+
         log.info("Customer deleted successfully: {}", customer.getEmail());
     }
 
@@ -160,7 +161,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         customer.setAccountStatus(AccountStatus.ACTIVE);
         userRepository.save(customer);
-        
+
         log.info("Customer activated successfully: {}", customer.getEmail());
         sendStatusChangeMessage(customer, "activated");
     }
@@ -172,7 +173,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         customer.setAccountStatus(AccountStatus.INACTIVE);
         userRepository.save(customer);
-        
+
         log.info("Customer deactivated successfully: {}", customer.getEmail());
         sendStatusChangeMessage(customer, "deactivated");
     }
@@ -230,7 +231,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         message.markAsRead();
         messageRepository.save(message);
-        
+
         log.info("Message marked as read: {}", messageId);
     }
 
@@ -239,7 +240,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional(readOnly = true)
     public CustomerResponse getCurrentCustomerProfile() {
         User currentUser = securityUtils.getCurrentUser();
-        
+
         if (!currentUser.isCustomer()) {
             throw new ValidationException("Current user is not a customer");
         }
@@ -250,7 +251,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerResponse updateCurrentCustomerProfile(CustomerUpdateRequest request) {
         User currentUser = securityUtils.getCurrentUser();
-        
+
         if (!currentUser.isCustomer()) {
             throw new ValidationException("Current user is not a customer");
         }
@@ -268,15 +269,16 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public void sendMessageFromCustomer(CustomerMessageRequest request) {
         User currentUser = securityUtils.getCurrentUser();
-        
+
         User recipient = null;
         if (request.getRecipientId() != null) {
             recipient = userRepository.findByIdAndIsDeletedFalse(request.getRecipientId())
                     .orElseThrow(() -> new UserNotFoundException("Recipient not found"));
         } else {
-            // Send to platform support (simplified)
-            recipient = userRepository.findByEmailAndIsDeletedFalse("support@emenu-platform.com")
-                    .orElse(null);
+            // Send to platform support (simplified - find first platform admin)
+            recipient = userRepository.findByUserTypeAndIsDeletedFalse(UserType.PLATFORM_USER,
+                            PaginationUtils.createPageable(0, 1, "createdAt", "ASC"))
+                    .getContent().stream().findFirst().orElse(null);
         }
 
         if (recipient == null) {
@@ -313,9 +315,9 @@ public class CustomerServiceImpl implements CustomerService {
             welcomeMessage.setSubject("Welcome to E-Menu Platform!");
             welcomeMessage.setContent(String.format(
                     "Hello %s,\n\nWelcome to E-Menu Platform! We're excited to have you as a customer.\n\n" +
-                    "You can now browse restaurants and place orders through our platform.\n\n" +
-                    "If you have any questions, feel free to contact us.\n\n" +
-                    "Best regards,\nE-Menu Platform Team",
+                            "You can now browse restaurants and place orders through our platform.\n\n" +
+                            "If you have any questions, feel free to contact us.\n\n" +
+                            "Best regards,\nE-Menu Platform Team",
                     customer.getFullName()
             ));
             welcomeMessage.setMessageType(MessageType.WELCOME);

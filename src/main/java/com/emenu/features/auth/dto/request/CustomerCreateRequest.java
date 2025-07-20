@@ -22,5 +22,4 @@ public class CustomerCreateRequest {
     
     private String phoneNumber;
     private String address;
-    private String notes;
 }

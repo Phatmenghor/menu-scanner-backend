@@ -17,12 +17,6 @@ public class CustomerResponse {
     private String phoneNumber;
     private AccountStatus accountStatus;
     private String address;
-    private String notes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
-    // Statistics
-    private Integer totalOrders;
-    private Integer totalMessages;
-    private Integer unreadMessages;
 }
