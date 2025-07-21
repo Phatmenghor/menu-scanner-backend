@@ -69,7 +69,6 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(savedUser);
     }
 
-
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<UserResponse> getAllUsers(UserFilterRequest request) {
@@ -133,19 +132,8 @@ public class UserServiceImpl implements UserService {
     public UserResponse updateCurrentUser(UserUpdateRequest request) {
         User currentUser = securityUtils.getCurrentUser();
 
-        // Users can only update certain fields of their own profile
-        if (request.getFirstName() != null) {
-            currentUser.setFirstName(request.getFirstName());
-        }
-        if (request.getLastName() != null) {
-            currentUser.setLastName(request.getLastName());
-        }
-        if (request.getPhoneNumber() != null) {
-            currentUser.setPhoneNumber(request.getPhoneNumber());
-        }
-        if (request.getAddress() != null) {
-            currentUser.setAddress(request.getAddress());
-        }
+        // Use dedicated mapper method for restricted current user profile updates
+        userMapper.updateCurrentUserProfile(request, currentUser);
 
         User updatedUser = userRepository.save(currentUser);
         log.info("Current user profile updated: {}", updatedUser.getEmail());

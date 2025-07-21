@@ -67,6 +67,30 @@ public abstract class CustomerMapper {
     @Mapping(target = "accountStatus", ignore = true)
     public abstract void updateEntity(UserUpdateRequest request, @MappingTarget User user);
 
+    /**
+     * Restricted update for current customer profile - only allows safe fields
+     */
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "userType", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "business", ignore = true)
+    @Mapping(target = "businessId", ignore = true)
+    @Mapping(target = "position", ignore = true)
+    @Mapping(target = "accountStatus", ignore = true)
+    @Mapping(target = "notes", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "isDeleted", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "deletedBy", ignore = true)
+    public abstract void updateCurrentUserProfile(UserUpdateRequest request, @MappingTarget User user);
+
     @Named("rolesToRoleEnums")
     protected List<RoleEnum> rolesToRoleEnums(List<Role> roles) {
         if (roles == null) {

@@ -14,6 +14,7 @@ public class LoginResponse {
     private UUID userId;
     private String email;
     private String fullName;
+    private String profileImageUrl;
     private UserType userType;
     private List<String> roles;
     private UUID businessId;
