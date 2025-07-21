@@ -1,4 +1,4 @@
-package com.emenu.features.notification.mapper;
+package com.emenu.features.auth.mapper;
 
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.models.User;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class AuthMapper {
+public abstract class LoginResponseMapper {
 
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "email", source = "user.email")

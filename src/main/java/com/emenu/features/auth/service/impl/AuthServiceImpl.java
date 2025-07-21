@@ -10,6 +10,7 @@ import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.AccountStatusUpdateRequest;
+import com.emenu.features.auth.mapper.LoginResponseMapper;
 import com.emenu.features.auth.mapper.RegistrationMapper;
 import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.auth.models.Role;
@@ -17,7 +18,6 @@ import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.AuthService;
-import com.emenu.features.notification.mapper.AuthMapper;
 import com.emenu.security.SecurityUtils;
 import com.emenu.security.jwt.JWTGenerator;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +42,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
-    private final AuthMapper authMapper;
+    private final LoginResponseMapper loginResponseMapper; // ✅ Updated mapper name
     private final RegistrationMapper registrationMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -68,8 +68,8 @@ public class AuthServiceImpl implements AuthService {
         // Generate JWT token
         String token = jwtGenerator.generateAccessToken(authentication);
 
-        // ✅ Use mapper to create response
-        LoginResponse response = authMapper.toLoginResponse(user, token);
+        // ✅ Use updated mapper to create response
+        LoginResponse response = loginResponseMapper.toLoginResponse(user, token);
 
         log.info("Login successful for user: {}", user.getEmail());
         return response;
@@ -101,7 +101,6 @@ public class AuthServiceImpl implements AuthService {
         // ✅ Use mapper to create response
         return userMapper.toResponse(savedUser);
     }
-
 
     @Override
     public UserResponse changePassword(PasswordChangeRequest request) {
