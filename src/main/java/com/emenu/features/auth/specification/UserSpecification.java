@@ -1,9 +1,12 @@
 package com.emenu.features.auth.specification;
 
 import com.emenu.enums.AccountStatus;
+import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.models.User;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
@@ -35,6 +38,15 @@ public class UserSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("userType"), request.getUserType()));
             }
 
+            // ✅ NEW: Roles filter (can filter by multiple roles)
+            if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+                Join<Object, Object> rolesJoin = root.join("roles", JoinType.INNER);
+                predicates.add(rolesJoin.get("name").in(request.getRoles()));
+
+                // Use DISTINCT to avoid duplicate users when they have multiple matching roles
+                query.distinct(true);
+            }
+
             // Global search filter (searches across email, firstName, lastName)
             if (StringUtils.hasText(request.getSearch())) {
                 String searchPattern = "%" + request.getSearch().toLowerCase() + "%";
@@ -51,7 +63,6 @@ public class UserSpecification {
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
-
 
     // Specific specifications for common queries
     public static Specification<User> isActive() {
@@ -84,6 +95,29 @@ public class UserSpecification {
                         criteriaBuilder.equal(root.get("isDeleted"), false),
                         criteriaBuilder.equal(root.get("accountStatus"), status)
                 );
+    }
+
+    // ✅ NEW: Filter by specific role
+    public static Specification<User> byRole(RoleEnum role) {
+        return (root, query, criteriaBuilder) -> {
+            Join<Object, Object> rolesJoin = root.join("roles", JoinType.INNER);
+            return criteriaBuilder.and(
+                    criteriaBuilder.equal(root.get("isDeleted"), false),
+                    criteriaBuilder.equal(rolesJoin.get("name"), role)
+            );
+        };
+    }
+
+    // ✅ NEW: Filter by multiple roles
+    public static Specification<User> byRoles(List<RoleEnum> roles) {
+        return (root, query, criteriaBuilder) -> {
+            Join<Object, Object> rolesJoin = root.join("roles", JoinType.INNER);
+            query.distinct(true);
+            return criteriaBuilder.and(
+                    criteriaBuilder.equal(root.get("isDeleted"), false),
+                    rolesJoin.get("name").in(roles)
+            );
+        };
     }
 
     public static Specification<User> byEmailContaining(String email) {

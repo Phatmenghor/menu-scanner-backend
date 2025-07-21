@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -23,6 +24,8 @@ public class UserFilterRequest {
 
     // Filter by user type
     private UserType userType;
+
+    private List<RoleEnum> roles;
 
     @Min(value = 1, message = "Page number must be at least 1")
     private Integer pageNo = 1;
