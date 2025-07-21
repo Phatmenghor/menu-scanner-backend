@@ -4,7 +4,7 @@ import com.emenu.enums.PaymentStatus;
 import com.emenu.features.auth.dto.filter.PaymentFilterRequest;
 import com.emenu.features.auth.dto.request.PaymentCreateRequest;
 import com.emenu.features.auth.dto.response.PaymentResponse;
-import com.emenu.features.auth.mapper.PaymentMapper;
+import com.emenu.features.auth.mapper.PaymentMapper; // ✅ Correct import from mapper package
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.Payment;
 import com.emenu.features.auth.models.Subscription;
@@ -56,7 +56,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Create payment
         Payment payment = paymentMapper.toEntity(request);
-        
+
         // Generate reference number if not provided
         if (payment.getReferenceNumber() == null || payment.getReferenceNumber().isEmpty()) {
             payment.setReferenceNumber(generateReferenceNumber());
@@ -69,7 +69,7 @@ public class PaymentServiceImpl implements PaymentService {
         if (plan.isFree()) {
             savedPayment.markAsCompleted();
             paymentRepository.save(savedPayment);
-            
+
             // Create/extend subscription
             createOrExtendSubscription(savedPayment, plan);
         }
@@ -81,7 +81,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional(readOnly = true)
     public PaginationResponse<PaymentResponse> getPayments(PaymentFilterRequest filter) {
         Specification<Payment> spec = PaymentSpecification.buildSpecification(filter);
-        
+
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
                 pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
@@ -170,7 +170,7 @@ public class PaymentServiceImpl implements PaymentService {
     public BigDecimal getTotalRevenue() {
         LocalDateTime startOfYear = LocalDateTime.now().withDayOfYear(1).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime now = LocalDateTime.now();
-        
+
         BigDecimal revenue = paymentRepository.getTotalRevenueInPeriod(startOfYear, now);
         return revenue != null ? revenue : BigDecimal.ZERO;
     }
@@ -180,7 +180,7 @@ public class PaymentServiceImpl implements PaymentService {
     public BigDecimal getMonthlyRevenue() {
         LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime now = LocalDateTime.now();
-        
+
         BigDecimal revenue = paymentRepository.getTotalRevenueInPeriod(startOfMonth, now);
         return revenue != null ? revenue : BigDecimal.ZERO;
     }
@@ -218,13 +218,13 @@ public class PaymentServiceImpl implements PaymentService {
                 newSubscription.setIsActive(true);
                 newSubscription.setAutoRenew(false);
                 newSubscription.setIsTrial(plan.getIsTrial());
-                
+
                 Subscription savedSubscription = subscriptionRepository.save(newSubscription);
-                
+
                 // Link payment to subscription
                 payment.setSubscriptionId(savedSubscription.getId());
                 paymentRepository.save(payment);
-                
+
                 log.info("Created new subscription for business: {}", payment.getBusinessId());
             }
         } catch (Exception e) {

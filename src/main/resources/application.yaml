@@ -21,7 +21,7 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: create-drop # Changed: This will drop and recreate tables on each startup
+      ddl-auto: update # Changed: This will drop and recreate tables on each startup
     show-sql: false # Changed: Disable SQL logging during creation
     open-in-view: false
     properties:

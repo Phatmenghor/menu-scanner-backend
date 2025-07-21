@@ -22,6 +22,7 @@ public abstract class PaymentMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "subscription", ignore = true)
+    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "status", constant = "PENDING")
     @Mapping(target = "paymentDate", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -35,8 +36,8 @@ public abstract class PaymentMapper {
     public abstract Payment toEntity(PaymentCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
-    @Mapping(source = "plan.displayName", target = "planDisplayName")
     @Mapping(source = "plan.name", target = "planName")
+    @Mapping(source = "plan.displayName", target = "planDisplayName")
     public abstract PaymentResponse toResponse(Payment payment);
 
     public abstract List<PaymentResponse> toResponseList(List<Payment> payments);
