@@ -34,9 +34,4 @@ public interface AuthService {
     void unlockAccount(UUID userId);
     void suspendAccount(UUID userId);
     void activateAccount(UUID userId);
-
-    // Validation
-    boolean isEmailAvailable(String email);
-    boolean isPhoneAvailable(String phoneNumber);
-    boolean validatePassword(String password);
 }

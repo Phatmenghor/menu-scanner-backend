@@ -39,7 +39,6 @@ public class AuthController {
      * User logout
      */
     @PostMapping("/logout")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'PLATFORM_SUPPORT', 'BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_STAFF', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.replace("Bearer ", "");
         authService.logout(token);
@@ -72,7 +71,6 @@ public class AuthController {
      * Change password
      */
     @PostMapping("/change-password")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'PLATFORM_SUPPORT', 'BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_STAFF', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody PasswordChangeRequest request) {
         log.info("Password change request received");
         authService.changePassword(request);
@@ -104,7 +102,6 @@ public class AuthController {
      * Send email verification
      */
     @PostMapping("/verify-email/send")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'PLATFORM_SUPPORT', 'BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_STAFF', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<Void>> sendEmailVerification() {
         log.info("Email verification send request");
         // Would get current user ID from security context
@@ -123,36 +120,6 @@ public class AuthController {
     }
 
     /**
-     * Check email availability
-     */
-    @GetMapping("/check-email")
-    public ResponseEntity<ApiResponse<Boolean>> checkEmailAvailability(@RequestParam String email) {
-        boolean available = authService.isEmailAvailable(email);
-        String message = available ? "Email is available" : "Email is already taken";
-        return ResponseEntity.ok(ApiResponse.success(message, available));
-    }
-
-    /**
-     * Check phone availability
-     */
-    @GetMapping("/check-phone")
-    public ResponseEntity<ApiResponse<Boolean>> checkPhoneAvailability(@RequestParam String phoneNumber) {
-        boolean available = authService.isPhoneAvailable(phoneNumber);
-        String message = available ? "Phone number is available" : "Phone number is already taken";
-        return ResponseEntity.ok(ApiResponse.success(message, available));
-    }
-
-    /**
-     * Validate password
-     */
-    @PostMapping("/validate-password")
-    public ResponseEntity<ApiResponse<Boolean>> validatePassword(@RequestParam String password) {
-        boolean valid = authService.validatePassword(password);
-        String message = valid ? "Password meets security requirements" : "Password does not meet security requirements";
-        return ResponseEntity.ok(ApiResponse.success(message, valid));
-    }
-
-    /**
      * Refresh token
      */
     @PostMapping("/refresh-token")
@@ -168,7 +135,6 @@ public class AuthController {
      * Lock user account
      */
     @PostMapping("/admin/lock-account/{userId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> lockAccount(@PathVariable UUID userId) {
         log.info("Account lock request for user: {}", userId);
         authService.lockAccount(userId);
@@ -179,7 +145,6 @@ public class AuthController {
      * Unlock user account
      */
     @PostMapping("/admin/unlock-account/{userId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> unlockAccount(@PathVariable UUID userId) {
         log.info("Account unlock request for user: {}", userId);
         authService.unlockAccount(userId);
@@ -190,7 +155,6 @@ public class AuthController {
      * Suspend user account
      */
     @PostMapping("/admin/suspend-account/{userId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> suspendAccount(@PathVariable UUID userId) {
         log.info("Account suspension request for user: {}", userId);
         authService.suspendAccount(userId);
@@ -201,7 +165,7 @@ public class AuthController {
      * Activate user account
      */
     @PostMapping("/admin/activate-account/{userId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
+//    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> activateAccount(@PathVariable UUID userId) {
         log.info("Account activation request for user: {}", userId);
         authService.activateAccount(userId);

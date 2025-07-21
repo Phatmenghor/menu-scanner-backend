@@ -43,9 +43,6 @@ public class AuthServiceImpl implements AuthService {
     private final JWTGenerator jwtGenerator;
     private final SecurityUtils securityUtils;
 
-    private static final Pattern PASSWORD_PATTERN = Pattern.compile(
-            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
-    );
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -167,14 +164,9 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Password confirmation does not match");
         }
 
-        // Validate new password
-        if (!validatePassword(request.getNewPassword())) {
-            throw new RuntimeException("New password does not meet security requirements");
-        }
-
         // Update password
         currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(currentUser);
+        User user = userRepository.save(currentUser);
 
         log.info("Password changed successfully for user: {}", currentUser.getEmail());
     }
@@ -250,21 +242,14 @@ public class AuthServiceImpl implements AuthService {
         log.info("Account activated for user: {}", user.getEmail());
     }
 
-    @Override
     @Transactional(readOnly = true)
-    public boolean isEmailAvailable(String email) {
+    private boolean isEmailAvailable(String email) {
         return !userRepository.existsByEmailAndIsDeletedFalse(email);
     }
 
-    @Override
     @Transactional(readOnly = true)
-    public boolean isPhoneAvailable(String phoneNumber) {
+    private boolean isPhoneAvailable(String phoneNumber) {
         return !userRepository.existsByPhoneNumberAndIsDeletedFalse(phoneNumber);
-    }
-
-    @Override
-    public boolean validatePassword(String password) {
-        return PASSWORD_PATTERN.matcher(password).matches();
     }
 
     private void validateRegistration(RegisterRequest request) {
@@ -274,10 +259,6 @@ public class AuthServiceImpl implements AuthService {
 
         if (request.getPhoneNumber() != null && !isPhoneAvailable(request.getPhoneNumber())) {
             throw new RuntimeException("Phone number is already in use");
-        }
-
-        if (!validatePassword(request.getPassword())) {
-            throw new RuntimeException("Password does not meet security requirements");
         }
     }
 }
