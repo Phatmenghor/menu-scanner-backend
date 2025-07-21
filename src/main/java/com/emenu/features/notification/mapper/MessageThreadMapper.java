@@ -3,6 +3,7 @@ package com.emenu.features.notification.mapper;
 import com.emenu.features.notification.dto.request.MessageThreadCreateRequest;
 import com.emenu.features.notification.dto.response.MessageThreadResponse;
 import com.emenu.features.notification.models.MessageThread;
+import com.emenu.shared.domain.UUIDConversionHelper;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;
@@ -25,6 +26,7 @@ public abstract class MessageThreadMapper {
     @Mapping(target = "isClosed", constant = "false")
     @Mapping(target = "unreadCount", constant = "0")
     @Mapping(target = "lastMessageAt", ignore = true)
+    @Mapping(target = "participantIds", ignore = true) // Handle in @AfterMapping
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -38,19 +40,30 @@ public abstract class MessageThreadMapper {
     public abstract MessageThread toEntity(MessageThreadCreateRequest request);
 
     @Mapping(source = "messages", target = "messages")
+    @Mapping(source = "participantIds", target = "participantIds", ignore = true) // Handle in @AfterMapping
     public abstract MessageThreadResponse toResponse(MessageThread messageThread);
 
     public abstract List<MessageThreadResponse> toResponseList(List<MessageThread> messageThreads);
+
+    @AfterMapping
+    protected void setParticipantIds(MessageThreadCreateRequest request, @MappingTarget MessageThread messageThread) {
+        if (request.getParticipantIds() != null && !request.getParticipantIds().isEmpty()) {
+            messageThread.setParticipantIds(UUIDConversionHelper.uuidListToString(request.getParticipantIds()));
+        }
+    }
 
     @AfterMapping
     protected void setCalculatedFields(@MappingTarget MessageThreadResponse response, MessageThread messageThread) {
         // Set priority display
         response.setPriorityDisplay(getPriorityDisplay(messageThread.getPriority()));
 
+        // Set participant IDs
+        response.setParticipantIds(UUIDConversionHelper.stringToUuidList(messageThread.getParticipantIds()));
+
         // Set message count
         if (messageThread.getMessages() != null) {
             response.setMessageCount(messageThread.getMessages().size());
-            
+
             // Set last message
             messageThread.getMessages().stream()
                     .max((m1, m2) -> m1.getCreatedAt().compareTo(m2.getCreatedAt()))

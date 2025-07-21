@@ -1,5 +1,8 @@
 package com.emenu.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum BusinessStatus {
     ACTIVE("Active"),
     INACTIVE("Inactive"),
@@ -12,7 +15,4 @@ public enum BusinessStatus {
         this.description = description;
     }
 
-    public String getDescription() {
-        return description;
-    }
 }

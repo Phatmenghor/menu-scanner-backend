@@ -1,5 +1,8 @@
 package com.emenu.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum PaymentStatus {
     PENDING("Pending"),
     COMPLETED("Completed"),
@@ -12,7 +15,4 @@ public enum PaymentStatus {
         this.description = description;
     }
 
-    public String getDescription() {
-        return description;
-    }
 }

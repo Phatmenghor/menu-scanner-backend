@@ -1,5 +1,8 @@
 package com.emenu.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum UserType {
     PLATFORM_USER("Platform User"),
     BUSINESS_USER("Business User"), 
@@ -11,7 +14,4 @@ public enum UserType {
         this.description = description;
     }
 
-    public String getDescription() {
-        return description;
-    }
 }

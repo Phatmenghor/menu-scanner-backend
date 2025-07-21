@@ -1,5 +1,8 @@
 package com.emenu.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum PaymentMethod {
     CASH("Cash"),
     BANK_TRANSFER("Bank Transfer"),
@@ -12,7 +15,4 @@ public enum PaymentMethod {
         this.description = description;
     }
 
-    public String getDescription() {
-        return description;
-    }
 }

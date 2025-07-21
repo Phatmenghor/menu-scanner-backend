@@ -3,6 +3,7 @@ package com.emenu.features.notification.mapper;
 import com.emenu.features.notification.dto.request.MessageTemplateRequest;
 import com.emenu.features.notification.dto.response.MessageTemplateResponse;
 import com.emenu.features.notification.models.MessageTemplate;
+import com.emenu.shared.domain.UUIDConversionHelper;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;
@@ -18,7 +19,7 @@ public abstract class MessageTemplateMapper {
     protected PaginationMapper paginationMapper;
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "variables", ignore = true) // Set in @AfterMapping
+    @Mapping(target = "variables", ignore = true) // Handle in @AfterMapping
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -29,7 +30,7 @@ public abstract class MessageTemplateMapper {
     @Mapping(target = "deletedBy", ignore = true)
     public abstract MessageTemplate toEntity(MessageTemplateRequest request);
 
-    @Mapping(source = "variables", target = "variables")
+    @Mapping(source = "variables", target = "variables", ignore = true) // Handle in @AfterMapping
     public abstract MessageTemplateResponse toResponse(MessageTemplate messageTemplate);
 
     public abstract List<MessageTemplateResponse> toResponseList(List<MessageTemplate> messageTemplates);
@@ -37,7 +38,7 @@ public abstract class MessageTemplateMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "templateName", ignore = true) // Don't allow changing template name
-    @Mapping(target = "variables", ignore = true) // Set in @AfterMapping
+    @Mapping(target = "variables", ignore = true) // Handle in @AfterMapping
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -51,22 +52,20 @@ public abstract class MessageTemplateMapper {
     @AfterMapping
     protected void setVariables(MessageTemplateRequest request, @MappingTarget MessageTemplate messageTemplate) {
         if (request.getVariables() != null) {
-            messageTemplate.setVariables(String.join(",", request.getVariables()));
+            messageTemplate.setVariables(UUIDConversionHelper.stringListToString(request.getVariables()));
         }
     }
 
     @AfterMapping
     protected void updateVariables(MessageTemplateRequest request, @MappingTarget MessageTemplate messageTemplate) {
         if (request.getVariables() != null) {
-            messageTemplate.setVariables(String.join(",", request.getVariables()));
+            messageTemplate.setVariables(UUIDConversionHelper.stringListToString(request.getVariables()));
         }
     }
 
     @AfterMapping
     protected void parseVariables(@MappingTarget MessageTemplateResponse response, MessageTemplate messageTemplate) {
-        if (messageTemplate.getVariables() != null && !messageTemplate.getVariables().isEmpty()) {
-            response.setVariables(List.of(messageTemplate.getVariables().split(",")));
-        }
+        response.setVariables(UUIDConversionHelper.stringToStringList(messageTemplate.getVariables()));
     }
 
     // Universal pagination mapper usage

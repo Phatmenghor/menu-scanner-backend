@@ -1,10 +1,20 @@
 package com.emenu.features.notification.integration;
 
+import com.emenu.enums.notification.AlertType;
+import com.emenu.enums.notification.NotificationChannel;
+import com.emenu.features.auth.models.Business;
+import com.emenu.features.auth.models.User;
+import com.emenu.features.auth.repository.BusinessRepository;
+import com.emenu.features.auth.repository.UserRepository;
+import com.emenu.features.notification.dto.request.NotificationCreateRequest;
 import com.emenu.features.notification.service.EmailService;
 import com.emenu.features.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * Integration component that listens to subscription events and sends appropriate notifications
