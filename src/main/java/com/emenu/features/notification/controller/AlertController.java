@@ -49,9 +49,11 @@ public class AlertController {
      */
     @PostMapping("/payment-reminder/{businessId}")
     @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> sendPaymentReminderAlert(@PathVariable UUID businessId) {
-        log.info("Sending payment reminder alert for business: {}", businessId);
-        alertService.sendPaymentReminderAlert(businessId);
+    public ResponseEntity<ApiResponse<Void>> sendPaymentReminderAlert(
+            @PathVariable UUID businessId,
+            @RequestParam(defaultValue = "0") int daysOverdue) {
+        log.info("Sending payment reminder alert for business: {}, days overdue: {}", businessId, daysOverdue);
+        alertService.sendPaymentReminderAlert(businessId, daysOverdue);
         return ResponseEntity.ok(ApiResponse.success("Payment reminder alert sent successfully", null));
     }
 

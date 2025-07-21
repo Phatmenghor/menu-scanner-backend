@@ -1,6 +1,7 @@
 package com.emenu.features.notification.examples;
 
 import com.emenu.enums.notification.AlertType;
+import com.emenu.enums.notification.MessageType;
 import com.emenu.enums.notification.NotificationChannel;
 import com.emenu.features.notification.dto.request.BulkNotificationRequest;
 import com.emenu.features.notification.dto.request.MessageThreadCreateRequest;
@@ -62,7 +63,7 @@ public class MessagingUsageExamples {
         
         MessageThreadCreateRequest threadRequest = new MessageThreadCreateRequest();
         threadRequest.setSubject(subject);
-        threadRequest.setMessageType(com.emenu.enums.MessageType.SUPPORT_TICKET);
+        threadRequest.setMessageType(MessageType.SUPPORT_TICKET);
         threadRequest.setContent(initialMessage);
         threadRequest.setCustomerId(customerId);
         threadRequest.setPriority(2); // Normal priority
@@ -176,7 +177,7 @@ public class MessagingUsageExamples {
         
         MessageThreadCreateRequest threadRequest = new MessageThreadCreateRequest();
         threadRequest.setSubject("Customer Inquiry");
-        threadRequest.setMessageType(com.emenu.enums.MessageType.CUSTOMER_SUPPORT);
+        threadRequest.setMessageType(MessageType.CUSTOMER_SUPPORT);
         threadRequest.setContent(inquiry);
         threadRequest.setCustomerId(customerId);
         threadRequest.setBusinessId(businessId);
