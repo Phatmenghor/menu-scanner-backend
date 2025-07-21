@@ -8,8 +8,12 @@ import com.emenu.features.auth.models.SubscriptionPlan;
 import com.emenu.features.auth.repository.SubscriptionPlanRepository;
 import com.emenu.features.auth.repository.SubscriptionRepository;
 import com.emenu.features.auth.service.SubscriptionPlanService;
+import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +55,17 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SubscriptionPlanResponse> getActivePlans() {
+    public PaginationResponse<SubscriptionPlanResponse> getAllPlans(int pageNo, int pageSize) {
+        int page = pageNo > 0 ? pageNo - 1 : 0;
+        Pageable pageable = PaginationUtils.createPageable(page, pageSize, "createdAt", "DESC");
+
+        Page<SubscriptionPlan> planPage = planRepository.findByIsDeletedFalse(pageable);
+        return planMapper.toPaginationResponse(planPage);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SubscriptionPlanResponse> getAllActivePlans() {
         List<SubscriptionPlan> plans = planRepository.findAllActivePlans();
         return planMapper.toResponseList(plans);
     }
@@ -105,6 +119,30 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         plan.softDelete();
         planRepository.save(plan);
         log.info("Subscription plan deleted: {}", plan.getName());
+    }
+
+    @Override
+    public SubscriptionPlanResponse createCustomPlan(UUID businessId, SubscriptionPlanCreateRequest request) {
+        log.info("Creating custom subscription plan for business: {}", businessId);
+
+        // Create the plan but mark it as custom
+        SubscriptionPlan plan = planMapper.toEntity(request);
+        plan.setIsCustom(true);
+        plan.setName(request.getName() + "_" + businessId.toString().substring(0, 8));
+
+        SubscriptionPlan savedPlan = planRepository.save(plan);
+        log.info("Custom subscription plan created successfully: {}", savedPlan.getName());
+
+        return planMapper.toResponse(savedPlan);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SubscriptionPlanResponse> getCustomPlansForBusiness(UUID businessId) {
+        // In a real implementation, you might have a business_specific_plans table
+        // For now, we'll return empty list as custom plans would need additional database structure
+        log.info("Getting custom plans for business: {}", businessId);
+        return List.of();
     }
 
     @Override
