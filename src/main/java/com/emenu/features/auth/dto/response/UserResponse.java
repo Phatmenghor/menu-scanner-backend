@@ -18,6 +18,7 @@ public class UserResponse {
     private String lastName;
     private String fullName;
     private String phoneNumber;
+    private String profileImageUrl;
     private UserType userType;
     private AccountStatus accountStatus;
     private UUID businessId;

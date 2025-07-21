@@ -26,7 +26,8 @@ public class RegisterRequest {
     
     @NotBlank(message = "Last name is required")
     private String lastName;
-    
+
+    private String profileImageUrl;
     private String phoneNumber;
     private String address;
 }

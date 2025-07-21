@@ -27,6 +27,7 @@ public class UserCreateRequest {
     private String lastName;
     
     private String phoneNumber;
+    private String profileImageUrl;
     
     @NotNull(message = "User type is required")
     private UserType userType;
@@ -34,6 +35,7 @@ public class UserCreateRequest {
     private UUID businessId;
     private List<RoleEnum> roles;
     private String position;
+
     private String address;
     private String notes;
 }

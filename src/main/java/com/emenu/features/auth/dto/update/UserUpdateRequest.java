@@ -13,6 +13,7 @@ public class UserUpdateRequest {
     private String firstName;
     private String lastName;
     private String phoneNumber;
+    private String profileImageUrl;
     private AccountStatus accountStatus;
     private UUID businessId;
     private List<RoleEnum> roles;

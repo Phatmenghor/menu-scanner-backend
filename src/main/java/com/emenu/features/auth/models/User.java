@@ -35,6 +35,8 @@ public class User extends BaseUUIDEntity {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    private String profileImageUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "user_type", nullable = false)
     private UserType userType;
