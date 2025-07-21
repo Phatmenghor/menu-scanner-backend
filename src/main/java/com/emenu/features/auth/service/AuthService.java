@@ -5,14 +5,38 @@ import com.emenu.features.auth.dto.request.PasswordChangeRequest;
 import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
-import com.emenu.features.auth.dto.update.UserUpdateRequest;
+
+import java.util.UUID;
 
 public interface AuthService {
-    LoginResponse register(RegisterRequest request);
+
+    // Authentication
     LoginResponse login(LoginRequest request);
-    void logout();
+    void logout(String token);
+    LoginResponse refreshToken(String refreshToken);
+
+    // Registration
+    UserResponse register(RegisterRequest request);
+    UserResponse registerBusinessOwner(RegisterRequest request);
+    UserResponse registerCustomer(RegisterRequest request);
+
+    // Password Management
     void changePassword(PasswordChangeRequest request);
     void forgotPassword(String email);
-    UserResponse getCurrentUserProfile();
-    UserResponse updateCurrentUserProfile(UserUpdateRequest request);
+    void resetPassword(String token, String newPassword);
+
+    // Email Verification
+    void sendEmailVerification(UUID userId);
+    void verifyEmail(String token);
+
+    // Account Management
+    void lockAccount(UUID userId);
+    void unlockAccount(UUID userId);
+    void suspendAccount(UUID userId);
+    void activateAccount(UUID userId);
+
+    // Validation
+    boolean isEmailAvailable(String email);
+    boolean isPhoneAvailable(String phoneNumber);
+    boolean validatePassword(String password);
 }

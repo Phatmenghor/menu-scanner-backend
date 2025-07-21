@@ -11,6 +11,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -41,7 +43,7 @@ public class EmailServiceImpl implements EmailService {
             message.setTo(to);
             message.setSubject(subject);
             message.setText(content);
-            
+
             mailSender.send(message);
             log.info("Email sent successfully to: {}", to);
         } catch (Exception e) {
@@ -55,12 +57,12 @@ public class EmailServiceImpl implements EmailService {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-            
+
             helper.setFrom(fromEmail);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content, htmlContent);
-            
+
             mailSender.send(mimeMessage);
             log.info("HTML email sent successfully to: {}", to);
         } catch (MessagingException e) {
@@ -74,17 +76,17 @@ public class EmailServiceImpl implements EmailService {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-            
+
             helper.setFrom(fromEmail);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content);
-            
+
             // Add attachments
             for (Map.Entry<String, byte[]> attachment : attachments.entrySet()) {
-                helper.addAttachment(attachment.getKey(), () -> attachment.getValue());
+                helper.addAttachment(attachment.getKey(), () -> new java.io.ByteArrayInputStream(attachment.getValue()));
             }
-            
+
             mailSender.send(mimeMessage);
             log.info("Email with attachments sent successfully to: {}", to);
         } catch (MessagingException e) {
@@ -99,10 +101,10 @@ public class EmailServiceImpl implements EmailService {
             TemplateName template = TemplateName.valueOf(templateName.toUpperCase());
             String content = templateService.processTemplate(template, variables);
             String htmlContent = templateService.processHtmlTemplate(template, variables);
-            
+
             // Get template subject (simplified - would fetch from template)
             String subject = "Notification from " + appName;
-            
+
             sendEmail(to, subject, content, htmlContent);
             log.info("Templated email sent successfully to: {}", to);
         } catch (Exception e) {
@@ -140,11 +142,11 @@ public class EmailServiceImpl implements EmailService {
         String subject = "Your subscription is expiring soon - " + appName;
         String content = String.format(
                 "Dear %s,\n\n" +
-                "Your subscription will expire in %d days. Please renew to continue using our services.\n\n" +
-                "Best regards,\n%s Team",
+                        "Your subscription will expire in %d days. Please renew to continue using our services.\n\n" +
+                        "Best regards,\n%s Team",
                 businessName, daysRemaining, appName
         );
-        
+
         sendEmail(businessEmail, subject, content);
     }
 
@@ -153,11 +155,11 @@ public class EmailServiceImpl implements EmailService {
         String subject = "Your subscription has expired - " + appName;
         String content = String.format(
                 "Dear %s,\n\n" +
-                "Your subscription has expired. Please renew immediately to restore access to our services.\n\n" +
-                "Best regards,\n%s Team",
+                        "Your subscription has expired. Please renew immediately to restore access to our services.\n\n" +
+                        "Best regards,\n%s Team",
                 businessName, appName
         );
-        
+
         sendEmail(businessEmail, subject, content);
     }
 
@@ -166,13 +168,13 @@ public class EmailServiceImpl implements EmailService {
         String subject = "Payment confirmation - " + appName;
         String content = String.format(
                 "Dear %s,\n\n" +
-                "We have received your payment successfully.\n\n" +
-                "Payment Details:\n%s\n\n" +
-                "Thank you for your business!\n\n" +
-                "Best regards,\n%s Team",
+                        "We have received your payment successfully.\n\n" +
+                        "Payment Details:\n%s\n\n" +
+                        "Thank you for your business!\n\n" +
+                        "Best regards,\n%s Team",
                 businessName, paymentDetails, appName
         );
-        
+
         sendEmail(businessEmail, subject, content);
     }
 
@@ -181,12 +183,12 @@ public class EmailServiceImpl implements EmailService {
         String subject = "Welcome to " + appName;
         String content = String.format(
                 "Dear %s,\n\n" +
-                "Welcome to %s! We're excited to have you on board.\n\n" +
-                "Get started by exploring our features and setting up your account.\n\n" +
-                "Best regards,\n%s Team",
+                        "Welcome to %s! We're excited to have you on board.\n\n" +
+                        "Get started by exploring our features and setting up your account.\n\n" +
+                        "Best regards,\n%s Team",
                 userName, appName, appName
         );
-        
+
         sendEmail(userEmail, subject, content);
     }
 
@@ -195,12 +197,12 @@ public class EmailServiceImpl implements EmailService {
         String subject = "Password reset request - " + appName;
         String content = String.format(
                 "You have requested a password reset for your %s account.\n\n" +
-                "Click the following link to reset your password:\n%s\n\n" +
-                "If you didn't request this, please ignore this email.\n\n" +
-                "Best regards,\n%s Team",
+                        "Click the following link to reset your password:\n%s\n\n" +
+                        "If you didn't request this, please ignore this email.\n\n" +
+                        "Best regards,\n%s Team",
                 appName, resetLink, appName
         );
-        
+
         sendEmail(userEmail, subject, content);
     }
 
@@ -214,12 +216,12 @@ public class EmailServiceImpl implements EmailService {
         String subject = "Email verification - " + appName;
         String content = String.format(
                 "Please verify your email address by using the following code:\n\n" +
-                "Verification Code: %s\n\n" +
-                "This code will expire in 24 hours.\n\n" +
-                "Best regards,\n%s Team",
+                        "Verification Code: %s\n\n" +
+                        "This code will expire in 24 hours.\n\n" +
+                        "Best regards,\n%s Team",
                 verificationCode, appName
         );
-        
+
         sendEmail(email, subject, content);
     }
 }

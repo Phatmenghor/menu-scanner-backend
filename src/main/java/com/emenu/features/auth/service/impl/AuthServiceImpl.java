@@ -3,13 +3,11 @@ package com.emenu.features.auth.service.impl;
 import com.emenu.enums.AccountStatus;
 import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
-import com.emenu.exception.custom.*;
-import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.request.LoginRequest;
 import com.emenu.features.auth.dto.request.PasswordChangeRequest;
+import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
-import com.emenu.features.auth.dto.update.UserUpdateRequest;
 import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
@@ -23,13 +21,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -45,16 +43,63 @@ public class AuthServiceImpl implements AuthService {
     private final JWTGenerator jwtGenerator;
     private final SecurityUtils securityUtils;
 
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile(
+            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+    );
+
     @Override
-    public LoginResponse register(RegisterRequest request) {
+    public LoginResponse login(LoginRequest request) {
+        log.info("Login attempt for email: {}", request.getEmail());
+
+        // Authenticate user
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
+
+        // Get user details
+        User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Additional security validation
+        securityUtils.validateAccountStatus(user);
+
+        // Generate JWT token
+        String token = jwtGenerator.generateAccessToken(authentication);
+
+        // Create response
+        LoginResponse response = new LoginResponse();
+        response.setAccessToken(token);
+        response.setUserId(user.getId());
+        response.setEmail(user.getEmail());
+        response.setFullName(user.getFullName());
+        response.setUserType(user.getUserType());
+        response.setRoles(user.getRoles().stream().map(role -> role.getName().name()).toList());
+        response.setBusinessId(user.getBusinessId());
+        response.setBusinessName(user.getBusiness() != null ? user.getBusiness().getName() : null);
+        response.setWelcomeMessage("Welcome back, " + user.getFirstName() + "!");
+
+        log.info("Login successful for user: {}", user.getEmail());
+        return response;
+    }
+
+    @Override
+    public void logout(String token) {
+        // In a more complete implementation, you would add the token to a blacklist
+        log.info("User logged out");
+    }
+
+    @Override
+    public LoginResponse refreshToken(String refreshToken) {
+        // Implementation for refresh token logic
+        throw new RuntimeException("Refresh token not implemented yet");
+    }
+
+    @Override
+    public UserResponse register(RegisterRequest request) {
         log.info("Registering new customer: {}", request.getEmail());
 
-        // Check if user exists
-        if (userRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
-            throw new ValidationException("Email already exists");
-        }
+        validateRegistration(request);
 
-        // Create customer user
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -65,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
         user.setUserType(UserType.CUSTOMER);
         user.setAccountStatus(AccountStatus.ACTIVE);
 
-        // Set customer role
+        // Assign customer role
         Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
                 .orElseThrow(() -> new RuntimeException("Customer role not found"));
         user.setRoles(List.of(customerRole));
@@ -73,50 +118,39 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
         log.info("Customer registered successfully: {}", savedUser.getEmail());
 
-        // Auto login after registration
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtGenerator.generateAccessToken(authentication);
-
-        return createLoginResponse(token, savedUser, "Welcome! Registration successful.");
+        return userMapper.toResponse(savedUser);
     }
 
     @Override
-    public LoginResponse login(LoginRequest request) {
-        log.info("Login attempt for email: {}", request.getEmail());
+    public UserResponse registerBusinessOwner(RegisterRequest request) {
+        log.info("Registering new business owner: {}", request.getEmail());
 
-        // First, get user to check account status before authentication
-        User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
-                .orElseThrow(() -> new UserNotFoundException("Invalid email or password"));
+        validateRegistration(request);
 
-        // Validate account status before attempting authentication
-        validateAccountStatusForLogin(user);
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setAddress(request.getAddress());
+        user.setUserType(UserType.BUSINESS_USER);
+        user.setAccountStatus(AccountStatus.ACTIVE);
 
-        try {
-            // Authenticate user
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            );
+        // Assign business owner role
+        Role businessOwnerRole = roleRepository.findByName(RoleEnum.BUSINESS_OWNER)
+                .orElseThrow(() -> new RuntimeException("Business owner role not found"));
+        user.setRoles(List.of(businessOwnerRole));
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String token = jwtGenerator.generateAccessToken(authentication);
+        User savedUser = userRepository.save(user);
+        log.info("Business owner registered successfully: {}", savedUser.getEmail());
 
-            log.info("User logged in successfully: {} with status: {}", user.getEmail(), user.getAccountStatus());
-            return createLoginResponse(token, user, "Welcome back!");
-
-        } catch (Exception e) {
-            log.warn("Authentication failed for user: {} - Reason: {}", request.getEmail(), e.getMessage());
-            throw e; // Re-throw to let Spring Security handle it
-        }
+        return userMapper.toResponse(savedUser);
     }
 
     @Override
-    public void logout() {
-        SecurityContextHolder.clearContext();
-        log.info("User logged out successfully");
+    public UserResponse registerCustomer(RegisterRequest request) {
+        return register(request);
     }
 
     @Override
@@ -125,12 +159,17 @@ public class AuthServiceImpl implements AuthService {
 
         // Verify current password
         if (!passwordEncoder.matches(request.getCurrentPassword(), currentUser.getPassword())) {
-            throw new ValidationException("Current password is incorrect");
+            throw new RuntimeException("Current password is incorrect");
         }
 
         // Verify new password confirmation
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new ValidationException("Password confirmation does not match");
+            throw new RuntimeException("Password confirmation does not match");
+        }
+
+        // Validate new password
+        if (!validatePassword(request.getNewPassword())) {
+            throw new RuntimeException("New password does not meet security requirements");
         }
 
         // Update password
@@ -143,78 +182,102 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void forgotPassword(String email) {
         User user = userRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // In a real application, you would:
-        // 1. Generate a password reset token
-        // 2. Store it with expiration
-        // 3. Send email with reset link
+        // Generate reset token and send email
+        // Implementation would involve generating a secure token and sending email
+        log.info("Password reset requested for user: {}", email);
+    }
 
-        log.info("Password reset requested for: {}", email);
-        // For now, just log it
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        // Implementation for password reset with token validation
+        log.info("Password reset attempted with token");
+    }
+
+    @Override
+    public void sendEmailVerification(UUID userId) {
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Generate verification token and send email
+        log.info("Email verification sent to user: {}", user.getEmail());
+    }
+
+    @Override
+    public void verifyEmail(String token) {
+        // Implementation for email verification
+        log.info("Email verification attempted with token");
+    }
+
+    @Override
+    public void lockAccount(UUID userId) {
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setAccountStatus(AccountStatus.LOCKED);
+        userRepository.save(user);
+        log.info("Account locked for user: {}", user.getEmail());
+    }
+
+    @Override
+    public void unlockAccount(UUID userId) {
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        userRepository.save(user);
+        log.info("Account unlocked for user: {}", user.getEmail());
+    }
+
+    @Override
+    public void suspendAccount(UUID userId) {
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setAccountStatus(AccountStatus.SUSPENDED);
+        userRepository.save(user);
+        log.info("Account suspended for user: {}", user.getEmail());
+    }
+
+    @Override
+    public void activateAccount(UUID userId) {
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        userRepository.save(user);
+        log.info("Account activated for user: {}", user.getEmail());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponse getCurrentUserProfile() {
-        User currentUser = securityUtils.getCurrentUser();
-        return userMapper.toResponse(currentUser);
+    public boolean isEmailAvailable(String email) {
+        return !userRepository.existsByEmailAndIsDeletedFalse(email);
     }
 
     @Override
-    public UserResponse updateCurrentUserProfile(UserUpdateRequest request) {
-        User currentUser = securityUtils.getCurrentUser();
-
-        userMapper.updateEntity(request, currentUser);
-        User updatedUser = userRepository.save(currentUser);
-
-        log.info("Profile updated successfully for user: {}", currentUser.getEmail());
-        return userMapper.toResponse(updatedUser);
+    @Transactional(readOnly = true)
+    public boolean isPhoneAvailable(String phoneNumber) {
+        return !userRepository.existsByPhoneNumberAndIsDeletedFalse(phoneNumber);
     }
 
-    private LoginResponse createLoginResponse(String token, User user, String welcomeMessage) {
-        LoginResponse response = new LoginResponse();
-        response.setAccessToken(token);
-        response.setTokenType("Bearer");
-        response.setUserId(user.getId());
-        response.setEmail(user.getEmail());
-        response.setFullName(user.getFullName());
-        response.setUserType(user.getUserType());
-        response.setBusinessId(user.getBusinessId());
-        response.setBusinessName(user.getBusiness() != null ? user.getBusiness().getName() : null);
-        response.setWelcomeMessage(welcomeMessage);
+    @Override
+    public boolean validatePassword(String password) {
+        return PASSWORD_PATTERN.matcher(password).matches();
+    }
 
-        if (user.getRoles() != null) {
-            response.setRoles(user.getRoles().stream()
-                    .map(role -> role.getName().name())
-                    .collect(Collectors.toList()));
+    private void validateRegistration(RegisterRequest request) {
+        if (!isEmailAvailable(request.getEmail())) {
+            throw new RuntimeException("Email is already in use");
         }
 
-        return response;
-    }
+        if (request.getPhoneNumber() != null && !isPhoneAvailable(request.getPhoneNumber())) {
+            throw new RuntimeException("Phone number is already in use");
+        }
 
-    private void validateAccountStatusForLogin(User user) {
-        switch (user.getAccountStatus()) {
-            case INACTIVE -> {
-                log.warn("Login attempt blocked - inactive account: {}", user.getEmail());
-                throw new AccountInactiveException("Your account is inactive. Please contact support to reactivate your account.");
-            }
-            case LOCKED -> {
-                log.warn("Login attempt blocked - locked account: {}", user.getEmail());
-                throw new AccountLockedException("Your account has been locked due to security reasons. Please contact support to unlock your account.");
-            }
-            case SUSPENDED -> {
-                log.warn("Login attempt blocked - suspended account: {}", user.getEmail());
-                throw new AccountSuspendedException("Your account has been suspended. Please contact support for account reactivation.");
-            }
-            case ACTIVE -> {
-                // Account is active, allow login
-                log.debug("Account status validated successfully for user: {}", user.getEmail());
-            }
-            default -> {
-                log.error("Unknown account status for user: {} - Status: {}", user.getEmail(), user.getAccountStatus());
-                throw new AccountInactiveException("Account status is invalid. Please contact support.");
-            }
+        if (!validatePassword(request.getPassword())) {
+            throw new RuntimeException("Password does not meet security requirements");
         }
     }
 }

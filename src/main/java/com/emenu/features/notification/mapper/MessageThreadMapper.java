@@ -12,7 +12,7 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {MessageMapper.class})
 public abstract class MessageThreadMapper {
 
     @Autowired
@@ -39,7 +39,7 @@ public abstract class MessageThreadMapper {
     @Mapping(target = "closedBy", ignore = true)
     public abstract MessageThread toEntity(MessageThreadCreateRequest request);
 
-    @Mapping(source = "messages", target = "messages")
+    @Mapping(source = "messages", target = "messages", ignore = true) // Handle in @AfterMapping
     @Mapping(source = "participantIds", target = "participantIds", ignore = true) // Handle in @AfterMapping
     public abstract MessageThreadResponse toResponse(MessageThread messageThread);
 
@@ -60,9 +60,12 @@ public abstract class MessageThreadMapper {
         // Set participant IDs
         response.setParticipantIds(UUIDConversionHelper.stringToUuidList(messageThread.getParticipantIds()));
 
-        // Set message count
-        if (messageThread.getMessages() != null) {
+        // Set message count and last message manually to avoid conflicts
+        if (messageThread.getMessages() != null && !messageThread.getMessages().isEmpty()) {
             response.setMessageCount(messageThread.getMessages().size());
+
+            // Convert messages manually using the injected messageMapper
+            response.setMessages(messageMapper.toResponseList(messageThread.getMessages()));
 
             // Set last message
             messageThread.getMessages().stream()

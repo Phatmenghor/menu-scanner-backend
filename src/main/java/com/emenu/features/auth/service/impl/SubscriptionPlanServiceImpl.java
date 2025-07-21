@@ -1,19 +1,15 @@
 package com.emenu.features.auth.service.impl;
 
-import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.request.SubscriptionPlanCreateRequest;
 import com.emenu.features.auth.dto.response.SubscriptionPlanResponse;
 import com.emenu.features.auth.dto.update.SubscriptionPlanUpdateRequest;
 import com.emenu.features.auth.mapper.SubscriptionPlanMapper;
 import com.emenu.features.auth.models.SubscriptionPlan;
 import com.emenu.features.auth.repository.SubscriptionPlanRepository;
+import com.emenu.features.auth.repository.SubscriptionRepository;
 import com.emenu.features.auth.service.SubscriptionPlanService;
-import com.emenu.shared.dto.PaginationResponse;
-import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +24,7 @@ import java.util.UUID;
 public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
     private final SubscriptionPlanRepository planRepository;
+    private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanMapper planMapper;
 
     @Override
@@ -35,30 +32,28 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         log.info("Creating subscription plan: {}", request.getName());
 
         if (planRepository.existsByNameAndIsDeletedFalse(request.getName())) {
-            throw new ValidationException("Plan name already exists");
+            throw new RuntimeException("Plan with this name already exists");
         }
 
         SubscriptionPlan plan = planMapper.toEntity(request);
-        
-        // Set sort order if not provided
-        if (plan.getSortOrder() == null) {
-            plan.setSortOrder(getNextSortOrder());
-        }
-
         SubscriptionPlan savedPlan = planRepository.save(plan);
-        log.info("Subscription plan created successfully: {}", savedPlan.getName());
 
+        log.info("Subscription plan created successfully: {}", savedPlan.getName());
         return planMapper.toResponse(savedPlan);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PaginationResponse<SubscriptionPlanResponse> getAllPlans(int pageNo, int pageSize) {
-        int page = pageNo > 0 ? pageNo - 1 : 0;
-        Pageable pageable = PaginationUtils.createPageable(page, pageSize, "sortOrder", "ASC");
-        
-        Page<SubscriptionPlan> planPage = planRepository.findByIsDeletedFalse(pageable);
-        return planMapper.toPaginationResponse(planPage);
+    public List<SubscriptionPlanResponse> getAllPlans() {
+        List<SubscriptionPlan> plans = planRepository.findByIsDeletedFalse(null).getContent();
+        return planMapper.toResponseList(plans);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SubscriptionPlanResponse> getActivePlans() {
+        List<SubscriptionPlan> plans = planRepository.findAllActivePlans();
+        return planMapper.toResponseList(plans);
     }
 
     @Override
@@ -70,29 +65,26 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SubscriptionPlanResponse> getAllActivePlans() {
-        List<SubscriptionPlan> plans = planRepository.findAllActivePlans();
-        return planMapper.toResponseList(plans);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public SubscriptionPlanResponse getPlanById(UUID id) {
-        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(id)
+    public SubscriptionPlanResponse getPlanById(UUID planId) {
+        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(planId)
                 .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
+
         return planMapper.toResponse(plan);
     }
 
     @Override
-    public SubscriptionPlanResponse updatePlan(UUID id, SubscriptionPlanUpdateRequest request) {
-        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(id)
+    @Transactional(readOnly = true)
+    public SubscriptionPlanResponse getPlanByName(String planName) {
+        SubscriptionPlan plan = planRepository.findByNameAndIsDeletedFalse(planName)
                 .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
 
-        // Check name uniqueness if changed
-        if (!plan.getName().equals(request.getName()) && 
-            planRepository.existsByNameAndIsDeletedFalse(request.getName())) {
-            throw new ValidationException("Plan name already exists");
-        }
+        return planMapper.toResponse(plan);
+    }
+
+    @Override
+    public SubscriptionPlanResponse updatePlan(UUID planId, SubscriptionPlanUpdateRequest request) {
+        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(planId)
+                .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
 
         planMapper.updateEntity(request, plan);
         SubscriptionPlan updatedPlan = planRepository.save(plan);
@@ -102,23 +94,22 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     }
 
     @Override
-    public void deletePlan(UUID id) {
-        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(id)
+    public void deletePlan(UUID planId) {
+        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(planId)
                 .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
 
-        // Check if plan is in use
-        if (plan.getSubscriptions() != null && !plan.getSubscriptions().isEmpty()) {
-            throw new ValidationException("Cannot delete plan that has active subscriptions");
+        if (!canDeletePlan(planId)) {
+            throw new RuntimeException("Cannot delete plan that is currently in use");
         }
 
         plan.softDelete();
         planRepository.save(plan);
-        log.info("Subscription plan deleted successfully: {}", plan.getName());
+        log.info("Subscription plan deleted: {}", plan.getName());
     }
 
     @Override
-    public void activatePlan(UUID id) {
-        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(id)
+    public void activatePlan(UUID planId) {
+        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(planId)
                 .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
 
         plan.setIsActive(true);
@@ -127,8 +118,8 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     }
 
     @Override
-    public void deactivatePlan(UUID id) {
-        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(id)
+    public void deactivatePlan(UUID planId) {
+        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(planId)
                 .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
 
         plan.setIsActive(false);
@@ -137,79 +128,88 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     }
 
     @Override
-    public SubscriptionPlanResponse setAsDefault(UUID id) {
-        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
-
-        // Remove default from other plans
+    public SubscriptionPlanResponse setAsDefault(UUID planId) {
+        // First, remove default from all other plans
         List<SubscriptionPlan> defaultPlans = planRepository.findByIsDefaultAndIsDeletedFalse(true);
-        defaultPlans.forEach(p -> p.setIsDefault(false));
+        defaultPlans.forEach(plan -> plan.setIsDefault(false));
         planRepository.saveAll(defaultPlans);
 
-        // Set this plan as default
+        // Set the specified plan as default
+        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(planId)
+                .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
+
         plan.setIsDefault(true);
         SubscriptionPlan savedPlan = planRepository.save(plan);
 
-        log.info("Set subscription plan as default: {}", plan.getName());
+        log.info("Subscription plan set as default: {}", plan.getName());
         return planMapper.toResponse(savedPlan);
-    }
-
-    @Override
-    public SubscriptionPlanResponse createCustomPlan(UUID businessId, SubscriptionPlanCreateRequest request) {
-        log.info("Creating custom subscription plan for business: {}", businessId);
-
-        SubscriptionPlan plan = planMapper.toEntity(request);
-        plan.setIsCustom(true);
-        plan.setName(request.getName() + "_CUSTOM_" + businessId.toString().substring(0, 8));
-
-        SubscriptionPlan savedPlan = planRepository.save(plan);
-        log.info("Custom subscription plan created: {}", savedPlan.getName());
-
-        return planMapper.toResponse(savedPlan);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<SubscriptionPlanResponse> getCustomPlansForBusiness(UUID businessId) {
-        // This would need additional logic to track which custom plans belong to which business
-        // For now, return empty list
-        return List.of();
     }
 
     @Override
     public void seedDefaultPlans() {
-        log.info("Seeding default subscription plans...");
+        log.info("Seeding default subscription plans");
 
         if (planRepository.count() > 0) {
             log.info("Plans already exist, skipping seed");
             return;
         }
 
-        // Free Plan
-        createDefaultPlan("FREE", "Free Plan", "Perfect for testing", 
-                BigDecimal.ZERO, 30, 1, 10, 2, List.of("Basic Menu", "Basic Orders"), 0);
+        // Create Free Plan
+        createDefaultPlan("FREE", "Free Plan", "Get started with basic features",
+                BigDecimal.ZERO, 30, 1, 10, 2, true, true);
 
-        // Basic Plan
-        createDefaultPlan("BASIC", "Basic Plan", "Great for small restaurants", 
-                new BigDecimal("29.99"), 30, 3, 50, 10, 
-                List.of("Advanced Menu", "Order Management", "Basic Analytics"), 1);
+        // Create Basic Plan
+        createDefaultPlan("BASIC", "Basic Plan", "Perfect for small restaurants",
+                new BigDecimal("29.99"), 30, 3, 50, 10, false, false);
 
-        // Professional Plan
-        createDefaultPlan("PROFESSIONAL", "Professional Plan", "Perfect for growing businesses", 
-                new BigDecimal("79.99"), 30, 10, 200, 25, 
-                List.of("Full Menu Management", "Advanced Analytics", "Custom Branding"), 2);
+        // Create Professional Plan
+        createDefaultPlan("PROFESSIONAL", "Professional Plan", "Advanced features for growing businesses",
+                new BigDecimal("79.99"), 30, 10, 200, 25, false, false);
 
-        // Enterprise Plan
-        createDefaultPlan("ENTERPRISE", "Enterprise Plan", "For large operations", 
-                new BigDecimal("199.99"), 30, -1, -1, -1, 
-                List.of("Everything", "Priority Support", "Custom Integration"), 3);
+        // Create Enterprise Plan
+        createDefaultPlan("ENTERPRISE", "Enterprise Plan", "Full-featured solution for large operations",
+                new BigDecimal("199.99"), 30, -1, -1, -1, false, false);
 
         log.info("Default subscription plans seeded successfully");
     }
 
+    @Override
+    public void updateDefaultPlans() {
+        log.info("Updating default subscription plans");
+        // Implementation for updating existing default plans
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean canDeletePlan(UUID planId) {
+        return !isPlanInUse(planId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isPlanInUse(UUID planId) {
+        return subscriptionRepository.countByPlan(planId) > 0;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long getActiveSubscriptionsCount(UUID planId) {
+        return subscriptionRepository.countByPlan(planId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long getTotalPlansCount() {
+        return planRepository.count();
+    }
+
     private void createDefaultPlan(String name, String displayName, String description,
-                                   BigDecimal price, int durationDays, int maxStaff, 
-                                   int maxMenuItems, int maxTables, List<String> features, int sortOrder) {
+                                   BigDecimal price, Integer durationDays, Integer maxStaff,
+                                   Integer maxMenuItems, Integer maxTables, Boolean isDefault, Boolean isTrial) {
+        if (planRepository.existsByNameAndIsDeletedFalse(name)) {
+            return; // Plan already exists
+        }
+
         SubscriptionPlan plan = new SubscriptionPlan();
         plan.setName(name);
         plan.setDisplayName(displayName);
@@ -219,16 +219,22 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         plan.setMaxStaff(maxStaff);
         plan.setMaxMenuItems(maxMenuItems);
         plan.setMaxTables(maxTables);
-        plan.setFeatureList(features);
-        plan.setSortOrder(sortOrder);
         plan.setIsActive(true);
-        plan.setIsDefault(name.equals("FREE"));
-        plan.setIsCustom(false);
-        
+        plan.setIsDefault(isDefault);
+        plan.setIsTrial(isTrial);
+        plan.setSortOrder(getSortOrderForPlan(name));
+
         planRepository.save(plan);
+        log.debug("Created default plan: {}", name);
     }
 
-    private Integer getNextSortOrder() {
-        return (int) (planRepository.count() + 1);
+    private Integer getSortOrderForPlan(String planName) {
+        return switch (planName) {
+            case "FREE" -> 1;
+            case "BASIC" -> 2;
+            case "PROFESSIONAL" -> 3;
+            case "ENTERPRISE" -> 4;
+            default -> 99;
+        };
     }
 }
