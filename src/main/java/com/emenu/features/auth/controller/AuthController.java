@@ -1,10 +1,14 @@
 package com.emenu.features.auth.controller;
 
+import com.emenu.enums.AccountStatus;
+import com.emenu.enums.UserType;
+import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
 import com.emenu.features.auth.dto.request.LoginRequest;
 import com.emenu.features.auth.dto.request.PasswordChangeRequest;
 import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
+import com.emenu.features.auth.dto.update.AccountStatusUpdateRequest;
 import com.emenu.features.auth.service.AuthService;
 import com.emenu.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
@@ -12,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -46,129 +49,75 @@ public class AuthController {
     }
 
     /**
-     * Customer registration
+     * Unified user registration for all user types
      */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(@Valid @RequestBody RegisterRequest request) {
-        log.info("Registration request received for email: {}", request.getEmail());
+        log.info("Registration request received for {} user: {}", request.getUserType(), request.getEmail());
         UserResponse response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Registration successful", response));
-    }
 
-    /**
-     * Business owner registration
-     */
-    @PostMapping("/register/business-owner")
-    public ResponseEntity<ApiResponse<UserResponse>> registerBusinessOwner(@Valid @RequestBody RegisterRequest request) {
-        log.info("Business owner registration request received for email: {}", request.getEmail());
-        UserResponse response = authService.registerBusinessOwner(request);
+        String userTypeMessage = getUserTypeMessage(request.getUserType());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Business owner registration successful", response));
+                .body(ApiResponse.success(userTypeMessage + " registration successful", response));
     }
 
     /**
      * Change password
      */
     @PostMapping("/change-password")
-    public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody PasswordChangeRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> changePassword(@Valid @RequestBody PasswordChangeRequest request) {
         log.info("Password change request received");
-        authService.changePassword(request);
-        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
-    }
-
-    /**
-     * Forgot password
-     */
-    @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestParam String email) {
-        log.info("Forgot password request for email: {}", email);
-        authService.forgotPassword(email);
-        return ResponseEntity.ok(ApiResponse.success("Password reset instructions sent to your email", null));
+        UserResponse response = authService.changePassword(request); // ✅ Now returns UserResponse
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", response));
     }
 
     /**
      * Reset password
      */
     @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestParam String token,
-                                                           @RequestParam String newPassword) {
+    public ResponseEntity<ApiResponse<UserResponse>> resetPassword(@RequestParam String token,
+                                                                   @RequestParam String newPassword) {
         log.info("Password reset request with token");
-        authService.resetPassword(token, newPassword);
-        return ResponseEntity.ok(ApiResponse.success("Password reset successful", null));
+        UserResponse response = authService.resetPassword(token, newPassword); // ✅ Now returns UserResponse
+        return ResponseEntity.ok(ApiResponse.success("Password reset successful", response));
     }
 
     /**
-     * Send email verification
+     * Admin reset password
      */
-    @PostMapping("/verify-email/send")
-    public ResponseEntity<ApiResponse<Void>> sendEmailVerification() {
-        log.info("Email verification send request");
-        // Would get current user ID from security context
-        authService.sendEmailVerification(UUID.randomUUID());
-        return ResponseEntity.ok(ApiResponse.success("Verification email sent", null));
+    @PostMapping("/admin/reset-password")
+    public ResponseEntity<ApiResponse<UserResponse>> adminResetPassword(@Valid @RequestBody AdminPasswordResetRequest request) {
+        log.info("Admin password reset request for user: {}", request.getUserId());
+        UserResponse response = authService.adminResetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset successful", response));
     }
 
     /**
-     * Verify email
+     * Update user account status (Lock/Unlock/Suspend/Activate)
      */
-    @PostMapping("/verify-email")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam String token) {
-        log.info("Email verification request with token");
-        authService.verifyEmail(token);
-        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", null));
+    @PostMapping("/admin/update-account-status")
+    public ResponseEntity<ApiResponse<UserResponse>> updateAccountStatus(@Valid @RequestBody AccountStatusUpdateRequest request) {
+        log.info("Account status update request for user: {} to status: {}", request.getUserId(), request.getAccountStatus());
+        UserResponse response = authService.updateAccountStatus(request);
+
+        String statusMessage = getStatusMessage(request.getAccountStatus());
+        return ResponseEntity.ok(ApiResponse.success(statusMessage, response));
     }
 
-    /**
-     * Refresh token
-     */
-    @PostMapping("/refresh-token")
-    public ResponseEntity<ApiResponse<LoginResponse>> refreshToken(@RequestParam String refreshToken) {
-        log.info("Refresh token request");
-        LoginResponse response = authService.refreshToken(refreshToken);
-        return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", response));
+    private String getUserTypeMessage(UserType userType) {
+        return switch (userType) {
+            case CUSTOMER -> "Customer";
+            case BUSINESS_USER -> "Business user";
+            case PLATFORM_USER -> "Platform user";
+        };
     }
 
-    // Admin-only endpoints for account management
-
-    /**
-     * Lock user account
-     */
-    @PostMapping("/admin/lock-account/{userId}")
-    public ResponseEntity<ApiResponse<Void>> lockAccount(@PathVariable UUID userId) {
-        log.info("Account lock request for user: {}", userId);
-        authService.lockAccount(userId);
-        return ResponseEntity.ok(ApiResponse.success("Account locked successfully", null));
-    }
-
-    /**
-     * Unlock user account
-     */
-    @PostMapping("/admin/unlock-account/{userId}")
-    public ResponseEntity<ApiResponse<Void>> unlockAccount(@PathVariable UUID userId) {
-        log.info("Account unlock request for user: {}", userId);
-        authService.unlockAccount(userId);
-        return ResponseEntity.ok(ApiResponse.success("Account unlocked successfully", null));
-    }
-
-    /**
-     * Suspend user account
-     */
-    @PostMapping("/admin/suspend-account/{userId}")
-    public ResponseEntity<ApiResponse<Void>> suspendAccount(@PathVariable UUID userId) {
-        log.info("Account suspension request for user: {}", userId);
-        authService.suspendAccount(userId);
-        return ResponseEntity.ok(ApiResponse.success("Account suspended successfully", null));
-    }
-
-    /**
-     * Activate user account
-     */
-    @PostMapping("/admin/activate-account/{userId}")
-//    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> activateAccount(@PathVariable UUID userId) {
-        log.info("Account activation request for user: {}", userId);
-        authService.activateAccount(userId);
-        return ResponseEntity.ok(ApiResponse.success("Account activated successfully", null));
+    private String getStatusMessage(AccountStatus accountStatus) {
+        return switch (accountStatus) {
+            case ACTIVE -> "Account activated successfully";
+            case INACTIVE -> "Account deactivated successfully";
+            case LOCKED -> "Account locked successfully";
+            case SUSPENDED -> "Account suspended successfully";
+        };
     }
 }
