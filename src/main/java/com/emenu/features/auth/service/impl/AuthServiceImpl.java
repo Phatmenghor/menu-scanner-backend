@@ -127,21 +127,6 @@ public class AuthServiceImpl implements AuthService {
         return userMapper.toResponse(savedUser);
     }
 
-
-    @Override
-    public UserResponse resetPassword(String token, String newPassword) {
-        // Implementation for password reset with token validation
-        log.info("Password reset attempted with token");
-
-        // In real implementation, you would:
-        // 1. Validate token
-        // 2. Find user by token
-        // 3. Update password
-        // 4. Use mapper to return user response
-
-        throw new RuntimeException("Password reset not implemented yet");
-    }
-
     @Override
     public UserResponse adminResetPassword(AdminPasswordResetRequest request) {
         log.info("Admin password reset for user: {}", request.getUserId());

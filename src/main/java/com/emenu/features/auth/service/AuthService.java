@@ -22,8 +22,6 @@ public interface AuthService {
     // Password Management
     UserResponse changePassword(PasswordChangeRequest request); //
 
-    UserResponse resetPassword(String token, String newPassword); //
-
     UserResponse adminResetPassword(AdminPasswordResetRequest request);
 
     // Account Management

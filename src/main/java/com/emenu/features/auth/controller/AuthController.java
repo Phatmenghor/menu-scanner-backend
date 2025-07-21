@@ -72,17 +72,6 @@ public class AuthController {
     }
 
     /**
-     * Reset password
-     */
-    @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<UserResponse>> resetPassword(@RequestParam String token,
-                                                                   @RequestParam String newPassword) {
-        log.info("Password reset request with token");
-        UserResponse response = authService.resetPassword(token, newPassword); // ✅ Now returns UserResponse
-        return ResponseEntity.ok(ApiResponse.success("Password reset successful", response));
-    }
-
-    /**
      * Admin reset password
      */
     @PostMapping("/admin/reset-password")
