@@ -91,41 +91,20 @@ public class UserController {
      * Delete user (soft delete)
      */
     @DeleteMapping("/{userId}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID userId) {
+    public ResponseEntity<ApiResponse<UserResponse>> deleteUser(@PathVariable UUID userId) {
         log.info("Deleting user: {}", userId);
-        userService.deleteUser(userId);
-        return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
+        UserResponse userResponse = userService.deleteUser(userId);
+        return ResponseEntity.ok(ApiResponse.success("User deleted successfully", userResponse));
     }
 
     /**
      * Get business users
      */
     @GetMapping("/business/{businessId}")
-    public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getBusinessUsers(@PathVariable UUID businessId,
-                                                                                          @ModelAttribute UserFilterRequest filter) {
+    public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getBusinessUsers(@PathVariable UUID businessId, @ModelAttribute UserFilterRequest filter) {
         log.info("Getting users for business: {}", businessId);
         filter.setBusinessId(businessId);
         PaginationResponse<UserResponse> response = userService.getUsers(filter);
         return ResponseEntity.ok(ApiResponse.success("Business users retrieved successfully", response));
-    }
-
-    /**
-     * Activate user
-     */
-    @PostMapping("/{userId}/activate")
-    public ResponseEntity<ApiResponse<Void>> activateUser(@PathVariable UUID userId) {
-        log.info("Activating user: {}", userId);
-        userService.activateUser(userId);
-        return ResponseEntity.ok(ApiResponse.success("User activated successfully", null));
-    }
-
-    /**
-     * Deactivate user
-     */
-    @PostMapping("/{userId}/deactivate")
-    public ResponseEntity<ApiResponse<Void>> deactivateUser(@PathVariable UUID userId) {
-        log.info("Deactivating user: {}", userId);
-        userService.deactivateUser(userId);
-        return ResponseEntity.ok(ApiResponse.success("User deactivated successfully", null));
     }
 }

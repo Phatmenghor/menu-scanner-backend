@@ -18,28 +18,11 @@ public interface UserService {
     UserResponse getUserById(UUID userId);
     UserResponse getUserByEmail(String email);
     UserResponse updateUser(UUID userId, UserUpdateRequest request);
-    void deleteUser(UUID userId);
+    UserResponse deleteUser(UUID userId);
 
     // Current User Operations
     UserResponse getCurrentUser();
     UserResponse updateCurrentUser(UserUpdateRequest request);
-
-    // User Status Management
-    void activateUser(UUID userId);
-    void deactivateUser(UUID userId);
-    void lockUser(UUID userId);
-    void unlockUser(UUID userId);
-    void suspendUser(UUID userId);
-
-    // Business User Management
-    List<UserResponse> getBusinessUsers(UUID businessId);
-    UserResponse addUserToBusiness(UUID userId, UUID businessId);
-    void removeUserFromBusiness(UUID userId);
-
-    // User Statistics
-    long getTotalUsersCount();
-    long getActiveUsersCount();
-    long getBusinessUsersCount(UUID businessId);
 
     // User Validation
     boolean existsByEmail(String email);

@@ -127,13 +127,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(UUID userId) {
+    public UserResponse deleteUser(UUID userId) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.softDelete();
-        userRepository.save(user);
+        user = userRepository.save(user);
         log.info("User deleted: {}", user.getEmail());
+        return userMapper.toResponse(user);
     }
 
     @Override
@@ -165,104 +166,6 @@ public class UserServiceImpl implements UserService {
         log.info("Current user profile updated: {}", updatedUser.getEmail());
 
         return userMapper.toResponse(updatedUser);
-    }
-
-    @Override
-    public void activateUser(UUID userId) {
-        User user = userRepository.findByIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setAccountStatus(AccountStatus.ACTIVE);
-        userRepository.save(user);
-        log.info("User activated: {}", user.getEmail());
-    }
-
-    @Override
-    public void deactivateUser(UUID userId) {
-        User user = userRepository.findByIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setAccountStatus(AccountStatus.INACTIVE);
-        userRepository.save(user);
-        log.info("User deactivated: {}", user.getEmail());
-    }
-
-    @Override
-    public void lockUser(UUID userId) {
-        User user = userRepository.findByIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setAccountStatus(AccountStatus.LOCKED);
-        userRepository.save(user);
-        log.info("User locked: {}", user.getEmail());
-    }
-
-    @Override
-    public void unlockUser(UUID userId) {
-        User user = userRepository.findByIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setAccountStatus(AccountStatus.ACTIVE);
-        userRepository.save(user);
-        log.info("User unlocked: {}", user.getEmail());
-    }
-
-    @Override
-    public void suspendUser(UUID userId) {
-        User user = userRepository.findByIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setAccountStatus(AccountStatus.SUSPENDED);
-        userRepository.save(user);
-        log.info("User suspended: {}", user.getEmail());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<UserResponse> getBusinessUsers(UUID businessId) {
-        List<User> users = userRepository.findByBusinessIdAndIsDeletedFalse(businessId);
-        return userMapper.toResponseList(users);
-    }
-
-    @Override
-    public UserResponse addUserToBusiness(UUID userId, UUID businessId) {
-        User user = userRepository.findByIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setBusinessId(businessId);
-        User updatedUser = userRepository.save(user);
-
-        log.info("User {} added to business {}", user.getEmail(), businessId);
-        return userMapper.toResponse(updatedUser);
-    }
-
-    @Override
-    public void removeUserFromBusiness(UUID userId) {
-        User user = userRepository.findByIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setBusinessId(null);
-        userRepository.save(user);
-        log.info("User {} removed from business", user.getEmail());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getTotalUsersCount() {
-        return userRepository.countByIsDeletedFalse();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getActiveUsersCount() {
-        return userRepository.countByUserTypeAndIsDeletedFalse(com.emenu.enums.UserType.CUSTOMER) +
-                userRepository.countByUserTypeAndIsDeletedFalse(com.emenu.enums.UserType.BUSINESS_USER);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getBusinessUsersCount(UUID businessId) {
-        return userRepository.countByBusinessIdAndIsDeletedFalse(businessId);
     }
 
     @Override
