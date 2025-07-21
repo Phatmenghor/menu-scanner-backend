@@ -178,7 +178,7 @@ public class BusinessServiceImpl implements BusinessService {
         filter.setBusinessId(businessId);
         
         // ✅ Specification handles all filtering logic
-        Specification<User> spec = UserSpecification.buildSpecification(filter);
+        Specification<User> spec = UserSpecification.buildSearchSpecification(filter);
         
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(

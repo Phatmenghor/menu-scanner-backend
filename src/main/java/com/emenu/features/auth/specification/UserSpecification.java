@@ -13,76 +13,31 @@ import java.util.List;
 
 public class UserSpecification {
 
-    public static Specification<User> buildSpecification(UserFilterRequest filter) {
+    public static Specification<User> buildSearchSpecification(UserFilterRequest request) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             // Base condition: not deleted
             predicates.add(criteriaBuilder.equal(root.get("isDeleted"), false));
 
-            // Email filter
-            if (StringUtils.hasText(filter.getEmail())) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("email")),
-                        "%" + filter.getEmail().toLowerCase() + "%"
-                ));
-            }
-
-            // First name filter
-            if (StringUtils.hasText(filter.getFirstName())) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("firstName")),
-                        "%" + filter.getFirstName().toLowerCase() + "%"
-                ));
-            }
-
-            // Last name filter
-            if (StringUtils.hasText(filter.getLastName())) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("lastName")),
-                        "%" + filter.getLastName().toLowerCase() + "%"
-                ));
-            }
-
-            // Phone number filter
-            if (StringUtils.hasText(filter.getPhoneNumber())) {
-                predicates.add(criteriaBuilder.like(
-                        root.get("phoneNumber"),
-                        "%" + filter.getPhoneNumber() + "%"
-                ));
-            }
-
-            // User type filter
-            if (filter.getUserType() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("userType"), filter.getUserType()));
+            // Business ID filter
+            if (request.getBusinessId() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("businessId"), request.getBusinessId()));
             }
 
             // Account status filter
-            if (filter.getAccountStatus() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("accountStatus"), filter.getAccountStatus()));
+            if (request.getAccountStatus() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("accountStatus"), request.getAccountStatus()));
             }
 
-            // Business ID filter
-            if (filter.getBusinessId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("businessId"), filter.getBusinessId()));
+            // User type filter
+            if (request.getUserType() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("userType"), request.getUserType()));
             }
 
-            // Role filter
-            if (filter.getRole() != null) {
-                predicates.add(criteriaBuilder.isMember(filter.getRole(), root.get("roles").get("name")));
-            }
-
-            // Position filter
-            if (StringUtils.hasText(filter.getPosition())) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("position")),
-                        "%" + filter.getPosition().toLowerCase() + "%"
-                ));
-            }
-
-            // Global search filter
-            if (StringUtils.hasText(filter.getSearch())) {
-                String searchPattern = "%" + filter.getSearch().toLowerCase() + "%";
+            // Global search filter (searches across email, firstName, lastName)
+            if (StringUtils.hasText(request.getSearch())) {
+                String searchPattern = "%" + request.getSearch().toLowerCase() + "%";
                 Predicate emailPredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("email")), searchPattern);
                 Predicate firstNamePredicate = criteriaBuilder.like(
@@ -96,6 +51,7 @@ public class UserSpecification {
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
+
 
     // Specific specifications for common queries
     public static Specification<User> isActive() {

@@ -46,12 +46,12 @@ public class UserController {
     }
 
     /**
-     * Get all users with filtering and pagination
+     * Get all users with filtering and pagination - Updated to use POST with request body
      */
-    @GetMapping
-    public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getUsers(@ModelAttribute UserFilterRequest filter) {
-        log.info("Getting users with filter");
-        PaginationResponse<UserResponse> response = userService.getUsers(filter);
+    @PostMapping("/getAll")
+    public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getAllUsers(@Valid @RequestBody UserFilterRequest request) {
+        log.info("Getting all users with filters");
+        PaginationResponse<UserResponse> response = userService.getAllUsers(request);
         return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", response));
     }
 
@@ -95,16 +95,5 @@ public class UserController {
         log.info("Deleting user: {}", userId);
         UserResponse userResponse = userService.deleteUser(userId);
         return ResponseEntity.ok(ApiResponse.success("User deleted successfully", userResponse));
-    }
-
-    /**
-     * Get business users
-     */
-    @GetMapping("/business/{businessId}")
-    public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getBusinessUsers(@PathVariable UUID businessId, @ModelAttribute UserFilterRequest filter) {
-        log.info("Getting users for business: {}", businessId);
-        filter.setBusinessId(businessId);
-        PaginationResponse<UserResponse> response = userService.getUsers(filter);
-        return ResponseEntity.ok(ApiResponse.success("Business users retrieved successfully", response));
     }
 }

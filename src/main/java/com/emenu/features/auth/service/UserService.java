@@ -13,10 +13,8 @@ public interface UserService {
 
     // User Management
     UserResponse createUser(UserCreateRequest request);
-    PaginationResponse<UserResponse> getUsers(UserFilterRequest filter);
-    List<UserResponse> getAllUsers();
+    PaginationResponse<UserResponse> getAllUsers(UserFilterRequest request);
     UserResponse getUserById(UUID userId);
-    UserResponse getUserByEmail(String email);
     UserResponse updateUser(UUID userId, UserUpdateRequest request);
     UserResponse deleteUser(UUID userId);
 
@@ -24,7 +22,4 @@ public interface UserService {
     UserResponse getCurrentUser();
     UserResponse updateCurrentUser(UserUpdateRequest request);
 
-    // User Validation
-    boolean existsByEmail(String email);
-    boolean existsByPhone(String phoneNumber);
 }

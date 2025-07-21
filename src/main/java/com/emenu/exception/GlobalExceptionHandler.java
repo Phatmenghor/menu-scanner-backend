@@ -1,10 +1,6 @@
 package com.emenu.exception;
 
-import com.emenu.exception.custom.AccountInactiveException;
-import com.emenu.exception.custom.AccountSuspendedException;
-import com.emenu.exception.custom.CustomException;
-import com.emenu.exception.custom.UserNotFoundException;
-import com.emenu.exception.custom.ValidationException;
+import com.emenu.exception.custom.*;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.constants.ErrorCodes;
 import com.emenu.shared.dto.ApiResponse;
@@ -189,6 +185,15 @@ public class GlobalExceptionHandler {
 
         ApiResponse<Object> response = new ApiResponse<>("error", "An unexpected error occurred. Please try again later.", errorDetails);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleNotFoundException(NotFoundException ex, HttpServletRequest request) {
+        log.warn("Resource not found: {}", ex.getMessage());
+
+        Map<String, Object> errorDetails = createErrorDetails(ErrorCodes.USER_NOT_FOUND, request);
+        ApiResponse<Object> response = new ApiResponse<>("error", ex.getMessage(), errorDetails);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     private Map<String, Object> createErrorDetails(String errorCode, HttpServletRequest request) {

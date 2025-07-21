@@ -69,14 +69,15 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(savedUser);
     }
 
+
     @Override
     @Transactional(readOnly = true)
-    public PaginationResponse<UserResponse> getUsers(UserFilterRequest filter) {
-        Specification<User> spec = UserSpecification.buildSpecification(filter);
+    public PaginationResponse<UserResponse> getAllUsers(UserFilterRequest request) {
+        Specification<User> spec = UserSpecification.buildSearchSpecification(request);
 
-        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
+        int pageNo = request.getPageNo() != null && request.getPageNo() > 0 ? request.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+                pageNo, request.getPageSize(), request.getSortBy(), request.getSortDirection()
         );
 
         Page<User> userPage = userRepository.findAll(spec, pageable);
@@ -85,24 +86,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserResponse> getAllUsers() {
-        List<User> users = userRepository.findByIsDeletedFalse();
-        return userMapper.toResponseList(users);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public UserResponse getUserById(UUID userId) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return userMapper.toResponse(user);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public UserResponse getUserByEmail(String email) {
-        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return userMapper.toResponse(user);
@@ -168,15 +153,13 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(updatedUser);
     }
 
-    @Override
     @Transactional(readOnly = true)
-    public boolean existsByEmail(String email) {
+    private boolean existsByEmail(String email) {
         return userRepository.existsByEmailAndIsDeletedFalse(email);
     }
 
-    @Override
     @Transactional(readOnly = true)
-    public boolean existsByPhone(String phoneNumber) {
+    private boolean existsByPhone(String phoneNumber) {
         return userRepository.existsByPhoneNumberAndIsDeletedFalse(phoneNumber);
     }
 }
