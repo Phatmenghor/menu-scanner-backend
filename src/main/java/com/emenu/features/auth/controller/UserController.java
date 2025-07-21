@@ -28,8 +28,7 @@ public class UserController {
     /**
      * Get current user profile
      */
-    @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'PLATFORM_SUPPORT', 'BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_STAFF', 'CUSTOMER')")
+    @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
         log.info("Getting current user profile");
         UserResponse response = userService.getCurrentUser();
@@ -39,8 +38,7 @@ public class UserController {
     /**
      * Update current user profile
      */
-    @PutMapping("/me")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'PLATFORM_SUPPORT', 'BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_STAFF', 'CUSTOMER')")
+    @PutMapping("/profileb")
     public ResponseEntity<ApiResponse<UserResponse>> updateCurrentUser(@Valid @RequestBody UserUpdateRequest request) {
         log.info("Updating current user profile");
         UserResponse response = userService.updateCurrentUser(request);
@@ -51,7 +49,6 @@ public class UserController {
      * Get all users with filtering and pagination
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getUsers(@ModelAttribute UserFilterRequest filter) {
         log.info("Getting users with filter");
         PaginationResponse<UserResponse> response = userService.getUsers(filter);
@@ -62,7 +59,6 @@ public class UserController {
      * Get user by ID
      */
     @GetMapping("/{userId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @securityUtils.isCurrentUser(#userId)")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID userId) {
         log.info("Getting user by ID: {}", userId);
         UserResponse response = userService.getUserById(userId);
@@ -73,7 +69,6 @@ public class UserController {
      * Create new user
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserCreateRequest request) {
         log.info("Creating new user: {}", request.getEmail());
         UserResponse response = userService.createUser(request);
@@ -85,7 +80,6 @@ public class UserController {
      * Update user
      */
     @PutMapping("/{userId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @securityUtils.isCurrentUser(#userId)")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID userId,
                                                                 @Valid @RequestBody UserUpdateRequest request) {
         log.info("Updating user: {}", userId);
@@ -97,7 +91,6 @@ public class UserController {
      * Delete user (soft delete)
      */
     @DeleteMapping("/{userId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID userId) {
         log.info("Deleting user: {}", userId);
         userService.deleteUser(userId);
@@ -108,7 +101,6 @@ public class UserController {
      * Get business users
      */
     @GetMapping("/business/{businessId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @securityUtils.hasBusinessAccess(#businessId)")
     public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getBusinessUsers(@PathVariable UUID businessId,
                                                                                           @ModelAttribute UserFilterRequest filter) {
         log.info("Getting users for business: {}", businessId);
@@ -121,7 +113,6 @@ public class UserController {
      * Activate user
      */
     @PostMapping("/{userId}/activate")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> activateUser(@PathVariable UUID userId) {
         log.info("Activating user: {}", userId);
         userService.activateUser(userId);
@@ -132,7 +123,6 @@ public class UserController {
      * Deactivate user
      */
     @PostMapping("/{userId}/deactivate")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deactivateUser(@PathVariable UUID userId) {
         log.info("Deactivating user: {}", userId);
         userService.deactivateUser(userId);
