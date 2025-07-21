@@ -116,6 +116,19 @@ logging:
 ---
 # Development Profile
 spring:
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_USERNAME:your-email@gmail.com}
+    password: ${EMAIL_PASSWORD:your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   config:
     activate:
       on-profile: dev
@@ -153,6 +166,24 @@ server:
 app:
   init:
     create-admin: false
+
+  notifications:
+    telegram:
+      enabled: ${TELEGRAM_ENABLED:false}
+      bot-token: ${TELEGRAM_BOT_TOKEN:}
+    email:
+      enabled: ${EMAIL_ENABLED:true}
+      from-name: "Cambodia E-Menu Platform"
+
+    messaging:
+      cleanup:
+        old-notifications-days: 90
+        old-messages-days: 365
+        old-history-days: 730
+
+      batch-size: 100
+      retry-attempts: 3
+      retry-delay-minutes: 30
 
 logging:
   level:
