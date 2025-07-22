@@ -28,14 +28,9 @@ public abstract class SubscriptionPlanMapper {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
-    @Mapping(target = "isDefault", constant = "false")
-    @Mapping(target = "isCustom", constant = "false")
-    @Mapping(target = "features", ignore = true)
     public abstract SubscriptionPlan toEntity(SubscriptionPlanCreateRequest request);
 
-    @Mapping(source = "featureList", target = "features")
     public abstract SubscriptionPlanResponse toResponse(SubscriptionPlan plan);
-
     public abstract List<SubscriptionPlanResponse> toResponseList(List<SubscriptionPlan> plans);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -49,35 +44,19 @@ public abstract class SubscriptionPlanMapper {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
-    @Mapping(target = "isDefault", ignore = true)
-    @Mapping(target = "isCustom", ignore = true)
-    @Mapping(target = "features", ignore = true)
     public abstract void updateEntity(SubscriptionPlanUpdateRequest request, @MappingTarget SubscriptionPlan plan);
 
     @AfterMapping
     protected void setCalculatedFields(@MappingTarget SubscriptionPlanResponse response, SubscriptionPlan plan) {
         response.setPricingDisplay(plan.getPricingDisplay());
         response.setIsFree(plan.isFree());
-        response.setIsUnlimitedStaff(plan.isUnlimited("staff"));
-        response.setIsUnlimitedMenuItems(plan.isUnlimited("menu"));
-        response.setIsUnlimitedTables(plan.isUnlimited("tables"));
+        response.setIsPublic(plan.isPublic());
+        response.setIsPrivate(plan.isPrivate());
         
         if (plan.getSubscriptions() != null) {
             response.setActiveSubscriptionsCount((long) plan.getSubscriptions().size());
-        }
-    }
-
-    @AfterMapping
-    protected void setFeatures(SubscriptionPlanCreateRequest request, @MappingTarget SubscriptionPlan plan) {
-        if (request.getFeatures() != null) {
-            plan.setFeatureList(request.getFeatures());
-        }
-    }
-
-    @AfterMapping
-    protected void updateFeatures(SubscriptionPlanUpdateRequest request, @MappingTarget SubscriptionPlan plan) {
-        if (request.getFeatures() != null) {
-            plan.setFeatureList(request.getFeatures());
+        } else {
+            response.setActiveSubscriptionsCount(0L);
         }
     }
 

@@ -4,12 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum SubscriptionPlanStatus {
-    ACTIVE("Active"),
-    INACTIVE("Inactive"),
-    CUSTOM("Custom"),
-    TRIAL("Trial"),
-    DEFAULT("Default"),
-    ARCHIVED("Archived");
+    PUBLIC("Public - Available for all businesses"),
+    PRIVATE("Private - Custom plan for specific business");
 
     private final String description;
 

@@ -7,7 +7,6 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,30 +19,19 @@ public class SubscriptionPlanSpecification {
             predicates.add(criteriaBuilder.equal(root.get("isDeleted"), false));
 
             if (filter.getStatus() != null) {
-                predicates.add(createStatusPredicate(filter.getStatus(), root, criteriaBuilder));
+                predicates.add(criteriaBuilder.equal(root.get("status"), filter.getStatus()));
             }
 
             if (filter.getStatuses() != null && !filter.getStatuses().isEmpty()) {
-                List<Predicate> statusPredicates = new ArrayList<>();
-                for (SubscriptionPlanStatus status : filter.getStatuses()) {
-                    statusPredicates.add(createStatusPredicate(status, root, criteriaBuilder));
-                }
-                predicates.add(criteriaBuilder.or(statusPredicates.toArray(new Predicate[0])));
+                predicates.add(root.get("status").in(filter.getStatuses()));
             }
 
             if (filter.getPublicOnly() != null && filter.getPublicOnly()) {
-                predicates.add(criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("isActive"), true),
-                    criteriaBuilder.equal(root.get("isCustom"), false)
-                ));
+                predicates.add(criteriaBuilder.equal(root.get("status"), SubscriptionPlanStatus.PUBLIC));
             }
 
             if (filter.getFreeOnly() != null && filter.getFreeOnly()) {
-                predicates.add(criteriaBuilder.equal(root.get("price"), BigDecimal.ZERO));
-            }
-
-            if (filter.getBusinessId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("isCustom"), true));
+                predicates.add(criteriaBuilder.equal(root.get("price"), java.math.BigDecimal.ZERO));
             }
 
             if (filter.getMinPrice() != null) {
@@ -66,61 +54,29 @@ public class SubscriptionPlanSpecification {
                 String searchPattern = "%" + filter.getSearch().toLowerCase() + "%";
                 Predicate namePredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("name")), searchPattern);
-                Predicate displayNamePredicate = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("displayName")), searchPattern);
                 Predicate descriptionPredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("description")), searchPattern);
 
-                predicates.add(criteriaBuilder.or(
-                        namePredicate, displayNamePredicate, descriptionPredicate
-                ));
+                predicates.add(criteriaBuilder.or(namePredicate, descriptionPredicate));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
 
-    private static Predicate createStatusPredicate(SubscriptionPlanStatus status, 
-                                                  jakarta.persistence.criteria.Root<SubscriptionPlan> root, 
-                                                  jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder) {
-        return switch (status) {
-            case ACTIVE -> criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("isActive"), true),
-                    criteriaBuilder.equal(root.get("isCustom"), false)
-            );
-            case INACTIVE -> criteriaBuilder.equal(root.get("isActive"), false);
-            case CUSTOM -> criteriaBuilder.equal(root.get("isCustom"), true);
-            case TRIAL -> criteriaBuilder.equal(root.get("isTrial"), true);
-            case DEFAULT -> criteriaBuilder.equal(root.get("isDefault"), true);
-            case ARCHIVED -> criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("isActive"), false),
-                    criteriaBuilder.equal(root.get("isDeleted"), false)
-            );
-        };
-    }
-
-    public static Specification<SubscriptionPlan> isActive() {
-        return (root, query, criteriaBuilder) -> 
-            criteriaBuilder.and(
-                criteriaBuilder.equal(root.get("isDeleted"), false),
-                criteriaBuilder.equal(root.get("isActive"), true)
-            );
-    }
-
     public static Specification<SubscriptionPlan> isPublic() {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
                 criteriaBuilder.equal(root.get("isDeleted"), false),
-                criteriaBuilder.equal(root.get("isActive"), true),
-                criteriaBuilder.equal(root.get("isCustom"), false)
+                criteriaBuilder.equal(root.get("status"), SubscriptionPlanStatus.PUBLIC)
             );
     }
 
-    public static Specification<SubscriptionPlan> isCustom() {
+    public static Specification<SubscriptionPlan> isPrivate() {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
                 criteriaBuilder.equal(root.get("isDeleted"), false),
-                criteriaBuilder.equal(root.get("isCustom"), true)
+                criteriaBuilder.equal(root.get("status"), SubscriptionPlanStatus.PRIVATE)
             );
     }
 
@@ -128,23 +84,7 @@ public class SubscriptionPlanSpecification {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
                 criteriaBuilder.equal(root.get("isDeleted"), false),
-                criteriaBuilder.equal(root.get("price"), BigDecimal.ZERO)
-            );
-    }
-
-    public static Specification<SubscriptionPlan> isTrial() {
-        return (root, query, criteriaBuilder) -> 
-            criteriaBuilder.and(
-                criteriaBuilder.equal(root.get("isDeleted"), false),
-                criteriaBuilder.equal(root.get("isTrial"), true)
-            );
-    }
-
-    public static Specification<SubscriptionPlan> isDefault() {
-        return (root, query, criteriaBuilder) -> 
-            criteriaBuilder.and(
-                criteriaBuilder.equal(root.get("isDeleted"), false),
-                criteriaBuilder.equal(root.get("isDefault"), true)
+                criteriaBuilder.equal(root.get("price"), java.math.BigDecimal.ZERO)
             );
     }
 }

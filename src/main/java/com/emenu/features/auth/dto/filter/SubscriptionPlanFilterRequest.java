@@ -7,14 +7,12 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
 @Data
 public class SubscriptionPlanFilterRequest {
     private String search;
     private SubscriptionPlanStatus status;
     private List<SubscriptionPlanStatus> statuses;
-    private UUID businessId;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
     private Integer minDurationDays;
@@ -29,6 +27,6 @@ public class SubscriptionPlanFilterRequest {
     @Max(value = 100, message = "Page size cannot exceed 100")
     private Integer pageSize = 10;
 
-    private String sortBy = "sortOrder";
+    private String sortBy = "createdAt";
     private String sortDirection = "ASC";
 }

@@ -1,5 +1,6 @@
 package com.emenu.features.auth.service.impl;
 
+import com.emenu.enums.sub_scription.SubscriptionPlanStatus;
 import com.emenu.features.auth.dto.filter.SubscriptionPlanFilterRequest;
 import com.emenu.features.auth.dto.request.SubscriptionCreateRequest;
 import com.emenu.features.auth.dto.request.SubscriptionPlanCreateRequest;
@@ -78,7 +79,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     @Override
     @Transactional(readOnly = true)
     public List<SubscriptionPlanResponse> getPublicPlans() {
-        List<SubscriptionPlan> plans = planRepository.findPublicPlans();
+        List<SubscriptionPlan> plans = planRepository.findAll(SubscriptionPlanSpecification.isPublic());
         return planMapper.toResponseList(plans);
     }
 
@@ -246,26 +247,27 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
     @Override
     public void seedDefaultPlans() {
-        log.info("Seeding default subscription plans");
+        log.info("Seeding simplified default subscription plans");
 
         if (planRepository.count() > 0) {
             log.info("Plans already exist, skipping seed");
             return;
         }
 
-        createDefaultPlan("FREE", "Free Plan", "Get started with basic features",
-                BigDecimal.ZERO, 30, 1, 10, 2, true, true);
+        // Create simple default plans
+        createDefaultPlan("Free Plan", "Basic plan to get started",
+                BigDecimal.ZERO, 30, SubscriptionPlanStatus.PUBLIC);
 
-        createDefaultPlan("BASIC", "Basic Plan", "Perfect for small restaurants",
-                new BigDecimal("29.99"), 30, 3, 50, 10, false, false);
+        createDefaultPlan("Basic Plan", "Perfect for small restaurants",
+                new BigDecimal("29.99"), 30, SubscriptionPlanStatus.PUBLIC);
 
-        createDefaultPlan("PROFESSIONAL", "Professional Plan", "Advanced features for growing businesses",
-                new BigDecimal("79.99"), 30, 10, 200, 25, false, false);
+        createDefaultPlan("Professional Plan", "Advanced features for growing businesses",
+                new BigDecimal("79.99"), 30, SubscriptionPlanStatus.PUBLIC);
 
-        createDefaultPlan("ENTERPRISE", "Enterprise Plan", "Full-featured solution for large operations",
-                new BigDecimal("199.99"), 30, -1, -1, -1, false, false);
+        createDefaultPlan("Enterprise Plan", "Full-featured solution",
+                new BigDecimal("199.99"), 30, SubscriptionPlanStatus.PUBLIC);
 
-        log.info("Default subscription plans seeded successfully");
+        log.info("Simplified default subscription plans seeded successfully");
     }
 
     @Override
@@ -326,26 +328,18 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         return comparison;
     }
 
-    private void createDefaultPlan(String name, String displayName, String description,
-                                   BigDecimal price, Integer durationDays, Integer maxStaff,
-                                   Integer maxMenuItems, Integer maxTables, Boolean isDefault, Boolean isTrial) {
+    private void createDefaultPlan(String name, String description, BigDecimal price,
+                                   Integer durationDays, SubscriptionPlanStatus status) {
         if (planRepository.existsByNameAndIsDeletedFalse(name)) {
             return;
         }
 
         SubscriptionPlan plan = new SubscriptionPlan();
         plan.setName(name);
-        plan.setDisplayName(displayName);
         plan.setDescription(description);
         plan.setPrice(price);
         plan.setDurationDays(durationDays);
-        plan.setMaxStaff(maxStaff);
-        plan.setMaxMenuItems(maxMenuItems);
-        plan.setMaxTables(maxTables);
-        plan.setIsActive(true);
-        plan.setIsDefault(isDefault);
-        plan.setIsTrial(isTrial);
-        plan.setSortOrder(getSortOrderForPlan(name));
+        plan.setStatus(status);
 
         planRepository.save(plan);
         log.debug("Created default plan: {}", name);
