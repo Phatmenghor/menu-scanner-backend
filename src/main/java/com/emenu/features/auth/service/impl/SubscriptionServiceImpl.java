@@ -511,43 +511,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         return suspended;
     }
 
-    // ✅ SIMPLIFIED: Access control and validation methods
-    @Override
-    @Transactional(readOnly = true)
-    public boolean canAccessSubscription(UUID subscriptionId) {
-        try {
-            User currentUser = securityUtils.getCurrentUser();
-            Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId).orElse(null);
-            
-            if (subscription == null) return false;
-            
-            // Platform users can access any subscription
-            if (currentUser.isPlatformUser()) return true;
-            
-            // Business users can only access their own business subscriptions
-            return currentUser.getBusinessId() != null && 
-                   currentUser.getBusinessId().equals(subscription.getBusinessId());
-        } catch (Exception e) {
-            log.debug("Error checking subscription access: {}", e.getMessage());
-            return false;
-        }
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean canModifySubscription(UUID subscriptionId) {
-        try {
-            User currentUser = securityUtils.getCurrentUser();
-            
-            // Only platform admins and business owners can modify subscriptions
-            return currentUser.isPlatformUser() || 
-                   (currentUser.isBusinessUser() && canAccessSubscription(subscriptionId));
-        } catch (Exception e) {
-            log.debug("Error checking subscription modification rights: {}", e.getMessage());
-            return false;
-        }
-    }
-
     @Override
     @Transactional(readOnly = true)
     public boolean isValidSubscriptionForBusiness(UUID businessId, UUID planId) {

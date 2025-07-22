@@ -44,10 +44,7 @@ public interface SubscriptionService {
     List<SubscriptionResponse> bulkRenewSubscriptions(List<UUID> subscriptionIds);
     List<SubscriptionResponse> bulkCancelSubscriptions(List<UUID> subscriptionIds, String reason);
     List<SubscriptionResponse> bulkSuspendSubscriptions(List<UUID> subscriptionIds, String reason);
-    
-    // Access Control
-    boolean canAccessSubscription(UUID subscriptionId);
-    boolean canModifySubscription(UUID subscriptionId);
+
     
     // Subscription Validation
     boolean isValidSubscriptionForBusiness(UUID businessId, UUID planId);
