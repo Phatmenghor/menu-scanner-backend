@@ -1,12 +1,13 @@
 package com.emenu.features.auth.service;
 
 import com.emenu.features.auth.dto.filter.SubscriptionFilterRequest;
+import com.emenu.features.auth.dto.request.SubscriptionCancelRequest;
 import com.emenu.features.auth.dto.request.SubscriptionCreateRequest;
 import com.emenu.features.auth.dto.response.SubscriptionResponse;
+import com.emenu.features.auth.dto.update.SubscriptionRenewRequest;
 import com.emenu.features.auth.dto.update.SubscriptionUpdateRequest;
 import com.emenu.shared.dto.PaginationResponse;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface SubscriptionService {
@@ -17,9 +18,9 @@ public interface SubscriptionService {
     PaginationResponse<SubscriptionResponse> getCurrentUserBusinessSubscriptions(SubscriptionFilterRequest filter);
     SubscriptionResponse getSubscriptionById(UUID id);
     SubscriptionResponse updateSubscription(UUID id, SubscriptionUpdateRequest request);
-    void deleteSubscription(UUID id);
+    SubscriptionResponse deleteSubscription(UUID id); // Now returns SubscriptionResponse
     
-    // Basic Operations
-    SubscriptionResponse renewSubscription(UUID subscriptionId, UUID newPlanId, Integer customDurationDays);
-    void cancelSubscription(UUID subscriptionId, Boolean immediate);
+    // Operations with Request Bodies
+    SubscriptionResponse renewSubscription(UUID subscriptionId, SubscriptionRenewRequest request);
+    SubscriptionResponse cancelSubscription(UUID subscriptionId, SubscriptionCancelRequest request);
 }

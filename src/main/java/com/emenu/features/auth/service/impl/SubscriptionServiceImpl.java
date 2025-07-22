@@ -1,8 +1,10 @@
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.features.auth.dto.filter.SubscriptionFilterRequest;
+import com.emenu.features.auth.dto.request.SubscriptionCancelRequest;
 import com.emenu.features.auth.dto.request.SubscriptionCreateRequest;
 import com.emenu.features.auth.dto.response.SubscriptionResponse;
+import com.emenu.features.auth.dto.update.SubscriptionRenewRequest;
 import com.emenu.features.auth.dto.update.SubscriptionUpdateRequest;
 import com.emenu.features.auth.mapper.SubscriptionMapper;
 import com.emenu.features.auth.models.Business;
@@ -121,25 +123,29 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public void deleteSubscription(UUID id) {
+    public SubscriptionResponse deleteSubscription(UUID id) {
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
+
+        // Get response before deleting
+        SubscriptionResponse response = subscriptionMapper.toResponse(subscription);
 
         subscription.softDelete();
         subscriptionRepository.save(subscription);
         log.info("Subscription deleted successfully: {}", id);
+
+        return response;
     }
 
-    // Basic renewal - create new subscription
     @Override
-    public SubscriptionResponse renewSubscription(UUID subscriptionId, UUID newPlanId, Integer customDurationDays) {
+    public SubscriptionResponse renewSubscription(UUID subscriptionId, SubscriptionRenewRequest request) {
         Subscription oldSubscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
         // Get plan (new plan or existing plan)
         SubscriptionPlan plan = oldSubscription.getPlan();
-        if (newPlanId != null) {
-            plan = planRepository.findByIdAndIsDeletedFalse(newPlanId)
+        if (request.getNewPlanId() != null) {
+            plan = planRepository.findByIdAndIsDeletedFalse(request.getNewPlanId())
                     .orElseThrow(() -> new RuntimeException("New subscription plan not found"));
         }
 
@@ -149,10 +155,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         newSubscription.setPlanId(plan.getId());
         newSubscription.setStartDate(oldSubscription.getEndDate());
         
-        int durationDays = customDurationDays != null ? customDurationDays : plan.getDurationDays();
+        int durationDays = request.getCustomDurationDays() != null ? request.getCustomDurationDays() : plan.getDurationDays();
         newSubscription.setEndDate(oldSubscription.getEndDate().plusDays(durationDays));
         newSubscription.setIsActive(true);
         newSubscription.setAutoRenew(oldSubscription.getAutoRenew());
+        newSubscription.setNotes(request.getNotes());
 
         // Deactivate old subscription
         oldSubscription.setIsActive(false);
@@ -166,13 +173,29 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public void cancelSubscription(UUID subscriptionId, Boolean immediate) {
+    public SubscriptionResponse cancelSubscription(UUID subscriptionId, SubscriptionCancelRequest request) {
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
+        // Cancel subscription and clear all dates
         subscription.cancel();
-        subscriptionRepository.save(subscription);
-        log.info("Subscription cancelled successfully: {}", subscriptionId);
-    }
+        subscription.setStartDate(null);
+        subscription.setEndDate(null);
+        
+        // Add cancellation notes
+        if (request.getNotes() != null) {
+            String existingNotes = subscription.getNotes() != null ? subscription.getNotes() + "\n" : "";
+            subscription.setNotes(existingNotes + "Cancelled: " + request.getNotes());
+        }
+        
+        if (request.getReason() != null) {
+            String existingNotes = subscription.getNotes() != null ? subscription.getNotes() + "\n" : "";
+            subscription.setNotes(existingNotes + "Reason: " + request.getReason());
+        }
 
+        Subscription savedSubscription = subscriptionRepository.save(subscription);
+        log.info("Subscription cancelled successfully: {}", subscriptionId);
+
+        return subscriptionMapper.toResponse(savedSubscription);
+    }
 }

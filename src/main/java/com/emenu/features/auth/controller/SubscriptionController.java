@@ -1,8 +1,10 @@
 package com.emenu.features.auth.controller;
 
 import com.emenu.features.auth.dto.filter.SubscriptionFilterRequest;
+import com.emenu.features.auth.dto.request.SubscriptionCancelRequest;
 import com.emenu.features.auth.dto.request.SubscriptionCreateRequest;
 import com.emenu.features.auth.dto.response.SubscriptionResponse;
+import com.emenu.features.auth.dto.update.SubscriptionRenewRequest;
 import com.emenu.features.auth.dto.update.SubscriptionUpdateRequest;
 import com.emenu.features.auth.service.SubscriptionService;
 import com.emenu.shared.dto.ApiResponse;
@@ -80,37 +82,36 @@ public class SubscriptionController {
     }
 
     /**
-     * Delete subscription
+     * Delete subscription (now returns SubscriptionResponse)
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteSubscription(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<SubscriptionResponse>> deleteSubscription(@PathVariable UUID id) {
         log.info("Deleting subscription: {}", id);
-        subscriptionService.deleteSubscription(id);
-        return ResponseEntity.ok(ApiResponse.success("Subscription deleted successfully", null));
+        SubscriptionResponse subscription = subscriptionService.deleteSubscription(id);
+        return ResponseEntity.ok(ApiResponse.success("Subscription deleted successfully", subscription));
     }
 
     /**
-     * Renew subscription
+     * Renew subscription (now uses request body)
      */
     @PostMapping("/{id}/renew")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> renewSubscription(
             @PathVariable UUID id,
-            @RequestParam(required = false) UUID newPlanId,
-            @RequestParam(required = false) Integer customDurationDays) {
+            @Valid @RequestBody SubscriptionRenewRequest request) {
         log.info("Renewing subscription: {}", id);
-        SubscriptionResponse subscription = subscriptionService.renewSubscription(id, newPlanId, customDurationDays);
+        SubscriptionResponse subscription = subscriptionService.renewSubscription(id, request);
         return ResponseEntity.ok(ApiResponse.success("Subscription renewed successfully", subscription));
     }
 
     /**
-     * Cancel subscription
+     * Cancel subscription (now uses request body and clears dates)
      */
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<ApiResponse<Void>> cancelSubscription(
+    public ResponseEntity<ApiResponse<SubscriptionResponse>> cancelSubscription(
             @PathVariable UUID id,
-            @RequestParam(defaultValue = "false") Boolean immediate) {
+            @Valid @RequestBody SubscriptionCancelRequest request) {
         log.info("Cancelling subscription: {}", id);
-        subscriptionService.cancelSubscription(id, immediate);
-        return ResponseEntity.ok(ApiResponse.success("Subscription cancelled successfully", null));
+        SubscriptionResponse subscription = subscriptionService.cancelSubscription(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Subscription cancelled successfully", subscription));
     }
 }
