@@ -12,10 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -35,16 +33,6 @@ public class SubscriptionPlanController {
         log.info("Getting subscription plans with filter - Status: {}, Search: {}", filter.getStatus(), filter.getSearch());
         PaginationResponse<SubscriptionPlanResponse> plans = subscriptionPlanService.getAllPlans(filter);
         return ResponseEntity.ok(ApiResponse.success("Subscription plans retrieved successfully", plans));
-    }
-
-    /**
-     * Get public subscription plans (for frontend display)
-     */
-    @GetMapping("/public")
-    public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> getPublicPlans() {
-        log.info("Getting public subscription plans");
-        List<SubscriptionPlanResponse> plans = subscriptionPlanService.getPublicPlans();
-        return ResponseEntity.ok(ApiResponse.success("Public subscription plans retrieved successfully", plans));
     }
 
     /**
@@ -88,85 +76,5 @@ public class SubscriptionPlanController {
         log.info("Deleting subscription plan: {}", id);
         subscriptionPlanService.deletePlan(id);
         return ResponseEntity.ok(ApiResponse.success("Subscription plan deleted successfully", null));
-    }
-
-    /**
-     * Create custom plan for specific business
-     */
-    @PostMapping("/custom/{businessId}")
-    public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> createCustomPlan(
-            @PathVariable UUID businessId,
-            @Valid @RequestBody SubscriptionPlanCreateRequest request) {
-        log.info("Creating custom subscription plan for business: {}", businessId);
-        SubscriptionPlanResponse plan = subscriptionPlanService.createCustomPlan(businessId, request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Custom subscription plan created successfully", plan));
-    }
-
-    /**
-     * Get custom plans for business
-     */
-    @GetMapping("/custom/{businessId}")
-    public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> getCustomPlansForBusiness(@PathVariable UUID businessId) {
-        log.info("Getting custom subscription plans for business: {}", businessId);
-        List<SubscriptionPlanResponse> plans = subscriptionPlanService.getCustomPlansForBusiness(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Custom subscription plans retrieved successfully", plans));
-    }
-
-    /**
-     * Assign plan to business (create subscription)
-     */
-    @PostMapping("/{planId}/assign/{businessId}")
-    public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> assignPlanToBusiness(
-            @PathVariable UUID planId,
-            @PathVariable UUID businessId,
-            @RequestParam(defaultValue = "false") Boolean autoRenew,
-            @RequestParam(required = false) Integer customDurationDays) {
-        log.info("Assigning plan {} to business: {}", planId, businessId);
-        SubscriptionPlanResponse result = subscriptionPlanService.assignPlanToBusiness(planId, businessId, autoRenew, customDurationDays);
-        return ResponseEntity.ok(ApiResponse.success("Plan assigned to business successfully", result));
-    }
-
-    /**
-     * Bulk assign plan to multiple businesses
-     */
-    @PostMapping("/{planId}/assign/bulk")
-    public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> bulkAssignPlan(
-            @PathVariable UUID planId,
-            @RequestBody List<UUID> businessIds,
-            @RequestParam(defaultValue = "false") Boolean autoRenew) {
-        log.info("Bulk assigning plan {} to {} businesses", planId, businessIds.size());
-        List<SubscriptionPlanResponse> results = subscriptionPlanService.bulkAssignPlan(planId, businessIds, autoRenew);
-        return ResponseEntity.ok(ApiResponse.success("Plan assigned to businesses successfully", results));
-    }
-
-    /**
-     * Get plan statistics
-     */
-    @GetMapping("/{planId}/statistics")
-    public ResponseEntity<ApiResponse<Object>> getPlanStatistics(@PathVariable UUID planId) {
-        log.info("Getting statistics for plan: {}", planId);
-        Object statistics = subscriptionPlanService.getPlanStatistics(planId);
-        return ResponseEntity.ok(ApiResponse.success("Plan statistics retrieved successfully", statistics));
-    }
-
-    /**
-     * Compare multiple plans
-     */
-    @PostMapping("/compare")
-    public ResponseEntity<ApiResponse<Object>> comparePlans(@RequestBody List<UUID> planIds) {
-        log.info("Comparing {} plans", planIds.size());
-        Object comparison = subscriptionPlanService.comparePlans(planIds);
-        return ResponseEntity.ok(ApiResponse.success("Plans compared successfully", comparison));
-    }
-
-    /**
-     * Get recommended plans for business
-     */
-    @GetMapping("/recommended/{businessId}")
-    public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> getRecommendedPlans(@PathVariable UUID businessId) {
-        log.info("Getting recommended plans for business: {}", businessId);
-        List<SubscriptionPlanResponse> plans = subscriptionPlanService.getRecommendedPlans(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Recommended plans retrieved successfully", plans));
     }
 }

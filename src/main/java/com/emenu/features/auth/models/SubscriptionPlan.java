@@ -1,4 +1,3 @@
-
 package com.emenu.features.auth.models;
 
 import com.emenu.enums.sub_scription.SubscriptionPlanStatus;
@@ -40,7 +39,7 @@ public class SubscriptionPlan extends BaseUUIDEntity {
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Subscription> subscriptions;
 
-    // Business Logic Methods
+    // ✅ ADDED: Business Logic Methods
     public boolean isPublic() {
         return SubscriptionPlanStatus.PUBLIC.equals(status);
     }
@@ -58,5 +57,32 @@ public class SubscriptionPlan extends BaseUUIDEntity {
             return "Free";
         }
         return String.format("$%.2f/%d days", price, durationDays);
+    }
+
+    // ✅ ADDED: Get display name (since we removed displayName field)
+    public String getDisplayName() {
+        return name; // For simplified version, just return name
+    }
+
+    // ✅ ADDED: Methods that might be referenced elsewhere
+    public Integer getMaxStaff() {
+        // Simplified: return unlimited (-1) for now
+        // In future versions, you can add these as separate fields
+        return -1; // -1 means unlimited
+    }
+
+    public Integer getMaxMenuItems() {
+        // Simplified: return unlimited (-1) for now
+        return -1; // -1 means unlimited
+    }
+
+    public Integer getMaxTables() {
+        // Simplified: return unlimited (-1) for now
+        return -1; // -1 means unlimited
+    }
+
+    // ✅ ADDED: Trial support (for future use)
+    public Boolean getIsTrial() {
+        return false; // Simplified: no trial plans for now
     }
 }
