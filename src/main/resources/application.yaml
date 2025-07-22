@@ -40,6 +40,7 @@ spring:
 # Server Configuration
 server:
   port: 8080
+  url: "http://152.42.219.13:8080"
   servlet:
     context-path: /
 

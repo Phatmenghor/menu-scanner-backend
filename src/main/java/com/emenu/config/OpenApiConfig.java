@@ -26,6 +26,10 @@ public class OpenApiConfig {
     @Value("${app.description:Simple E-Menu Platform for Restaurant Management}")
     private String appDescription;
 
+    // ✅ ADD SERVER URL CONFIGURATION
+    @Value("${server.url:http://152.42.219.13:8080}")
+    private String serverUrl;
+
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
@@ -41,8 +45,9 @@ public class OpenApiConfig {
                                 .name("Proprietary")
                                 .url("https://emenu-platform.com/license")))
                 .servers(List.of(
-                        new Server().url("http://localhost:8080").description("Development server"),
-                        new Server().url("https://api.emenu-platform.com").description("Production server")))
+                        new Server().url(serverUrl).description("Production server"),
+                        new Server().url("http://localhost:8080").description("Development server")
+                ))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth",
