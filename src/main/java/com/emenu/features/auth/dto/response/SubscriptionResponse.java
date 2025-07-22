@@ -14,21 +14,8 @@ public class SubscriptionResponse {
     // Plan information
     private UUID planId;
     private String planName;
-    private String planDisplayName;
     private Double planPrice;
     private Integer planDurationDays;
-    
-    // Effective limits (considering custom overrides)
-    private Integer effectiveMaxStaff;
-    private Integer effectiveMaxMenuItems;
-    private Integer effectiveMaxTables;
-    private Integer effectiveDurationDays;
-    
-    // Custom overrides
-    private Integer customMaxStaff;
-    private Integer customMaxMenuItems;
-    private Integer customMaxTables;
-    private Integer customDurationDays;
     
     private LocalDateTime startDate;
     private LocalDateTime endDate;
@@ -36,21 +23,11 @@ public class SubscriptionResponse {
     private Boolean isExpired;
     private Long daysRemaining;
     private Boolean autoRenew;
-    private Boolean isTrial;
     private String notes;
     
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // Usage statistics
-    private Integer currentStaffCount;
-    private Integer currentMenuItemsCount;
-    private Integer currentTablesCount;
-    private Boolean canAddStaff;
-    private Boolean canAddMenuItem;
-    private Boolean canAddTable;
-    
-    // Display information
+    // ✅ SIMPLIFIED: Basic display information only
     private String displayName;
-    private Boolean hasCustomLimits;
 }

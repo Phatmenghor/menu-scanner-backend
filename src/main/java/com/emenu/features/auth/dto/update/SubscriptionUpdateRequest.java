@@ -11,9 +11,5 @@ public class SubscriptionUpdateRequest {
     private LocalDateTime endDate;
     private Boolean isActive;
     private Boolean autoRenew;
-    private Integer customMaxStaff;
-    private Integer customMaxMenuItems;
-    private Integer customMaxTables;
-    private Integer customDurationDays;
     private String notes;
 }

@@ -35,9 +35,9 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "isActive", constant = "true")
     public abstract Subscription toEntity(SubscriptionCreateRequest request);
 
+    // ✅ SIMPLIFIED: Basic mapping without complex custom limits
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "plan.name", target = "planName")
-    @Mapping(source = "plan.name", target = "planDisplayName") // ✅ FIXED: Use plan.name instead of plan.displayName
     @Mapping(source = "plan.price", target = "planPrice")
     @Mapping(source = "plan.durationDays", target = "planDurationDays")
     public abstract SubscriptionResponse toResponse(Subscription subscription);
@@ -61,36 +61,12 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateEntity(SubscriptionUpdateRequest request, @MappingTarget Subscription subscription);
 
+    // ✅ SIMPLIFIED: Basic calculated fields only
     @AfterMapping
     protected void setCalculatedFields(@MappingTarget SubscriptionResponse response, Subscription subscription) {
         response.setIsExpired(subscription.isExpired());
         response.setDaysRemaining(subscription.getDaysRemaining());
-        response.setDisplayName(getSubscriptionDisplayName(subscription)); // ✅ FIXED: Create custom display name
-        response.setHasCustomLimits(subscription.hasCustomLimits());
-        
-        response.setEffectiveMaxStaff(subscription.getEffectiveMaxStaff());
-        response.setEffectiveMaxMenuItems(subscription.getEffectiveMaxMenuItems());
-        response.setEffectiveMaxTables(subscription.getEffectiveMaxTables());
-        response.setEffectiveDurationDays(subscription.getEffectiveDurationDays());
-        
-        response.setCanAddStaff(subscription.canAddStaff(0));
-        response.setCanAddMenuItem(subscription.canAddMenuItem(0));
-        response.setCanAddTable(subscription.canAddTable(0));
-    }
-
-    // ✅ FIXED: Custom method to create display name from plan name
-    protected String getSubscriptionDisplayName(Subscription subscription) {
-        if (subscription.getPlan() != null) {
-            String planName = subscription.getPlan().getName();
-            if (Boolean.TRUE.equals(subscription.getIsTrial())) {
-                planName += " (Trial)";
-            }
-            if (subscription.hasCustomLimits()) {
-                planName += " (Custom)";
-            }
-            return planName;
-        }
-        return "Unknown Plan";
+        response.setDisplayName(subscription.getDisplayName());
     }
 
     public PaginationResponse<SubscriptionResponse> toPaginationResponse(Page<Subscription> subscriptionPage) {

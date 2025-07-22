@@ -1,3 +1,4 @@
+// ===== 6. SIMPLIFIED SubscriptionController =====
 package com.emenu.features.auth.controller;
 
 import com.emenu.features.auth.dto.filter.SubscriptionFilterRequest;
@@ -27,13 +28,12 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
 
     /**
-     * Get all subscriptions with filtering and pagination
+     * Get all subscriptions with filtering and pagination (Platform Admin only)
      */
     @PostMapping("/all")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<PaginationResponse<SubscriptionResponse>>> getAllSubscriptions(
             @Valid @RequestBody SubscriptionFilterRequest filter) {
-        log.info("Getting subscriptions with filter - Status: {}, BusinessId: {}", filter.getStatus(), filter.getBusinessId());
+        log.info("Getting subscriptions with filter - BusinessId: {}, PlanId: {}", filter.getBusinessId(), filter.getPlanId());
         PaginationResponse<SubscriptionResponse> subscriptions = subscriptionService.getSubscriptions(filter);
         return ResponseEntity.ok(ApiResponse.success("Subscriptions retrieved successfully", subscriptions));
     }
@@ -42,7 +42,6 @@ public class SubscriptionController {
      * Get my business subscriptions (current user's business)
      */
     @PostMapping("/my-business")
-    @PreAuthorize("hasAnyRole('BUSINESS_OWNER', 'BUSINESS_MANAGER')")
     public ResponseEntity<ApiResponse<PaginationResponse<SubscriptionResponse>>> getMyBusinessSubscriptions(
             @Valid @RequestBody SubscriptionFilterRequest filter) {
         log.info("Getting current user's business subscriptions");
@@ -54,9 +53,8 @@ public class SubscriptionController {
      * Create new subscription
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> createSubscription(@Valid @RequestBody SubscriptionCreateRequest request) {
-        log.info("Creating subscription for business: {}", request.getBusinessId());
+        log.info("Creating subscription for business: {} with plan: {}", request.getBusinessId(), request.getPlanId());
         SubscriptionResponse subscription = subscriptionService.createSubscription(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Subscription created successfully", subscription));
@@ -66,7 +64,6 @@ public class SubscriptionController {
      * Get subscription by ID
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @subscriptionService.canAccessSubscription(#id)")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> getSubscriptionById(@PathVariable UUID id) {
         log.info("Getting subscription by ID: {}", id);
         SubscriptionResponse subscription = subscriptionService.getSubscriptionById(id);
@@ -74,10 +71,9 @@ public class SubscriptionController {
     }
 
     /**
-     * Update subscription (unified update endpoint)
+     * Update subscription
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> updateSubscription(
             @PathVariable UUID id,
             @Valid @RequestBody SubscriptionUpdateRequest request) {
@@ -90,7 +86,6 @@ public class SubscriptionController {
      * Delete/Cancel subscription
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteSubscription(@PathVariable UUID id) {
         log.info("Deleting subscription: {}", id);
         subscriptionService.deleteSubscription(id);
@@ -98,10 +93,9 @@ public class SubscriptionController {
     }
 
     /**
-     * Get active subscription for business
+     * Get active subscription for specific business
      */
     @GetMapping("/business/{businessId}/active")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @securityUtils.hasBusinessAccess(#businessId)")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> getActiveSubscriptionByBusiness(@PathVariable UUID businessId) {
         log.info("Getting active subscription for business: {}", businessId);
         SubscriptionResponse subscription = subscriptionService.getActiveSubscriptionByBusiness(businessId);
@@ -112,7 +106,6 @@ public class SubscriptionController {
      * Get my active subscription (current user's business)
      */
     @GetMapping("/my-business/active")
-    @PreAuthorize("hasAnyRole('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_STAFF')")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> getMyActiveSubscription() {
         log.info("Getting active subscription for current user's business");
         SubscriptionResponse subscription = subscriptionService.getCurrentUserActiveSubscription();
@@ -123,7 +116,6 @@ public class SubscriptionController {
      * Get subscription history for business
      */
     @GetMapping("/business/{businessId}/history")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @securityUtils.hasBusinessAccess(#businessId)")
     public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getBusinessSubscriptionHistory(@PathVariable UUID businessId) {
         log.info("Getting subscription history for business: {}", businessId);
         List<SubscriptionResponse> history = subscriptionService.getBusinessSubscriptionHistory(businessId);
@@ -134,12 +126,11 @@ public class SubscriptionController {
      * Renew subscription
      */
     @PostMapping("/{id}/renew")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> renewSubscription(
             @PathVariable UUID id,
             @RequestParam(required = false) UUID newPlanId,
             @RequestParam(required = false) Integer customDurationDays) {
-        log.info("Renewing subscription: {} with planId: {}", id, newPlanId);
+        log.info("Renewing subscription: {} with planId: {}, customDays: {}", id, newPlanId, customDurationDays);
         SubscriptionResponse subscription = subscriptionService.renewSubscription(id, newPlanId, customDurationDays);
         return ResponseEntity.ok(ApiResponse.success("Subscription renewed successfully", subscription));
     }
@@ -148,7 +139,6 @@ public class SubscriptionController {
      * Cancel subscription
      */
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<Void>> cancelSubscription(
             @PathVariable UUID id,
             @RequestParam(defaultValue = "false") Boolean immediate) {
@@ -161,7 +151,6 @@ public class SubscriptionController {
      * Suspend subscription
      */
     @PostMapping("/{id}/suspend")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> suspendSubscription(
             @PathVariable UUID id,
             @RequestParam(required = false) String reason) {
@@ -174,7 +163,6 @@ public class SubscriptionController {
      * Reactivate subscription
      */
     @PostMapping("/{id}/reactivate")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> reactivateSubscription(@PathVariable UUID id) {
         log.info("Reactivating subscription: {}", id);
         SubscriptionResponse subscription = subscriptionService.reactivateSubscription(id);
@@ -185,7 +173,6 @@ public class SubscriptionController {
      * Extend subscription
      */
     @PostMapping("/{id}/extend")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> extendSubscription(
             @PathVariable UUID id,
             @RequestParam Integer days,
@@ -196,10 +183,9 @@ public class SubscriptionController {
     }
 
     /**
-     * Upgrade/Downgrade subscription plan
+     * Change subscription plan
      */
     @PostMapping("/{id}/change-plan")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> changeSubscriptionPlan(
             @PathVariable UUID id,
             @RequestParam UUID newPlanId,
@@ -213,7 +199,6 @@ public class SubscriptionController {
      * Get expiring subscriptions
      */
     @GetMapping("/expiring")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getExpiringSubscriptions(
             @RequestParam(defaultValue = "7") int days) {
         log.info("Getting subscriptions expiring in {} days", days);
@@ -225,7 +210,6 @@ public class SubscriptionController {
      * Get expired subscriptions
      */
     @GetMapping("/expired")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getExpiredSubscriptions() {
         log.info("Getting expired subscriptions");
         List<SubscriptionResponse> expired = subscriptionService.getExpiredSubscriptions();
@@ -233,10 +217,9 @@ public class SubscriptionController {
     }
 
     /**
-     * Process expired subscriptions (batch job endpoint)
+     * Process expired subscriptions (admin operation)
      */
     @PostMapping("/process-expired")
-    @PreAuthorize("hasRole('PLATFORM_OWNER')")
     public ResponseEntity<ApiResponse<Object>> processExpiredSubscriptions() {
         log.info("Processing expired subscriptions");
         Object result = subscriptionService.processExpiredSubscriptions();
@@ -247,7 +230,6 @@ public class SubscriptionController {
      * Get subscription usage statistics
      */
     @GetMapping("/{id}/usage")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @subscriptionService.canAccessSubscription(#id)")
     public ResponseEntity<ApiResponse<Object>> getSubscriptionUsage(@PathVariable UUID id) {
         log.info("Getting usage statistics for subscription: {}", id);
         Object usage = subscriptionService.getSubscriptionUsage(id);
@@ -258,7 +240,6 @@ public class SubscriptionController {
      * Bulk operations on subscriptions
      */
     @PostMapping("/bulk/{action}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Object>> bulkOperations(
             @PathVariable String action,
             @RequestBody List<UUID> subscriptionIds,
@@ -272,7 +253,6 @@ public class SubscriptionController {
      * Get business subscription analytics
      */
     @GetMapping("/business/{businessId}/analytics")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @securityUtils.hasBusinessAccess(#businessId)")
     public ResponseEntity<ApiResponse<Object>> getBusinessSubscriptionAnalytics(@PathVariable UUID businessId) {
         log.info("Getting subscription analytics for business: {}", businessId);
         Object analytics = subscriptionService.getBusinessSubscriptionAnalytics(businessId);

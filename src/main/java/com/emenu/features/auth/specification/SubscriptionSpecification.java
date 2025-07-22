@@ -1,6 +1,5 @@
 package com.emenu.features.auth.specification;
 
-import com.emenu.enums.sub_scription.SubscriptionStatus;
 import com.emenu.features.auth.dto.filter.SubscriptionFilterRequest;
 import com.emenu.features.auth.models.Subscription;
 import jakarta.persistence.criteria.Join;
@@ -19,40 +18,52 @@ public class SubscriptionSpecification {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            // Base condition: not deleted
             predicates.add(criteriaBuilder.equal(root.get("isDeleted"), false));
 
+            // Business ID filter
             if (filter.getBusinessId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("businessId"), filter.getBusinessId()));
             }
 
+            // Multiple business IDs filter
             if (filter.getBusinessIds() != null && !filter.getBusinessIds().isEmpty()) {
                 predicates.add(root.get("businessId").in(filter.getBusinessIds()));
             }
 
+            // Plan ID filter
             if (filter.getPlanId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("planId"), filter.getPlanId()));
             }
 
+            // Multiple plan IDs filter
             if (filter.getPlanIds() != null && !filter.getPlanIds().isEmpty()) {
                 predicates.add(root.get("planId").in(filter.getPlanIds()));
             }
 
-            if (filter.getStatus() != null) {
-                predicates.add(createStatusPredicate(filter.getStatus(), root, criteriaBuilder));
-            }
-
-            if (filter.getStatuses() != null && !filter.getStatuses().isEmpty()) {
-                List<Predicate> statusPredicates = new ArrayList<>();
-                for (SubscriptionStatus status : filter.getStatuses()) {
-                    statusPredicates.add(createStatusPredicate(status, root, criteriaBuilder));
+            // ✅ SIMPLIFIED: Active status filter
+            if (filter.getIsActive() != null) {
+                if (filter.getIsActive()) {
+                    // Active and not expired
+                    predicates.add(criteriaBuilder.and(
+                        criteriaBuilder.equal(root.get("isActive"), true),
+                        criteriaBuilder.greaterThan(root.get("endDate"), LocalDateTime.now())
+                    ));
+                } else {
+                    // Inactive or expired
+                    predicates.add(criteriaBuilder.or(
+                        criteriaBuilder.equal(root.get("isActive"), false),
+                        criteriaBuilder.lessThanOrEqualTo(root.get("endDate"), LocalDateTime.now())
+                    ));
                 }
-                predicates.add(criteriaBuilder.or(statusPredicates.toArray(new Predicate[0])));
             }
 
+            // Auto-renew filter
             if (filter.getAutoRenew() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("autoRenew"), filter.getAutoRenew()));
             }
 
+            // Date range filters
             if (filter.getStartDateFrom() != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("startDate"), filter.getStartDateFrom()));
             }
@@ -69,6 +80,7 @@ public class SubscriptionSpecification {
                 predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("endDate"), filter.getEndDateTo()));
             }
 
+            // Expiring soon filter
             if (filter.getExpiringSoon() != null && filter.getExpiringSoon()) {
                 LocalDateTime now = LocalDateTime.now();
                 LocalDateTime futureDate = now.plusDays(filter.getExpiringSoonDays());
@@ -78,15 +90,7 @@ public class SubscriptionSpecification {
                 ));
             }
 
-            if (filter.getHasCustomLimits() != null && filter.getHasCustomLimits()) {
-                predicates.add(criteriaBuilder.or(
-                    criteriaBuilder.isNotNull(root.get("customMaxStaff")),
-                    criteriaBuilder.isNotNull(root.get("customMaxMenuItems")),
-                    criteriaBuilder.isNotNull(root.get("customMaxTables")),
-                    criteriaBuilder.isNotNull(root.get("customDurationDays"))
-                ));
-            }
-
+            // ✅ SIMPLIFIED: Basic search across business and plan names
             if (StringUtils.hasText(filter.getSearch())) {
                 String searchPattern = "%" + filter.getSearch().toLowerCase() + "%";
                 
@@ -97,12 +101,8 @@ public class SubscriptionSpecification {
                         criteriaBuilder.lower(businessJoin.get("name")), searchPattern);
                 Predicate planNamePredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(planJoin.get("name")), searchPattern);
-                Predicate planDisplayNamePredicate = criteriaBuilder.like(
-                        criteriaBuilder.lower(planJoin.get("displayName")), searchPattern);
 
-                predicates.add(criteriaBuilder.or(
-                        businessNamePredicate, planNamePredicate, planDisplayNamePredicate
-                ));
+                predicates.add(criteriaBuilder.or(businessNamePredicate, planNamePredicate));
                 
                 query.distinct(true);
             }
@@ -111,34 +111,7 @@ public class SubscriptionSpecification {
         };
     }
 
-    private static Predicate createStatusPredicate(SubscriptionStatus status, 
-                                                  jakarta.persistence.criteria.Root<Subscription> root, 
-                                                  jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder) {
-        LocalDateTime now = LocalDateTime.now();
-        
-        return switch (status) {
-            case ACTIVE -> criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("isActive"), true),
-                    criteriaBuilder.greaterThan(root.get("endDate"), now)
-            );
-            case EXPIRED -> criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("isActive"), true),
-                    criteriaBuilder.lessThanOrEqualTo(root.get("endDate"), now)
-            );
-            case CANCELLED -> criteriaBuilder.equal(root.get("isActive"), false);
-            case PENDING -> criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("isActive"), false),
-                    criteriaBuilder.greaterThan(root.get("startDate"), now)
-            );
-            case SUSPENDED -> criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("isActive"), false),
-                    criteriaBuilder.lessThanOrEqualTo(root.get("startDate"), now),
-                    criteriaBuilder.greaterThan(root.get("endDate"), now)
-            );
-            case TRIAL -> criteriaBuilder.equal(root.get("isTrial"), true);
-        };
-    }
-
+    // ✅ SIMPLIFIED: Common specifications
     public static Specification<Subscription> isActive() {
         return (root, query, criteriaBuilder) -> {
             LocalDateTime now = LocalDateTime.now();
@@ -170,5 +143,21 @@ public class SubscriptionSpecification {
                     criteriaBuilder.between(root.get("endDate"), now, futureDate)
             );
         };
+    }
+
+    public static Specification<Subscription> byBusiness(java.util.UUID businessId) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.and(
+                        criteriaBuilder.equal(root.get("isDeleted"), false),
+                        criteriaBuilder.equal(root.get("businessId"), businessId)
+                );
+    }
+
+    public static Specification<Subscription> byPlan(java.util.UUID planId) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.and(
+                        criteriaBuilder.equal(root.get("isDeleted"), false),
+                        criteriaBuilder.equal(root.get("planId"), planId)
+                );
     }
 }

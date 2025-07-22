@@ -1,6 +1,5 @@
 package com.emenu.features.auth.dto.filter;
 
-import com.emenu.enums.sub_scription.SubscriptionStatus;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
@@ -16,8 +15,7 @@ public class SubscriptionFilterRequest {
     private UUID planId;
     private List<UUID> businessIds;
     private List<UUID> planIds;
-    private SubscriptionStatus status;
-    private List<SubscriptionStatus> statuses;
+    private Boolean isActive;
     private Boolean autoRenew;
     private LocalDateTime startDateFrom;
     private LocalDateTime startDateTo;
@@ -25,7 +23,6 @@ public class SubscriptionFilterRequest {
     private LocalDateTime endDateTo;
     private Boolean expiringSoon;
     private Integer expiringSoonDays = 7;
-    private Boolean hasCustomLimits;
 
     @Min(value = 1, message = "Page number must be at least 1")
     private Integer pageNo = 1;

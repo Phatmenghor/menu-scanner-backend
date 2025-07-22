@@ -217,7 +217,6 @@ public class PaymentServiceImpl implements PaymentService {
                 newSubscription.setEndDate(LocalDateTime.now().plusDays(plan.getDurationDays()));
                 newSubscription.setIsActive(true);
                 newSubscription.setAutoRenew(false);
-                newSubscription.setIsTrial(plan.getIsTrial());
 
                 Subscription savedSubscription = subscriptionRepository.save(newSubscription);
 

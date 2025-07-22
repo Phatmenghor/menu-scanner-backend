@@ -14,10 +14,5 @@ public class SubscriptionCreateRequest {
     private UUID planId;
     
     private Boolean autoRenew = false;
-    private Integer customMaxStaff;
-    private Integer customMaxMenuItems;
-    private Integer customMaxTables;
-    private Integer customDurationDays;
     private String notes;
-    private Boolean isTrial = false;
 }
