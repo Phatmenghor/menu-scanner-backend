@@ -18,16 +18,5 @@ public interface BusinessService {
     PaginationResponse<BusinessResponse> getBusinesses(BusinessFilterRequest filter);
     BusinessResponse getBusinessById(UUID id);
     BusinessResponse updateBusiness(UUID id, BusinessUpdateRequest request);
-    void deleteBusiness(UUID id);
-    
-    // Business Status Management
-    void activateBusiness(UUID id);
-    void suspendBusiness(UUID id);
-    
-    // Business Analytics
-    DashboardStatsResponse getBusinessStats(UUID businessId);
-    
-    // Staff Management
-    PaginationResponse<UserResponse> getBusinessStaff(UUID businessId, UserFilterRequest filter);
-    boolean canAddMoreStaff(UUID businessId);
+    BusinessResponse deleteBusiness(UUID id);
 }

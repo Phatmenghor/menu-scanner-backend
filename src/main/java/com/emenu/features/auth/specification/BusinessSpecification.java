@@ -6,6 +6,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,49 +19,41 @@ public class BusinessSpecification {
             // Base condition: not deleted
             predicates.add(criteriaBuilder.equal(root.get("isDeleted"), false));
 
-            // Name filter
-            if (StringUtils.hasText(filter.getName())) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("name")),
-                        "%" + filter.getName().toLowerCase() + "%"
-                ));
-            }
-
-            // Email filter
-            if (StringUtils.hasText(filter.getEmail())) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("email")),
-                        "%" + filter.getEmail().toLowerCase() + "%"
-                ));
-            }
-
-            // Phone filter
-            if (StringUtils.hasText(filter.getPhone())) {
-                predicates.add(criteriaBuilder.like(
-                        root.get("phone"),
-                        "%" + filter.getPhone() + "%"
-                ));
-            }
-
             // Status filter
             if (filter.getStatus() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("status"), filter.getStatus()));
             }
 
-            // Global search filter
+            // Active subscription filter
+            if (filter.getHasActiveSubscription() != null) {
+                if (filter.getHasActiveSubscription()) {
+                    // Has active subscription
+                    predicates.add(criteriaBuilder.and(
+                        criteriaBuilder.equal(root.get("isSubscriptionActive"), true),
+                        criteriaBuilder.greaterThan(root.get("subscriptionEndDate"), LocalDateTime.now())
+                    ));
+                } else {
+                    // No active subscription
+                    predicates.add(criteriaBuilder.or(
+                        criteriaBuilder.equal(root.get("isSubscriptionActive"), false),
+                        criteriaBuilder.isNull(root.get("subscriptionEndDate")),
+                        criteriaBuilder.lessThanOrEqualTo(root.get("subscriptionEndDate"), LocalDateTime.now())
+                    ));
+                }
+            }
+
+            // Global search filter (searches across name, email, description)
             if (StringUtils.hasText(filter.getSearch())) {
                 String searchPattern = "%" + filter.getSearch().toLowerCase() + "%";
                 Predicate namePredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("name")), searchPattern);
                 Predicate emailPredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("email")), searchPattern);
-                Predicate phonePredicate = criteriaBuilder.like(
-                        root.get("phone"), searchPattern);
                 Predicate descriptionPredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("description")), searchPattern);
 
                 predicates.add(criteriaBuilder.or(
-                        namePredicate, emailPredicate, phonePredicate, descriptionPredicate
+                        namePredicate, emailPredicate, descriptionPredicate
                 ));
             }
 

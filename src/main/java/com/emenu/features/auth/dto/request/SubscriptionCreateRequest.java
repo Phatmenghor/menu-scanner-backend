@@ -7,7 +7,6 @@ import java.util.UUID;
 
 @Data
 public class SubscriptionCreateRequest {
-    
     @NotNull(message = "Business ID is required")
     private UUID businessId;
     
@@ -15,13 +14,5 @@ public class SubscriptionCreateRequest {
     private UUID planId;
     
     private Boolean autoRenew = false;
-    
-    // Custom overrides for this specific subscription
-    private Integer customMaxStaff;
-    private Integer customMaxMenuItems;
-    private Integer customMaxTables;
-    private Integer customDurationDays;
-    
     private String notes;
-    private Boolean isTrial = false;
 }

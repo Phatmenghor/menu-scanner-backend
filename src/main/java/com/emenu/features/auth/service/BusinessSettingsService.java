@@ -12,10 +12,7 @@ public interface BusinessSettingsService {
     
     // Update business settings
     BusinessSettingsResponse updateBusinessSettings(UUID businessId, BusinessSettingsRequest request);
-    
-    // Update business logo
-    String updateLogo(UUID businessId, String logoUrl);
-    
+
     // Get current user's business settings
     BusinessSettingsResponse getCurrentUserBusinessSettings();
     

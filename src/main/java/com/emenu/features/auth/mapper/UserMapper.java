@@ -33,7 +33,6 @@ public abstract class UserMapper {
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "password", ignore = true)
-    @Mapping(target = "accountStatus", constant = "ACTIVE")
     public abstract User toEntity(UserCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")

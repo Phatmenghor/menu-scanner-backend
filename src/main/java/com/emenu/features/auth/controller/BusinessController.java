@@ -35,9 +35,11 @@ public class BusinessController {
                 .body(ApiResponse.success("Business created successfully", business));
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<PaginationResponse<BusinessResponse>>> getBusinesses(@ModelAttribute BusinessFilterRequest filter) {
-        log.info("Getting businesses with filter");
+    @PostMapping("/all")
+    public ResponseEntity<ApiResponse<PaginationResponse<BusinessResponse>>> getBusinesses(@Valid @RequestBody BusinessFilterRequest filter) {
+        log.info("Getting businesses with filter - Search: {}, Status: {}, HasActiveSubscription: {}",
+                filter.getSearch(), filter.getStatus(), filter.getHasActiveSubscription());
+
         // ✅ Service returns pagination response directly from mapper
         PaginationResponse<BusinessResponse> businesses = businessService.getBusinesses(filter);
         return ResponseEntity.ok(ApiResponse.success("Businesses retrieved successfully", businesses));
@@ -60,47 +62,9 @@ public class BusinessController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteBusiness(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<BusinessResponse>> deleteBusiness(@PathVariable UUID id) {
         log.info("Deleting business: {}", id);
-        businessService.deleteBusiness(id);
-        return ResponseEntity.ok(ApiResponse.success("Business deleted successfully", null));
-    }
-
-    @PostMapping("/{id}/activate")
-    public ResponseEntity<ApiResponse<Void>> activateBusiness(@PathVariable UUID id) {
-        log.info("Activating business: {}", id);
-        businessService.activateBusiness(id);
-        return ResponseEntity.ok(ApiResponse.success("Business activated successfully", null));
-    }
-
-    @PostMapping("/{id}/suspend")
-    public ResponseEntity<ApiResponse<Void>> suspendBusiness(@PathVariable UUID id) {
-        log.info("Suspending business: {}", id);
-        businessService.suspendBusiness(id);
-        return ResponseEntity.ok(ApiResponse.success("Business suspended successfully", null));
-    }
-
-    @GetMapping("/{id}/stats")
-    public ResponseEntity<ApiResponse<DashboardStatsResponse>> getBusinessStats(@PathVariable UUID id) {
-        log.info("Getting business stats: {}", id);
-        DashboardStatsResponse stats = businessService.getBusinessStats(id);
-        return ResponseEntity.ok(ApiResponse.success("Business stats retrieved successfully", stats));
-    }
-
-    @GetMapping("/{id}/staff")
-    public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getBusinessStaff(
-            @PathVariable UUID id,
-            @ModelAttribute UserFilterRequest filter) {
-        log.info("Getting business staff: {}", id);
-        // ✅ Service returns pagination response directly from mapper
-        PaginationResponse<UserResponse> staff = businessService.getBusinessStaff(id, filter);
-        return ResponseEntity.ok(ApiResponse.success("Business staff retrieved successfully", staff));
-    }
-
-    @GetMapping("/{id}/can-add-staff")
-    public ResponseEntity<ApiResponse<Boolean>> canAddMoreStaff(@PathVariable UUID id) {
-        log.info("Checking if business can add more staff: {}", id);
-        boolean canAdd = businessService.canAddMoreStaff(id);
-        return ResponseEntity.ok(ApiResponse.success("Staff limit check completed", canAdd));
+        BusinessResponse businessResponse = businessService.deleteBusiness(id);
+        return ResponseEntity.ok(ApiResponse.success("Business deleted successfully", businessResponse));
     }
 }

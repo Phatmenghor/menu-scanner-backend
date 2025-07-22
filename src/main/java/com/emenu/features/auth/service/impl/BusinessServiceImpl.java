@@ -53,7 +53,6 @@ public class BusinessServiceImpl implements BusinessService {
             throw new ValidationException("Business email already exists");
         }
 
-        // ✅ Mapper handles entity creation
         Business business = businessMapper.toEntity(request);
         Business savedBusiness = businessRepository.save(business);
 
@@ -114,92 +113,26 @@ public class BusinessServiceImpl implements BusinessService {
     }
 
     @Override
-    public void deleteBusiness(UUID id) {
+    public BusinessResponse deleteBusiness(UUID id) {
         Business business = businessRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
         business.softDelete();
-        businessRepository.save(business);
-        log.info("Business deleted successfully: {}", business.getName());
-    }
+        business = businessRepository.save(business);
 
-    @Override
-    public void activateBusiness(UUID id) {
-        Business business = businessRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Business not found"));
+        BusinessResponse response = businessMapper.toResponse(business);
 
-        business.setStatus(BusinessStatus.ACTIVE);
-        businessRepository.save(business);
-        log.info("Business activated successfully: {}", business.getName());
-    }
+        response.setTotalStaff((int) userRepository.countByBusinessIdAndIsDeletedFalse(id));
 
-    @Override
-    public void suspendBusiness(UUID id) {
-        Business business = businessRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Business not found"));
-
-        business.setStatus(BusinessStatus.SUSPENDED);
-        businessRepository.save(business);
-        log.info("Business suspended successfully: {}", business.getName());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public DashboardStatsResponse getBusinessStats(UUID businessId) {
-        DashboardStatsResponse stats = new DashboardStatsResponse();
-
-        // Basic business stats
-        stats.setTotalStaff((int) userRepository.countByBusinessIdAndIsDeletedFalse(businessId));
-        stats.setActiveStaff((int) userRepository.countByBusinessIdAndIsDeletedFalse(businessId)); // Simplified
-
-        // Subscription stats
-        var activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(businessId, LocalDateTime.now());
+        // Check subscription status
+        var activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(id, LocalDateTime.now());
+        response.setHasActiveSubscription(activeSubscription.isPresent());
         if (activeSubscription.isPresent()) {
-            Subscription subscription = activeSubscription.get();
-            stats.setCurrentPlan(subscription.getPlan().getDisplayName());
-            stats.setDaysRemaining(subscription.getDaysRemaining());
-            
-            int currentStaff = (int) userRepository.countByBusinessIdAndIsDeletedFalse(businessId);
-            stats.setCanAddStaff(subscription.canAddStaff(currentStaff));
-            stats.setCanAddMenuItem(subscription.canAddMenuItem(0)); // Pass actual count
-            stats.setCanAddTable(subscription.canAddTable(0)); // Pass actual count
-            
-            stats.setStaffUsage(currentStaff);
-            stats.setStaffLimit(subscription.getPlan().getMaxStaff());
+            response.setCurrentSubscriptionPlan(activeSubscription.get().getPlan().getDisplayName());
+            response.setDaysRemaining(activeSubscription.get().getDaysRemaining());
         }
+        log.info("Business deleted successfully: {}", business.getName());
 
-        return stats;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public PaginationResponse<UserResponse> getBusinessStaff(UUID businessId, UserFilterRequest filter) {
-        // Set business filter
-        filter.setBusinessId(businessId);
-        
-        // ✅ Specification handles all filtering logic
-        Specification<User> spec = UserSpecification.buildSearchSpecification(filter);
-        
-        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
-        Pageable pageable = PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
-        );
-
-        Page<User> staffPage = userRepository.findAll(spec, pageable);
-
-        // ✅ Mapper handles pagination response conversion
-        return userMapper.toPaginationResponse(staffPage);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean canAddMoreStaff(UUID businessId) {
-        var activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(businessId, LocalDateTime.now());
-        if (activeSubscription.isEmpty()) {
-            return false; // No active subscription
-        }
-
-        int currentStaffCount = (int) userRepository.countByBusinessIdAndIsDeletedFalse(businessId);
-        return activeSubscription.get().canAddStaff(currentStaffCount);
+        return response;
     }
 }

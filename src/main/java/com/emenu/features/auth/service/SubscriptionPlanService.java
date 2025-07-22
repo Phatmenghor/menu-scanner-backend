@@ -1,5 +1,6 @@
 package com.emenu.features.auth.service;
 
+import com.emenu.features.auth.dto.filter.SubscriptionPlanFilterRequest;
 import com.emenu.features.auth.dto.request.SubscriptionPlanCreateRequest;
 import com.emenu.features.auth.dto.response.SubscriptionPlanResponse;
 import com.emenu.features.auth.dto.update.SubscriptionPlanUpdateRequest;
@@ -10,35 +11,13 @@ import java.util.UUID;
 
 public interface SubscriptionPlanService {
 
-    // Plan Management
+    // Plan Management with Filtering
     SubscriptionPlanResponse createPlan(SubscriptionPlanCreateRequest request);
-    List<SubscriptionPlanResponse> getAllPlans();
-    PaginationResponse<SubscriptionPlanResponse> getAllPlans(int pageNo, int pageSize);
-    List<SubscriptionPlanResponse> getAllActivePlans();
-    List<SubscriptionPlanResponse> getPublicPlans();
+    PaginationResponse<SubscriptionPlanResponse> getAllPlans(SubscriptionPlanFilterRequest filter);
     SubscriptionPlanResponse getPlanById(UUID planId);
-    SubscriptionPlanResponse getPlanByName(String planName);
     SubscriptionPlanResponse updatePlan(UUID planId, SubscriptionPlanUpdateRequest request);
     void deletePlan(UUID planId);
 
-    // Custom Plans
-    SubscriptionPlanResponse createCustomPlan(UUID businessId, SubscriptionPlanCreateRequest request);
-    List<SubscriptionPlanResponse> getCustomPlansForBusiness(UUID businessId);
-
-    // Plan Operations
-    void activatePlan(UUID planId);
-    void deactivatePlan(UUID planId);
-    SubscriptionPlanResponse setAsDefault(UUID planId);
-
     // System Operations
     void seedDefaultPlans();
-    void updateDefaultPlans();
-
-    // Plan Validation
-    boolean canDeletePlan(UUID planId);
-    boolean isPlanInUse(UUID planId);
-
-    // Plan Statistics
-    long getActiveSubscriptionsCount(UUID planId);
-    long getTotalPlansCount();
 }

@@ -1,5 +1,6 @@
 package com.emenu.features.auth.dto.request;
 
+import com.emenu.enums.AccountStatus;
 import com.emenu.enums.UserType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -20,14 +21,12 @@ public class RegisterRequest {
 
     @NotNull(message = "User type is required")
     private UserType userType;
-    
-    @NotBlank(message = "First name is required")
+
     private String firstName;
-    
-    @NotBlank(message = "Last name is required")
     private String lastName;
 
     private String profileImageUrl;
     private String phoneNumber;
     private String address;
+    private AccountStatus accountStatus = AccountStatus.ACTIVE;
 }

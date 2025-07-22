@@ -35,9 +35,9 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "isActive", constant = "true")
     public abstract Subscription toEntity(SubscriptionCreateRequest request);
 
+    // ✅ SIMPLIFIED: Basic mapping without complex custom limits
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "plan.name", target = "planName")
-    @Mapping(source = "plan.displayName", target = "planDisplayName")
     @Mapping(source = "plan.price", target = "planPrice")
     @Mapping(source = "plan.durationDays", target = "planDurationDays")
     public abstract SubscriptionResponse toResponse(Subscription subscription);
@@ -61,26 +61,14 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateEntity(SubscriptionUpdateRequest request, @MappingTarget Subscription subscription);
 
+    // ✅ SIMPLIFIED: Basic calculated fields only
     @AfterMapping
     protected void setCalculatedFields(@MappingTarget SubscriptionResponse response, Subscription subscription) {
         response.setIsExpired(subscription.isExpired());
         response.setDaysRemaining(subscription.getDaysRemaining());
         response.setDisplayName(subscription.getDisplayName());
-        response.setHasCustomLimits(subscription.hasCustomLimits());
-        
-        // Set effective limits
-        response.setEffectiveMaxStaff(subscription.getEffectiveMaxStaff());
-        response.setEffectiveMaxMenuItems(subscription.getEffectiveMaxMenuItems());
-        response.setEffectiveMaxTables(subscription.getEffectiveMaxTables());
-        response.setEffectiveDurationDays(subscription.getEffectiveDurationDays());
-        
-        // Set usage capabilities (these would be calculated from actual usage)
-        response.setCanAddStaff(subscription.canAddStaff(0)); // Pass actual count
-        response.setCanAddMenuItem(subscription.canAddMenuItem(0)); // Pass actual count
-        response.setCanAddTable(subscription.canAddTable(0)); // Pass actual count
     }
 
-    // Universal pagination mapper usage
     public PaginationResponse<SubscriptionResponse> toPaginationResponse(Page<Subscription> subscriptionPage) {
         return paginationMapper.toPaginationResponse(subscriptionPage, this::toResponseList);
     }

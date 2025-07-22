@@ -6,9 +6,6 @@ import com.emenu.features.auth.dto.request.PasswordChangeRequest;
 import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
-import com.emenu.features.auth.dto.update.AccountStatusUpdateRequest;
-
-import java.util.UUID;
 
 public interface AuthService {
 
@@ -23,7 +20,4 @@ public interface AuthService {
     UserResponse changePassword(PasswordChangeRequest request); //
 
     UserResponse adminResetPassword(AdminPasswordResetRequest request);
-
-    // Account Management
-    UserResponse updateAccountStatus(AccountStatusUpdateRequest request);
 }

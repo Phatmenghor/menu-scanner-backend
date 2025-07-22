@@ -37,7 +37,7 @@ public abstract class PaymentMapper {
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "plan.name", target = "planName")
-    @Mapping(source = "plan.displayName", target = "planDisplayName")
+    @Mapping(source = "plan.name", target = "planDisplayName") // ✅ FIXED: Use plan.name instead of plan.displayName
     public abstract PaymentResponse toResponse(Payment payment);
 
     public abstract List<PaymentResponse> toResponseList(List<Payment> payments);

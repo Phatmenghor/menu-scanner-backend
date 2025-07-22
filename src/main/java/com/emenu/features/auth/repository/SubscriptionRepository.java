@@ -18,9 +18,7 @@ import java.util.UUID;
 public interface SubscriptionRepository extends JpaRepository<Subscription, UUID>, JpaSpecificationExecutor<Subscription> {
     
     Optional<Subscription> findByIdAndIsDeletedFalse(UUID id);
-    
     List<Subscription> findByBusinessIdAndIsDeletedFalse(UUID businessId);
-    
     Page<Subscription> findByBusinessIdAndIsDeletedFalse(UUID businessId, Pageable pageable);
     
     @Query("SELECT s FROM Subscription s WHERE s.businessId = :businessId AND s.isActive = true AND s.isDeleted = false")
@@ -43,4 +41,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
 
     @Query("SELECT s FROM Subscription s WHERE s.planId = :planId AND s.isDeleted = false")
     List<Subscription> findByPlanId(@Param("planId") UUID planId);
+    
+    @Query("SELECT s FROM Subscription s WHERE s.autoRenew = true AND s.endDate BETWEEN :start AND :end AND s.isActive = true AND s.isDeleted = false")
+    List<Subscription> findAutoRenewingSubscriptions(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }
