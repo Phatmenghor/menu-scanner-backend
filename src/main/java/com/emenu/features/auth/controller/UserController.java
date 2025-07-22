@@ -52,7 +52,7 @@ public class UserController {
     /**
      * Get all users with filtering and pagination - Updated to use POST with request body
      */
-    @PostMapping("/getAll")
+    @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getAllUsers(@Valid @RequestBody UserFilterRequest request) {
         log.info("Getting all users with filters");
         PaginationResponse<UserResponse> response = userService.getAllUsers(request);

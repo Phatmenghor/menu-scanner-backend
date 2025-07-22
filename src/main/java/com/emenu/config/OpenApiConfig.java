@@ -44,10 +44,6 @@ public class OpenApiConfig {
                         .license(new License()
                                 .name("Proprietary")
                                 .url("https://emenu-platform.com/license")))
-                .servers(List.of(
-                        new Server().url(serverUrl).description("Production server"),
-                        new Server().url("http://localhost:8080").description("Development server")
-                ))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth",
