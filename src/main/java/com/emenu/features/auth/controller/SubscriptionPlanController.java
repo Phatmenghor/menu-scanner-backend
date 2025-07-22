@@ -38,10 +38,8 @@ public class SubscriptionPlanController {
 
     /**
      * Get all active subscription plans
-     * Available to platform users and business owners
      */
     @GetMapping("/active")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'BUSINESS_OWNER', 'BUSINESS_MANAGER')")
     public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> getActivePlans() {
         log.info("Getting active subscription plans");
         List<SubscriptionPlanResponse> plans = subscriptionPlanService.getAllActivePlans();
@@ -50,10 +48,8 @@ public class SubscriptionPlanController {
 
     /**
      * Get all subscription plans with pagination
-     * Only platform admins can see all plans including inactive ones
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<PaginationResponse<SubscriptionPlanResponse>>> getAllPlans(
             @RequestParam(defaultValue = "1") int pageNo,
             @RequestParam(defaultValue = "10") int pageSize) {
@@ -66,7 +62,6 @@ public class SubscriptionPlanController {
      * Get subscription plan by ID
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'BUSINESS_OWNER', 'BUSINESS_MANAGER')")
     public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> getPlanById(@PathVariable UUID id) {
         log.info("Getting subscription plan by ID: {}", id);
         SubscriptionPlanResponse plan = subscriptionPlanService.getPlanById(id);
@@ -75,10 +70,8 @@ public class SubscriptionPlanController {
 
     /**
      * Create new subscription plan
-     * Only platform admins can create plans
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> createPlan(@Valid @RequestBody SubscriptionPlanCreateRequest request) {
         log.info("Creating subscription plan: {}", request.getName());
         SubscriptionPlanResponse plan = subscriptionPlanService.createPlan(request);
@@ -88,10 +81,8 @@ public class SubscriptionPlanController {
 
     /**
      * Update subscription plan
-     * Only platform admins can update plans
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> updatePlan(
             @PathVariable UUID id,
             @Valid @RequestBody SubscriptionPlanUpdateRequest request) {
@@ -105,7 +96,6 @@ public class SubscriptionPlanController {
      * Only platform admins can delete plans
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deletePlan(@PathVariable UUID id) {
         log.info("Deleting subscription plan: {}", id);
         subscriptionPlanService.deletePlan(id);
@@ -116,7 +106,6 @@ public class SubscriptionPlanController {
      * Activate subscription plan
      */
     @PostMapping("/{id}/activate")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> activatePlan(@PathVariable UUID id) {
         log.info("Activating subscription plan: {}", id);
         subscriptionPlanService.activatePlan(id);
@@ -127,7 +116,6 @@ public class SubscriptionPlanController {
      * Deactivate subscription plan
      */
     @PostMapping("/{id}/deactivate")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deactivatePlan(@PathVariable UUID id) {
         log.info("Deactivating subscription plan: {}", id);
         subscriptionPlanService.deactivatePlan(id);

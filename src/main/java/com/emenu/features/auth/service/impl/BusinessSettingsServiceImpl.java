@@ -76,18 +76,6 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
     }
 
     @Override
-    public String updateLogo(UUID businessId, String logoUrl) {
-        Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)
-                .orElseThrow(() -> new RuntimeException("Business not found"));
-
-        business.setLogoUrl(logoUrl);
-        businessRepository.save(business);
-
-        log.info("Logo updated for business: {}", business.getName());
-        return logoUrl;
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public BusinessSettingsResponse getCurrentUserBusinessSettings() {
         User currentUser = securityUtils.getCurrentUser();
