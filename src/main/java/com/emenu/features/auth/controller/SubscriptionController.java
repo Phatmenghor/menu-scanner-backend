@@ -14,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -91,36 +90,6 @@ public class SubscriptionController {
     }
 
     /**
-     * Get active subscription for specific business
-     */
-    @GetMapping("/business/{businessId}/active")
-    public ResponseEntity<ApiResponse<SubscriptionResponse>> getActiveSubscriptionByBusiness(@PathVariable UUID businessId) {
-        log.info("Getting active subscription for business: {}", businessId);
-        SubscriptionResponse subscription = subscriptionService.getActiveSubscriptionByBusiness(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Active subscription retrieved successfully", subscription));
-    }
-
-    /**
-     * Get current user's active subscription
-     */
-    @GetMapping("/my-business/active")
-    public ResponseEntity<ApiResponse<SubscriptionResponse>> getMyActiveSubscription() {
-        log.info("Getting active subscription for current user's business");
-        SubscriptionResponse subscription = subscriptionService.getCurrentUserActiveSubscription();
-        return ResponseEntity.ok(ApiResponse.success("Active subscription retrieved successfully", subscription));
-    }
-
-    /**
-     * Get subscription history for business
-     */
-    @GetMapping("/business/{businessId}/history")
-    public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getBusinessSubscriptionHistory(@PathVariable UUID businessId) {
-        log.info("Getting subscription history for business: {}", businessId);
-        List<SubscriptionResponse> history = subscriptionService.getBusinessSubscriptionHistory(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Subscription history retrieved successfully", history));
-    }
-
-    /**
      * Renew subscription
      */
     @PostMapping("/{id}/renew")
@@ -143,26 +112,5 @@ public class SubscriptionController {
         log.info("Cancelling subscription: {}", id);
         subscriptionService.cancelSubscription(id, immediate);
         return ResponseEntity.ok(ApiResponse.success("Subscription cancelled successfully", null));
-    }
-
-    /**
-     * Get expiring subscriptions
-     */
-    @GetMapping("/expiring")
-    public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getExpiringSubscriptions(
-            @RequestParam(defaultValue = "7") int days) {
-        log.info("Getting subscriptions expiring in {} days", days);
-        List<SubscriptionResponse> expiring = subscriptionService.getExpiringSubscriptions(days);
-        return ResponseEntity.ok(ApiResponse.success("Expiring subscriptions retrieved successfully", expiring));
-    }
-
-    /**
-     * Get expired subscriptions
-     */
-    @GetMapping("/expired")
-    public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getExpiredSubscriptions() {
-        log.info("Getting expired subscriptions");
-        List<SubscriptionResponse> expired = subscriptionService.getExpiredSubscriptions();
-        return ResponseEntity.ok(ApiResponse.success("Expired subscriptions retrieved successfully", expired));
     }
 }

@@ -56,18 +56,9 @@ public class Subscription extends BaseUUIDEntity {
         return LocalDateTime.now().isAfter(endDate);
     }
 
-    public boolean isCurrentlyActive() {
-        return isActive && !isExpired();
-    }
-
     public long getDaysRemaining() {
         if (isExpired()) return 0;
         return java.time.Duration.between(LocalDateTime.now(), endDate).toDays();
-    }
-
-    public boolean isExpiringSoon(int days) {
-        if (isExpired()) return false;
-        return getDaysRemaining() <= days;
     }
 
     public String getDisplayName() {
@@ -85,9 +76,5 @@ public class Subscription extends BaseUUIDEntity {
     public void cancel() {
         this.isActive = false;
         this.autoRenew = false;
-    }
-
-    public void reactivate() {
-        this.isActive = true;
     }
 }

@@ -19,17 +19,7 @@ public interface SubscriptionService {
     SubscriptionResponse updateSubscription(UUID id, SubscriptionUpdateRequest request);
     void deleteSubscription(UUID id);
     
-    // Business Subscription Management
-    SubscriptionResponse getActiveSubscriptionByBusiness(UUID businessId);
-    SubscriptionResponse getCurrentUserActiveSubscription();
-    List<SubscriptionResponse> getBusinessSubscriptionHistory(UUID businessId);
-    
     // Basic Operations
     SubscriptionResponse renewSubscription(UUID subscriptionId, UUID newPlanId, Integer customDurationDays);
     void cancelSubscription(UUID subscriptionId, Boolean immediate);
-    
-    // Basic Queries
-    List<SubscriptionResponse> getExpiringSubscriptions(int days);
-    List<SubscriptionResponse> getExpiredSubscriptions();
-    boolean hasActiveSubscription(UUID businessId);
 }

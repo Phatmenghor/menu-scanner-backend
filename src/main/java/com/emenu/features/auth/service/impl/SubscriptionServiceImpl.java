@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -131,33 +130,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         log.info("Subscription deleted successfully: {}", id);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public SubscriptionResponse getActiveSubscriptionByBusiness(UUID businessId) {
-        Subscription subscription = subscriptionRepository.findCurrentActiveByBusinessId(businessId, LocalDateTime.now())
-                .orElseThrow(() -> new RuntimeException("No active subscription found for business"));
-        return subscriptionMapper.toResponse(subscription);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public SubscriptionResponse getCurrentUserActiveSubscription() {
-        User currentUser = securityUtils.getCurrentUser();
-        
-        if (currentUser.getBusinessId() == null) {
-            throw new RuntimeException("User is not associated with any business");
-        }
-
-        return getActiveSubscriptionByBusiness(currentUser.getBusinessId());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<SubscriptionResponse> getBusinessSubscriptionHistory(UUID businessId) {
-        List<Subscription> subscriptions = subscriptionRepository.findByBusinessIdAndIsDeletedFalse(businessId);
-        return subscriptionMapper.toResponseList(subscriptions);
-    }
-
     // Basic renewal - create new subscription
     @Override
     public SubscriptionResponse renewSubscription(UUID subscriptionId, UUID newPlanId, Integer customDurationDays) {
@@ -198,35 +170,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
-        if (immediate != null && immediate) {
-            subscription.setEndDate(LocalDateTime.now());
-        }
-        
         subscription.cancel();
         subscriptionRepository.save(subscription);
         log.info("Subscription cancelled successfully: {}", subscriptionId);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<SubscriptionResponse> getExpiringSubscriptions(int days) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime futureDate = now.plusDays(days);
-        
-        List<Subscription> expiring = subscriptionRepository.findExpiringSubscriptions(now, futureDate);
-        return subscriptionMapper.toResponseList(expiring);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<SubscriptionResponse> getExpiredSubscriptions() {
-        List<Subscription> expired = subscriptionRepository.findExpiredSubscriptions(LocalDateTime.now());
-        return subscriptionMapper.toResponseList(expired);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean hasActiveSubscription(UUID businessId) {
-        return subscriptionRepository.findCurrentActiveByBusinessId(businessId, LocalDateTime.now()).isPresent();
-    }
 }
