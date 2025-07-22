@@ -45,15 +45,13 @@ public class Subscription extends BaseUUIDEntity {
     @Column(name = "auto_renew", nullable = false)
     private Boolean autoRenew = false;
 
-    // ✅ SIMPLIFIED: Only basic notes field
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
-    // ✅ SIMPLIFIED: Basic relationships
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL)
     private List<Payment> payments;
 
-    // ✅ SIMPLIFIED: Basic business methods only
+    // Basic business methods
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(endDate);
     }
@@ -79,7 +77,7 @@ public class Subscription extends BaseUUIDEntity {
         return "Unknown Plan";
     }
 
-    // ✅ SIMPLIFIED: Basic operations
+    // Basic operations
     public void extendByDays(int days) {
         this.endDate = this.endDate.plusDays(days);
     }
@@ -91,18 +89,5 @@ public class Subscription extends BaseUUIDEntity {
 
     public void reactivate() {
         this.isActive = true;
-    }
-
-    // ✅ SIMPLIFIED: No custom limits - use plan defaults
-    public boolean canAddStaff(int currentStaffCount) {
-        return true; // Simplified: always allow for now
-    }
-
-    public boolean canAddMenuItem(int currentMenuItems) {
-        return true; // Simplified: always allow for now
-    }
-
-    public boolean canAddTable(int currentTables) {
-        return true; // Simplified: always allow for now
     }
 }

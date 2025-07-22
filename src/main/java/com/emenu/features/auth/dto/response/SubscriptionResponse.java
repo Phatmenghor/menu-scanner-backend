@@ -28,6 +28,6 @@ public class SubscriptionResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // ✅ SIMPLIFIED: Basic display information only
+    // Display information
     private String displayName;
 }

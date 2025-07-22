@@ -35,7 +35,6 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "isActive", constant = "true")
     public abstract Subscription toEntity(SubscriptionCreateRequest request);
 
-    // ✅ SIMPLIFIED: Basic mapping without complex custom limits
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "plan.name", target = "planName")
     @Mapping(source = "plan.price", target = "planPrice")
@@ -50,7 +49,6 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "plan", ignore = true)
     @Mapping(target = "payments", ignore = true)
-    @Mapping(target = "startDate", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -61,7 +59,6 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateEntity(SubscriptionUpdateRequest request, @MappingTarget Subscription subscription);
 
-    // ✅ SIMPLIFIED: Basic calculated fields only
     @AfterMapping
     protected void setCalculatedFields(@MappingTarget SubscriptionResponse response, Subscription subscription) {
         response.setIsExpired(subscription.isExpired());

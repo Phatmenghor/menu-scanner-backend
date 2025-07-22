@@ -17,10 +17,11 @@ public class SubscriptionFilterRequest {
     private List<UUID> planIds;
     private Boolean isActive;
     private Boolean autoRenew;
-    private LocalDateTime startDateFrom;
-    private LocalDateTime startDateTo;
-    private LocalDateTime endDateFrom;
-    private LocalDateTime endDateTo;
+    
+    // Simple date range filtering - only 2 fields
+    private LocalDateTime startDate;  // From date
+    private LocalDateTime toDate;     // To date
+    
     private Boolean expiringSoon;
     private Integer expiringSoonDays = 7;
 

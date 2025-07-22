@@ -41,7 +41,7 @@ public class SubscriptionSpecification {
                 predicates.add(root.get("planId").in(filter.getPlanIds()));
             }
 
-            // ✅ SIMPLIFIED: Active status filter
+            // Active status filter
             if (filter.getIsActive() != null) {
                 if (filter.getIsActive()) {
                     // Active and not expired
@@ -63,21 +63,13 @@ public class SubscriptionSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("autoRenew"), filter.getAutoRenew()));
             }
 
-            // Date range filters
-            if (filter.getStartDateFrom() != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("startDate"), filter.getStartDateFrom()));
+            // Simple date range filtering - only 2 fields
+            if (filter.getStartDate() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("startDate"), filter.getStartDate()));
             }
 
-            if (filter.getStartDateTo() != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("startDate"), filter.getStartDateTo()));
-            }
-
-            if (filter.getEndDateFrom() != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("endDate"), filter.getEndDateFrom()));
-            }
-
-            if (filter.getEndDateTo() != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("endDate"), filter.getEndDateTo()));
+            if (filter.getToDate() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("startDate"), filter.getToDate()));
             }
 
             // Expiring soon filter
@@ -90,7 +82,7 @@ public class SubscriptionSpecification {
                 ));
             }
 
-            // ✅ SIMPLIFIED: Basic search across business and plan names
+            // Basic search across business and plan names
             if (StringUtils.hasText(filter.getSearch())) {
                 String searchPattern = "%" + filter.getSearch().toLowerCase() + "%";
                 
@@ -111,7 +103,7 @@ public class SubscriptionSpecification {
         };
     }
 
-    // ✅ SIMPLIFIED: Common specifications
+    // Common specifications for basic queries
     public static Specification<Subscription> isActive() {
         return (root, query, criteriaBuilder) -> {
             LocalDateTime now = LocalDateTime.now();

@@ -1,4 +1,3 @@
-// ===== 6. SIMPLIFIED SubscriptionController =====
 package com.emenu.features.auth.controller;
 
 import com.emenu.features.auth.dto.filter.SubscriptionFilterRequest;
@@ -13,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,18 +26,18 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
 
     /**
-     * Get all subscriptions with filtering and pagination (Platform Admin only)
+     * Get all subscriptions with filtering and pagination
      */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<SubscriptionResponse>>> getAllSubscriptions(
             @Valid @RequestBody SubscriptionFilterRequest filter) {
-        log.info("Getting subscriptions with filter - BusinessId: {}, PlanId: {}", filter.getBusinessId(), filter.getPlanId());
+        log.info("Getting subscriptions with filter");
         PaginationResponse<SubscriptionResponse> subscriptions = subscriptionService.getSubscriptions(filter);
         return ResponseEntity.ok(ApiResponse.success("Subscriptions retrieved successfully", subscriptions));
     }
 
     /**
-     * Get my business subscriptions (current user's business)
+     * Get current user's business subscriptions
      */
     @PostMapping("/my-business")
     public ResponseEntity<ApiResponse<PaginationResponse<SubscriptionResponse>>> getMyBusinessSubscriptions(
@@ -54,7 +52,7 @@ public class SubscriptionController {
      */
     @PostMapping
     public ResponseEntity<ApiResponse<SubscriptionResponse>> createSubscription(@Valid @RequestBody SubscriptionCreateRequest request) {
-        log.info("Creating subscription for business: {} with plan: {}", request.getBusinessId(), request.getPlanId());
+        log.info("Creating subscription for business: {}", request.getBusinessId());
         SubscriptionResponse subscription = subscriptionService.createSubscription(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Subscription created successfully", subscription));
@@ -83,7 +81,7 @@ public class SubscriptionController {
     }
 
     /**
-     * Delete/Cancel subscription
+     * Delete subscription
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteSubscription(@PathVariable UUID id) {
@@ -103,7 +101,7 @@ public class SubscriptionController {
     }
 
     /**
-     * Get my active subscription (current user's business)
+     * Get current user's active subscription
      */
     @GetMapping("/my-business/active")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> getMyActiveSubscription() {
@@ -130,7 +128,7 @@ public class SubscriptionController {
             @PathVariable UUID id,
             @RequestParam(required = false) UUID newPlanId,
             @RequestParam(required = false) Integer customDurationDays) {
-        log.info("Renewing subscription: {} with planId: {}, customDays: {}", id, newPlanId, customDurationDays);
+        log.info("Renewing subscription: {}", id);
         SubscriptionResponse subscription = subscriptionService.renewSubscription(id, newPlanId, customDurationDays);
         return ResponseEntity.ok(ApiResponse.success("Subscription renewed successfully", subscription));
     }
@@ -142,57 +140,9 @@ public class SubscriptionController {
     public ResponseEntity<ApiResponse<Void>> cancelSubscription(
             @PathVariable UUID id,
             @RequestParam(defaultValue = "false") Boolean immediate) {
-        log.info("Cancelling subscription: {} immediately: {}", id, immediate);
+        log.info("Cancelling subscription: {}", id);
         subscriptionService.cancelSubscription(id, immediate);
         return ResponseEntity.ok(ApiResponse.success("Subscription cancelled successfully", null));
-    }
-
-    /**
-     * Suspend subscription
-     */
-    @PostMapping("/{id}/suspend")
-    public ResponseEntity<ApiResponse<SubscriptionResponse>> suspendSubscription(
-            @PathVariable UUID id,
-            @RequestParam(required = false) String reason) {
-        log.info("Suspending subscription: {} with reason: {}", id, reason);
-        SubscriptionResponse subscription = subscriptionService.suspendSubscription(id, reason);
-        return ResponseEntity.ok(ApiResponse.success("Subscription suspended successfully", subscription));
-    }
-
-    /**
-     * Reactivate subscription
-     */
-    @PostMapping("/{id}/reactivate")
-    public ResponseEntity<ApiResponse<SubscriptionResponse>> reactivateSubscription(@PathVariable UUID id) {
-        log.info("Reactivating subscription: {}", id);
-        SubscriptionResponse subscription = subscriptionService.reactivateSubscription(id);
-        return ResponseEntity.ok(ApiResponse.success("Subscription reactivated successfully", subscription));
-    }
-
-    /**
-     * Extend subscription
-     */
-    @PostMapping("/{id}/extend")
-    public ResponseEntity<ApiResponse<SubscriptionResponse>> extendSubscription(
-            @PathVariable UUID id,
-            @RequestParam Integer days,
-            @RequestParam(required = false) String reason) {
-        log.info("Extending subscription: {} by {} days", id, days);
-        SubscriptionResponse subscription = subscriptionService.extendSubscription(id, days, reason);
-        return ResponseEntity.ok(ApiResponse.success("Subscription extended successfully", subscription));
-    }
-
-    /**
-     * Change subscription plan
-     */
-    @PostMapping("/{id}/change-plan")
-    public ResponseEntity<ApiResponse<SubscriptionResponse>> changeSubscriptionPlan(
-            @PathVariable UUID id,
-            @RequestParam UUID newPlanId,
-            @RequestParam(defaultValue = "false") Boolean immediate) {
-        log.info("Changing subscription {} plan to: {} immediately: {}", id, newPlanId, immediate);
-        SubscriptionResponse subscription = subscriptionService.changeSubscriptionPlan(id, newPlanId, immediate);
-        return ResponseEntity.ok(ApiResponse.success("Subscription plan changed successfully", subscription));
     }
 
     /**
@@ -214,48 +164,5 @@ public class SubscriptionController {
         log.info("Getting expired subscriptions");
         List<SubscriptionResponse> expired = subscriptionService.getExpiredSubscriptions();
         return ResponseEntity.ok(ApiResponse.success("Expired subscriptions retrieved successfully", expired));
-    }
-
-    /**
-     * Process expired subscriptions (admin operation)
-     */
-    @PostMapping("/process-expired")
-    public ResponseEntity<ApiResponse<Object>> processExpiredSubscriptions() {
-        log.info("Processing expired subscriptions");
-        Object result = subscriptionService.processExpiredSubscriptions();
-        return ResponseEntity.ok(ApiResponse.success("Expired subscriptions processed successfully", result));
-    }
-
-    /**
-     * Get subscription usage statistics
-     */
-    @GetMapping("/{id}/usage")
-    public ResponseEntity<ApiResponse<Object>> getSubscriptionUsage(@PathVariable UUID id) {
-        log.info("Getting usage statistics for subscription: {}", id);
-        Object usage = subscriptionService.getSubscriptionUsage(id);
-        return ResponseEntity.ok(ApiResponse.success("Subscription usage retrieved successfully", usage));
-    }
-
-    /**
-     * Bulk operations on subscriptions
-     */
-    @PostMapping("/bulk/{action}")
-    public ResponseEntity<ApiResponse<Object>> bulkOperations(
-            @PathVariable String action,
-            @RequestBody List<UUID> subscriptionIds,
-            @RequestParam(required = false) String reason) {
-        log.info("Performing bulk {} on {} subscriptions", action, subscriptionIds.size());
-        Object result = subscriptionService.bulkOperations(action, subscriptionIds, reason);
-        return ResponseEntity.ok(ApiResponse.success("Bulk operation completed successfully", result));
-    }
-
-    /**
-     * Get business subscription analytics
-     */
-    @GetMapping("/business/{businessId}/analytics")
-    public ResponseEntity<ApiResponse<Object>> getBusinessSubscriptionAnalytics(@PathVariable UUID businessId) {
-        log.info("Getting subscription analytics for business: {}", businessId);
-        Object analytics = subscriptionService.getBusinessSubscriptionAnalytics(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Business subscription analytics retrieved successfully", analytics));
     }
 }
