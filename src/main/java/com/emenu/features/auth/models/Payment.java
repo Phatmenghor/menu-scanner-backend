@@ -35,7 +35,6 @@ public class Payment extends BaseUUIDEntity {
     @JoinColumn(name = "subscription_id", insertable = false, updatable = false)
     private Subscription subscription;
 
-    // Reference to dynamic subscription plan
     @Column(name = "plan_id", nullable = false)
     private UUID planId;
 
@@ -45,6 +44,9 @@ public class Payment extends BaseUUIDEntity {
 
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
+
+    @Column(name = "amount_khr", precision = 15, scale = 2)
+    private BigDecimal amountKhr; // Amount in Cambodian Riel
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false)
@@ -57,13 +59,37 @@ public class Payment extends BaseUUIDEntity {
     @Column(name = "payment_date")
     private LocalDateTime paymentDate;
 
-    @Column(name = "reference_number")
+    @Column(name = "due_date")
+    private LocalDateTime dueDate;
+
+    @Column(name = "reference_number", unique = true)
     private String referenceNumber;
 
-    @Column(name = "notes")
+    @Column(name = "external_transaction_id")
+    private String externalTransactionId; // For future payment gateway integration
+
+    @Column(name = "currency", length = 3)
+    private String currency = "USD";
+
+    @Column(name = "exchange_rate")
+    private Double exchangeRate; // USD to KHR rate at time of payment
+
+    @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
-    // Business methods
+    @Column(name = "admin_notes", columnDefinition = "TEXT")
+    private String adminNotes; // Internal admin notes
+
+    @Column(name = "payment_proof_url")
+    private String paymentProofUrl; // URL to payment proof image
+
+    @Column(name = "processed_by")
+    private UUID processedBy; // Admin who processed the payment
+
+    @Column(name = "processed_at")
+    private LocalDateTime processedAt;
+
+    // Business Logic Methods
     public boolean isCompleted() {
         return PaymentStatus.COMPLETED.equals(status);
     }
@@ -72,25 +98,71 @@ public class Payment extends BaseUUIDEntity {
         return PaymentStatus.PENDING.equals(status);
     }
 
-    public void markAsCompleted() {
+    public boolean isFailed() {
+        return PaymentStatus.FAILED.equals(status);
+    }
+
+    public boolean isRefunded() {
+        return PaymentStatus.REFUNDED.equals(status);
+    }
+
+    public boolean isOverdue() {
+        return dueDate != null && LocalDateTime.now().isAfter(dueDate) && isPending();
+    }
+
+    public void markAsCompleted(UUID processedBy) {
         this.status = PaymentStatus.COMPLETED;
         this.paymentDate = LocalDateTime.now();
+        this.processedBy = processedBy;
+        this.processedAt = LocalDateTime.now();
     }
 
-    public void markAsFailed() {
+    public void markAsFailed(UUID processedBy, String reason) {
         this.status = PaymentStatus.FAILED;
+        this.processedBy = processedBy;
+        this.processedAt = LocalDateTime.now();
+        if (reason != null) {
+            this.adminNotes = (this.adminNotes != null ? this.adminNotes + "\n" : "") + "Failed: " + reason;
+        }
     }
 
-    // Helper methods for plan information
+    public void markAsRefunded(UUID processedBy, String reason) {
+        this.status = PaymentStatus.REFUNDED;
+        this.processedBy = processedBy;
+        this.processedAt = LocalDateTime.now();
+        if (reason != null) {
+            this.adminNotes = (this.adminNotes != null ? this.adminNotes + "\n" : "") + "Refunded: " + reason;
+        }
+    }
+
+    // Calculate KHR amount based on exchange rate
+    public void calculateAmountKhr(Double exchangeRate) {
+        if (amount != null && exchangeRate != null) {
+            this.exchangeRate = exchangeRate;
+            this.amountKhr = amount.multiply(BigDecimal.valueOf(exchangeRate));
+        }
+    }
+
+    // Helper methods for business logic
     public String getPlanName() {
         return plan != null ? plan.getName() : "Unknown Plan";
     }
 
-    public String getPlanDisplayName() {
-        return plan != null ? plan.getDisplayName() : "Unknown Plan";
+    public String getBusinessName() {
+        return business != null ? business.getName() : "Unknown Business";
     }
 
-    public boolean isPlanFree() {
-        return plan != null && plan.isFree();
+    public String getFormattedAmount() {
+        return String.format("$%.2f", amount);
+    }
+
+    public String getFormattedAmountKhr() {
+        return amountKhr != null ? String.format("៛%.0f", amountKhr) : "N/A";
+    }
+
+    // Payment duration calculation
+    public long getDaysUntilDue() {
+        if (dueDate == null) return 0;
+        return java.time.Duration.between(LocalDateTime.now(), dueDate).toDays();
     }
 }
