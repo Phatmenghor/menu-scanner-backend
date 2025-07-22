@@ -11,7 +11,6 @@ import java.util.List;
 
 @Data
 public class SubscriptionPlanCreateRequest {
-    
     @NotBlank(message = "Plan name is required")
     private String name;
     
@@ -31,9 +30,7 @@ public class SubscriptionPlanCreateRequest {
     private Integer maxStaff;
     private Integer maxMenuItems;
     private Integer maxTables;
-    
     private List<String> features;
-    
     private Boolean isActive = true;
     private Boolean isTrial = false;
     private Integer trialDurationDays;

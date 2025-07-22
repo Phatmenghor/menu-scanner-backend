@@ -1,5 +1,6 @@
 package com.emenu.features.auth.controller;
 
+import com.emenu.features.auth.dto.filter.SubscriptionPlanFilterRequest;
 import com.emenu.features.auth.dto.request.SubscriptionPlanCreateRequest;
 import com.emenu.features.auth.dto.response.SubscriptionPlanResponse;
 import com.emenu.features.auth.dto.update.SubscriptionPlanUpdateRequest;
@@ -26,36 +27,24 @@ public class SubscriptionPlanController {
     private final SubscriptionPlanService subscriptionPlanService;
 
     /**
+     * Get all subscription plans with filtering and pagination
+     */
+    @PostMapping("/all")
+    public ResponseEntity<ApiResponse<PaginationResponse<SubscriptionPlanResponse>>> getAllPlans(
+            @Valid @RequestBody SubscriptionPlanFilterRequest filter) {
+        log.info("Getting subscription plans with filter - Status: {}, Search: {}", filter.getStatus(), filter.getSearch());
+        PaginationResponse<SubscriptionPlanResponse> plans = subscriptionPlanService.getAllPlans(filter);
+        return ResponseEntity.ok(ApiResponse.success("Subscription plans retrieved successfully", plans));
+    }
+
+    /**
      * Get public subscription plans (for frontend display)
-     * Available to all authenticated users
      */
     @GetMapping("/public")
     public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> getPublicPlans() {
         log.info("Getting public subscription plans");
         List<SubscriptionPlanResponse> plans = subscriptionPlanService.getPublicPlans();
         return ResponseEntity.ok(ApiResponse.success("Public subscription plans retrieved successfully", plans));
-    }
-
-    /**
-     * Get all active subscription plans
-     */
-    @GetMapping("/active")
-    public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> getActivePlans() {
-        log.info("Getting active subscription plans");
-        List<SubscriptionPlanResponse> plans = subscriptionPlanService.getAllActivePlans();
-        return ResponseEntity.ok(ApiResponse.success("Active subscription plans retrieved successfully", plans));
-    }
-
-    /**
-     * Get all subscription plans with pagination
-     */
-    @GetMapping
-    public ResponseEntity<ApiResponse<PaginationResponse<SubscriptionPlanResponse>>> getAllPlans(
-            @RequestParam(defaultValue = "1") int pageNo,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        log.info("Getting all subscription plans - Page: {}, Size: {}", pageNo, pageSize);
-        PaginationResponse<SubscriptionPlanResponse> plans = subscriptionPlanService.getAllPlans(pageNo, pageSize);
-        return ResponseEntity.ok(ApiResponse.success("Subscription plans retrieved successfully", plans));
     }
 
     /**
@@ -72,6 +61,7 @@ public class SubscriptionPlanController {
      * Create new subscription plan
      */
     @PostMapping
+    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> createPlan(@Valid @RequestBody SubscriptionPlanCreateRequest request) {
         log.info("Creating subscription plan: {}", request.getName());
         SubscriptionPlanResponse plan = subscriptionPlanService.createPlan(request);
@@ -80,9 +70,10 @@ public class SubscriptionPlanController {
     }
 
     /**
-     * Update subscription plan
+     * Update subscription plan (unified update endpoint)
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> updatePlan(
             @PathVariable UUID id,
             @Valid @RequestBody SubscriptionPlanUpdateRequest request) {
@@ -93,9 +84,9 @@ public class SubscriptionPlanController {
 
     /**
      * Delete subscription plan
-     * Only platform admins can delete plans
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deletePlan(@PathVariable UUID id) {
         log.info("Deleting subscription plan: {}", id);
         subscriptionPlanService.deletePlan(id);
@@ -103,39 +94,7 @@ public class SubscriptionPlanController {
     }
 
     /**
-     * Activate subscription plan
-     */
-    @PostMapping("/{id}/activate")
-    public ResponseEntity<ApiResponse<Void>> activatePlan(@PathVariable UUID id) {
-        log.info("Activating subscription plan: {}", id);
-        subscriptionPlanService.activatePlan(id);
-        return ResponseEntity.ok(ApiResponse.success("Subscription plan activated successfully", null));
-    }
-
-    /**
-     * Deactivate subscription plan
-     */
-    @PostMapping("/{id}/deactivate")
-    public ResponseEntity<ApiResponse<Void>> deactivatePlan(@PathVariable UUID id) {
-        log.info("Deactivating subscription plan: {}", id);
-        subscriptionPlanService.deactivatePlan(id);
-        return ResponseEntity.ok(ApiResponse.success("Subscription plan deactivated successfully", null));
-    }
-
-    /**
-     * Set plan as default
-     */
-    @PostMapping("/{id}/set-default")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
-    public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> setAsDefault(@PathVariable UUID id) {
-        log.info("Setting subscription plan as default: {}", id);
-        SubscriptionPlanResponse plan = subscriptionPlanService.setAsDefault(id);
-        return ResponseEntity.ok(ApiResponse.success("Default plan set successfully", plan));
-    }
-
-    /**
      * Create custom plan for specific business
-     * Platform admins can create custom plans for businesses
      */
     @PostMapping("/custom/{businessId}")
     @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
@@ -157,6 +116,67 @@ public class SubscriptionPlanController {
         log.info("Getting custom subscription plans for business: {}", businessId);
         List<SubscriptionPlanResponse> plans = subscriptionPlanService.getCustomPlansForBusiness(businessId);
         return ResponseEntity.ok(ApiResponse.success("Custom subscription plans retrieved successfully", plans));
+    }
+
+    /**
+     * Assign plan to business (create subscription)
+     */
+    @PostMapping("/{planId}/assign/{businessId}")
+    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'BUSINESS_OWNER')")
+    public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> assignPlanToBusiness(
+            @PathVariable UUID planId,
+            @PathVariable UUID businessId,
+            @RequestParam(defaultValue = "false") Boolean autoRenew,
+            @RequestParam(required = false) Integer customDurationDays) {
+        log.info("Assigning plan {} to business: {}", planId, businessId);
+        SubscriptionPlanResponse result = subscriptionPlanService.assignPlanToBusiness(planId, businessId, autoRenew, customDurationDays);
+        return ResponseEntity.ok(ApiResponse.success("Plan assigned to business successfully", result));
+    }
+
+    /**
+     * Bulk assign plan to multiple businesses
+     */
+    @PostMapping("/{planId}/assign/bulk")
+    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
+    public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> bulkAssignPlan(
+            @PathVariable UUID planId,
+            @RequestBody List<UUID> businessIds,
+            @RequestParam(defaultValue = "false") Boolean autoRenew) {
+        log.info("Bulk assigning plan {} to {} businesses", planId, businessIds.size());
+        List<SubscriptionPlanResponse> results = subscriptionPlanService.bulkAssignPlan(planId, businessIds, autoRenew);
+        return ResponseEntity.ok(ApiResponse.success("Plan assigned to businesses successfully", results));
+    }
+
+    /**
+     * Get plan statistics
+     */
+    @GetMapping("/{planId}/statistics")
+    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
+    public ResponseEntity<ApiResponse<Object>> getPlanStatistics(@PathVariable UUID planId) {
+        log.info("Getting statistics for plan: {}", planId);
+        Object statistics = subscriptionPlanService.getPlanStatistics(planId);
+        return ResponseEntity.ok(ApiResponse.success("Plan statistics retrieved successfully", statistics));
+    }
+
+    /**
+     * Compare multiple plans
+     */
+    @PostMapping("/compare")
+    public ResponseEntity<ApiResponse<Object>> comparePlans(@RequestBody List<UUID> planIds) {
+        log.info("Comparing {} plans", planIds.size());
+        Object comparison = subscriptionPlanService.comparePlans(planIds);
+        return ResponseEntity.ok(ApiResponse.success("Plans compared successfully", comparison));
+    }
+
+    /**
+     * Get recommended plans for business
+     */
+    @GetMapping("/recommended/{businessId}")
+    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @securityUtils.hasBusinessAccess(#businessId)")
+    public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> getRecommendedPlans(@PathVariable UUID businessId) {
+        log.info("Getting recommended plans for business: {}", businessId);
+        List<SubscriptionPlanResponse> plans = subscriptionPlanService.getRecommendedPlans(businessId);
+        return ResponseEntity.ok(ApiResponse.success("Recommended plans retrieved successfully", plans));
     }
 
     /**

@@ -9,7 +9,6 @@ import java.util.UUID;
 
 @Data
 public class SubscriptionPlanResponse {
-    
     private UUID id;
     private String name;
     private String displayName;
@@ -35,7 +34,7 @@ public class SubscriptionPlanResponse {
     private Boolean isUnlimitedMenuItems;
     private Boolean isUnlimitedTables;
     
-    // Usage statistics (if needed)
+    // Statistics
     private Long activeSubscriptionsCount;
     
     // Audit

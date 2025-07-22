@@ -1,5 +1,6 @@
 package com.emenu.features.auth.service;
 
+import com.emenu.features.auth.dto.filter.SubscriptionPlanFilterRequest;
 import com.emenu.features.auth.dto.request.SubscriptionPlanCreateRequest;
 import com.emenu.features.auth.dto.response.SubscriptionPlanResponse;
 import com.emenu.features.auth.dto.update.SubscriptionPlanUpdateRequest;
@@ -10,25 +11,29 @@ import java.util.UUID;
 
 public interface SubscriptionPlanService {
 
-    // Plan Management
+    // Plan Management with Filtering
     SubscriptionPlanResponse createPlan(SubscriptionPlanCreateRequest request);
-    List<SubscriptionPlanResponse> getAllPlans();
-    PaginationResponse<SubscriptionPlanResponse> getAllPlans(int pageNo, int pageSize);
-    List<SubscriptionPlanResponse> getAllActivePlans();
+    PaginationResponse<SubscriptionPlanResponse> getAllPlans(SubscriptionPlanFilterRequest filter);
     List<SubscriptionPlanResponse> getPublicPlans();
     SubscriptionPlanResponse getPlanById(UUID planId);
     SubscriptionPlanResponse getPlanByName(String planName);
     SubscriptionPlanResponse updatePlan(UUID planId, SubscriptionPlanUpdateRequest request);
     void deletePlan(UUID planId);
 
-    // Custom Plans
+    // Custom Plans Management
     SubscriptionPlanResponse createCustomPlan(UUID businessId, SubscriptionPlanCreateRequest request);
     List<SubscriptionPlanResponse> getCustomPlansForBusiness(UUID businessId);
 
-    // Plan Operations
-    void activatePlan(UUID planId);
-    void deactivatePlan(UUID planId);
-    SubscriptionPlanResponse setAsDefault(UUID planId);
+    // Business Assignment Operations
+    SubscriptionPlanResponse assignPlanToBusiness(UUID planId, UUID businessId, Boolean autoRenew, Integer customDurationDays);
+    List<SubscriptionPlanResponse> bulkAssignPlan(UUID planId, List<UUID> businessIds, Boolean autoRenew);
+    void unassignPlanFromBusiness(UUID planId, UUID businessId);
+
+    // Plan Statistics & Analytics
+    Object getPlanStatistics(UUID planId);
+    long getActiveSubscriptionsCount(UUID planId);
+    long getTotalPlansCount();
+    Object getPlatformStatistics();
 
     // System Operations
     void seedDefaultPlans();
@@ -37,8 +42,12 @@ public interface SubscriptionPlanService {
     // Plan Validation
     boolean canDeletePlan(UUID planId);
     boolean isPlanInUse(UUID planId);
+    boolean canBusinessUsePlan(UUID businessId, UUID planId);
 
-    // Plan Statistics
-    long getActiveSubscriptionsCount(UUID planId);
-    long getTotalPlansCount();
+    // Plan Recommendations
+    List<SubscriptionPlanResponse> getRecommendedPlans(UUID businessId);
+    List<SubscriptionPlanResponse> getSimilarPlans(UUID planId);
+
+    // Plan Comparison
+    Object comparePlans(List<UUID> planIds);
 }

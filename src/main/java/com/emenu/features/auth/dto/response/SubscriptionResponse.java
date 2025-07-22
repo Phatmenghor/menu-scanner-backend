@@ -7,7 +7,6 @@ import java.util.UUID;
 
 @Data
 public class SubscriptionResponse {
-    
     private UUID id;
     private UUID businessId;
     private String businessName;

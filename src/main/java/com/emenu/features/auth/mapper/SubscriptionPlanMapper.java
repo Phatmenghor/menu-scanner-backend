@@ -56,14 +56,12 @@ public abstract class SubscriptionPlanMapper {
 
     @AfterMapping
     protected void setCalculatedFields(@MappingTarget SubscriptionPlanResponse response, SubscriptionPlan plan) {
-        // Set computed fields
         response.setPricingDisplay(plan.getPricingDisplay());
         response.setIsFree(plan.isFree());
         response.setIsUnlimitedStaff(plan.isUnlimited("staff"));
         response.setIsUnlimitedMenuItems(plan.isUnlimited("menu"));
         response.setIsUnlimitedTables(plan.isUnlimited("tables"));
         
-        // Set usage statistics if needed
         if (plan.getSubscriptions() != null) {
             response.setActiveSubscriptionsCount((long) plan.getSubscriptions().size());
         }
@@ -83,7 +81,6 @@ public abstract class SubscriptionPlanMapper {
         }
     }
 
-    // Universal pagination mapper usage
     public PaginationResponse<SubscriptionPlanResponse> toPaginationResponse(Page<SubscriptionPlan> planPage) {
         return paginationMapper.toPaginationResponse(planPage, this::toResponseList);
     }

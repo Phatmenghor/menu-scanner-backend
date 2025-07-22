@@ -68,19 +68,16 @@ public abstract class SubscriptionMapper {
         response.setDisplayName(subscription.getDisplayName());
         response.setHasCustomLimits(subscription.hasCustomLimits());
         
-        // Set effective limits
         response.setEffectiveMaxStaff(subscription.getEffectiveMaxStaff());
         response.setEffectiveMaxMenuItems(subscription.getEffectiveMaxMenuItems());
         response.setEffectiveMaxTables(subscription.getEffectiveMaxTables());
         response.setEffectiveDurationDays(subscription.getEffectiveDurationDays());
         
-        // Set usage capabilities (these would be calculated from actual usage)
-        response.setCanAddStaff(subscription.canAddStaff(0)); // Pass actual count
-        response.setCanAddMenuItem(subscription.canAddMenuItem(0)); // Pass actual count
-        response.setCanAddTable(subscription.canAddTable(0)); // Pass actual count
+        response.setCanAddStaff(subscription.canAddStaff(0));
+        response.setCanAddMenuItem(subscription.canAddMenuItem(0));
+        response.setCanAddTable(subscription.canAddTable(0));
     }
 
-    // Universal pagination mapper usage
     public PaginationResponse<SubscriptionResponse> toPaginationResponse(Page<Subscription> subscriptionPage) {
         return paginationMapper.toPaginationResponse(subscriptionPage, this::toResponseList);
     }

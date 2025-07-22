@@ -7,7 +7,6 @@ import java.util.List;
 
 @Data
 public class SubscriptionPlanUpdateRequest {
-    
     private String name;
     private String displayName;
     private String description;
