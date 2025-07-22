@@ -19,5 +19,5 @@ public interface AuthService {
     // Password Management
     UserResponse changePassword(PasswordChangeRequest request); //
 
-    UserResponse adminResetPassword(AdminPasswordResetRequest request)
+    UserResponse adminResetPassword(AdminPasswordResetRequest request);
 }
