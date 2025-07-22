@@ -61,7 +61,6 @@ public class SubscriptionPlanController {
      * Create new subscription plan
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> createPlan(@Valid @RequestBody SubscriptionPlanCreateRequest request) {
         log.info("Creating subscription plan: {}", request.getName());
         SubscriptionPlanResponse plan = subscriptionPlanService.createPlan(request);
@@ -73,7 +72,6 @@ public class SubscriptionPlanController {
      * Update subscription plan (unified update endpoint)
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> updatePlan(
             @PathVariable UUID id,
             @Valid @RequestBody SubscriptionPlanUpdateRequest request) {
@@ -86,7 +84,6 @@ public class SubscriptionPlanController {
      * Delete subscription plan
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deletePlan(@PathVariable UUID id) {
         log.info("Deleting subscription plan: {}", id);
         subscriptionPlanService.deletePlan(id);
@@ -97,7 +94,6 @@ public class SubscriptionPlanController {
      * Create custom plan for specific business
      */
     @PostMapping("/custom/{businessId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> createCustomPlan(
             @PathVariable UUID businessId,
             @Valid @RequestBody SubscriptionPlanCreateRequest request) {
@@ -111,7 +107,6 @@ public class SubscriptionPlanController {
      * Get custom plans for business
      */
     @GetMapping("/custom/{businessId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @securityUtils.hasBusinessAccess(#businessId)")
     public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> getCustomPlansForBusiness(@PathVariable UUID businessId) {
         log.info("Getting custom subscription plans for business: {}", businessId);
         List<SubscriptionPlanResponse> plans = subscriptionPlanService.getCustomPlansForBusiness(businessId);
@@ -122,7 +117,6 @@ public class SubscriptionPlanController {
      * Assign plan to business (create subscription)
      */
     @PostMapping("/{planId}/assign/{businessId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> assignPlanToBusiness(
             @PathVariable UUID planId,
             @PathVariable UUID businessId,
@@ -137,7 +131,6 @@ public class SubscriptionPlanController {
      * Bulk assign plan to multiple businesses
      */
     @PostMapping("/{planId}/assign/bulk")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> bulkAssignPlan(
             @PathVariable UUID planId,
             @RequestBody List<UUID> businessIds,
@@ -151,7 +144,6 @@ public class SubscriptionPlanController {
      * Get plan statistics
      */
     @GetMapping("/{planId}/statistics")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Object>> getPlanStatistics(@PathVariable UUID planId) {
         log.info("Getting statistics for plan: {}", planId);
         Object statistics = subscriptionPlanService.getPlanStatistics(planId);
@@ -172,21 +164,9 @@ public class SubscriptionPlanController {
      * Get recommended plans for business
      */
     @GetMapping("/recommended/{businessId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN') or @securityUtils.hasBusinessAccess(#businessId)")
     public ResponseEntity<ApiResponse<List<SubscriptionPlanResponse>>> getRecommendedPlans(@PathVariable UUID businessId) {
         log.info("Getting recommended plans for business: {}", businessId);
         List<SubscriptionPlanResponse> plans = subscriptionPlanService.getRecommendedPlans(businessId);
         return ResponseEntity.ok(ApiResponse.success("Recommended plans retrieved successfully", plans));
-    }
-
-    /**
-     * Seed default plans - Development/Setup endpoint
-     */
-    @PostMapping("/seed")
-    @PreAuthorize("hasRole('PLATFORM_OWNER')")
-    public ResponseEntity<ApiResponse<Void>> seedDefaultPlans() {
-        log.info("Seeding default subscription plans");
-        subscriptionPlanService.seedDefaultPlans();
-        return ResponseEntity.ok(ApiResponse.success("Default subscription plans seeded successfully", null));
     }
 }
