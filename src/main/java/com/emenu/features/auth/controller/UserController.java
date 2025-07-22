@@ -1,9 +1,12 @@
 package com.emenu.features.auth.controller;
 
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
+import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
+import com.emenu.features.auth.dto.request.PasswordChangeRequest;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
+import com.emenu.features.auth.service.AuthService;
 import com.emenu.features.auth.service.UserService;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
@@ -24,6 +27,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final AuthService authService;
 
     /**
      * Get current user profile
@@ -85,6 +89,26 @@ public class UserController {
         log.info("Updating user: {}", userId);
         UserResponse response = userService.updateUser(userId, request);
         return ResponseEntity.ok(ApiResponse.success("User updated successfully", response));
+    }
+
+    /**
+     * Change password
+     */
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<UserResponse>> changePassword(@Valid @RequestBody PasswordChangeRequest request) {
+        log.info("Password change request received");
+        UserResponse response = authService.changePassword(request); // ✅ Now returns UserResponse
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", response));
+    }
+
+    /**
+     * Admin reset password
+     */
+    @PostMapping("/admin/reset-password")
+    public ResponseEntity<ApiResponse<UserResponse>> adminResetPassword(@Valid @RequestBody AdminPasswordResetRequest request) {
+        log.info("Admin password reset request for user: {}", request.getUserId());
+        UserResponse response = authService.adminResetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset successful", response));
     }
 
     /**

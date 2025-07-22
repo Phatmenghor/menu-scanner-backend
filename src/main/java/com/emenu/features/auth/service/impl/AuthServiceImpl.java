@@ -1,6 +1,5 @@
 package com.emenu.features.auth.service.impl;
 
-import com.emenu.enums.AccountStatus;
 import com.emenu.enums.RoleEnum;
 import com.emenu.enums.UserType;
 import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
@@ -9,7 +8,6 @@ import com.emenu.features.auth.dto.request.PasswordChangeRequest;
 import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
-import com.emenu.features.auth.dto.update.AccountStatusUpdateRequest;
 import com.emenu.features.auth.mapper.LoginResponseMapper;
 import com.emenu.features.auth.mapper.RegistrationMapper;
 import com.emenu.features.auth.mapper.UserMapper;
@@ -30,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -90,6 +87,9 @@ public class AuthServiceImpl implements AuthService {
         // ✅ Use registration mapper based on user type
         User user = createUserFromRequest(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setProfileImageUrl(request.getProfileImageUrl());
 
         // Assign appropriate role based on user type
         Role role = getRoleForUserType(request.getUserType());
@@ -145,24 +145,6 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("Admin password reset successful for user: {} by admin", user.getEmail());
 
-        return userMapper.toResponse(savedUser);
-    }
-
-    @Override
-    public UserResponse updateAccountStatus(AccountStatusUpdateRequest request) {
-        log.info("Updating account status for user: {} to {}", request.getUserId(), request.getAccountStatus());
-
-        User user = userRepository.findByIdAndIsDeletedFalse(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Update account status
-        user.setAccountStatus(request.getAccountStatus());
-        User savedUser = userRepository.save(user);
-
-        log.info("Account status updated for user: {} to {}",
-                user.getEmail(), request.getAccountStatus());
-
-        // ✅ Use mapper to create response
         return userMapper.toResponse(savedUser);
     }
 
