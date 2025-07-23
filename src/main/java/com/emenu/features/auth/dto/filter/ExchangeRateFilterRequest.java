@@ -1,24 +1,17 @@
 package com.emenu.features.auth.dto.filter;
 
-import com.emenu.enums.payment.PaymentMethod;
-import com.emenu.enums.payment.PaymentStatus;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
-public class PaymentFilterRequest {
+public class ExchangeRateFilterRequest {
     private UUID businessId;
-    private UUID planId;
-    private PaymentMethod paymentMethod;
-    private PaymentStatus status;
-    private String referenceNumber;
-    private String search; // Global search
-    private LocalDateTime createdFrom;
-    private LocalDateTime createdTo;
+    private Boolean isSystemDefault;
+    private Boolean isActive;
+    private String search;
     
     @Min(value = 1, message = "Page number must be at least 1")
     private Integer pageNo = 1;

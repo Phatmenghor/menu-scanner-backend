@@ -1,9 +1,9 @@
 package com.emenu.features.auth.mapper;
 
-import com.emenu.features.auth.dto.request.PaymentCreateRequest;
-import com.emenu.features.auth.dto.response.PaymentResponse;
-import com.emenu.features.auth.dto.update.PaymentUpdateRequest;
-import com.emenu.features.auth.models.Payment;
+import com.emenu.features.auth.dto.request.ExchangeRateCreateRequest;
+import com.emenu.features.auth.dto.response.ExchangeRateResponse;
+import com.emenu.features.auth.dto.update.ExchangeRateUpdateRequest;
+import com.emenu.features.auth.models.ExchangeRate;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;
@@ -13,16 +13,14 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class PaymentMapper {
+public abstract class ExchangeRateMapper {
 
     @Autowired
     protected PaginationMapper paginationMapper;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "business", ignore = true)
-    @Mapping(target = "plan", ignore = true)
-    @Mapping(target = "status", constant = "PENDING")
-    @Mapping(target = "amountKhr", ignore = true) // Will be calculated
+    @Mapping(target = "isActive", constant = "true")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -31,24 +29,20 @@ public abstract class PaymentMapper {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
-    public abstract Payment toEntity(PaymentCreateRequest request);
+    public abstract ExchangeRate toEntity(ExchangeRateCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
-    @Mapping(source = "plan.name", target = "planName")
-    @Mapping(target = "statusDescription", expression = "java(payment.getStatus().getDescription())")
-    @Mapping(target = "formattedAmount", expression = "java(payment.getFormattedAmount())")
-    @Mapping(target = "formattedAmountKhr", expression = "java(payment.getFormattedAmountKhr())")
-    public abstract PaymentResponse toResponse(Payment payment);
+    @Mapping(target = "formattedRate", expression = "java(exchangeRate.getFormattedRate())")
+    @Mapping(target = "displayName", expression = "java(exchangeRate.getDisplayName())")
+    public abstract ExchangeRateResponse toResponse(ExchangeRate exchangeRate);
 
-    public abstract List<PaymentResponse> toResponseList(List<Payment> payments);
+    public abstract List<ExchangeRateResponse> toResponseList(List<ExchangeRate> exchangeRates);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
-    @Mapping(target = "planId", ignore = true)
-    @Mapping(target = "plan", ignore = true)
-    @Mapping(target = "amountKhr", ignore = true) // Will be recalculated
+    @Mapping(target = "isSystemDefault", ignore = true) // Cannot change this after creation
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -57,9 +51,15 @@ public abstract class PaymentMapper {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
-    public abstract void updateEntity(PaymentUpdateRequest request, @MappingTarget Payment payment);
+    public abstract void updateEntity(ExchangeRateUpdateRequest request, @MappingTarget ExchangeRate exchangeRate);
 
-    public PaginationResponse<PaymentResponse> toPaginationResponse(Page<Payment> paymentPage) {
-        return paginationMapper.toPaginationResponse(paymentPage, this::toResponseList);
+    @AfterMapping
+    protected void setCalculatedFields(@MappingTarget ExchangeRateResponse response, ExchangeRate exchangeRate) {
+        response.setFormattedRate(exchangeRate.getFormattedRate());
+        response.setDisplayName(exchangeRate.getDisplayName());
+    }
+
+    public PaginationResponse<ExchangeRateResponse> toPaginationResponse(Page<ExchangeRate> exchangeRatePage) {
+        return paginationMapper.toPaginationResponse(exchangeRatePage, this::toResponseList);
     }
 }
