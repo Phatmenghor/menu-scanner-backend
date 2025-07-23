@@ -48,6 +48,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/public/**").permitAll()
+                        .requestMatchers("/api/images/**").permitAll()
 
                         // Documentation endpoints
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
@@ -57,23 +58,6 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health/**").permitAll()
                         .requestMatchers("/actuator/**").hasRole("PLATFORM_OWNER")
 
-                        // Platform administration
-                        .requestMatchers("/api/v1/platform/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN")
-
-                        // User management
-                        .requestMatchers("/api/v1/users/me/**").authenticated()
-                        .requestMatchers("/api/v1/users/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER")
-
-                        // Business management
-                        .requestMatchers("/api/v1/business/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER", "BUSINESS_MANAGER")
-
-                        // Customer endpoints
-                        .requestMatchers("/api/v1/customers/me/**").hasRole("CUSTOMER")
-                        .requestMatchers("/api/v1/customers/**").hasAnyRole("PLATFORM_OWNER", "PLATFORM_ADMIN", "BUSINESS_OWNER")
-
-                        // Subscription & Payment endpoints
-                        .requestMatchers("/api/v1/subscriptions/**").authenticated()
-                        .requestMatchers("/api/v1/payments/**").authenticated()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
