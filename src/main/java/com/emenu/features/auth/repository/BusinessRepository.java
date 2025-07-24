@@ -1,6 +1,6 @@
 package com.emenu.features.auth.repository;
 
-import com.emenu.enums.BusinessStatus;
+import com.emenu.enums.user.BusinessStatus;
 import com.emenu.features.auth.models.Business;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

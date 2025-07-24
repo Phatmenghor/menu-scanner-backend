@@ -1,6 +1,6 @@
 package com.emenu.features.auth.models;
 
-import com.emenu.enums.RoleEnum;
+import com.emenu.enums.user.RoleEnum;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

@@ -1,6 +1,6 @@
 package com.emenu.features.auth.mapper;
 
-import com.emenu.enums.UserType;
+import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.models.User;
 import org.mapstruct.Mapper;

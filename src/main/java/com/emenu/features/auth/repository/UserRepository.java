@@ -1,7 +1,7 @@
 package com.emenu.features.auth.repository;
 
-import com.emenu.enums.AccountStatus;
-import com.emenu.enums.UserType;
+import com.emenu.enums.user.AccountStatus;
+import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.models.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,6 +1,5 @@
 package com.emenu.features.auth.service.impl;
 
-import com.emenu.enums.AccountStatus;
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
 import com.emenu.features.auth.dto.response.UserResponse;

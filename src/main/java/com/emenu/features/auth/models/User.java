@@ -1,7 +1,7 @@
 package com.emenu.features.auth.models;
 
-import com.emenu.enums.AccountStatus;
-import com.emenu.enums.UserType;
+import com.emenu.enums.user.AccountStatus;
+import com.emenu.enums.user.UserType;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

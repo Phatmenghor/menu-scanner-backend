@@ -1,7 +1,7 @@
 package com.emenu.features.auth.service.impl;
 
-import com.emenu.enums.RoleEnum;
-import com.emenu.enums.UserType;
+import com.emenu.enums.user.RoleEnum;
+import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
 import com.emenu.features.auth.dto.request.LoginRequest;
 import com.emenu.features.auth.dto.request.PasswordChangeRequest;

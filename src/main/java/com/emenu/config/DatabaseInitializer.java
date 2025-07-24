@@ -1,6 +1,6 @@
 package com.emenu.config;
 
-import com.emenu.enums.RoleEnum;
+import com.emenu.enums.user.RoleEnum;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;

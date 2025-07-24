@@ -1,6 +1,6 @@
 package com.emenu.features.auth.dto.update;
 
-import com.emenu.enums.BusinessStatus;
+import com.emenu.enums.user.BusinessStatus;
 import lombok.Data;
 
 @Data

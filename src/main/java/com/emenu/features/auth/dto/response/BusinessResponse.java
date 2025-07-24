@@ -1,6 +1,6 @@
 package com.emenu.features.auth.dto.response;
 
-import com.emenu.enums.BusinessStatus;
+import com.emenu.enums.user.BusinessStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;

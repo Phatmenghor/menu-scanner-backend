@@ -1,25 +1,18 @@
 package com.emenu.features.auth.service.impl;
 
-import com.emenu.enums.BusinessStatus;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.BusinessFilterRequest;
-import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.BusinessCreateRequest;
 import com.emenu.features.auth.dto.response.BusinessResponse;
-import com.emenu.features.auth.dto.response.DashboardStatsResponse;
-import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.BusinessUpdateRequest;
 import com.emenu.features.auth.mapper.BusinessMapper;
 import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.auth.models.Business;
-import com.emenu.features.auth.models.Subscription;
-import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.auth.repository.SubscriptionRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.BusinessService;
 import com.emenu.features.auth.specification.BusinessSpecification;
-import com.emenu.features.auth.specification.UserSpecification;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;

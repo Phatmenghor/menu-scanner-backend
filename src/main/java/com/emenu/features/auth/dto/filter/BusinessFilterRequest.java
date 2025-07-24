@@ -1,6 +1,6 @@
 package com.emenu.features.auth.dto.filter;
 
-import com.emenu.enums.BusinessStatus;
+import com.emenu.enums.user.BusinessStatus;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;

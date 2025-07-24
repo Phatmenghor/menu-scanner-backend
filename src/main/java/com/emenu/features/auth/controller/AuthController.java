@@ -1,10 +1,8 @@
 package com.emenu.features.auth.controller;
 
-import com.emenu.enums.AccountStatus;
-import com.emenu.enums.UserType;
-import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
+import com.emenu.enums.user.AccountStatus;
+import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.dto.request.LoginRequest;
-import com.emenu.features.auth.dto.request.PasswordChangeRequest;
 import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;

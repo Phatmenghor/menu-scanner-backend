@@ -1,18 +1,17 @@
-package com.emenu.enums;
+package com.emenu.enums.user;
 
 import lombok.Getter;
 
 @Getter
-public enum BusinessStatus {
+public enum AccountStatus {
     ACTIVE("Active"),
     INACTIVE("Inactive"),
-    SUSPENDED("Suspended"),
-    PENDING("Pending Approval");
+    LOCKED("Locked"),
+    SUSPENDED("Suspended");
 
     private final String description;
 
-    BusinessStatus(String description) {
+    AccountStatus(String description) {
         this.description = description;
     }
-
 }

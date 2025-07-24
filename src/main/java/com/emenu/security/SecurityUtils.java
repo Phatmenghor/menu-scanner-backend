@@ -1,6 +1,6 @@
 package com.emenu.security;
 
-import com.emenu.enums.AccountStatus;
+import com.emenu.enums.user.AccountStatus;
 import com.emenu.exception.custom.AccountInactiveException;
 import com.emenu.exception.custom.AccountSuspendedException;
 import com.emenu.exception.custom.UserNotFoundException;

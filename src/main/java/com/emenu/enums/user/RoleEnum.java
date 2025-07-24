@@ -1,4 +1,4 @@
-package com.emenu.enums;
+package com.emenu.enums.user;
 
 import lombok.Getter;
 
