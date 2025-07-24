@@ -11,6 +11,5 @@ public class ExchangeRateUpdateRequest {
     @DecimalMax(value = "10000.0", message = "Exchange rate cannot exceed 10000 KHR per USD")
     private Double usdToKhrRate;
     
-    private Boolean isActive;
     private String notes;
 }

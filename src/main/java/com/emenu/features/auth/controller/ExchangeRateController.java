@@ -37,9 +37,9 @@ public class ExchangeRateController {
     }
 
     /**
-     * Get all exchange rates with filtering and pagination (for history)
+     * Get all exchange rates with filtering and pagination
      */
-    @PostMapping("/search")
+    @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<ExchangeRateResponse>>> getAllExchangeRates(@Valid @RequestBody ExchangeRateFilterRequest filter) {
         log.info("Getting all exchange rates with filter");
         PaginationResponse<ExchangeRateResponse> exchangeRates = exchangeRateService.getAllExchangeRates(filter);
@@ -94,53 +94,5 @@ public class ExchangeRateController {
         log.info("Getting current exchange rate value");
         Double rate = exchangeRateService.getCurrentRateValue();
         return ResponseEntity.ok(ApiResponse.success("Current exchange rate value retrieved successfully", rate));
-    }
-
-    /**
-     * Get exchange rate history
-     */
-    @GetMapping("/history")
-    public ResponseEntity<ApiResponse<List<ExchangeRateResponse>>> getRateHistory() {
-        log.info("Getting exchange rate history");
-        List<ExchangeRateResponse> history = exchangeRateService.getRateHistory();
-        return ResponseEntity.ok(ApiResponse.success("Exchange rate history retrieved successfully", history));
-    }
-
-    /**
-     * Activate specific exchange rate (deactivates current active)
-     */
-    @PostMapping("/{id}/activate")
-    public ResponseEntity<ApiResponse<ExchangeRateResponse>> activateRate(@PathVariable UUID id) {
-        log.info("Activating exchange rate: {}", id);
-        ExchangeRateResponse exchangeRate = exchangeRateService.activateRate(id);
-        return ResponseEntity.ok(ApiResponse.success("Exchange rate activated successfully", exchangeRate));
-    }
-
-    /**
-     * Deactivate exchange rate
-     */
-    @PostMapping("/{id}/deactivate")
-    public ResponseEntity<ApiResponse<ExchangeRateResponse>> deactivateRate(@PathVariable UUID id) {
-        log.info("Deactivating exchange rate: {}", id);
-        ExchangeRateResponse exchangeRate = exchangeRateService.deactivateRate(id);
-        return ResponseEntity.ok(ApiResponse.success("Exchange rate deactivated successfully", exchangeRate));
-    }
-
-    /**
-     * Get total rates count
-     */
-    @GetMapping("/stats/total")
-    public ResponseEntity<ApiResponse<Long>> getTotalRatesCount() {
-        long count = exchangeRateService.getTotalRatesCount();
-        return ResponseEntity.ok(ApiResponse.success("Total exchange rates count retrieved successfully", count));
-    }
-
-    /**
-     * Get active rates count
-     */
-    @GetMapping("/stats/active")
-    public ResponseEntity<ApiResponse<Long>> getActiveRatesCount() {
-        long count = exchangeRateService.getActiveRatesCount();
-        return ResponseEntity.ok(ApiResponse.success("Active exchange rates count retrieved successfully", count));
     }
 }

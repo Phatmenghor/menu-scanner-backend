@@ -20,7 +20,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,8 +31,7 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
 
     private final ExchangeRateRepository exchangeRateRepository;
     private final ExchangeRateMapper exchangeRateMapper;
-
-    private static final Double DEFAULT_EXCHANGE_RATE = 4000.0;
+    private static final Double DEFAULT_EXCHANGE_RATE = 4000.00;
 
     @Override
     public ExchangeRateResponse createExchangeRate(ExchangeRateCreateRequest request) {
@@ -44,7 +42,7 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
 
         ExchangeRate exchangeRate = exchangeRateMapper.toEntity(request);
         exchangeRate.setIsActive(true); // New rate is always active
-        
+
         ExchangeRate savedExchangeRate = exchangeRateRepository.save(exchangeRate);
 
         log.info("System exchange rate created successfully: {} KHR per USD", savedExchangeRate.getUsdToKhrRate());
@@ -102,22 +100,18 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     @Override
     @Transactional(readOnly = true)
     public ExchangeRateResponse getCurrentActiveRate() {
-        Optional<ExchangeRate> activeRate = exchangeRateRepository.findActiveRate();
-        
-        if (activeRate.isEmpty()) {
-            // Create default rate if none exists
-            log.info("No active exchange rate found, creating default rate: {}", DEFAULT_EXCHANGE_RATE);
-            return createDefaultRate();
-        }
+        ExchangeRate activeRate = exchangeRateRepository.findActiveRate().orElseThrow(
+                () -> new NotFoundException("No active exchange rate found")
+        );
 
-        return exchangeRateMapper.toResponse(activeRate.get());
+        return exchangeRateMapper.toResponse(activeRate);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Double getCurrentRateValue() {
         Optional<ExchangeRate> activeRate = exchangeRateRepository.findActiveRate();
-        
+
         if (activeRate.isPresent()) {
             return activeRate.get().getUsdToKhrRate();
         }
@@ -125,56 +119,6 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         // Return default rate if no active rate exists
         log.warn("No active exchange rate found, using default: {}", DEFAULT_EXCHANGE_RATE);
         return DEFAULT_EXCHANGE_RATE;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ExchangeRateResponse> getRateHistory() {
-        List<ExchangeRate> rateHistory = exchangeRateRepository.findAllRatesHistory();
-        return exchangeRateMapper.toResponseList(rateHistory);
-    }
-
-    @Override
-    public ExchangeRateResponse activateRate(UUID id) {
-        ExchangeRate exchangeRate = findExchangeRateById(id);
-
-        // Deactivate current active rate
-        deactivateCurrentActiveRate();
-
-        // Activate the selected rate
-        exchangeRate.setIsActive(true);
-        ExchangeRate activatedRate = exchangeRateRepository.save(exchangeRate);
-
-        log.info("Exchange rate activated: {} - Rate: {}", id, activatedRate.getUsdToKhrRate());
-        return exchangeRateMapper.toResponse(activatedRate);
-    }
-
-    @Override
-    public ExchangeRateResponse deactivateRate(UUID id) {
-        ExchangeRate exchangeRate = findExchangeRateById(id);
-
-        // Don't allow deactivation of the only active rate
-        if (exchangeRate.getIsActive() && exchangeRateRepository.countActiveRates() == 1) {
-            throw new RuntimeException("Cannot deactivate the only active exchange rate. Activate another rate first.");
-        }
-
-        exchangeRate.setIsActive(false);
-        ExchangeRate deactivatedRate = exchangeRateRepository.save(exchangeRate);
-
-        log.info("Exchange rate deactivated: {}", id);
-        return exchangeRateMapper.toResponse(deactivatedRate);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getTotalRatesCount() {
-        return exchangeRateRepository.countAllRates();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getActiveRatesCount() {
-        return exchangeRateRepository.countActiveRates();
     }
 
     // Private helper methods
@@ -193,15 +137,4 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         }
     }
 
-    private ExchangeRateResponse createDefaultRate() {
-        ExchangeRate defaultRate = new ExchangeRate();
-        defaultRate.setUsdToKhrRate(DEFAULT_EXCHANGE_RATE);
-        defaultRate.setIsActive(true);
-        defaultRate.setNotes("System generated default rate");
-
-        ExchangeRate savedRate = exchangeRateRepository.save(defaultRate);
-        log.info("Default exchange rate created: {}", savedRate.getUsdToKhrRate());
-
-        return exchangeRateMapper.toResponse(savedRate);
-    }
 }

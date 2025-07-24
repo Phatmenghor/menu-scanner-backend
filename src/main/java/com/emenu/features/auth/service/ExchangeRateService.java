@@ -21,13 +21,4 @@ public interface ExchangeRateService {
     // System Rate Operations
     ExchangeRateResponse getCurrentActiveRate();
     Double getCurrentRateValue(); // Returns just the double value for calculations
-    List<ExchangeRateResponse> getRateHistory();
-    
-    // Activation/Deactivation
-    ExchangeRateResponse activateRate(UUID id);
-    ExchangeRateResponse deactivateRate(UUID id);
-    
-    // Statistics
-    long getTotalRatesCount();
-    long getActiveRatesCount();
 }

@@ -30,8 +30,6 @@ public abstract class ExchangeRateMapper {
     @Mapping(target = "deletedBy", ignore = true)
     public abstract ExchangeRate toEntity(ExchangeRateCreateRequest request);
 
-    @Mapping(target = "formattedRate", expression = "java(exchangeRate.getFormattedRate())")
-    @Mapping(target = "displayName", expression = "java(exchangeRate.getDisplayName())")
     public abstract ExchangeRateResponse toResponse(ExchangeRate exchangeRate);
 
     public abstract List<ExchangeRateResponse> toResponseList(List<ExchangeRate> exchangeRates);
@@ -43,16 +41,11 @@ public abstract class ExchangeRateMapper {
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "updatedBy", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "isActive", ignore = true)
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateEntity(ExchangeRateUpdateRequest request, @MappingTarget ExchangeRate exchangeRate);
-
-    @AfterMapping
-    protected void setCalculatedFields(@MappingTarget ExchangeRateResponse response, ExchangeRate exchangeRate) {
-        response.setFormattedRate(exchangeRate.getFormattedRate());
-        response.setDisplayName(exchangeRate.getDisplayName());
-    }
 
     public PaginationResponse<ExchangeRateResponse> toPaginationResponse(Page<ExchangeRate> exchangeRatePage) {
         return paginationMapper.toPaginationResponse(exchangeRatePage, this::toResponseList);

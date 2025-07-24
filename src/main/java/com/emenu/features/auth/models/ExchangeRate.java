@@ -36,18 +36,4 @@ public class ExchangeRate extends BaseUUIDEntity {
     public boolean isActive() {
         return Boolean.TRUE.equals(isActive);
     }
-
-    /**
-     * Get display name for this rate
-     */
-    public String getDisplayName() {
-        return "System Exchange Rate";
-    }
-
-    /**
-     * Format the rate for display
-     */
-    public String getFormattedRate() {
-        return String.format("1 USD = %.0f KHR", usdToKhrRate);
-    }
 }

@@ -18,27 +18,13 @@ public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, UUID
     // Basic CRUD operations
     Optional<ExchangeRate> findByIdAndIsDeletedFalse(UUID id);
     
-    Page<ExchangeRate> findByIsDeletedFalse(Pageable pageable);
-    
-    List<ExchangeRate> findByIsDeletedFalse();
-    
     // Get current active rate (only one should be active at a time)
     @Query("SELECT er FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
     Optional<ExchangeRate> findActiveRate();
     
     // Get all rates ordered by creation date (for history)
     @Query("SELECT er FROM ExchangeRate er WHERE er.isDeleted = false ORDER BY er.createdAt DESC")
-    List<ExchangeRate> findAllRatesHistory();
-    
-    // Active rates
-    @Query("SELECT er FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
-    List<ExchangeRate> findAllActiveRates();
-    
-    Page<ExchangeRate> findByIsActiveAndIsDeletedFalse(Boolean isActive, Pageable pageable);
-    
-    // Check if there's an active rate
-    @Query("SELECT COUNT(er) > 0 FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
-    boolean hasActiveRate();
+    List<ExchangeRate> findAllRatesHistory();;
     
     // Count total rates
     @Query("SELECT COUNT(er) FROM ExchangeRate er WHERE er.isDeleted = false")

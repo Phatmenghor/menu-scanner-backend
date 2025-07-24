@@ -6,8 +6,8 @@ import lombok.Data;
 
 @Data
 public class ExchangeRateFilterRequest {
-    private Boolean isActive;
     private String search;
+    private Boolean isActive;
     
     @Min(value = 1, message = "Page number must be at least 1")
     private Integer pageNo = 1;
