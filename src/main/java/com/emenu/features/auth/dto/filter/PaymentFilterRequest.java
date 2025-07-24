@@ -11,12 +11,12 @@ import java.util.UUID;
 
 @Data
 public class PaymentFilterRequest {
-    private UUID businessId;
-    private UUID planId;
+    private String search; // Global search
     private PaymentMethod paymentMethod;
     private PaymentStatus status;
-    private String referenceNumber;
-    private String search; // Global search
+    private UUID businessId;
+    private UUID planId;
+
     private LocalDateTime createdFrom;
     private LocalDateTime createdTo;
     

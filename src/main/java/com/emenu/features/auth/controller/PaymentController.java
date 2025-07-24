@@ -14,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -33,7 +32,7 @@ public class PaymentController {
                 .body(ApiResponse.success("Payment created successfully", payment));
     }
 
-    @PostMapping("/search")
+    @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<PaymentResponse>>> getAllPayments(@Valid @RequestBody PaymentFilterRequest filter) {
         log.info("Getting all payments with filter");
         PaginationResponse<PaymentResponse> payments = paymentService.getAllPayments(filter);
@@ -61,85 +60,9 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success("Payment deleted successfully", payment));
     }
 
-    @GetMapping("/business/{businessId}")
-    public ResponseEntity<ApiResponse<List<PaymentResponse>>> getBusinessPayments(@PathVariable UUID businessId) {
-        log.info("Getting payments for business: {}", businessId);
-        List<PaymentResponse> payments = paymentService.getBusinessPayments(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Business payments retrieved successfully", payments));
-    }
-
-    @PostMapping("/business/{businessId}/search")
-    public ResponseEntity<ApiResponse<PaginationResponse<PaymentResponse>>> searchBusinessPayments(
-            @PathVariable UUID businessId, @Valid @RequestBody PaymentFilterRequest filter) {
-        log.info("Searching payments for business: {}", businessId);
-        PaginationResponse<PaymentResponse> payments = paymentService.getBusinessPaymentsPaginated(businessId, filter);
-        return ResponseEntity.ok(ApiResponse.success("Business payments retrieved successfully", payments));
-    }
-
-    // ✅ ADDED: Subscription payment endpoints
-    @GetMapping("/subscription/{subscriptionId}")
-    public ResponseEntity<ApiResponse<List<PaymentResponse>>> getSubscriptionPayments(@PathVariable UUID subscriptionId) {
-        log.info("Getting payments for subscription: {}", subscriptionId);
-        List<PaymentResponse> payments = paymentService.getSubscriptionPayments(subscriptionId);
-        return ResponseEntity.ok(ApiResponse.success("Subscription payments retrieved successfully", payments));
-    }
-
-    @GetMapping("/reference/{referenceNumber}")
-    public ResponseEntity<ApiResponse<PaymentResponse>> getPaymentByReference(@PathVariable String referenceNumber) {
-        log.info("Getting payment by reference: {}", referenceNumber);
-        PaymentResponse payment = paymentService.getPaymentByReference(referenceNumber);
-        return ResponseEntity.ok(ApiResponse.success("Payment retrieved successfully", payment));
-    }
-
-    @PostMapping("/{id}/complete")
-    public ResponseEntity<ApiResponse<PaymentResponse>> completePayment(@PathVariable UUID id, @RequestParam(required = false) String notes) {
-        log.info("Completing payment: {}", id);
-        PaymentResponse payment = paymentService.completePayment(id, notes);
-        return ResponseEntity.ok(ApiResponse.success("Payment completed successfully", payment));
-    }
-
-    @PostMapping("/{id}/cancel")
-    public ResponseEntity<ApiResponse<PaymentResponse>> cancelPayment(@PathVariable UUID id, @RequestParam(required = false) String reason) {
-        log.info("Cancelling payment: {}", id);
-        PaymentResponse payment = paymentService.cancelPayment(id, reason);
-        return ResponseEntity.ok(ApiResponse.success("Payment cancelled successfully", payment));
-    }
-
     @GetMapping("/generate-reference")
     public ResponseEntity<ApiResponse<String>> generateReferenceNumber() {
         String referenceNumber = paymentService.generateReferenceNumber();
         return ResponseEntity.ok(ApiResponse.success("Reference number generated successfully", referenceNumber));
-    }
-
-    // Statistics endpoints
-    @GetMapping("/stats/total")
-    public ResponseEntity<ApiResponse<Long>> getTotalPaymentsCount() {
-        long count = paymentService.getTotalPaymentsCount();
-        return ResponseEntity.ok(ApiResponse.success("Total payments count retrieved successfully", count));
-    }
-
-    @GetMapping("/stats/completed")
-    public ResponseEntity<ApiResponse<Long>> getCompletedPaymentsCount() {
-        long count = paymentService.getCompletedPaymentsCount();
-        return ResponseEntity.ok(ApiResponse.success("Completed payments count retrieved successfully", count));
-    }
-
-    @GetMapping("/stats/pending")
-    public ResponseEntity<ApiResponse<Long>> getPendingPaymentsCount() {
-        long count = paymentService.getPendingPaymentsCount();
-        return ResponseEntity.ok(ApiResponse.success("Pending payments count retrieved successfully", count));
-    }
-
-    @GetMapping("/stats/business/{businessId}")
-    public ResponseEntity<ApiResponse<Long>> getBusinessPaymentsCount(@PathVariable UUID businessId) {
-        long count = paymentService.getBusinessPaymentsCount(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Business payments count retrieved successfully", count));
-    }
-
-    // ✅ ADDED: Subscription statistics endpoint
-    @GetMapping("/stats/subscription/{subscriptionId}")
-    public ResponseEntity<ApiResponse<Long>> getSubscriptionPaymentsCount(@PathVariable UUID subscriptionId) {
-        long count = paymentService.getSubscriptionPaymentsCount(subscriptionId);
-        return ResponseEntity.ok(ApiResponse.success("Subscription payments count retrieved successfully", count));
     }
 }

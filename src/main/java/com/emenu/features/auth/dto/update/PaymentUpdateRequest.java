@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 
 @Data
 public class PaymentUpdateRequest {
+    private String imageUrl;
     private BigDecimal amount;
     private PaymentMethod paymentMethod;
     private PaymentStatus status;

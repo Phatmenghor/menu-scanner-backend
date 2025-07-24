@@ -1,6 +1,7 @@
 package com.emenu.features.auth.dto.request;
 
 import com.emenu.enums.payment.PaymentMethod;
+import com.emenu.enums.payment.PaymentStatus;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -11,6 +12,8 @@ import java.util.UUID;
 
 @Data
 public class PaymentCreateRequest {
+
+    private String imageUrl;
     
     @NotNull(message = "Business ID is required")
     private UUID businessId;
@@ -20,6 +23,8 @@ public class PaymentCreateRequest {
     
     // ✅ ADDED: Optional subscription ID for linking payment to specific subscription
     private UUID subscriptionId;
+
+    private PaymentStatus status = PaymentStatus.PENDING;
     
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
@@ -32,6 +37,4 @@ public class PaymentCreateRequest {
     
     @Size(max = 1000, message = "Notes cannot exceed 1000 characters")
     private String notes;
-    
-    private Boolean autoComplete = false; // Auto-complete for free plans
 }

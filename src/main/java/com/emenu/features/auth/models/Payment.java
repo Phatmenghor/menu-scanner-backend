@@ -22,6 +22,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Payment extends BaseUUIDEntity {
 
+    private String imageUrl;
+
     @Column(name = "business_id", nullable = false)
     private UUID businessId;
 
@@ -36,7 +38,6 @@ public class Payment extends BaseUUIDEntity {
     @JoinColumn(name = "plan_id", insertable = false, updatable = false)
     private SubscriptionPlan plan;
 
-    // ✅ ADDED: Subscription relationship
     @Column(name = "subscription_id")
     private UUID subscriptionId;
 

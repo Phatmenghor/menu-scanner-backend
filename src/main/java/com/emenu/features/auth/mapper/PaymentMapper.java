@@ -22,7 +22,6 @@ public abstract class PaymentMapper {
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "plan", ignore = true)
     @Mapping(target = "subscription", ignore = true) // ✅ ADDED: Ignore subscription entity mapping
-    @Mapping(target = "status", constant = "PENDING")
     @Mapping(target = "amountKhr", ignore = true) // Will be calculated
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)

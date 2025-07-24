@@ -42,14 +42,6 @@ public class PaymentSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("status"), filter.getStatus()));
             }
 
-            // Reference number filter
-            if (StringUtils.hasText(filter.getReferenceNumber())) {
-                predicates.add(criteriaBuilder.like(
-                    criteriaBuilder.lower(root.get("referenceNumber")),
-                    "%" + filter.getReferenceNumber().toLowerCase() + "%"
-                ));
-            }
-
             // Date range filters
             if (filter.getCreatedFrom() != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), filter.getCreatedFrom()));
@@ -68,15 +60,13 @@ public class PaymentSpecification {
                 
                 Predicate refPredicate = criteriaBuilder.like(
                     criteriaBuilder.lower(root.get("referenceNumber")), searchPattern);
-                Predicate notesPredicate = criteriaBuilder.like(
-                    criteriaBuilder.lower(root.get("notes")), searchPattern);
                 Predicate businessNamePredicate = criteriaBuilder.like(
                     criteriaBuilder.lower(businessJoin.get("name")), searchPattern);
                 Predicate planNamePredicate = criteriaBuilder.like(
                     criteriaBuilder.lower(planJoin.get("name")), searchPattern);
 
                 predicates.add(criteriaBuilder.or(
-                    refPredicate, notesPredicate, businessNamePredicate, planNamePredicate
+                    refPredicate, businessNamePredicate, planNamePredicate
                 ));
                 
                 query.distinct(true);
