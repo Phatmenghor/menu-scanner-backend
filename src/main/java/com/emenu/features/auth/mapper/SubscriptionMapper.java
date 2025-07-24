@@ -64,6 +64,30 @@ public abstract class SubscriptionMapper {
         response.setIsExpired(subscription.isExpired());
         response.setDaysRemaining(subscription.getDaysRemaining());
         response.setDisplayName(subscription.getDisplayName());
+        
+        // ✅ ADDED: Set payment-related fields
+        response.setTotalPaidAmount(subscription.getTotalPaidAmount());
+        response.setIsFullyPaid(subscription.isFullyPaid());
+        response.setPaymentStatusSummary(subscription.getPaymentStatusSummary());
+        
+        // Count payments if available
+        if (subscription.getPayments() != null) {
+            response.setTotalPaymentsCount((long) subscription.getPayments().size());
+            response.setCompletedPaymentsCount(
+                subscription.getPayments().stream()
+                    .filter(payment -> payment.getStatus().isCompleted())
+                    .count()
+            );
+            response.setPendingPaymentsCount(
+                subscription.getPayments().stream()
+                    .filter(payment -> payment.getStatus().isPending())
+                    .count()
+            );
+        } else {
+            response.setTotalPaymentsCount(0L);
+            response.setCompletedPaymentsCount(0L);
+            response.setPendingPaymentsCount(0L);
+        }
     }
 
     public PaginationResponse<SubscriptionResponse> toPaginationResponse(Page<Subscription> subscriptionPage) {

@@ -76,6 +76,14 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success("Business payments retrieved successfully", payments));
     }
 
+    // ✅ ADDED: Subscription payment endpoints
+    @GetMapping("/subscription/{subscriptionId}")
+    public ResponseEntity<ApiResponse<List<PaymentResponse>>> getSubscriptionPayments(@PathVariable UUID subscriptionId) {
+        log.info("Getting payments for subscription: {}", subscriptionId);
+        List<PaymentResponse> payments = paymentService.getSubscriptionPayments(subscriptionId);
+        return ResponseEntity.ok(ApiResponse.success("Subscription payments retrieved successfully", payments));
+    }
+
     @GetMapping("/reference/{referenceNumber}")
     public ResponseEntity<ApiResponse<PaymentResponse>> getPaymentByReference(@PathVariable String referenceNumber) {
         log.info("Getting payment by reference: {}", referenceNumber);
@@ -103,6 +111,7 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success("Reference number generated successfully", referenceNumber));
     }
 
+    // Statistics endpoints
     @GetMapping("/stats/total")
     public ResponseEntity<ApiResponse<Long>> getTotalPaymentsCount() {
         long count = paymentService.getTotalPaymentsCount();
@@ -119,5 +128,18 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<Long>> getPendingPaymentsCount() {
         long count = paymentService.getPendingPaymentsCount();
         return ResponseEntity.ok(ApiResponse.success("Pending payments count retrieved successfully", count));
+    }
+
+    @GetMapping("/stats/business/{businessId}")
+    public ResponseEntity<ApiResponse<Long>> getBusinessPaymentsCount(@PathVariable UUID businessId) {
+        long count = paymentService.getBusinessPaymentsCount(businessId);
+        return ResponseEntity.ok(ApiResponse.success("Business payments count retrieved successfully", count));
+    }
+
+    // ✅ ADDED: Subscription statistics endpoint
+    @GetMapping("/stats/subscription/{subscriptionId}")
+    public ResponseEntity<ApiResponse<Long>> getSubscriptionPaymentsCount(@PathVariable UUID subscriptionId) {
+        long count = paymentService.getSubscriptionPaymentsCount(subscriptionId);
+        return ResponseEntity.ok(ApiResponse.success("Subscription payments count retrieved successfully", count));
     }
 }

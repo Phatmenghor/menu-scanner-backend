@@ -6,7 +6,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -23,21 +22,13 @@ public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, UUID
     
     List<ExchangeRate> findByIsDeletedFalse();
     
-    // System default operations
-    @Query("SELECT er FROM ExchangeRate er WHERE er.isSystemDefault = true AND er.isActive = true AND er.isDeleted = false")
-    Optional<ExchangeRate> findActiveSystemDefault();
+    // Get current active rate (only one should be active at a time)
+    @Query("SELECT er FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
+    Optional<ExchangeRate> findActiveRate();
     
-    @Query("SELECT er FROM ExchangeRate er WHERE er.isSystemDefault = true AND er.isDeleted = false")
-    List<ExchangeRate> findAllSystemDefaults();
-    
-    // Business specific operations
-    @Query("SELECT er FROM ExchangeRate er WHERE er.businessId = :businessId AND er.isActive = true AND er.isDeleted = false")
-    Optional<ExchangeRate> findActiveByBusinessId(@Param("businessId") UUID businessId);
-    
-    @Query("SELECT er FROM ExchangeRate er WHERE er.businessId = :businessId AND er.isDeleted = false ORDER BY er.createdAt DESC")
-    List<ExchangeRate> findByBusinessIdAndIsDeletedFalse(@Param("businessId") UUID businessId);
-    
-    Page<ExchangeRate> findByBusinessIdAndIsDeletedFalse(UUID businessId, Pageable pageable);
+    // Get all rates ordered by creation date (for history)
+    @Query("SELECT er FROM ExchangeRate er WHERE er.isDeleted = false ORDER BY er.createdAt DESC")
+    List<ExchangeRate> findAllRatesHistory();
     
     // Active rates
     @Query("SELECT er FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
@@ -45,18 +36,15 @@ public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, UUID
     
     Page<ExchangeRate> findByIsActiveAndIsDeletedFalse(Boolean isActive, Pageable pageable);
     
-    // Check for existing rates
-    @Query("SELECT COUNT(er) > 0 FROM ExchangeRate er WHERE er.businessId = :businessId AND er.isActive = true AND er.isDeleted = false")
-    boolean hasActiveRateForBusiness(@Param("businessId") UUID businessId);
+    // Check if there's an active rate
+    @Query("SELECT COUNT(er) > 0 FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
+    boolean hasActiveRate();
     
-    @Query("SELECT COUNT(er) > 0 FROM ExchangeRate er WHERE er.isSystemDefault = true AND er.isActive = true AND er.isDeleted = false")
-    boolean hasActiveSystemDefault();
+    // Count total rates
+    @Query("SELECT COUNT(er) FROM ExchangeRate er WHERE er.isDeleted = false")
+    long countAllRates();
     
-    // Latest rates
-    @Query("SELECT er FROM ExchangeRate er WHERE er.isDeleted = false ORDER BY er.createdAt DESC")
-    Page<ExchangeRate> findLatestRates(Pageable pageable);
-    
-    // Business count
-    @Query("SELECT COUNT(DISTINCT er.businessId) FROM ExchangeRate er WHERE er.businessId IS NOT NULL AND er.isDeleted = false")
-    long countBusinessesWithRates();
+    // Count active rates
+    @Query("SELECT COUNT(er) FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
+    long countActiveRates();
 }

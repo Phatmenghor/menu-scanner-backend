@@ -10,10 +10,12 @@ import com.emenu.features.auth.dto.update.PaymentUpdateRequest;
 import com.emenu.features.auth.mapper.PaymentMapper;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.Payment;
+import com.emenu.features.auth.models.Subscription;
 import com.emenu.features.auth.models.SubscriptionPlan;
 import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.auth.repository.PaymentRepository;
 import com.emenu.features.auth.repository.SubscriptionPlanRepository;
+import com.emenu.features.auth.repository.SubscriptionRepository;
 import com.emenu.features.auth.service.ExchangeRateService;
 import com.emenu.features.auth.service.PaymentService;
 import com.emenu.features.auth.specification.PaymentSpecification;
@@ -42,6 +44,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final BusinessRepository businessRepository;
     private final SubscriptionPlanRepository planRepository;
+    private final SubscriptionRepository subscriptionRepository; // ✅ ADDED: Subscription repository
     private final ExchangeRateService exchangeRateService;
     private final PaymentMapper paymentMapper;
     private final SecurityUtils securityUtils;
@@ -58,6 +61,21 @@ public class PaymentServiceImpl implements PaymentService {
         SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(request.getPlanId())
                 .orElseThrow(() -> new NotFoundException("Subscription plan not found"));
 
+        // ✅ ADDED: Validate subscription if provided
+        Subscription subscription = null;
+        if (request.getSubscriptionId() != null) {
+            subscription = subscriptionRepository.findByIdAndIsDeletedFalse(request.getSubscriptionId())
+                    .orElseThrow(() -> new NotFoundException("Subscription not found"));
+            
+            // Validate that subscription belongs to the same business and plan
+            if (!subscription.getBusinessId().equals(request.getBusinessId())) {
+                throw new ValidationException("Subscription does not belong to the specified business");
+            }
+            if (!subscription.getPlanId().equals(request.getPlanId())) {
+                throw new ValidationException("Subscription plan does not match the specified plan");
+            }
+        }
+
         // Validate reference number uniqueness if provided
         if (request.getReferenceNumber() != null && !isReferenceNumberUnique(request.getReferenceNumber())) {
             throw new ValidationException("Reference number already exists: " + request.getReferenceNumber());
@@ -66,8 +84,13 @@ public class PaymentServiceImpl implements PaymentService {
         // Create payment entity
         Payment payment = paymentMapper.toEntity(request);
 
-        // Calculate KHR amount using current exchange rate
-        Double currentRate = exchangeRateService.getCurrentRate(request.getBusinessId());
+        // ✅ ADDED: Set subscription if provided
+        if (subscription != null) {
+            payment.setSubscriptionId(subscription.getId());
+        }
+
+        // Calculate KHR amount using current system exchange rate
+        Double currentRate = exchangeRateService.getCurrentRateValue();
         payment.calculateAmountKhr(currentRate);
 
         // Generate reference number if not provided
@@ -129,7 +152,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Recalculate KHR amount if amount changed
         if (request.getAmount() != null) {
-            Double currentRate = exchangeRateService.getCurrentRate(payment.getBusinessId());
+            Double currentRate = exchangeRateService.getCurrentRateValue();
             payment.calculateAmountKhr(currentRate);
         }
 
@@ -167,6 +190,14 @@ public class PaymentServiceImpl implements PaymentService {
     public PaginationResponse<PaymentResponse> getBusinessPaymentsPaginated(UUID businessId, PaymentFilterRequest filter) {
         filter.setBusinessId(businessId);
         return getAllPayments(filter);
+    }
+
+    // ✅ ADDED: Get payments for a specific subscription
+    @Override
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> getSubscriptionPayments(UUID subscriptionId) {
+        List<Payment> payments = paymentRepository.findBySubscriptionIdAndIsDeletedFalse(subscriptionId);
+        return paymentMapper.toResponseList(payments);
     }
 
     @Override
@@ -254,6 +285,13 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional(readOnly = true)
     public long getBusinessPaymentsCount(UUID businessId) {
         return paymentRepository.countByBusinessIdAndIsDeletedFalse(businessId);
+    }
+
+    // ✅ ADDED: Get subscription payment statistics
+    @Override
+    @Transactional(readOnly = true)
+    public long getSubscriptionPaymentsCount(UUID subscriptionId) {
+        return paymentRepository.countBySubscriptionIdAndIsDeletedFalse(subscriptionId);
     }
 
     // Private helper methods

@@ -18,6 +18,9 @@ public class PaymentCreateRequest {
     @NotNull(message = "Plan ID is required")
     private UUID planId;
     
+    // ✅ ADDED: Optional subscription ID for linking payment to specific subscription
+    private UUID subscriptionId;
+    
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
     private BigDecimal amount;

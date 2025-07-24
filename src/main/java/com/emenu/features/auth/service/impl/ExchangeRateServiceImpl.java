@@ -7,7 +7,6 @@ import com.emenu.features.auth.dto.response.ExchangeRateResponse;
 import com.emenu.features.auth.dto.update.ExchangeRateUpdateRequest;
 import com.emenu.features.auth.mapper.ExchangeRateMapper;
 import com.emenu.features.auth.models.ExchangeRate;
-import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.auth.repository.ExchangeRateRepository;
 import com.emenu.features.auth.service.ExchangeRateService;
 import com.emenu.features.auth.specification.ExchangeRateSpecification;
@@ -32,31 +31,23 @@ import java.util.UUID;
 public class ExchangeRateServiceImpl implements ExchangeRateService {
 
     private final ExchangeRateRepository exchangeRateRepository;
-    private final BusinessRepository businessRepository;
     private final ExchangeRateMapper exchangeRateMapper;
 
     private static final Double DEFAULT_EXCHANGE_RATE = 4000.0;
 
     @Override
     public ExchangeRateResponse createExchangeRate(ExchangeRateCreateRequest request) {
-        log.info("Creating exchange rate: {} for business: {}", request.getUsdToKhrRate(), request.getBusinessId());
+        log.info("Creating new system exchange rate: {}", request.getUsdToKhrRate());
 
-        // Validate business exists if businessId is provided
-        if (request.getBusinessId() != null) {
-            businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
-                    .orElseThrow(() -> new NotFoundException("Business not found"));
-            
-            // Deactivate existing business rate if creating a new one
-            deactivateExistingBusinessRate(request.getBusinessId());
-        } else if (Boolean.TRUE.equals(request.getIsSystemDefault())) {
-            // Deactivate existing system default if creating a new one
-            deactivateExistingSystemDefault();
-        }
+        // Deactivate existing active rate
+        deactivateCurrentActiveRate();
 
         ExchangeRate exchangeRate = exchangeRateMapper.toEntity(request);
+        exchangeRate.setIsActive(true); // New rate is always active
+        
         ExchangeRate savedExchangeRate = exchangeRateRepository.save(exchangeRate);
 
-        log.info("Exchange rate created successfully: {}", savedExchangeRate.getId());
+        log.info("System exchange rate created successfully: {} KHR per USD", savedExchangeRate.getUsdToKhrRate());
         return exchangeRateMapper.toResponse(savedExchangeRate);
     }
 
@@ -96,6 +87,11 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     public ExchangeRateResponse deleteExchangeRate(UUID id) {
         ExchangeRate exchangeRate = findExchangeRateById(id);
 
+        // Don't allow deletion of the only active rate
+        if (exchangeRate.getIsActive() && exchangeRateRepository.countActiveRates() == 1) {
+            throw new RuntimeException("Cannot delete the only active exchange rate. Create a new rate first.");
+        }
+
         exchangeRate.softDelete();
         exchangeRate = exchangeRateRepository.save(exchangeRate);
 
@@ -104,177 +100,63 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     }
 
     @Override
-    public ExchangeRateResponse createSystemDefault(Double rate, String notes) {
-        log.info("Creating system default exchange rate: {}", rate);
+    @Transactional(readOnly = true)
+    public ExchangeRateResponse getCurrentActiveRate() {
+        Optional<ExchangeRate> activeRate = exchangeRateRepository.findActiveRate();
+        
+        if (activeRate.isEmpty()) {
+            // Create default rate if none exists
+            log.info("No active exchange rate found, creating default rate: {}", DEFAULT_EXCHANGE_RATE);
+            return createDefaultRate();
+        }
 
-        // Deactivate existing system default
-        deactivateExistingSystemDefault();
-
-        ExchangeRate systemDefault = new ExchangeRate();
-        systemDefault.setBusinessId(null);
-        systemDefault.setUsdToKhrRate(rate);
-        systemDefault.setIsSystemDefault(true);
-        systemDefault.setIsActive(true);
-        systemDefault.setNotes(notes);
-
-        ExchangeRate savedRate = exchangeRateRepository.save(systemDefault);
-        log.info("System default exchange rate created: {}", savedRate.getId());
-
-        return exchangeRateMapper.toResponse(savedRate);
+        return exchangeRateMapper.toResponse(activeRate.get());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ExchangeRateResponse getActiveSystemDefault() {
-        Optional<ExchangeRate> systemDefault = exchangeRateRepository.findActiveSystemDefault();
+    public Double getCurrentRateValue() {
+        Optional<ExchangeRate> activeRate = exchangeRateRepository.findActiveRate();
         
-        if (systemDefault.isEmpty()) {
-            // Create default system rate if none exists
-            log.info("No system default found, creating default rate: {}", DEFAULT_EXCHANGE_RATE);
-            return createSystemDefault(DEFAULT_EXCHANGE_RATE, "System generated default rate");
+        if (activeRate.isPresent()) {
+            return activeRate.get().getUsdToKhrRate();
         }
 
-        return exchangeRateMapper.toResponse(systemDefault.get());
-    }
-
-    @Override
-    public ExchangeRateResponse updateSystemDefault(Double newRate, String notes) {
-        log.info("Updating system default exchange rate to: {}", newRate);
-
-        Optional<ExchangeRate> existingDefault = exchangeRateRepository.findActiveSystemDefault();
-        
-        if (existingDefault.isPresent()) {
-            // Update existing system default
-            ExchangeRate systemDefault = existingDefault.get();
-            systemDefault.setUsdToKhrRate(newRate);
-            if (notes != null) {
-                systemDefault.setNotes(notes);
-            }
-            ExchangeRate updatedRate = exchangeRateRepository.save(systemDefault);
-            return exchangeRateMapper.toResponse(updatedRate);
-        } else {
-            // Create new system default
-            return createSystemDefault(newRate, notes);
-        }
-    }
-
-    @Override
-    public ExchangeRateResponse createBusinessRate(UUID businessId, Double rate, String notes) {
-        log.info("Creating business exchange rate: {} for business: {}", rate, businessId);
-
-        // Validate business exists
-        businessRepository.findByIdAndIsDeletedFalse(businessId)
-                .orElseThrow(() -> new NotFoundException("Business not found"));
-
-        // Deactivate existing business rate
-        deactivateExistingBusinessRate(businessId);
-
-        ExchangeRate businessRate = new ExchangeRate();
-        businessRate.setBusinessId(businessId);
-        businessRate.setUsdToKhrRate(rate);
-        businessRate.setIsSystemDefault(false);
-        businessRate.setIsActive(true);
-        businessRate.setNotes(notes);
-
-        ExchangeRate savedRate = exchangeRateRepository.save(businessRate);
-        log.info("Business exchange rate created: {}", savedRate.getId());
-
-        return exchangeRateMapper.toResponse(savedRate);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ExchangeRateResponse getActiveBusinessRate(UUID businessId) {
-        Optional<ExchangeRate> businessRate = exchangeRateRepository.findActiveByBusinessId(businessId);
-        
-        if (businessRate.isEmpty()) {
-            throw new NotFoundException("No active exchange rate found for business: " + businessId);
-        }
-
-        return exchangeRateMapper.toResponse(businessRate.get());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ExchangeRateResponse> getBusinessRateHistory(UUID businessId) {
-        List<ExchangeRate> rateHistory = exchangeRateRepository.findByBusinessIdAndIsDeletedFalse(businessId);
-        return exchangeRateMapper.toResponseList(rateHistory);
-    }
-
-    @Override
-    public ExchangeRateResponse updateBusinessRate(UUID businessId, Double newRate, String notes) {
-        log.info("Updating business exchange rate to: {} for business: {}", newRate, businessId);
-
-        Optional<ExchangeRate> existingRate = exchangeRateRepository.findActiveByBusinessId(businessId);
-        
-        if (existingRate.isPresent()) {
-            // Update existing business rate
-            ExchangeRate businessRate = existingRate.get();
-            businessRate.setUsdToKhrRate(newRate);
-            if (notes != null) {
-                businessRate.setNotes(notes);
-            }
-            ExchangeRate updatedRate = exchangeRateRepository.save(businessRate);
-            return exchangeRateMapper.toResponse(updatedRate);
-        } else {
-            // Create new business rate
-            return createBusinessRate(businessId, newRate, notes);
-        }
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Double getCurrentRate(UUID businessId) {
-        if (businessId != null) {
-            // Try to get business-specific rate first
-            Optional<ExchangeRate> businessRate = exchangeRateRepository.findActiveByBusinessId(businessId);
-            if (businessRate.isPresent()) {
-                return businessRate.get().getUsdToKhrRate();
-            }
-        }
-
-        // Fall back to system default
-        Optional<ExchangeRate> systemDefault = exchangeRateRepository.findActiveSystemDefault();
-        if (systemDefault.isPresent()) {
-            return systemDefault.get().getUsdToKhrRate();
-        }
-
-        // Ultimate fallback
-        log.warn("No exchange rate found, using default: {}", DEFAULT_EXCHANGE_RATE);
+        // Return default rate if no active rate exists
+        log.warn("No active exchange rate found, using default: {}", DEFAULT_EXCHANGE_RATE);
         return DEFAULT_EXCHANGE_RATE;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ExchangeRateResponse> getAllActiveRates() {
-        List<ExchangeRate> activeRates = exchangeRateRepository.findAllActiveRates();
-        return exchangeRateMapper.toResponseList(activeRates);
+    public List<ExchangeRateResponse> getRateHistory() {
+        List<ExchangeRate> rateHistory = exchangeRateRepository.findAllRatesHistory();
+        return exchangeRateMapper.toResponseList(rateHistory);
     }
 
     @Override
     public ExchangeRateResponse activateRate(UUID id) {
         ExchangeRate exchangeRate = findExchangeRateById(id);
 
-        // If this is a business rate, deactivate other business rates
-        if (exchangeRate.getBusinessId() != null) {
-            deactivateExistingBusinessRate(exchangeRate.getBusinessId());
-        }
+        // Deactivate current active rate
+        deactivateCurrentActiveRate();
 
-        // If this is a system default, deactivate other system defaults
-        if (exchangeRate.isSystemDefault()) {
-            deactivateExistingSystemDefault();
-        }
-
+        // Activate the selected rate
         exchangeRate.setIsActive(true);
         ExchangeRate activatedRate = exchangeRateRepository.save(exchangeRate);
 
-        log.info("Exchange rate activated: {}", id);
+        log.info("Exchange rate activated: {} - Rate: {}", id, activatedRate.getUsdToKhrRate());
         return exchangeRateMapper.toResponse(activatedRate);
     }
 
     @Override
     public ExchangeRateResponse deactivateRate(UUID id) {
         ExchangeRate exchangeRate = findExchangeRateById(id);
+
+        // Don't allow deactivation of the only active rate
+        if (exchangeRate.getIsActive() && exchangeRateRepository.countActiveRates() == 1) {
+            throw new RuntimeException("Cannot deactivate the only active exchange rate. Activate another rate first.");
+        }
 
         exchangeRate.setIsActive(false);
         ExchangeRate deactivatedRate = exchangeRateRepository.save(exchangeRate);
@@ -286,19 +168,13 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     @Override
     @Transactional(readOnly = true)
     public long getTotalRatesCount() {
-        return exchangeRateRepository.count();
+        return exchangeRateRepository.countAllRates();
     }
 
     @Override
     @Transactional(readOnly = true)
     public long getActiveRatesCount() {
-        return exchangeRateRepository.findAllActiveRates().size();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getBusinessesWithRatesCount() {
-        return exchangeRateRepository.countBusinessesWithRates();
+        return exchangeRateRepository.countActiveRates();
     }
 
     // Private helper methods
@@ -307,23 +183,25 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
                 .orElseThrow(() -> new NotFoundException("Exchange rate not found"));
     }
 
-    private void deactivateExistingBusinessRate(UUID businessId) {
-        Optional<ExchangeRate> existingRate = exchangeRateRepository.findActiveByBusinessId(businessId);
-        if (existingRate.isPresent()) {
-            ExchangeRate rate = existingRate.get();
+    private void deactivateCurrentActiveRate() {
+        Optional<ExchangeRate> existingActiveRate = exchangeRateRepository.findActiveRate();
+        if (existingActiveRate.isPresent()) {
+            ExchangeRate rate = existingActiveRate.get();
             rate.setIsActive(false);
             exchangeRateRepository.save(rate);
-            log.info("Deactivated existing business rate for business: {}", businessId);
+            log.info("Deactivated existing active rate: {}", rate.getUsdToKhrRate());
         }
     }
 
-    private void deactivateExistingSystemDefault() {
-        Optional<ExchangeRate> existingDefault = exchangeRateRepository.findActiveSystemDefault();
-        if (existingDefault.isPresent()) {
-            ExchangeRate rate = existingDefault.get();
-            rate.setIsActive(false);
-            exchangeRateRepository.save(rate);
-            log.info("Deactivated existing system default rate");
-        }
+    private ExchangeRateResponse createDefaultRate() {
+        ExchangeRate defaultRate = new ExchangeRate();
+        defaultRate.setUsdToKhrRate(DEFAULT_EXCHANGE_RATE);
+        defaultRate.setIsActive(true);
+        defaultRate.setNotes("System generated default rate");
+
+        ExchangeRate savedRate = exchangeRateRepository.save(defaultRate);
+        log.info("Default exchange rate created: {}", savedRate.getUsdToKhrRate());
+
+        return exchangeRateMapper.toResponse(savedRate);
     }
 }

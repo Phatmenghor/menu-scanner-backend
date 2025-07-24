@@ -36,6 +36,14 @@ public class Payment extends BaseUUIDEntity {
     @JoinColumn(name = "plan_id", insertable = false, updatable = false)
     private SubscriptionPlan plan;
 
+    // ✅ ADDED: Subscription relationship
+    @Column(name = "subscription_id")
+    private UUID subscriptionId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subscription_id", insertable = false, updatable = false)
+    private Subscription subscription;
+
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount; // Amount in USD
 
@@ -103,6 +111,13 @@ public class Payment extends BaseUUIDEntity {
      */
     public String getPlanName() {
         return plan != null ? plan.getName() : "Unknown Plan";
+    }
+
+    /**
+     * Get subscription display name safely
+     */
+    public String getSubscriptionDisplayName() {
+        return subscription != null ? subscription.getDisplayName() : "No Subscription";
     }
 
     @PrePersist

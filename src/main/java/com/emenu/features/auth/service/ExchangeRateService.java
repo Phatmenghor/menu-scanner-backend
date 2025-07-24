@@ -18,20 +18,10 @@ public interface ExchangeRateService {
     ExchangeRateResponse updateExchangeRate(UUID id, ExchangeRateUpdateRequest request);
     ExchangeRateResponse deleteExchangeRate(UUID id);
     
-    // System Default Operations
-    ExchangeRateResponse createSystemDefault(Double rate, String notes);
-    ExchangeRateResponse getActiveSystemDefault();
-    ExchangeRateResponse updateSystemDefault(Double newRate, String notes);
-    
-    // Business Specific Operations
-    ExchangeRateResponse createBusinessRate(UUID businessId, Double rate, String notes);
-    ExchangeRateResponse getActiveBusinessRate(UUID businessId);
-    List<ExchangeRateResponse> getBusinessRateHistory(UUID businessId);
-    ExchangeRateResponse updateBusinessRate(UUID businessId, Double newRate, String notes);
-    
-    // Utility Operations
-    Double getCurrentRate(UUID businessId); // Returns business rate or system default
-    List<ExchangeRateResponse> getAllActiveRates();
+    // System Rate Operations
+    ExchangeRateResponse getCurrentActiveRate();
+    Double getCurrentRateValue(); // Returns just the double value for calculations
+    List<ExchangeRateResponse> getRateHistory();
     
     // Activation/Deactivation
     ExchangeRateResponse activateRate(UUID id);
@@ -40,5 +30,4 @@ public interface ExchangeRateService {
     // Statistics
     long getTotalRatesCount();
     long getActiveRatesCount();
-    long getBusinessesWithRatesCount();
 }

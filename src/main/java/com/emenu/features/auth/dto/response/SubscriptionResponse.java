@@ -2,6 +2,7 @@ package com.emenu.features.auth.dto.response;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -30,4 +31,12 @@ public class SubscriptionResponse {
     
     // Display information
     private String displayName;
+    
+    // ✅ ADDED: Payment information
+    private BigDecimal totalPaidAmount;
+    private Boolean isFullyPaid;
+    private String paymentStatusSummary;
+    private Long totalPaymentsCount;
+    private Long completedPaymentsCount;
+    private Long pendingPaymentsCount;
 }

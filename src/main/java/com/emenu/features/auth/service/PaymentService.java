@@ -22,6 +22,9 @@ public interface PaymentService {
     List<PaymentResponse> getBusinessPayments(UUID businessId);
     PaginationResponse<PaymentResponse> getBusinessPaymentsPaginated(UUID businessId, PaymentFilterRequest filter);
     
+    // ✅ ADDED: Subscription Operations
+    List<PaymentResponse> getSubscriptionPayments(UUID subscriptionId);
+    
     // Status Operations
     PaymentResponse completePayment(UUID id, String notes);
     PaymentResponse cancelPayment(UUID id, String reason);
@@ -36,4 +39,7 @@ public interface PaymentService {
     long getCompletedPaymentsCount();
     long getPendingPaymentsCount();
     long getBusinessPaymentsCount(UUID businessId);
+    
+    // ✅ ADDED: Subscription Statistics
+    long getSubscriptionPaymentsCount(UUID subscriptionId);
 }

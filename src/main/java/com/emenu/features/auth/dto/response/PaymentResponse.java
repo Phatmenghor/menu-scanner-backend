@@ -15,6 +15,11 @@ public class PaymentResponse {
     private String businessName;
     private UUID planId;
     private String planName;
+    
+    // ✅ ADDED: Subscription information
+    private UUID subscriptionId;
+    private String subscriptionDisplayName;
+    
     private BigDecimal amount;
     private BigDecimal amountKhr;
     private String formattedAmount;    // "$29.99"

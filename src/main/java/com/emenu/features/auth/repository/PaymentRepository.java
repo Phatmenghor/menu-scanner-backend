@@ -33,6 +33,17 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID>, JpaSpec
     @Query("SELECT COUNT(p) FROM Payment p WHERE p.businessId = :businessId AND p.isDeleted = false")
     long countByBusinessIdAndIsDeletedFalse(@Param("businessId") UUID businessId);
     
+    // ✅ ADDED: Subscription specific operations
+    List<Payment> findBySubscriptionIdAndIsDeletedFalse(UUID subscriptionId);
+    
+    Page<Payment> findBySubscriptionIdAndIsDeletedFalse(UUID subscriptionId, Pageable pageable);
+    
+    @Query("SELECT COUNT(p) FROM Payment p WHERE p.subscriptionId = :subscriptionId AND p.isDeleted = false")
+    long countBySubscriptionIdAndIsDeletedFalse(@Param("subscriptionId") UUID subscriptionId);
+    
+    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.subscriptionId = :subscriptionId AND p.status = 'COMPLETED' AND p.isDeleted = false")
+    java.math.BigDecimal sumCompletedAmountBySubscription(@Param("subscriptionId") UUID subscriptionId);
+    
     // Reference number operations
     Optional<Payment> findByReferenceNumberAndIsDeletedFalse(String referenceNumber);
     
@@ -61,4 +72,14 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID>, JpaSpec
            "(LOWER(p.referenceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(p.notes) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Payment> findBySearchAndIsDeletedFalse(@Param("search") String search, Pageable pageable);
+    
+    // ✅ ADDED: Complex queries for subscription payments
+    @Query("SELECT p FROM Payment p WHERE p.subscriptionId = :subscriptionId AND p.status = :status AND p.isDeleted = false")
+    List<Payment> findBySubscriptionIdAndStatusAndIsDeletedFalse(@Param("subscriptionId") UUID subscriptionId, @Param("status") PaymentStatus status);
+    
+    @Query("SELECT p FROM Payment p WHERE p.businessId = :businessId AND p.subscriptionId IS NOT NULL AND p.isDeleted = false")
+    List<Payment> findBusinessSubscriptionPayments(@Param("businessId") UUID businessId);
+    
+    @Query("SELECT COUNT(DISTINCT p.subscriptionId) FROM Payment p WHERE p.businessId = :businessId AND p.subscriptionId IS NOT NULL AND p.isDeleted = false")
+    long countDistinctSubscriptionsWithPayments(@Param("businessId") UUID businessId);
 }

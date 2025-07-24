@@ -48,10 +48,14 @@ public class Subscription extends BaseUUIDEntity {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
-    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL)
+    // ✅ FIXED: Proper payment relationship
+    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payment> payments;
 
-    // Basic business methods
+    // ================================
+    // BUSINESS METHODS
+    // ================================
+
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(endDate);
     }
@@ -68,7 +72,6 @@ public class Subscription extends BaseUUIDEntity {
         return "Unknown Plan";
     }
 
-    // Basic operations
     public void extendByDays(int days) {
         this.endDate = this.endDate.plusDays(days);
     }
@@ -76,5 +79,48 @@ public class Subscription extends BaseUUIDEntity {
     public void cancel() {
         this.isActive = false;
         this.autoRenew = false;
+    }
+
+    /**
+     * Get total amount paid for this subscription
+     */
+    public java.math.BigDecimal getTotalPaidAmount() {
+        if (payments == null || payments.isEmpty()) {
+            return java.math.BigDecimal.ZERO;
+        }
+        
+        return payments.stream()
+                .filter(payment -> payment.getStatus().isCompleted())
+                .map(Payment::getAmount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+    }
+
+    /**
+     * Check if subscription is fully paid
+     */
+    public boolean isFullyPaid() {
+        if (plan == null) return false;
+        
+        java.math.BigDecimal totalPaid = getTotalPaidAmount();
+        return totalPaid.compareTo(plan.getPrice()) >= 0;
+    }
+
+    /**
+     * Get payment status summary
+     */
+    public String getPaymentStatusSummary() {
+        if (payments == null || payments.isEmpty()) {
+            return "No payments";
+        }
+        
+        long completedCount = payments.stream()
+                .filter(payment -> payment.getStatus().isCompleted())
+                .count();
+        
+        long pendingCount = payments.stream()
+                .filter(payment -> payment.getStatus().isPending())
+                .count();
+        
+        return String.format("%d completed, %d pending", completedCount, pendingCount);
     }
 }

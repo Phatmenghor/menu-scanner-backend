@@ -19,7 +19,6 @@ public abstract class ExchangeRateMapper {
     protected PaginationMapper paginationMapper;
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "business", ignore = true)
     @Mapping(target = "isActive", constant = "true")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -31,7 +30,6 @@ public abstract class ExchangeRateMapper {
     @Mapping(target = "deletedBy", ignore = true)
     public abstract ExchangeRate toEntity(ExchangeRateCreateRequest request);
 
-    @Mapping(source = "business.name", target = "businessName")
     @Mapping(target = "formattedRate", expression = "java(exchangeRate.getFormattedRate())")
     @Mapping(target = "displayName", expression = "java(exchangeRate.getDisplayName())")
     public abstract ExchangeRateResponse toResponse(ExchangeRate exchangeRate);
@@ -40,9 +38,6 @@ public abstract class ExchangeRateMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    @Mapping(target = "isSystemDefault", ignore = true) // Cannot change this after creation
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)

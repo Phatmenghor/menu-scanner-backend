@@ -4,12 +4,8 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
 
-import java.util.UUID;
-
 @Data
 public class ExchangeRateFilterRequest {
-    private UUID businessId;
-    private Boolean isSystemDefault;
     private Boolean isActive;
     private String search;
     

@@ -1,13 +1,13 @@
 package com.emenu.features.auth.models;
 
 import com.emenu.shared.domain.BaseUUIDEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import java.util.UUID;
 
 @Entity
 @Table(name = "exchange_rates")
@@ -17,18 +17,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ExchangeRate extends BaseUUIDEntity {
 
-    @Column(name = "business_id")
-    private UUID businessId; // NULL means system default
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "business_id", insertable = false, updatable = false)
-    private Business business;
-
     @Column(name = "usd_to_khr_rate", nullable = false)
     private Double usdToKhrRate;
-
-    @Column(name = "is_system_default", nullable = false)
-    private Boolean isSystemDefault = false;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -41,13 +31,6 @@ public class ExchangeRate extends BaseUUIDEntity {
     // ================================
 
     /**
-     * Check if this is the system default rate
-     */
-    public boolean isSystemDefault() {
-        return Boolean.TRUE.equals(isSystemDefault) && businessId == null;
-    }
-
-    /**
      * Check if this rate is currently active
      */
     public boolean isActive() {
@@ -58,13 +41,7 @@ public class ExchangeRate extends BaseUUIDEntity {
      * Get display name for this rate
      */
     public String getDisplayName() {
-        if (isSystemDefault()) {
-            return "System Default Rate";
-        } else if (business != null) {
-            return business.getName() + " Rate";
-        } else {
-            return "Unknown Rate";
-        }
+        return "System Exchange Rate";
     }
 
     /**
