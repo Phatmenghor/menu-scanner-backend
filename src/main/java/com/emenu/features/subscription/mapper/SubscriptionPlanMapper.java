@@ -1,9 +1,9 @@
-package com.emenu.features.auth.mapper;
+package com.emenu.features.subscription.mapper;
 
-import com.emenu.features.auth.dto.request.SubscriptionPlanCreateRequest;
-import com.emenu.features.auth.dto.response.SubscriptionPlanResponse;
-import com.emenu.features.auth.dto.update.SubscriptionPlanUpdateRequest;
-import com.emenu.features.auth.models.SubscriptionPlan;
+import com.emenu.features.subscription.dto.request.SubscriptionPlanCreateRequest;
+import com.emenu.features.subscription.dto.response.SubscriptionPlanResponse;
+import com.emenu.features.subscription.dto.update.SubscriptionPlanUpdateRequest;
+import com.emenu.features.subscription.models.SubscriptionPlan;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;

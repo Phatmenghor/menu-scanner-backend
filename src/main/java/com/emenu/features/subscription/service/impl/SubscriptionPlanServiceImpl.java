@@ -1,16 +1,16 @@
-package com.emenu.features.auth.service.impl;
+package com.emenu.features.subscription.service.impl;
 
 import com.emenu.enums.sub_scription.SubscriptionPlanStatus;
-import com.emenu.features.auth.dto.filter.SubscriptionPlanFilterRequest;
-import com.emenu.features.auth.dto.request.SubscriptionPlanCreateRequest;
-import com.emenu.features.auth.dto.response.SubscriptionPlanResponse;
-import com.emenu.features.auth.dto.update.SubscriptionPlanUpdateRequest;
-import com.emenu.features.auth.mapper.SubscriptionPlanMapper;
-import com.emenu.features.auth.models.SubscriptionPlan;
-import com.emenu.features.auth.repository.SubscriptionPlanRepository;
-import com.emenu.features.auth.repository.SubscriptionRepository;
-import com.emenu.features.auth.service.SubscriptionPlanService;
-import com.emenu.features.auth.specification.SubscriptionPlanSpecification;
+import com.emenu.features.subscription.dto.filter.SubscriptionPlanFilterRequest;
+import com.emenu.features.subscription.dto.request.SubscriptionPlanCreateRequest;
+import com.emenu.features.subscription.dto.response.SubscriptionPlanResponse;
+import com.emenu.features.subscription.dto.update.SubscriptionPlanUpdateRequest;
+import com.emenu.features.subscription.mapper.SubscriptionPlanMapper;
+import com.emenu.features.subscription.models.SubscriptionPlan;
+import com.emenu.features.subscription.repository.SubscriptionPlanRepository;
+import com.emenu.features.subscription.repository.SubscriptionRepository;
+import com.emenu.features.subscription.service.SubscriptionPlanService;
+import com.emenu.features.subscription.specification.SubscriptionPlanSpecification;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;

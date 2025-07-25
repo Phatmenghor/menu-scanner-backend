@@ -1,10 +1,10 @@
-package com.emenu.features.auth.controller;
+package com.emenu.features.subscription.controller;
 
-import com.emenu.features.auth.dto.filter.SubscriptionPlanFilterRequest;
-import com.emenu.features.auth.dto.request.SubscriptionPlanCreateRequest;
-import com.emenu.features.auth.dto.response.SubscriptionPlanResponse;
-import com.emenu.features.auth.dto.update.SubscriptionPlanUpdateRequest;
-import com.emenu.features.auth.service.SubscriptionPlanService;
+import com.emenu.features.subscription.dto.filter.SubscriptionPlanFilterRequest;
+import com.emenu.features.subscription.dto.request.SubscriptionPlanCreateRequest;
+import com.emenu.features.subscription.dto.response.SubscriptionPlanResponse;
+import com.emenu.features.subscription.dto.update.SubscriptionPlanUpdateRequest;
+import com.emenu.features.subscription.service.SubscriptionPlanService;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;

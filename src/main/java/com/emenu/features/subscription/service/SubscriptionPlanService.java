@@ -1,12 +1,11 @@
-package com.emenu.features.auth.service;
+package com.emenu.features.subscription.service;
 
-import com.emenu.features.auth.dto.filter.SubscriptionPlanFilterRequest;
-import com.emenu.features.auth.dto.request.SubscriptionPlanCreateRequest;
-import com.emenu.features.auth.dto.response.SubscriptionPlanResponse;
-import com.emenu.features.auth.dto.update.SubscriptionPlanUpdateRequest;
+import com.emenu.features.subscription.dto.filter.SubscriptionPlanFilterRequest;
+import com.emenu.features.subscription.dto.request.SubscriptionPlanCreateRequest;
+import com.emenu.features.subscription.dto.response.SubscriptionPlanResponse;
+import com.emenu.features.subscription.dto.update.SubscriptionPlanUpdateRequest;
 import com.emenu.shared.dto.PaginationResponse;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface SubscriptionPlanService {

@@ -1,5 +1,6 @@
-package com.emenu.features.auth.models;
+package com.emenu.features.subscription.models;
 
+import com.emenu.features.auth.models.Business;
 import com.emenu.features.payment.models.Payment;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;

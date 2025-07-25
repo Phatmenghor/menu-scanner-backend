@@ -9,7 +9,7 @@ import com.emenu.features.auth.mapper.BusinessMapper;
 import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.repository.BusinessRepository;
-import com.emenu.features.auth.repository.SubscriptionRepository;
+import com.emenu.features.subscription.repository.SubscriptionRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.BusinessService;
 import com.emenu.features.auth.specification.BusinessSpecification;

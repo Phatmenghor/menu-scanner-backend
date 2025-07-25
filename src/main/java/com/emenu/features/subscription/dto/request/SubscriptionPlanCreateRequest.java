@@ -1,4 +1,4 @@
-package com.emenu.features.auth.dto.request;
+package com.emenu.features.subscription.dto.request;
 
 import com.emenu.enums.sub_scription.SubscriptionPlanStatus;
 import jakarta.validation.constraints.DecimalMin;

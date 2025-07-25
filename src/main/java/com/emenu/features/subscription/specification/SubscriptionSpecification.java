@@ -1,7 +1,7 @@
-package com.emenu.features.auth.specification;
+package com.emenu.features.subscription.specification;
 
-import com.emenu.features.auth.dto.filter.SubscriptionFilterRequest;
-import com.emenu.features.auth.models.Subscription;
+import com.emenu.features.subscription.dto.filter.SubscriptionFilterRequest;
+import com.emenu.features.subscription.models.Subscription;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;

@@ -1,6 +1,6 @@
-package com.emenu.features.auth.repository;
+package com.emenu.features.subscription.repository;
 
-import com.emenu.features.auth.models.Subscription;
+import com.emenu.features.subscription.models.Subscription;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

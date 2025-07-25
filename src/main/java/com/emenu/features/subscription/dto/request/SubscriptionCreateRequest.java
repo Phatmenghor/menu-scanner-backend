@@ -1,4 +1,4 @@
-package com.emenu.features.auth.dto.request;
+package com.emenu.features.subscription.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

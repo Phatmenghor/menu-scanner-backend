@@ -1,4 +1,4 @@
-package com.emenu.features.auth.dto.update;
+package com.emenu.features.subscription.dto.update;
 
 import lombok.Data;
 

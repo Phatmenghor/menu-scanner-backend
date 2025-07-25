@@ -1,8 +1,8 @@
-package com.emenu.features.auth.specification;
+package com.emenu.features.subscription.specification;
 
 import com.emenu.enums.sub_scription.SubscriptionPlanStatus;
-import com.emenu.features.auth.dto.filter.SubscriptionPlanFilterRequest;
-import com.emenu.features.auth.models.SubscriptionPlan;
+import com.emenu.features.subscription.dto.filter.SubscriptionPlanFilterRequest;
+import com.emenu.features.subscription.models.SubscriptionPlan;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;

@@ -1,11 +1,11 @@
-package com.emenu.features.auth.service;
+package com.emenu.features.subscription.service;
 
-import com.emenu.features.auth.dto.filter.SubscriptionFilterRequest;
-import com.emenu.features.auth.dto.request.SubscriptionCancelRequest;
-import com.emenu.features.auth.dto.request.SubscriptionCreateRequest;
-import com.emenu.features.auth.dto.response.SubscriptionResponse;
-import com.emenu.features.auth.dto.update.SubscriptionRenewRequest;
-import com.emenu.features.auth.dto.update.SubscriptionUpdateRequest;
+import com.emenu.features.subscription.dto.filter.SubscriptionFilterRequest;
+import com.emenu.features.subscription.dto.request.SubscriptionCancelRequest;
+import com.emenu.features.subscription.dto.request.SubscriptionCreateRequest;
+import com.emenu.features.subscription.dto.response.SubscriptionResponse;
+import com.emenu.features.subscription.dto.update.SubscriptionRenewRequest;
+import com.emenu.features.subscription.dto.update.SubscriptionUpdateRequest;
 import com.emenu.shared.dto.PaginationResponse;
 
 import java.util.UUID;

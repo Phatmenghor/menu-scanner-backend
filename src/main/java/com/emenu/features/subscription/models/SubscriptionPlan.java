@@ -1,4 +1,4 @@
-package com.emenu.features.auth.models;
+package com.emenu.features.subscription.models;
 
 import com.emenu.enums.sub_scription.SubscriptionPlanStatus;
 import com.emenu.shared.domain.BaseUUIDEntity;

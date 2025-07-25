@@ -1,4 +1,4 @@
-package com.emenu.features.auth.dto.filter;
+package com.emenu.features.subscription.dto.filter;
 
 import com.emenu.enums.sub_scription.SubscriptionPlanStatus;
 import jakarta.validation.constraints.Max;
