@@ -1,4 +1,4 @@
-package com.emenu.features.setting.dto;
+package com.emenu.features.setting.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,8 +1,8 @@
 package com.emenu.features.setting.mapper;
 
-import com.emenu.features.setting.dto.ImageDto;
-import com.emenu.features.setting.dto.ImageResponse;
-import com.emenu.features.setting.dto.ImageUploadRequest;
+import com.emenu.features.setting.dto.response.ImageDto;
+import com.emenu.features.setting.dto.response.ImageResponse;
+import com.emenu.features.setting.dto.request.ImageUploadRequest;
 import com.emenu.features.setting.models.ImageEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

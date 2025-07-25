@@ -1,8 +1,8 @@
 package com.emenu.features.setting.controller;
 
-import com.emenu.features.setting.dto.ImageDto;
-import com.emenu.features.setting.dto.ImageResponse;
-import com.emenu.features.setting.dto.ImageUploadRequest;
+import com.emenu.features.setting.dto.response.ImageDto;
+import com.emenu.features.setting.dto.response.ImageResponse;
+import com.emenu.features.setting.dto.request.ImageUploadRequest;
 import com.emenu.features.setting.service.ImageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Base64;
 import java.util.UUID;
 
 @RestController

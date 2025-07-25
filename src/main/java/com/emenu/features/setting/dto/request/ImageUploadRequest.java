@@ -1,4 +1,4 @@
-package com.emenu.features.setting.dto;
+package com.emenu.features.setting.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
