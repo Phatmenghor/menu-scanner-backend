@@ -95,11 +95,19 @@ app:
     allowed-headers: "*"
     allow-credentials: true
 
+  # Security Configuration
+  security:
+    token-cleanup:
+      enabled: true
+      schedule: "0 0 2 * * ?" # Daily at 2 AM
+      retention-weeks: 1
+
 # Logging Configuration
 logging:
   level:
     com.emenu: INFO
     com.emenu.config.DataInitializationService: DEBUG # Enable detailed logging for initialization
+    com.emenu.security: INFO
     org.springframework.security: WARN
     org.springframework.web: WARN
     org.hibernate.SQL: OFF
@@ -143,53 +151,6 @@ logging:
   level:
     com.emenu: INFO
     com.emenu.config.DataInitializationService: DEBUG # Debug initialization
+    com.emenu.security.jwt: DEBUG # Debug JWT operations
     org.hibernate.SQL: OFF
 
----
-# Production Profile
-spring:
-  config:
-    activate:
-      on-profile: prod
-
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-
-  datasource:
-    hikari:
-      maximum-pool-size: 30
-      minimum-idle: 10
-
-server:
-  port: 8080
-
-app:
-  init:
-    create-admin: false
-
-  notifications:
-    telegram:
-      enabled: ${TELEGRAM_ENABLED:false}
-      bot-token: ${TELEGRAM_BOT_TOKEN:}
-    email:
-      enabled: ${EMAIL_ENABLED:true}
-      from-name: "Cambodia E-Menu Platform"
-
-    messaging:
-      cleanup:
-        old-notifications-days: 90
-        old-messages-days: 365
-        old-history-days: 730
-
-      batch-size: 100
-      retry-attempts: 3
-      retry-delay-minutes: 30
-
-logging:
-  level:
-    com.emenu: INFO
-    root: WARN
-  file:
-    name: /var/log/cambodia-emenu-platform/application.log
