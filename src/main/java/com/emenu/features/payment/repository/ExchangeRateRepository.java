@@ -20,14 +20,6 @@ public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, UUID
     @Query("SELECT er FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
     Optional<ExchangeRate> findActiveRate();
     
-    // Get all rates ordered by creation date (for history)
-    @Query("SELECT er FROM ExchangeRate er WHERE er.isDeleted = false ORDER BY er.createdAt DESC")
-    List<ExchangeRate> findAllRatesHistory();;
-    
-    // Count total rates
-    @Query("SELECT COUNT(er) FROM ExchangeRate er WHERE er.isDeleted = false")
-    long countAllRates();
-    
     // Count active rates
     @Query("SELECT COUNT(er) FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
     long countActiveRates();

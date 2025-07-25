@@ -26,36 +26,6 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 
     boolean existsByPhoneNumberAndIsDeletedFalse(String phoneNumber);
 
-    List<User> findByIsDeletedFalse();
-
-    Page<User> findByIsDeletedFalse(Pageable pageable);
-
-    Page<User> findByUserTypeAndIsDeletedFalse(UserType userType, Pageable pageable);
-
-    Page<User> findByAccountStatusAndIsDeletedFalse(AccountStatus accountStatus, Pageable pageable);
-
-    List<User> findByBusinessIdAndIsDeletedFalse(UUID businessId);
-
-    Page<User> findByBusinessIdAndIsDeletedFalse(UUID businessId, Pageable pageable);
-
-    List<User> findByUserTypeInAndIsDeletedFalse(List<UserType> userTypes);
-
-    List<User> findByBusinessIdInAndIsDeletedFalse(List<UUID> businessIds);
-
-    List<User> findByIdInAndIsDeletedFalse(List<UUID> ids);
-
-    @Query("SELECT COUNT(u) FROM User u WHERE u.userType = :userType AND u.isDeleted = false")
-    long countByUserTypeAndIsDeletedFalse(@Param("userType") UserType userType);
-
     @Query("SELECT COUNT(u) FROM User u WHERE u.businessId = :businessId AND u.isDeleted = false")
     long countByBusinessIdAndIsDeletedFalse(@Param("businessId") UUID businessId);
-
-    @Query("SELECT COUNT(u) FROM User u WHERE u.isDeleted = false")
-    long countByIsDeletedFalse();
-
-    @Query("SELECT u FROM User u WHERE u.isDeleted = false AND " +
-            "(LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<User> findBySearchAndIsDeletedFalse(@Param("search") String search, Pageable pageable);
 }

@@ -16,32 +16,11 @@ import java.util.UUID;
 
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, UUID>, JpaSpecificationExecutor<Subscription> {
-    
     Optional<Subscription> findByIdAndIsDeletedFalse(UUID id);
-    List<Subscription> findByBusinessIdAndIsDeletedFalse(UUID businessId);
-    Page<Subscription> findByBusinessIdAndIsDeletedFalse(UUID businessId, Pageable pageable);
-    
-    @Query("SELECT s FROM Subscription s WHERE s.businessId = :businessId AND s.isActive = true AND s.isDeleted = false")
-    Optional<Subscription> findActiveByBusinessId(@Param("businessId") UUID businessId);
     
     @Query("SELECT s FROM Subscription s WHERE s.businessId = :businessId AND s.isActive = true AND s.endDate > :now AND s.isDeleted = false")
     Optional<Subscription> findCurrentActiveByBusinessId(@Param("businessId") UUID businessId, @Param("now") LocalDateTime now);
     
-    @Query("SELECT s FROM Subscription s WHERE s.endDate < :now AND s.isActive = true AND s.isDeleted = false")
-    List<Subscription> findExpiredSubscriptions(@Param("now") LocalDateTime now);
-    
-    @Query("SELECT s FROM Subscription s WHERE s.endDate BETWEEN :start AND :end AND s.isActive = true AND s.isDeleted = false")
-    List<Subscription> findExpiringSubscriptions(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
-    
     @Query("SELECT COUNT(s) FROM Subscription s WHERE s.planId = :planId AND s.isDeleted = false")
     long countByPlan(@Param("planId") UUID planId);
-    
-    @Query("SELECT COUNT(s) FROM Subscription s WHERE s.isActive = true AND s.isDeleted = false")
-    long countActiveSubscriptions();
-
-    @Query("SELECT s FROM Subscription s WHERE s.planId = :planId AND s.isDeleted = false")
-    List<Subscription> findByPlanId(@Param("planId") UUID planId);
-    
-    @Query("SELECT s FROM Subscription s WHERE s.autoRenew = true AND s.endDate BETWEEN :start AND :end AND s.isActive = true AND s.isDeleted = false")
-    List<Subscription> findAutoRenewingSubscriptions(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }

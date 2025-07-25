@@ -19,22 +19,5 @@ public interface BusinessRepository extends JpaRepository<Business, UUID>, JpaSp
     
     Optional<Business> findByIdAndIsDeletedFalse(UUID id);
     
-    List<Business> findByIsDeletedFalse();
-    
-    Page<Business> findByIsDeletedFalse(Pageable pageable);
-    
-    Page<Business> findByStatusAndIsDeletedFalse(BusinessStatus status, Pageable pageable);
-    
     boolean existsByEmailAndIsDeletedFalse(String email);
-    
-    @Query("SELECT COUNT(b) FROM Business b WHERE b.isDeleted = false")
-    long countByIsDeletedFalse();
-    
-    @Query("SELECT COUNT(b) FROM Business b WHERE b.status = :status AND b.isDeleted = false")
-    long countByStatusAndIsDeletedFalse(@Param("status") BusinessStatus status);
-    
-    @Query("SELECT b FROM Business b WHERE b.isDeleted = false AND " +
-           "(LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(b.email) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Business> findBySearchAndIsDeletedFalse(@Param("search") String search, Pageable pageable);
 }
