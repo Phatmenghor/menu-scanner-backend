@@ -1,10 +1,10 @@
-package com.emenu.features.auth.controller;
+package com.emenu.features.payment.controller;
 
-import com.emenu.features.auth.dto.filter.PaymentFilterRequest;
-import com.emenu.features.auth.dto.request.PaymentCreateRequest;
-import com.emenu.features.auth.dto.response.PaymentResponse;
-import com.emenu.features.auth.dto.update.PaymentUpdateRequest;
-import com.emenu.features.auth.service.PaymentService;
+import com.emenu.features.payment.dto.filter.PaymentFilterRequest;
+import com.emenu.features.payment.dto.request.PaymentCreateRequest;
+import com.emenu.features.payment.dto.response.PaymentResponse;
+import com.emenu.features.payment.dto.update.PaymentUpdateRequest;
+import com.emenu.features.payment.service.PaymentService;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;

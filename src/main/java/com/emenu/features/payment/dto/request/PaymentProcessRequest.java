@@ -1,4 +1,4 @@
-package com.emenu.features.auth.dto.request;
+package com.emenu.features.payment.dto.request;
 
 import jakarta.validation.constraints.Size;
 import lombok.Data;

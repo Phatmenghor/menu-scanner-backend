@@ -1,9 +1,9 @@
-package com.emenu.features.auth.specification;
+package com.emenu.features.payment.specification;
 
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
-import com.emenu.features.auth.dto.filter.PaymentFilterRequest;
-import com.emenu.features.auth.models.Payment;
+import com.emenu.features.payment.dto.filter.PaymentFilterRequest;
+import com.emenu.features.payment.models.Payment;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;

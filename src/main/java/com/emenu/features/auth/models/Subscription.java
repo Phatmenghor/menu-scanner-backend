@@ -1,5 +1,6 @@
 package com.emenu.features.auth.models;
 
+import com.emenu.features.payment.models.Payment;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

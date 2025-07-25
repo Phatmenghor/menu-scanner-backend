@@ -1,7 +1,10 @@
-package com.emenu.features.auth.models;
+package com.emenu.features.payment.models;
 
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
+import com.emenu.features.auth.models.Business;
+import com.emenu.features.auth.models.Subscription;
+import com.emenu.features.auth.models.SubscriptionPlan;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

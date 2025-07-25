@@ -1,9 +1,9 @@
-package com.emenu.features.auth.mapper;
+package com.emenu.features.payment.mapper;
 
-import com.emenu.features.auth.dto.request.PaymentCreateRequest;
-import com.emenu.features.auth.dto.response.PaymentResponse;
-import com.emenu.features.auth.dto.update.PaymentUpdateRequest;
-import com.emenu.features.auth.models.Payment;
+import com.emenu.features.payment.dto.request.PaymentCreateRequest;
+import com.emenu.features.payment.dto.response.PaymentResponse;
+import com.emenu.features.payment.dto.update.PaymentUpdateRequest;
+import com.emenu.features.payment.models.Payment;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;

@@ -1,4 +1,4 @@
-package com.emenu.features.auth.dto.update;
+package com.emenu.features.payment.dto.update;
 
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;

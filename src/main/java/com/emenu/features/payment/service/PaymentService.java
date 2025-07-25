@@ -1,9 +1,9 @@
-package com.emenu.features.auth.service;
+package com.emenu.features.payment.service;
 
-import com.emenu.features.auth.dto.filter.PaymentFilterRequest;
-import com.emenu.features.auth.dto.request.PaymentCreateRequest;
-import com.emenu.features.auth.dto.response.PaymentResponse;
-import com.emenu.features.auth.dto.update.PaymentUpdateRequest;
+import com.emenu.features.payment.dto.filter.PaymentFilterRequest;
+import com.emenu.features.payment.dto.request.PaymentCreateRequest;
+import com.emenu.features.payment.dto.response.PaymentResponse;
+import com.emenu.features.payment.dto.update.PaymentUpdateRequest;
 import com.emenu.shared.dto.PaginationResponse;
 
 import java.util.UUID;
