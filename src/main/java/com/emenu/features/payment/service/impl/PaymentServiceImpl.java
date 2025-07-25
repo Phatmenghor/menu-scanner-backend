@@ -14,7 +14,7 @@ import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.payment.repository.PaymentRepository;
 import com.emenu.features.subscription.repository.SubscriptionPlanRepository;
 import com.emenu.features.subscription.repository.SubscriptionRepository;
-import com.emenu.features.auth.service.ExchangeRateService;
+import com.emenu.features.payment.service.ExchangeRateService;
 import com.emenu.features.payment.service.PaymentService;
 import com.emenu.features.payment.specification.PaymentSpecification;
 import com.emenu.shared.dto.PaginationResponse;

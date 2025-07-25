@@ -1,7 +1,7 @@
-package com.emenu.features.auth.specification;
+package com.emenu.features.payment.specification;
 
-import com.emenu.features.auth.dto.filter.ExchangeRateFilterRequest;
-import com.emenu.features.auth.models.ExchangeRate;
+import com.emenu.features.payment.dto.filter.ExchangeRateFilterRequest;
+import com.emenu.features.payment.models.ExchangeRate;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;

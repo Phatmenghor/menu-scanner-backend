@@ -1,4 +1,4 @@
-package com.emenu.features.auth.dto.filter;
+package com.emenu.features.payment.dto.filter;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

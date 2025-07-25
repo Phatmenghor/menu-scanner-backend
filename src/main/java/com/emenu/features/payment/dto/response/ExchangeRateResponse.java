@@ -1,4 +1,4 @@
-package com.emenu.features.auth.dto.response;
+package com.emenu.features.payment.dto.response;
 
 import lombok.Data;
 

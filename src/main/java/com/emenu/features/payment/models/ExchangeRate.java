@@ -1,4 +1,4 @@
-package com.emenu.features.auth.models;
+package com.emenu.features.payment.models;
 
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.Column;
