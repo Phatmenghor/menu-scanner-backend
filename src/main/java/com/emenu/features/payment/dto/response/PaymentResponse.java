@@ -2,21 +2,21 @@ package com.emenu.features.payment.dto.response;
 
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
+import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class PaymentResponse {
-    private UUID id;
+public class PaymentResponse extends BaseAuditResponse {
     private UUID businessId;
     private String businessName;
     private UUID planId;
     private String planName;
     
-    // ✅ ADDED: Subscription information
     private UUID subscriptionId;
     private String subscriptionDisplayName;
     
@@ -29,8 +29,4 @@ public class PaymentResponse {
     private String statusDescription;
     private String referenceNumber;
     private String notes;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private String createdBy;
-    private String updatedBy;
 }

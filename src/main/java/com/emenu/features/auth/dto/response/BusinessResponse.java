@@ -1,16 +1,16 @@
 package com.emenu.features.auth.dto.response;
 
 import com.emenu.enums.user.BusinessStatus;
+import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class BusinessResponse {
-    
-    // Basic Information
-    private UUID id;
+public class BusinessResponse extends BaseAuditResponse {
     private String name;
     private String email;
     private String phone;
@@ -43,12 +43,6 @@ public class BusinessResponse {
     private LocalDateTime subscriptionEndDate;
     private Long daysRemaining;
     private Boolean isExpiringSoon;
-    
-    // Audit Information
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private String createdBy;
-    private String updatedBy;
     
     // Statistics
     private Integer totalStaff;

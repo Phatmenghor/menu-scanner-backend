@@ -1,8 +1,6 @@
 package com.emenu.features.subscription.dto.filter;
 
-import com.emenu.shared.dto.BaseFilterResponse;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import com.emenu.shared.dto.BaseFilterRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -12,7 +10,7 @@ import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class SubscriptionFilterRequest extends BaseFilterResponse {
+public class SubscriptionFilterRequest extends BaseFilterRequest {
     private UUID businessId;
     private UUID planId;
     private List<UUID> businessIds;

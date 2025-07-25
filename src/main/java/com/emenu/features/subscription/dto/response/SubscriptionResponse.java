@@ -1,14 +1,16 @@
 package com.emenu.features.subscription.dto.response;
 
+import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class SubscriptionResponse {
-    private UUID id;
+public class SubscriptionResponse extends BaseAuditResponse {
     private UUID businessId;
     private String businessName;
     
@@ -25,9 +27,6 @@ public class SubscriptionResponse {
     private Long daysRemaining;
     private Boolean autoRenew;
     private String notes;
-    
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     
     // Display information
     private String displayName;

@@ -3,16 +3,18 @@ package com.emenu.features.auth.dto.response;
 import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
+import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class UserResponse {
+public class UserResponse extends BaseAuditResponse {
 
-    private UUID id;
     private String email;
     private String firstName;
     private String lastName;
@@ -27,8 +29,4 @@ public class UserResponse {
     private String position;
     private String address;
     private String notes;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private String createdBy;
-    private String updatedBy;
 }

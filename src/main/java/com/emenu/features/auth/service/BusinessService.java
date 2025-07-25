@@ -1,11 +1,8 @@
 package com.emenu.features.auth.service;
 
 import com.emenu.features.auth.dto.filter.BusinessFilterRequest;
-import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.BusinessCreateRequest;
 import com.emenu.features.auth.dto.response.BusinessResponse;
-import com.emenu.features.auth.dto.response.DashboardStatsResponse;
-import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.BusinessUpdateRequest;
 import com.emenu.shared.dto.PaginationResponse;
 

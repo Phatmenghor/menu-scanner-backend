@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 @Data
-public abstract class BaseFilterResponse {
+public abstract class BaseFilterRequest {
     private String search;
 
     @Min(value = 1, message = "Page number must be at least 1")
