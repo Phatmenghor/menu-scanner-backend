@@ -1,16 +1,18 @@
 package com.emenu.features.subscription.dto.filter;
 
+import com.emenu.shared.dto.BaseFilterResponse;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class SubscriptionFilterRequest {
-    private String search;
+public class SubscriptionFilterRequest extends BaseFilterResponse {
     private UUID businessId;
     private UUID planId;
     private List<UUID> businessIds;
@@ -24,14 +26,4 @@ public class SubscriptionFilterRequest {
     
     private Boolean expiringSoon;
     private Integer expiringSoonDays = 7;
-
-    @Min(value = 1, message = "Page number must be at least 1")
-    private Integer pageNo = 1;
-
-    @Min(value = 1, message = "Page size must be at least 1")
-    @Max(value = 100, message = "Page size cannot exceed 100")
-    private Integer pageSize = 10;
-
-    private String sortBy = "createdAt";
-    private String sortDirection = "DESC";
 }
