@@ -225,7 +225,6 @@ public class SubdomainController {
      * ✅ ADMIN ONLY: Create exact subdomain (no formatting, exact input)
      */
     @PostMapping("/admin/exact-create")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'PLATFORM_MANAGER')")
     public ResponseEntity<ApiResponse<SubdomainResponse>> adminCreateExactSubdomain(@RequestBody Map<String, Object> requestBody) {
         UUID businessId = UUID.fromString(requestBody.get("businessId").toString());
         String exactSubdomain = requestBody.get("exactSubdomain").toString();
