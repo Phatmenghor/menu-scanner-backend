@@ -15,7 +15,6 @@ public interface SubdomainService {
     SubdomainResponse createSubdomain(SubdomainCreateRequest request);
     PaginationResponse<SubdomainResponse> getAllSubdomains(SubdomainFilterRequest filter);
     SubdomainResponse getSubdomainById(UUID id);
-    SubdomainResponse getSubdomainByName(String subdomain);
     SubdomainResponse updateSubdomain(UUID id, SubdomainUpdateRequest request);
     SubdomainResponse deleteSubdomain(UUID id);
     
@@ -28,18 +27,11 @@ public interface SubdomainService {
     
     // Domain management
     boolean isSubdomainAvailable(String subdomain);
-    SubdomainResponse verifyDomain(UUID id);
     SubdomainResponse enableSSL(UUID id);
-    SubdomainResponse suspendSubdomain(UUID id, String reason);
-    SubdomainResponse activateSubdomain(UUID id);
-    
-    // Statistics and monitoring
-    long getTotalSubdomainsCount();
-    long getActiveSubdomainsCount();
     
     // Auto-creation for business registration (with formatting)
-    SubdomainResponse createSubdomainForBusiness(UUID businessId, String preferredSubdomain);
+    void createSubdomainForBusiness(UUID businessId, String preferredSubdomain);
     
     // ✅ NEW: Exact subdomain creation for platform admins (no formatting)
-    SubdomainResponse createExactSubdomainForBusiness(UUID businessId, String exactSubdomain);
+    void createExactSubdomainForBusiness(UUID businessId, String exactSubdomain);
 }

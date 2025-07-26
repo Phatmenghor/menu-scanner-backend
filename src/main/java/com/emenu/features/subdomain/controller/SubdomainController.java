@@ -1,7 +1,6 @@
 package com.emenu.features.subdomain.controller;
 
 import com.emenu.features.subdomain.dto.filter.SubdomainFilterRequest;
-import com.emenu.features.subdomain.dto.request.SubdomainCreateRequest;
 import com.emenu.features.subdomain.dto.response.SubdomainCheckResponse;
 import com.emenu.features.subdomain.dto.response.SubdomainResponse;
 import com.emenu.features.subdomain.dto.update.SubdomainUpdateRequest;
@@ -11,9 +10,7 @@ import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -44,17 +41,6 @@ public class SubdomainController {
     }
 
     /**
-     * Create new subdomain
-     */
-    @PostMapping
-    public ResponseEntity<ApiResponse<SubdomainResponse>> createSubdomain(@Valid @RequestBody SubdomainCreateRequest request) {
-        log.info("Creating subdomain: {} for business: {}", request.getSubdomain(), request.getBusinessId());
-        SubdomainResponse subdomain = subdomainService.createSubdomain(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Subdomain created successfully", subdomain));
-    }
-
-    /**
      * Get all subdomains with filtering and pagination
      */
     @PostMapping("/all")
@@ -66,17 +52,6 @@ public class SubdomainController {
     }
 
     /**
-     * Get current user's business subdomains
-     */
-    @PostMapping("/my-business")
-    public ResponseEntity<ApiResponse<PaginationResponse<SubdomainResponse>>> getMyBusinessSubdomains(
-            @Valid @RequestBody SubdomainFilterRequest filter) {
-        log.info("Getting current user's business subdomains");
-        PaginationResponse<SubdomainResponse> subdomains = subdomainService.getCurrentUserBusinessSubdomains(filter);
-        return ResponseEntity.ok(ApiResponse.success("Business subdomains retrieved successfully", subdomains));
-    }
-
-    /**
      * Get subdomain by ID
      */
     @GetMapping("/{id}")
@@ -84,16 +59,6 @@ public class SubdomainController {
         log.info("Getting subdomain by ID: {}", id);
         SubdomainResponse subdomain = subdomainService.getSubdomainById(id);
         return ResponseEntity.ok(ApiResponse.success("Subdomain retrieved successfully", subdomain));
-    }
-
-    /**
-     * Get subdomain by name
-     */
-    @GetMapping("/name/{subdomain}")
-    public ResponseEntity<ApiResponse<SubdomainResponse>> getSubdomainByName(@PathVariable String subdomain) {
-        log.info("Getting subdomain by name: {}", subdomain);
-        SubdomainResponse subdomainResponse = subdomainService.getSubdomainByName(subdomain);
-        return ResponseEntity.ok(ApiResponse.success("Subdomain retrieved successfully", subdomainResponse));
     }
 
     /**
@@ -148,16 +113,6 @@ public class SubdomainController {
     }
 
     /**
-     * Verify domain
-     */
-    @PostMapping("/{id}/verify")
-    public ResponseEntity<ApiResponse<SubdomainResponse>> verifyDomain(@PathVariable UUID id) {
-        log.info("Verifying domain for subdomain: {}", id);
-        SubdomainResponse subdomain = subdomainService.verifyDomain(id);
-        return ResponseEntity.ok(ApiResponse.success("Domain verified successfully", subdomain));
-    }
-
-    /**
      * Enable SSL
      */
     @PostMapping("/{id}/enable-ssl")
@@ -165,89 +120,5 @@ public class SubdomainController {
         log.info("Enabling SSL for subdomain: {}", id);
         SubdomainResponse subdomain = subdomainService.enableSSL(id);
         return ResponseEntity.ok(ApiResponse.success("SSL enabled successfully", subdomain));
-    }
-
-    /**
-     * Suspend subdomain
-     */
-    @PostMapping("/{id}/suspend")
-    public ResponseEntity<ApiResponse<SubdomainResponse>> suspendSubdomain(
-            @PathVariable UUID id,
-            @RequestBody Map<String, String> requestBody) {
-        String reason = requestBody.getOrDefault("reason", "Suspended by administrator");
-        log.info("Suspending subdomain: {} - Reason: {}", id, reason);
-        SubdomainResponse subdomain = subdomainService.suspendSubdomain(id, reason);
-        return ResponseEntity.ok(ApiResponse.success("Subdomain suspended successfully", subdomain));
-    }
-
-    /**
-     * Activate subdomain
-     */
-    @PostMapping("/{id}/activate")
-    public ResponseEntity<ApiResponse<SubdomainResponse>> activateSubdomain(@PathVariable UUID id) {
-        log.info("Activating subdomain: {}", id);
-        SubdomainResponse subdomain = subdomainService.activateSubdomain(id);
-        return ResponseEntity.ok(ApiResponse.success("Subdomain activated successfully", subdomain));
-    }
-
-    /**
-     * Get subdomain statistics
-     */
-    @GetMapping("/statistics")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getSubdomainStatistics() {
-        log.info("Getting subdomain statistics");
-        
-        Map<String, Object> stats = Map.of(
-            "totalSubdomains", subdomainService.getTotalSubdomainsCount(),
-            "activeSubdomains", subdomainService.getActiveSubdomainsCount(),
-            "timestamp", java.time.LocalDateTime.now()
-        );
-        
-        return ResponseEntity.ok(ApiResponse.success("Subdomain statistics retrieved successfully", stats));
-    }
-
-    /**
-     * ✅ AUTO CREATE: For business registration (with formatting and availability check)
-     */
-    @PostMapping("/auto-create")
-    public ResponseEntity<ApiResponse<SubdomainResponse>> autoCreateSubdomain(@RequestBody Map<String, Object> requestBody) {
-        UUID businessId = UUID.fromString(requestBody.get("businessId").toString());
-        String preferredSubdomain = requestBody.getOrDefault("preferredSubdomain", "business").toString();
-        
-        log.info("Auto-creating subdomain for business: {} with preferred name: {}", businessId, preferredSubdomain);
-        
-        SubdomainResponse subdomain = subdomainService.createSubdomainForBusiness(businessId, preferredSubdomain);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Subdomain auto-created successfully", subdomain));
-    }
-
-    /**
-     * ✅ ADMIN ONLY: Create exact subdomain (no formatting, exact input)
-     */
-    @PostMapping("/admin/exact-create")
-    public ResponseEntity<ApiResponse<SubdomainResponse>> adminCreateExactSubdomain(@RequestBody Map<String, Object> requestBody) {
-        UUID businessId = UUID.fromString(requestBody.get("businessId").toString());
-        String exactSubdomain = requestBody.get("exactSubdomain").toString();
-        
-        log.info("🔧 ADMIN: Creating exact subdomain for business: {} with exact name: {}", businessId, exactSubdomain);
-        
-        SubdomainResponse subdomain = subdomainService.createExactSubdomainForBusiness(businessId, exactSubdomain);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Exact subdomain created successfully by admin", subdomain));
-    }
-
-    /**
-     * ✅ LEGACY SUPPORT: For backward compatibility
-     */
-    @PostMapping("/business/{businessId}/auto-create")
-    public ResponseEntity<ApiResponse<SubdomainResponse>> createSubdomainForBusiness(
-            @PathVariable UUID businessId,
-            @RequestBody Map<String, String> requestBody) {
-        String preferredSubdomain = requestBody.getOrDefault("preferredSubdomain", "business");
-        log.info("Creating subdomain for business: {} with preferred name: {}", businessId, preferredSubdomain);
-        
-        SubdomainResponse subdomain = subdomainService.createSubdomainForBusiness(businessId, preferredSubdomain);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Subdomain created for business successfully", subdomain));
     }
 }

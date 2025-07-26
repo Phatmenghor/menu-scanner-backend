@@ -210,17 +210,6 @@ public class SubdomainServiceImpl implements SubdomainService {
     }
 
     @Override
-    public SubdomainResponse verifyDomain(UUID id) {
-        Subdomain subdomain = findSubdomainById(id);
-        
-        subdomain.verify();
-        Subdomain verifiedSubdomain = subdomainRepository.save(subdomain);
-        
-        log.info("Domain verified successfully: {}", verifiedSubdomain.getSubdomain());
-        return subdomainMapper.toResponse(verifiedSubdomain);
-    }
-
-    @Override
     public SubdomainResponse enableSSL(UUID id) {
         Subdomain subdomain = findSubdomainById(id);
         
@@ -231,48 +220,16 @@ public class SubdomainServiceImpl implements SubdomainService {
         return subdomainMapper.toResponse(updatedSubdomain);
     }
 
-    @Override
-    public SubdomainResponse suspendSubdomain(UUID id, String reason) {
-        Subdomain subdomain = findSubdomainById(id);
-        
-        subdomain.suspend(reason);
-        Subdomain suspendedSubdomain = subdomainRepository.save(subdomain);
-        
-        log.info("Subdomain suspended: {} - Reason: {}", suspendedSubdomain.getSubdomain(), reason);
-        return subdomainMapper.toResponse(suspendedSubdomain);
-    }
 
     @Override
-    public SubdomainResponse activateSubdomain(UUID id) {
-        Subdomain subdomain = findSubdomainById(id);
-        
-        subdomain.activate();
-        Subdomain activatedSubdomain = subdomainRepository.save(subdomain);
-        
-        log.info("Subdomain activated: {}", activatedSubdomain.getSubdomain());
-        return subdomainMapper.toResponse(activatedSubdomain);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getTotalSubdomainsCount() {
-        return subdomainRepository.countTotalSubdomains();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getActiveSubdomainsCount() {
-        return subdomainRepository.countActiveSubdomains();
-    }
-
-    @Override
-    public SubdomainResponse createSubdomainForBusiness(UUID businessId, String preferredSubdomain) {
+    public void createSubdomainForBusiness(UUID businessId, String preferredSubdomain) {
         log.info("Auto-creating subdomain for business: {} with preferred name: {}", businessId, preferredSubdomain);
 
         // Check if business already has a subdomain
         if (subdomainRepository.existsByBusinessIdAndIsDeletedFalse(businessId)) {
             log.debug("Business already has a subdomain, returning existing one");
-            return getSubdomainByBusinessId(businessId);
+            getSubdomainByBusinessId(businessId);
+            return;
         }
 
         // Generate available subdomain name (with formatting)
@@ -283,11 +240,11 @@ public class SubdomainServiceImpl implements SubdomainService {
         request.setSubdomain(availableSubdomain);
         request.setNotes("Auto-created during business registration");
 
-        return createSubdomain(request);
+        createSubdomain(request);
     }
 
     @Override
-    public SubdomainResponse createExactSubdomainForBusiness(UUID businessId, String exactSubdomain) {
+    public void createExactSubdomainForBusiness(UUID businessId, String exactSubdomain) {
         log.info("✅ Creating EXACT subdomain for business: {} with exact name: {}", businessId, exactSubdomain);
 
         // Validate business exists
@@ -297,7 +254,8 @@ public class SubdomainServiceImpl implements SubdomainService {
         // Check if business already has a subdomain
         if (subdomainRepository.existsByBusinessIdAndIsDeletedFalse(businessId)) {
             log.debug("Business already has a subdomain, returning existing one");
-            return getSubdomainByBusinessId(businessId);
+            getSubdomainByBusinessId(businessId);
+            return;
         }
 
         // ✅ SIMPLIFIED: Minimal cleaning - only lowercase and basic validation
@@ -326,7 +284,6 @@ public class SubdomainServiceImpl implements SubdomainService {
         log.info("✅ Exact subdomain created successfully: {} (from input: {}) for business: {}", 
                 cleanedSubdomain, exactSubdomain, business.getName());
 
-        return response;
     }
 
     // Private helper methods
