@@ -14,8 +14,6 @@ import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.AuthService;
-import com.emenu.features.auth.service.BusinessService;
-import com.emenu.features.subdomain.service.SubdomainService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.security.jwt.JWTGenerator;
 import com.emenu.security.jwt.TokenBlacklistService;
@@ -27,7 +25,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -39,8 +36,6 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final BusinessService businessService; // ✅ ADDED: Business service
-    private final SubdomainService subdomainService; // ✅ ADDED: Subdomain service
     private final AuthMapper authMapper;
     private final RegistrationMapper registrationMapper;
     private final UserMapper userMapper;
@@ -96,72 +91,22 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public UserResponse register(RegisterRequest request) {
-        log.info("Registering new {} user: {}", request.getUserType(), request.getEmail());
+    public UserResponse registerCustomer(RegisterRequest request) {
+        log.info("Registering new customer: {}", request.getEmail());
 
-        validateRegistration(request);
+        validateCustomerRegistration(request);
 
-        // ✅ ENHANCED: Handle business user registration with subdomain
-        if (request.getUserType() == UserType.BUSINESS_USER) {
-            return registerBusinessUser(request);
-        } else {
-            return registerRegularUser(request);
-        }
-    }
-
-    // ✅ ADDED: Method to handle business user registration
-    private UserResponse registerBusinessUser(RegisterRequest request) {
-        log.info("Registering business user with business creation: {}", request.getEmail());
-
-        // Create business first
-        BusinessCreateRequest businessRequest = new BusinessCreateRequest();
-        businessRequest.setName(request.getBusinessName() != null ? request.getBusinessName() : 
-                               request.getFirstName() + "'s Business");
-        businessRequest.setEmail(request.getBusinessEmail());
-        businessRequest.setPhone(request.getBusinessPhone());
-        businessRequest.setAddress(request.getBusinessAddress());
-        businessRequest.setDescription(request.getBusinessDescription());
-
-        var businessResponse = businessService.createBusiness(businessRequest);
-        log.info("Business created for user registration: {}", businessResponse.getName());
-
-        // Create user with business association
-        User user = createUserFromRequest(request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setBusinessId(businessResponse.getId());
-
-        Role role = getRoleForUserType(request.getUserType());
-        user.setRoles(List.of(role));
-
-        User savedUser = userRepository.save(user);
-
-        // ✅ ADDED: Create subdomain if preferred subdomain is provided
-        if (StringUtils.hasText(request.getPreferredSubdomain())) {
-            try {
-                subdomainService.createSubdomainForBusiness(businessResponse.getId(), request.getPreferredSubdomain());
-                log.info("Subdomain created for business user: {} with subdomain: {}", 
-                        savedUser.getEmail(), request.getPreferredSubdomain());
-            } catch (Exception e) {
-                log.warn("Failed to create preferred subdomain for business user: {} - Error: {}", 
-                        savedUser.getEmail(), e.getMessage());
-            }
-        }
-
-        log.info("Business user registered successfully: {} with business: {}", 
-                savedUser.getEmail(), businessResponse.getName());
-        return userMapper.toResponse(savedUser);
-    }
-
-    // ✅ ADDED: Method to handle regular user registration
-    private UserResponse registerRegularUser(RegisterRequest request) {
-        User user = createUserFromRequest(request);
+        // Create customer user
+        User user = registrationMapper.toCustomerEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        Role role = getRoleForUserType(request.getUserType());
-        user.setRoles(List.of(role));
+        // Set customer role
+        Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
+                .orElseThrow(() -> new ValidationException("Customer role not found"));
+        user.setRoles(List.of(customerRole));
 
         User savedUser = userRepository.save(user);
-        log.info("{} user registered successfully: {}", request.getUserType(), savedUser.getEmail());
+        log.info("Customer registered successfully: {}", savedUser.getEmail());
 
         return userMapper.toResponse(savedUser);
     }
@@ -207,31 +152,12 @@ public class AuthServiceImpl implements AuthService {
         return userMapper.toResponse(savedUser);
     }
 
-    // Helper methods remain the same...
+    // Helper methods
     private String extractToken(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             return authorizationHeader.substring(7).trim();
         }
         return null;
-    }
-
-    private User createUserFromRequest(RegisterRequest request) {
-        return switch (request.getUserType()) {
-            case CUSTOMER -> registrationMapper.toCustomerEntity(request);
-            case BUSINESS_USER -> registrationMapper.toBusinessOwnerEntity(request);
-            case PLATFORM_USER -> registrationMapper.toPlatformUserEntity(request);
-        };
-    }
-
-    private Role getRoleForUserType(UserType userType) {
-        RoleEnum roleEnum = switch (userType) {
-            case CUSTOMER -> RoleEnum.CUSTOMER;
-            case BUSINESS_USER -> RoleEnum.BUSINESS_OWNER;
-            case PLATFORM_USER -> RoleEnum.PLATFORM_ADMIN;
-        };
-
-        return roleRepository.findByName(roleEnum)
-                .orElseThrow(() -> new ValidationException(roleEnum.name() + " role not found"));
     }
 
     @Transactional(readOnly = true)
@@ -244,20 +170,13 @@ public class AuthServiceImpl implements AuthService {
         return !userRepository.existsByPhoneNumberAndIsDeletedFalse(phoneNumber);
     }
 
-    private void validateRegistration(RegisterRequest request) {
+    private void validateCustomerRegistration(RegisterRequest request) {
         if (!isEmailAvailable(request.getEmail())) {
             throw new ValidationException("Email is already in use");
         }
 
         if (request.getPhoneNumber() != null && !isPhoneAvailable(request.getPhoneNumber())) {
             throw new ValidationException("Phone number is already in use");
-        }
-
-        // ✅ ADDED: Validate business-specific fields for business users
-        if (request.getUserType() == UserType.BUSINESS_USER) {
-            if (!StringUtils.hasText(request.getBusinessName())) {
-                throw new ValidationException("Business name is required for business user registration");
-            }
         }
     }
 }

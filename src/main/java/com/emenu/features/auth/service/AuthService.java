@@ -11,13 +11,11 @@ public interface AuthService {
 
     // Authentication
     LoginResponse login(LoginRequest request);
+    void logout(String token);
 
-    void logout(String token); //
-
-    UserResponse register(RegisterRequest request); //
+    UserResponse registerCustomer(RegisterRequest request);
 
     // Password Management
-    UserResponse changePassword(PasswordChangeRequest request); //
-
+    UserResponse changePassword(PasswordChangeRequest request);
     UserResponse adminResetPassword(AdminPasswordResetRequest request);
 }

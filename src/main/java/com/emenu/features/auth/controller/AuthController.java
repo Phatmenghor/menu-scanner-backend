@@ -1,6 +1,5 @@
 package com.emenu.features.auth.controller;
 
-import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.dto.request.LoginRequest;
 import com.emenu.features.auth.dto.request.RegisterRequest;
@@ -44,32 +43,15 @@ public class AuthController {
     }
 
     /**
-     * Unified user registration for all user types
+     * Customer self-registration only
+     * Business users must be created by platform administrators through user management
      */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(@Valid @RequestBody RegisterRequest request) {
-        log.info("Registration request received for {} user: {}", request.getUserType(), request.getEmail());
-        UserResponse response = authService.register(request);
-
-        String userTypeMessage = getUserTypeMessage(request.getUserType());
+        log.info("Customer registration request received for: {}", request.getEmail());
+        
+        UserResponse response = authService.registerCustomer(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(userTypeMessage + " registration successful", response));
-    }
-
-    private String getUserTypeMessage(UserType userType) {
-        return switch (userType) {
-            case CUSTOMER -> "Customer";
-            case BUSINESS_USER -> "Business user";
-            case PLATFORM_USER -> "Platform user";
-        };
-    }
-
-    private String getStatusMessage(AccountStatus accountStatus) {
-        return switch (accountStatus) {
-            case ACTIVE -> "Account activated successfully";
-            case INACTIVE -> "Account deactivated successfully";
-            case LOCKED -> "Account locked successfully";
-            case SUSPENDED -> "Account suspended successfully";
-        };
+                .body(ApiResponse.success("Customer registration successful", response));
     }
 }

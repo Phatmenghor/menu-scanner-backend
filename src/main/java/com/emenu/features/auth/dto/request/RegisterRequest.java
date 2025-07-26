@@ -19,8 +19,9 @@ public class RegisterRequest {
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
 
+    // ✅ FIXED: Default to CUSTOMER, but still validate in controller
     @NotNull(message = "User type is required")
-    private UserType userType;
+    private UserType userType = UserType.CUSTOMER;
 
     private String firstName;
     private String lastName;
@@ -28,14 +29,4 @@ public class RegisterRequest {
     private String phoneNumber;
     private String address;
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
-
-    // ✅ ADDED: Business-specific fields for business user registration
-    private String businessName;
-    private String businessEmail;
-    private String businessPhone;
-    private String businessAddress;
-    private String businessDescription;
-    
-    // ✅ ADDED: Preferred subdomain for business registration
-    private String preferredSubdomain;
 }

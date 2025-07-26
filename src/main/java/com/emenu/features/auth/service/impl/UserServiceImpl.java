@@ -1,7 +1,13 @@
 package com.emenu.features.auth.service.impl;
 
+import com.emenu.enums.user.RoleEnum;
+import com.emenu.enums.user.UserType;
+import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
+import com.emenu.features.auth.dto.request.BusinessCreateRequest;
+import com.emenu.features.auth.dto.request.BusinessUserCreateRequest;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
+import com.emenu.features.auth.dto.response.BusinessResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
 import com.emenu.features.auth.mapper.UserMapper;
@@ -9,8 +15,10 @@ import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
+import com.emenu.features.auth.service.BusinessService;
 import com.emenu.features.auth.service.UserService;
 import com.emenu.features.auth.specification.UserSpecification;
+import com.emenu.features.subdomain.service.SubdomainService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -34,6 +42,8 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final BusinessService businessService;
+    private final SubdomainService subdomainService;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final SecurityUtils securityUtils;
@@ -66,6 +76,72 @@ public class UserServiceImpl implements UserService {
         log.info("User created successfully: {}", savedUser.getEmail());
 
         return userMapper.toResponse(savedUser);
+    }
+
+    @Override
+    public UserResponse createBusinessUser(BusinessUserCreateRequest request) {
+        log.info("Creating business user with business: {} for email: {}", request.getBusinessName(), request.getEmail());
+
+        // Validate email uniqueness
+        if (existsByEmail(request.getEmail())) {
+            throw new ValidationException("Email already exists");
+        }
+
+        // Validate phone uniqueness if provided
+        if (request.getPhoneNumber() != null && existsByPhone(request.getPhoneNumber())) {
+            throw new ValidationException("Phone number already exists");
+        }
+
+        try {
+            // ✅ STEP 1: Create business first
+            BusinessCreateRequest businessRequest = new BusinessCreateRequest();
+            businessRequest.setName(request.getBusinessName());
+            businessRequest.setEmail(request.getBusinessEmail());
+            businessRequest.setPhone(request.getBusinessPhone());
+            businessRequest.setAddress(request.getBusinessAddress());
+            businessRequest.setDescription(request.getBusinessDescription());
+
+            BusinessResponse businessResponse = businessService.createBusiness(businessRequest);
+            log.info("Business created for business user: {} with ID: {}", businessResponse.getName(), businessResponse.getId());
+
+            // ✅ STEP 2: Create business user
+            User user = new User();
+            user.setEmail(request.getEmail());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            user.setPhoneNumber(request.getPhoneNumber());
+            user.setProfileImageUrl(request.getProfileImageUrl());
+            user.setPosition(request.getPosition());
+            user.setAddress(request.getAddress());
+            user.setNotes(request.getNotes());
+            user.setUserType(UserType.BUSINESS_USER);
+            user.setAccountStatus(request.getAccountStatus());
+            user.setBusinessId(businessResponse.getId());
+
+            // Set business owner role
+            Role businessOwnerRole = roleRepository.findByName(RoleEnum.BUSINESS_OWNER)
+                    .orElseThrow(() -> new ValidationException("Business owner role not found"));
+            user.setRoles(List.of(businessOwnerRole));
+
+            User savedUser = userRepository.save(user);
+            log.info("Business user created successfully: {} for business: {}", savedUser.getEmail(), businessResponse.getName());
+
+            // ✅ STEP 3: Create subdomain with EXACT input (no formatting)
+            try {
+                subdomainService.createExactSubdomainForBusiness(businessResponse.getId(), request.getPreferredSubdomain());
+                log.info("Subdomain created successfully: {} for business: {}", request.getPreferredSubdomain(), businessResponse.getName());
+            } catch (Exception e) {
+                log.warn("Failed to create subdomain for business user: {} - Error: {}", savedUser.getEmail(), e.getMessage());
+                // Don't fail the user creation if subdomain creation fails
+            }
+
+            return userMapper.toResponse(savedUser);
+
+        } catch (Exception e) {
+            log.error("Failed to create business user: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create business user: " + e.getMessage(), e);
+        }
     }
 
     @Override

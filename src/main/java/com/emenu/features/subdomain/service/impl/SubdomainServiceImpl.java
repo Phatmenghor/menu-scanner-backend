@@ -275,7 +275,7 @@ public class SubdomainServiceImpl implements SubdomainService {
             return getSubdomainByBusinessId(businessId);
         }
 
-        // Generate available subdomain name
+        // Generate available subdomain name (with formatting)
         String availableSubdomain = generateAvailableSubdomain(preferredSubdomain);
 
         SubdomainCreateRequest request = new SubdomainCreateRequest();
@@ -284,6 +284,56 @@ public class SubdomainServiceImpl implements SubdomainService {
         request.setNotes("Auto-created during business registration");
 
         return createSubdomain(request);
+    }
+
+    @Override
+    public SubdomainResponse createExactSubdomainForBusiness(UUID businessId, String exactSubdomain) {
+        log.info("Creating exact subdomain for business: {} with exact name: {}", businessId, exactSubdomain);
+
+        // Validate business exists
+        Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)
+                .orElseThrow(() -> new NotFoundException("Business not found"));
+
+        // Check if business already has a subdomain
+        if (subdomainRepository.existsByBusinessIdAndIsDeletedFalse(businessId)) {
+            log.debug("Business already has a subdomain, returning existing one");
+            return getSubdomainByBusinessId(businessId);
+        }
+
+        // ✅ MINIMAL CLEANING: Only lowercase and remove truly invalid characters (no hyphens added)
+        String cleanedSubdomain = exactSubdomain.toLowerCase()
+                .trim()
+                .replaceAll("[^a-z0-9]", ""); // Remove only truly invalid characters, keep alphanumeric
+
+        // Ensure minimum length
+        if (cleanedSubdomain.length() < 3) {
+            cleanedSubdomain = cleanedSubdomain + "123"; // Add numbers to meet minimum length
+        }
+
+        // If exact subdomain is taken, add a number suffix
+        String finalSubdomain = cleanedSubdomain;
+        int counter = 1;
+        while (!isSubdomainAvailable(finalSubdomain)) {
+            finalSubdomain = cleanedSubdomain + counter;
+            counter++;
+            
+            // Prevent infinite loop
+            if (counter > 1000) {
+                finalSubdomain = cleanedSubdomain + System.currentTimeMillis() % 10000;
+                break;
+            }
+        }
+
+        SubdomainCreateRequest request = new SubdomainCreateRequest();
+        request.setBusinessId(businessId);
+        request.setSubdomain(finalSubdomain);
+        request.setNotes("Created by platform admin with exact input: " + exactSubdomain);
+
+        SubdomainResponse response = createSubdomain(request);
+        log.info("Exact subdomain created successfully: {} (from input: {}) for business: {}", 
+                finalSubdomain, exactSubdomain, business.getName());
+
+        return response;
     }
 
     // Private helper methods

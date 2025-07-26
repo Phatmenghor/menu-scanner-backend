@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -206,7 +207,7 @@ public class SubdomainController {
     }
 
     /**
-     * Create subdomain for business (used during business registration)
+     * Create subdomain for business (used during business registration - with formatting)
      */
     @PostMapping("/business/{businessId}/auto-create")
     public ResponseEntity<ApiResponse<SubdomainResponse>> createSubdomainForBusiness(
@@ -218,5 +219,20 @@ public class SubdomainController {
         SubdomainResponse subdomain = subdomainService.createSubdomainForBusiness(businessId, preferredSubdomain);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Subdomain created for business successfully", subdomain));
+    }
+
+    /**
+     * ✅ NEW: Create exact subdomain for business (Platform admins only - minimal formatting)
+     */
+    @PostMapping("/business/{businessId}/exact")
+    public ResponseEntity<ApiResponse<SubdomainResponse>> createExactSubdomainForBusiness(
+            @PathVariable UUID businessId,
+            @RequestBody Map<String, String> requestBody) {
+        String exactSubdomain = requestBody.getOrDefault("exactSubdomain", "business");
+        log.info("Creating exact subdomain for business: {} with exact name: {}", businessId, exactSubdomain);
+        
+        SubdomainResponse subdomain = subdomainService.createExactSubdomainForBusiness(businessId, exactSubdomain);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Exact subdomain created for business successfully", subdomain));
     }
 }

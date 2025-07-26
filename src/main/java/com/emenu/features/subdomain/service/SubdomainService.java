@@ -37,6 +37,9 @@ public interface SubdomainService {
     long getTotalSubdomainsCount();
     long getActiveSubdomainsCount();
     
-    // Auto-creation for business registration
+    // Auto-creation for business registration (with formatting)
     SubdomainResponse createSubdomainForBusiness(UUID businessId, String preferredSubdomain);
+    
+    // ✅ NEW: Exact subdomain creation for platform admins (no formatting)
+    SubdomainResponse createExactSubdomainForBusiness(UUID businessId, String exactSubdomain);
 }
