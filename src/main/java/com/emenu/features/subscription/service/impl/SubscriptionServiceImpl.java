@@ -46,11 +46,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public SubscriptionResponse createSubscription(SubscriptionCreateRequest request) {
         log.info("Creating subscription for business: {} with plan: {}", request.getBusinessId(), request.getPlanId());
 
-        // Validate business exists
+        // ✅ FIXED: Validate and load business with all details
         Business business = businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
-        // Validate plan exists
+        // ✅ FIXED: Validate and load plan with all details
         SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(request.getPlanId())
                 .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
 
@@ -63,6 +63,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         // Create subscription
         Subscription subscription = subscriptionMapper.toEntity(request);
+        subscription.setBusinessId(request.getBusinessId());
+        subscription.setPlanId(request.getPlanId());
         
         // Use provided startDate or current time if not provided
         LocalDateTime startDate = request.getStartDate() != null ? request.getStartDate() : LocalDateTime.now();
@@ -70,9 +72,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscription.setEndDate(startDate.plusDays(plan.getDurationDays()));
 
         Subscription savedSubscription = subscriptionRepository.save(subscription);
-        log.info("Subscription created successfully: {} starting from {}", savedSubscription.getId(), startDate);
 
-        return subscriptionMapper.toResponse(savedSubscription);
+        // ✅ FIXED: Update business subscription status
+        business.activateSubscription(startDate, subscription.getEndDate());
+        businessRepository.save(business);
+
+        // ✅ FIXED: Load the saved subscription with relationships
+        Subscription subscriptionWithRelations = subscriptionRepository.findByIdAndIsDeletedFalse(savedSubscription.getId())
+                .orElse(savedSubscription);
+
+        log.info("Subscription created successfully: {} starting from {}", savedSubscription.getId(), startDate);
+        return subscriptionMapper.toResponse(subscriptionWithRelations);
     }
 
     @Override
@@ -85,6 +95,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
+        // ✅ FIXED: Use repository method that loads relationships
         Page<Subscription> subscriptionPage = subscriptionRepository.findAll(spec, pageable);
         return subscriptionMapper.toPaginationResponse(subscriptionPage);
     }
@@ -105,6 +116,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     @Transactional(readOnly = true)
     public SubscriptionResponse getSubscriptionById(UUID id) {
+        // ✅ FIXED: Use repository method that loads relationships
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
         return subscriptionMapper.toResponse(subscription);
@@ -112,18 +124,24 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public SubscriptionResponse updateSubscription(UUID id, SubscriptionUpdateRequest request) {
+        // ✅ FIXED: Load with relationships
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
         subscriptionMapper.updateEntity(request, subscription);
         Subscription updatedSubscription = subscriptionRepository.save(subscription);
 
+        // ✅ FIXED: Reload with relationships
+        Subscription subscriptionWithRelations = subscriptionRepository.findByIdAndIsDeletedFalse(updatedSubscription.getId())
+                .orElse(updatedSubscription);
+
         log.info("Subscription updated successfully: {}", id);
-        return subscriptionMapper.toResponse(updatedSubscription);
+        return subscriptionMapper.toResponse(subscriptionWithRelations);
     }
 
     @Override
     public SubscriptionResponse deleteSubscription(UUID id) {
+        // ✅ FIXED: Load with relationships
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
@@ -132,13 +150,23 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         subscription.softDelete();
         subscriptionRepository.save(subscription);
-        log.info("Subscription deleted successfully: {}", id);
 
+        // ✅ FIXED: Update business subscription status
+        if (subscription.getBusinessId() != null) {
+            businessRepository.findByIdAndIsDeletedFalse(subscription.getBusinessId())
+                    .ifPresent(business -> {
+                        business.deactivateSubscription();
+                        businessRepository.save(business);
+                    });
+        }
+
+        log.info("Subscription deleted successfully: {}", id);
         return response;
     }
 
     @Override
     public SubscriptionResponse renewSubscription(UUID subscriptionId, SubscriptionRenewRequest request) {
+        // ✅ FIXED: Load with relationships
         Subscription oldSubscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
@@ -167,13 +195,27 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         // Save new subscription
         Subscription savedNewSubscription = subscriptionRepository.save(newSubscription);
-        log.info("Subscription renewed successfully: {} -> {}", subscriptionId, savedNewSubscription.getId());
 
-        return subscriptionMapper.toResponse(savedNewSubscription);
+        // ✅ FIXED: Update business subscription status
+        if (savedNewSubscription.getBusinessId() != null) {
+            businessRepository.findByIdAndIsDeletedFalse(savedNewSubscription.getBusinessId())
+                    .ifPresent(business -> {
+                        business.activateSubscription(savedNewSubscription.getStartDate(), savedNewSubscription.getEndDate());
+                        businessRepository.save(business);
+                    });
+        }
+
+        // ✅ FIXED: Reload with relationships
+        Subscription subscriptionWithRelations = subscriptionRepository.findByIdAndIsDeletedFalse(savedNewSubscription.getId())
+                .orElse(savedNewSubscription);
+
+        log.info("Subscription renewed successfully: {} -> {}", subscriptionId, savedNewSubscription.getId());
+        return subscriptionMapper.toResponse(subscriptionWithRelations);
     }
 
     @Override
     public SubscriptionResponse cancelSubscription(UUID subscriptionId, SubscriptionCancelRequest request) {
+        // ✅ FIXED: Load with relationships
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
@@ -194,8 +236,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         }
 
         Subscription savedSubscription = subscriptionRepository.save(subscription);
-        log.info("Subscription cancelled successfully: {}", subscriptionId);
 
+        // ✅ FIXED: Update business subscription status
+        if (savedSubscription.getBusinessId() != null) {
+            businessRepository.findByIdAndIsDeletedFalse(savedSubscription.getBusinessId())
+                    .ifPresent(business -> {
+                        business.deactivateSubscription();
+                        businessRepository.save(business);
+                    });
+        }
+
+        log.info("Subscription cancelled successfully: {}", subscriptionId);
         return subscriptionMapper.toResponse(savedSubscription);
     }
 }

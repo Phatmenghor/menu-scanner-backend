@@ -113,25 +113,42 @@ public class Business extends BaseUUIDEntity {
     @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Subscription> subscriptions;
 
-    // Business Logic Methods
+    // ✅ FIXED: Business Logic Methods
     public boolean isActive() {
         return BusinessStatus.ACTIVE.equals(status);
     }
 
     public boolean hasActiveSubscription() {
-        return isSubscriptionActive && 
-               subscriptionEndDate != null && 
-               subscriptionEndDate.isAfter(LocalDateTime.now());
+        // ✅ FIXED: Check both database fields AND active subscriptions
+        if (Boolean.TRUE.equals(isSubscriptionActive) && 
+            subscriptionEndDate != null && 
+            subscriptionEndDate.isAfter(LocalDateTime.now())) {
+            return true;
+        }
+
+        // ✅ FIXED: Also check subscriptions collection if loaded
+        if (subscriptions != null && !subscriptions.isEmpty()) {
+            return subscriptions.stream()
+                    .anyMatch(sub -> sub.getIsActive() && !sub.isExpired());
+        }
+
+        return false;
     }
 
     public long getDaysRemaining() {
         if (!hasActiveSubscription()) return 0;
-        return java.time.Duration.between(LocalDateTime.now(), subscriptionEndDate).toDays();
+        
+        LocalDateTime endDate = getEffectiveEndDate();
+        if (endDate == null) return 0;
+        
+        long days = java.time.Duration.between(LocalDateTime.now(), endDate).toDays();
+        return Math.max(0, days);
     }
 
     public boolean isSubscriptionExpiringSoon(int days) {
         if (!hasActiveSubscription()) return false;
-        return getDaysRemaining() <= days && getDaysRemaining() > 0;
+        long remaining = getDaysRemaining();
+        return remaining <= days && remaining > 0;
     }
 
     public void activateSubscription(LocalDateTime startDate, LocalDateTime endDate) {
@@ -143,6 +160,27 @@ public class Business extends BaseUUIDEntity {
 
     public void deactivateSubscription() {
         this.isSubscriptionActive = false;
+        this.subscriptionStartDate = null;
+        this.subscriptionEndDate = null;
         this.status = BusinessStatus.SUSPENDED;
+    }
+
+    // ✅ NEW: Helper method to get effective end date
+    private LocalDateTime getEffectiveEndDate() {
+        // First check database field
+        if (subscriptionEndDate != null) {
+            return subscriptionEndDate;
+        }
+        
+        // Then check active subscription
+        if (subscriptions != null && !subscriptions.isEmpty()) {
+            return subscriptions.stream()
+                    .filter(sub -> sub.getIsActive() && !sub.isExpired())
+                    .map(Subscription::getEndDate)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(null);
+        }
+        
+        return null;
     }
 }

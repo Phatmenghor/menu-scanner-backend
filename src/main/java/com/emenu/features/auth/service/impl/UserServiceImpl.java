@@ -282,18 +282,18 @@ public class UserServiceImpl implements UserService {
             log.info("Business owner created successfully: {} for business: {}",
                     savedUser.getEmail(), businessResponse.getName());
 
-            // ✅ STEP 3: Create subdomain with exact input
+            // ✅ STEP 3: Create subdomain with exact input using admin method
             try {
                 subdomainService.createExactSubdomainForBusiness(
                         businessResponse.getId(),
                         request.getPreferredSubdomain()
                 );
-                log.info("Subdomain created successfully: {} for business: {}",
+                log.info("✅ Subdomain created successfully: {} for business: {}",
                         request.getPreferredSubdomain(), businessResponse.getName());
             } catch (Exception e) {
-                log.warn("Failed to create subdomain for business owner: {} - Error: {}",
+                log.warn("❌ Failed to create subdomain for business owner: {} - Error: {}",
                         savedUser.getEmail(), e.getMessage());
-                // Don't fail the user creation if subdomain creation fails
+                // Don't fail the user creation if subdomain creation fails, but log it
             }
 
             // ✅ FIX: Load user with business relationship for proper response

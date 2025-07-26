@@ -156,7 +156,7 @@ public class SubdomainServiceImpl implements SubdomainService {
     public SubdomainCheckResponse checkSubdomainAccess(String subdomainName) {
         log.debug("Checking subdomain access for: {}", subdomainName);
 
-        // Find subdomain with business info
+        // ✅ FIXED: Find subdomain with business info loaded
         var subdomainOpt = subdomainRepository.findBySubdomainWithBusiness(subdomainName);
 
         if (subdomainOpt.isEmpty()) {
@@ -180,7 +180,7 @@ public class SubdomainServiceImpl implements SubdomainService {
             return SubdomainCheckResponse.suspended(subdomainName, business.getName(), business.getId());
         }
 
-        // Check subscription status
+        // ✅ FIXED: Check subscription status properly
         if (!business.hasActiveSubscription()) {
             log.debug("Business subscription expired for subdomain: {}", subdomainName);
             return SubdomainCheckResponse.subscriptionExpired(subdomainName, business.getName(), business.getId());
@@ -288,7 +288,7 @@ public class SubdomainServiceImpl implements SubdomainService {
 
     @Override
     public SubdomainResponse createExactSubdomainForBusiness(UUID businessId, String exactSubdomain) {
-        log.info("Creating exact subdomain for business: {} with exact name: {}", businessId, exactSubdomain);
+        log.info("✅ Creating EXACT subdomain for business: {} with exact name: {}", businessId, exactSubdomain);
 
         // Validate business exists
         Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)
@@ -300,38 +300,31 @@ public class SubdomainServiceImpl implements SubdomainService {
             return getSubdomainByBusinessId(businessId);
         }
 
-        // ✅ MINIMAL CLEANING: Only lowercase and remove truly invalid characters (no hyphens added)
-        String cleanedSubdomain = exactSubdomain.toLowerCase()
-                .trim()
-                .replaceAll("[^a-z0-9]", ""); // Remove only truly invalid characters, keep alphanumeric
-
-        // Ensure minimum length
+        // ✅ SIMPLIFIED: Minimal cleaning - only lowercase and basic validation
+        String cleanedSubdomain = exactSubdomain.toLowerCase().trim();
+        
+        // Basic validation
         if (cleanedSubdomain.length() < 3) {
-            cleanedSubdomain = cleanedSubdomain + "123"; // Add numbers to meet minimum length
+            throw new ValidationException("Subdomain must be at least 3 characters long");
+        }
+        
+        if (cleanedSubdomain.length() > 63) {
+            throw new ValidationException("Subdomain cannot exceed 63 characters");
         }
 
-        // If exact subdomain is taken, add a number suffix
-        String finalSubdomain = cleanedSubdomain;
-        int counter = 1;
-        while (!isSubdomainAvailable(finalSubdomain)) {
-            finalSubdomain = cleanedSubdomain + counter;
-            counter++;
-            
-            // Prevent infinite loop
-            if (counter > 1000) {
-                finalSubdomain = cleanedSubdomain + System.currentTimeMillis() % 10000;
-                break;
-            }
+        // If exact subdomain is taken, throw error (no auto-generation for admin)
+        if (!isSubdomainAvailable(cleanedSubdomain)) {
+            throw new ValidationException("Subdomain '" + cleanedSubdomain + "' is already taken");
         }
 
         SubdomainCreateRequest request = new SubdomainCreateRequest();
         request.setBusinessId(businessId);
-        request.setSubdomain(finalSubdomain);
-        request.setNotes("Created by platform admin with exact input: " + exactSubdomain);
+        request.setSubdomain(cleanedSubdomain);
+        request.setNotes("Created by admin with exact input: " + exactSubdomain);
 
         SubdomainResponse response = createSubdomain(request);
-        log.info("Exact subdomain created successfully: {} (from input: {}) for business: {}", 
-                finalSubdomain, exactSubdomain, business.getName());
+        log.info("✅ Exact subdomain created successfully: {} (from input: {}) for business: {}", 
+                cleanedSubdomain, exactSubdomain, business.getName());
 
         return response;
     }
@@ -348,7 +341,7 @@ public class SubdomainServiceImpl implements SubdomainService {
         }
         
         // Must start and end with alphanumeric, can contain hyphens in between
-        return subdomain.matches("^[a-z0-9][a-z0-9-]*[a-z0-9]$") || subdomain.matches("^[a-z0-9]$");
+        return subdomain.matches("^[a-z0-9][a-z0-9-]*[a-z0-9]$") || subdomain.matches("^[a-z0-9]{3,}$");
     }
 
     private String generateAvailableSubdomain(String preferredSubdomain) {
@@ -361,12 +354,12 @@ public class SubdomainServiceImpl implements SubdomainService {
         int counter = 1;
 
         while (!isSubdomainAvailable(candidateSubdomain)) {
-            candidateSubdomain = baseSubdomain + "-" + counter;
+            candidateSubdomain = baseSubdomain + counter;
             counter++;
             
             // Prevent infinite loop
             if (counter > 1000) {
-                candidateSubdomain = "business-" + System.currentTimeMillis();
+                candidateSubdomain = "business" + System.currentTimeMillis();
                 break;
             }
         }
@@ -379,8 +372,7 @@ public class SubdomainServiceImpl implements SubdomainService {
         
         return subdomain.toLowerCase()
                 .trim()
-                .replaceAll("[^a-z0-9-]", "") // Remove invalid characters
-                .replaceAll("^-+|-+$", "")     // Remove leading/trailing hyphens
-                .replaceAll("-{2,}", "-");     // Replace multiple hyphens with single
+                .replaceAll("[^a-z0-9]", "")      // Remove all non-alphanumeric
+                .substring(0, Math.min(subdomain.length(), 20)); // Limit length
     }
 }

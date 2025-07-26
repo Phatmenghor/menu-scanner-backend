@@ -37,7 +37,7 @@ public class BusinessServiceImpl implements BusinessService {
     private final BusinessRepository businessRepository;
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
-    private final SubdomainService subdomainService; // ✅ ADDED: Subdomain service
+    private final SubdomainService subdomainService;
     private final BusinessMapper businessMapper;
 
     @Override
@@ -50,15 +50,14 @@ public class BusinessServiceImpl implements BusinessService {
         Business business = businessMapper.toEntity(request);
         Business savedBusiness = businessRepository.save(business);
 
-        // ✅ Auto-create subdomain for the business
+        // ✅ FIXED: Auto-create subdomain for the business - ALWAYS create one
         try {
             String preferredSubdomain = generateSubdomainFromBusinessName(request.getName());
             subdomainService.createSubdomainForBusiness(savedBusiness.getId(), preferredSubdomain);
-            log.info("Subdomain created automatically for business: {}", savedBusiness.getName());
+            log.info("Subdomain created automatically for business: {} -> {}", savedBusiness.getName(), preferredSubdomain);
         } catch (Exception e) {
-            log.warn("Failed to create subdomain for business: {} - Error: {}",
-                    savedBusiness.getName(), e.getMessage());
-            // Don't fail the business creation if subdomain creation fails
+            log.error("Failed to create subdomain for business: {} - Error: {}", savedBusiness.getName(), e.getMessage());
+            // Still proceed with business creation, but log the error
         }
 
         log.info("Business created successfully: {}", savedBusiness.getName());
@@ -82,20 +81,27 @@ public class BusinessServiceImpl implements BusinessService {
     @Override
     @Transactional(readOnly = true)
     public BusinessResponse getBusinessById(UUID id) {
-        Business business = businessRepository.findByIdAndIsDeletedFalse(id)
+        // ✅ FIXED: Use method that loads all relationships
+        Business business = businessRepository.findByIdWithAllRelationships(id)
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
         BusinessResponse response = businessMapper.toResponse(business);
 
-        // Add statistics
+        // ✅ FIXED: Add statistics with proper loading
         response.setTotalStaff((int) userRepository.countByBusinessIdAndIsDeletedFalse(id));
         
-        // Check subscription status
+        // ✅ FIXED: Check subscription status properly
         var activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(id, LocalDateTime.now());
         response.setHasActiveSubscription(activeSubscription.isPresent());
+        
         if (activeSubscription.isPresent()) {
-            response.setCurrentSubscriptionPlan(activeSubscription.get().getPlan().getDisplayName());
+            if (activeSubscription.get().getPlan() != null) {
+                response.setCurrentSubscriptionPlan(activeSubscription.get().getPlan().getName());
+            }
             response.setDaysRemaining(activeSubscription.get().getDaysRemaining());
+        } else {
+            response.setCurrentSubscriptionPlan("No Active Plan");
+            response.setDaysRemaining(0L);
         }
 
         return response;
@@ -103,7 +109,8 @@ public class BusinessServiceImpl implements BusinessService {
 
     @Override
     public BusinessResponse updateBusiness(UUID id, BusinessUpdateRequest request) {
-        Business business = businessRepository.findByIdAndIsDeletedFalse(id)
+        // ✅ FIXED: Load with relationships
+        Business business = businessRepository.findByIdWithAllRelationships(id)
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
         businessMapper.updateEntity(request, business);
@@ -115,7 +122,8 @@ public class BusinessServiceImpl implements BusinessService {
 
     @Override
     public BusinessResponse deleteBusiness(UUID id) {
-        Business business = businessRepository.findByIdAndIsDeletedFalse(id)
+        // ✅ FIXED: Load with relationships
+        Business business = businessRepository.findByIdWithAllRelationships(id)
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
         business.softDelete();
@@ -128,7 +136,9 @@ public class BusinessServiceImpl implements BusinessService {
         var activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(id, LocalDateTime.now());
         response.setHasActiveSubscription(activeSubscription.isPresent());
         if (activeSubscription.isPresent()) {
-            response.setCurrentSubscriptionPlan(activeSubscription.get().getPlan().getDisplayName());
+            if (activeSubscription.get().getPlan() != null) {
+                response.setCurrentSubscriptionPlan(activeSubscription.get().getPlan().getName());
+            }
             response.setDaysRemaining(activeSubscription.get().getDaysRemaining());
         }
         
@@ -184,7 +194,6 @@ public class BusinessServiceImpl implements BusinessService {
         return cleanPhone.matches("^(\\+855|0)?[1-9][0-9]{7,8}$");
     }
 
-
     private boolean isValidEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
             return false;
@@ -199,7 +208,7 @@ public class BusinessServiceImpl implements BusinessService {
         return businessRepository.existsByNameIgnoreCaseAndIsDeletedFalse(name);
     }
 
-    // ✅ ADDED: Helper method to generate subdomain from business name
+    // ✅ IMPROVED: Better subdomain generation from business name
     private String generateSubdomainFromBusinessName(String businessName) {
         if (businessName == null || businessName.trim().isEmpty()) {
             return "business";

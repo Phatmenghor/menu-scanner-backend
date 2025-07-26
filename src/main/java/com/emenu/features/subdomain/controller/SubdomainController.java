@@ -207,32 +207,48 @@ public class SubdomainController {
     }
 
     /**
-     * Create subdomain for business (used during business registration - with formatting)
+     * ✅ AUTO CREATE: For business registration (with formatting and availability check)
+     */
+    @PostMapping("/auto-create")
+    public ResponseEntity<ApiResponse<SubdomainResponse>> autoCreateSubdomain(@RequestBody Map<String, Object> requestBody) {
+        UUID businessId = UUID.fromString(requestBody.get("businessId").toString());
+        String preferredSubdomain = requestBody.getOrDefault("preferredSubdomain", "business").toString();
+        
+        log.info("Auto-creating subdomain for business: {} with preferred name: {}", businessId, preferredSubdomain);
+        
+        SubdomainResponse subdomain = subdomainService.createSubdomainForBusiness(businessId, preferredSubdomain);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Subdomain auto-created successfully", subdomain));
+    }
+
+    /**
+     * ✅ ADMIN ONLY: Create exact subdomain (no formatting, exact input)
+     */
+    @PostMapping("/admin/exact-create")
+    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'PLATFORM_MANAGER')")
+    public ResponseEntity<ApiResponse<SubdomainResponse>> adminCreateExactSubdomain(@RequestBody Map<String, Object> requestBody) {
+        UUID businessId = UUID.fromString(requestBody.get("businessId").toString());
+        String exactSubdomain = requestBody.get("exactSubdomain").toString();
+        
+        log.info("🔧 ADMIN: Creating exact subdomain for business: {} with exact name: {}", businessId, exactSubdomain);
+        
+        SubdomainResponse subdomain = subdomainService.createExactSubdomainForBusiness(businessId, exactSubdomain);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Exact subdomain created successfully by admin", subdomain));
+    }
+
+    /**
+     * ✅ LEGACY SUPPORT: For backward compatibility
      */
     @PostMapping("/business/{businessId}/auto-create")
     public ResponseEntity<ApiResponse<SubdomainResponse>> createSubdomainForBusiness(
             @PathVariable UUID businessId,
             @RequestBody Map<String, String> requestBody) {
         String preferredSubdomain = requestBody.getOrDefault("preferredSubdomain", "business");
-        log.info("Auto-creating subdomain for business: {} with preferred name: {}", businessId, preferredSubdomain);
+        log.info("Creating subdomain for business: {} with preferred name: {}", businessId, preferredSubdomain);
         
         SubdomainResponse subdomain = subdomainService.createSubdomainForBusiness(businessId, preferredSubdomain);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Subdomain created for business successfully", subdomain));
-    }
-
-    /**
-     * ✅ NEW: Create exact subdomain for business (Platform admins only - minimal formatting)
-     */
-    @PostMapping("/business/{businessId}/exact")
-    public ResponseEntity<ApiResponse<SubdomainResponse>> createExactSubdomainForBusiness(
-            @PathVariable UUID businessId,
-            @RequestBody Map<String, String> requestBody) {
-        String exactSubdomain = requestBody.getOrDefault("exactSubdomain", "business");
-        log.info("Creating exact subdomain for business: {} with exact name: {}", businessId, exactSubdomain);
-        
-        SubdomainResponse subdomain = subdomainService.createExactSubdomainForBusiness(businessId, exactSubdomain);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Exact subdomain created for business successfully", subdomain));
     }
 }

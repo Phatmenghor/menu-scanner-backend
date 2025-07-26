@@ -91,16 +91,32 @@ public abstract class BusinessMapper {
 
     @AfterMapping
     protected void setCalculatedFields(@MappingTarget BusinessResponse response, Business business) {
-        // Set subscription status
-        response.setHasActiveSubscription(business.hasActiveSubscription());
+        // ✅ FIXED: Calculate subscription status properly
+        boolean hasActiveSubscription = business.hasActiveSubscription();
+        response.setHasActiveSubscription(hasActiveSubscription);
+        response.setIsSubscriptionActive(hasActiveSubscription);
         response.setIsExpiringSoon(business.isSubscriptionExpiringSoon(7));
+        response.setDaysRemaining(business.getDaysRemaining());
         
-        // Get current subscription plan
-        if (business.hasActiveSubscription() && business.getSubscriptions() != null) {
+        // ✅ FIXED: Get current subscription plan from active subscriptions
+        if (hasActiveSubscription && business.getSubscriptions() != null) {
             business.getSubscriptions().stream()
                     .filter(sub -> sub.getIsActive() && !sub.isExpired())
                     .findFirst()
-                    .ifPresent(subscription -> response.setCurrentSubscriptionPlan(subscription.getPlan().getDisplayName()));
+                    .ifPresent(subscription -> {
+                        if (subscription.getPlan() != null) {
+                            response.setCurrentSubscriptionPlan(subscription.getPlan().getName());
+                        } else {
+                            response.setCurrentSubscriptionPlan("Unknown Plan");
+                        }
+                    });
+        } else {
+            response.setCurrentSubscriptionPlan(null);
+        }
+        
+        // Set default values if null
+        if (response.getCurrentSubscriptionPlan() == null) {
+            response.setCurrentSubscriptionPlan("No Active Plan");
         }
     }
 
