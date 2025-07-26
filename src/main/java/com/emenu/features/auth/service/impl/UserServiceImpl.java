@@ -5,7 +5,6 @@ import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.BusinessCreateRequest;
-import com.emenu.features.auth.dto.request.BusinessUserCreateRequest;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
 import com.emenu.features.auth.dto.response.BusinessResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
@@ -48,38 +47,9 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final SecurityUtils securityUtils;
 
+
     @Override
     public UserResponse createUser(UserCreateRequest request) {
-        log.info("Creating user: {}", request.getEmail());
-
-        // Validate email uniqueness
-        if (existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
-        }
-
-        // Validate phone uniqueness if provided
-        if (request.getPhoneNumber() != null && existsByPhone(request.getPhoneNumber())) {
-            throw new RuntimeException("Phone number already exists");
-        }
-
-        // Create user entity
-        User user = userMapper.toEntity(request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        // Set roles
-        if (request.getRoles() != null && !request.getRoles().isEmpty()) {
-            List<Role> roles = roleRepository.findByNameIn(request.getRoles());
-            user.setRoles(roles);
-        }
-
-        User savedUser = userRepository.save(user);
-        log.info("User created successfully: {}", savedUser.getEmail());
-
-        return userMapper.toResponse(savedUser);
-    }
-
-    @Override
-    public UserResponse createBusinessUser(BusinessUserCreateRequest request) {
         log.info("Creating business user with business: {} for email: {}", request.getBusinessName(), request.getEmail());
 
         // Validate email uniqueness
