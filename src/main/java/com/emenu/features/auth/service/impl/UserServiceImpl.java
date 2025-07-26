@@ -135,9 +135,6 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ✅ Security: Business users can only see users from their business
-        validateUserAccess(user);
-
         return userMapper.toResponse(user);
     }
 
@@ -147,9 +144,6 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // ✅ Security: Validate access
-        validateUserAccess(user);
 
         // ✅ Handle business assignment changes
         if (request.getBusinessId() != null && !request.getBusinessId().equals(user.getBusinessId())) {
@@ -174,9 +168,6 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // ✅ Security: Validate access
-        validateUserAccess(user);
 
         // ✅ Prevent self-deletion
         User currentUser = securityUtils.getCurrentUser();
@@ -387,27 +378,6 @@ public class UserServiceImpl implements UserService {
             if (user.getBusinessId() != null && !user.getBusinessId().equals(currentUser.getBusinessId())) {
                 throw new ValidationException("You can only assign roles to users in your business");
             }
-        }
-    }
-
-    private void validateUserAccess(User user) {
-        User currentUser = securityUtils.getCurrentUser();
-
-        // ✅ Platform users can access any user
-        if (currentUser.isPlatformUser()) {
-            return;
-        }
-
-        // ✅ Business users can only access users from their business
-        if (currentUser.isBusinessUser()) {
-            if (user.getBusinessId() == null || !user.getBusinessId().equals(currentUser.getBusinessId())) {
-                throw new ValidationException("You can only access users from your business");
-            }
-        }
-
-        // ✅ Customers can only access their own profile
-        if (currentUser.isCustomer() && !user.getId().equals(currentUser.getId())) {
-            throw new ValidationException("You can only access your own profile");
         }
     }
 }
