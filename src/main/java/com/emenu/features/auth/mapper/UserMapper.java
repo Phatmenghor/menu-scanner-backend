@@ -35,7 +35,6 @@ public abstract class UserMapper {
     @Mapping(target = "password", ignore = true)
     public abstract User toEntity(UserCreateRequest request);
 
-    @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "roles", target = "roles", qualifiedByName = "rolesToRoleEnums")
     public abstract UserResponse toResponse(User user);
 

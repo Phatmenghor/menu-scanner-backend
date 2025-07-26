@@ -61,7 +61,7 @@ public class PaymentController {
     }
 
     @GetMapping("/generate-reference")
-    public ResponseEntity<ApiResponse<String>> generateReferenceNumber() {
+    public ResponseEntity<ApiResponse<String>> generateRfeferenceNumber() {
         String referenceNumber = paymentService.generateReferenceNumber();
         return ResponseEntity.ok(ApiResponse.success("Reference number generated successfully", referenceNumber));
     }
