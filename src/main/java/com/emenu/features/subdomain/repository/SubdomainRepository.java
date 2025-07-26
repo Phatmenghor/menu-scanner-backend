@@ -2,7 +2,6 @@ package com.emenu.features.subdomain.repository;
 
 import com.emenu.enums.subdomain.SubdomainStatus;
 import com.emenu.features.subdomain.models.Subdomain;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -26,24 +25,10 @@ public interface SubdomainRepository extends JpaRepository<Subdomain, UUID>, Jpa
     
     // Find by business
     Optional<Subdomain> findByBusinessIdAndIsDeletedFalse(UUID businessId);
-    List<Subdomain> findAllByBusinessIdAndIsDeletedFalse(UUID businessId);
-    
+
     // Check existence
     boolean existsBySubdomainAndIsDeletedFalse(String subdomain);
     boolean existsByBusinessIdAndIsDeletedFalse(UUID businessId);
-    
-    // Find active subdomains
-    @Query("SELECT s FROM Subdomain s WHERE s.isActive = true AND s.status = :status AND s.isDeleted = false")
-    List<Subdomain> findActiveSubdomainsByStatus(@Param("status") SubdomainStatus status);
-    
-    // Find subdomains with active subscriptions
-    @Query("SELECT s FROM Subdomain s " +
-           "JOIN s.business b " +
-           "WHERE s.isDeleted = false " +
-           "AND b.isDeleted = false " +
-           "AND b.hasActiveSubscription = true " +
-           "AND b.subscriptionEndDate > :now")
-    List<Subdomain> findSubdomainsWithActiveSubscriptions(@Param("now") LocalDateTime now);
     
     // Check subdomain availability for frontend
     @Query("SELECT s FROM Subdomain s " +
@@ -58,16 +43,14 @@ public interface SubdomainRepository extends JpaRepository<Subdomain, UUID>, Jpa
     @Query("UPDATE Subdomain s SET s.accessCount = s.accessCount + 1, s.lastAccessed = :accessTime " +
            "WHERE s.id = :id")
     void incrementAccessCount(@Param("id") UUID id, @Param("accessTime") LocalDateTime accessTime);
-    
-    // Find by verification token
-    Optional<Subdomain> findByVerificationTokenAndIsDeletedFalse(String verificationToken);
-    
-    // Find expired subdomains (for cleanup)
+
+
+    // ✅ FIXED: Changed hasActiveSubscription to isSubscriptionActive
     @Query("SELECT s FROM Subdomain s " +
            "JOIN s.business b " +
            "WHERE s.isDeleted = false " +
            "AND b.isDeleted = false " +
-           "AND (b.hasActiveSubscription = false OR b.subscriptionEndDate < :now)")
+           "AND (b.isSubscriptionActive = false OR b.subscriptionEndDate < :now)")
     List<Subdomain> findExpiredSubdomains(@Param("now") LocalDateTime now);
     
     // Statistics queries
@@ -79,12 +62,5 @@ public interface SubdomainRepository extends JpaRepository<Subdomain, UUID>, Jpa
     
     @Query("SELECT COUNT(s) FROM Subdomain s WHERE s.status = :status AND s.isDeleted = false")
     long countByStatus(@Param("status") SubdomainStatus status);
-    
-    // Find recently accessed subdomains
-    @Query("SELECT s FROM Subdomain s WHERE s.lastAccessed > :since AND s.isDeleted = false ORDER BY s.lastAccessed DESC")
-    List<Subdomain> findRecentlyAccessed(@Param("since") LocalDateTime since, Pageable pageable);
-    
-    // Custom domain queries
-    Optional<Subdomain> findByCustomDomainAndIsDeletedFalse(String customDomain);
-    boolean existsByCustomDomainAndIsDeletedFalse(String customDomain);
+
 }
