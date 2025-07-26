@@ -13,17 +13,11 @@ import java.util.UUID;
 @Data
 public class PaymentCreateRequest {
 
-    private String imageUrl;
+    private String imageUrl; // Receipt image URL
     
-    @NotNull(message = "Business ID is required")
-    private UUID businessId;
-    
-    @NotNull(message = "Plan ID is required")
-    private UUID planId;
-    
-    // ✅ ADDED: Optional subscription ID for linking payment to specific subscription
+    @NotNull(message = "Subscription ID is required")
     private UUID subscriptionId;
-
+    
     private PaymentStatus status = PaymentStatus.PENDING;
     
     @NotNull(message = "Amount is required")

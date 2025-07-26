@@ -26,7 +26,7 @@ public class PaymentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(@Valid @RequestBody PaymentCreateRequest request) {
-        log.info("Creating payment for business: {}", request.getBusinessId());
+        log.info("Creating payment for subscription: {}", request.getSubscriptionId());
         PaymentResponse payment = paymentService.createPayment(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Payment created successfully", payment));

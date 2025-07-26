@@ -14,7 +14,7 @@ import java.util.UUID;
 @Data
 public class UserCreateRequest {
 
-    // ✅ USER INFORMATION
+    // ✅ USER INFORMATION ONLY
     @NotBlank(message = "Email is required")
     @Email(message = "Email format is invalid")
     private String email;
@@ -29,20 +29,16 @@ public class UserCreateRequest {
     private String position;
     private String address;
     private String notes;
+    
+    @NotNull(message = "User type is required")
+    private UserType userType;
+    
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
 
-    // ✅ BUSINESS INFORMATION
-    @NotBlank(message = "Business name is required")
-    private String businessName;
-
-    @Email(message = "Business email format is invalid")
-    private String businessEmail;
-
-    private String businessPhone;
-    private String businessAddress;
-    private String businessDescription;
-
-    // ✅ SUBDOMAIN INFORMATION (exact input, no formatting)
-    @NotBlank(message = "Preferred subdomain is required")
-    private String preferredSubdomain;
+    // ✅ BUSINESS ASSIGNMENT (Optional - for business users)
+    private UUID businessId; // Assign user to existing business
+    
+    // ✅ ROLES (Required)
+    @NotNull(message = "At least one role is required")
+    private List<RoleEnum> roles;
 }

@@ -24,8 +24,8 @@ public class PaymentResponse extends BaseAuditResponse {
     
     private BigDecimal amount;
     private BigDecimal amountKhr;
-    private String formattedAmount;    // "$29.99"
-    private String formattedAmountKhr; // "៛119,960"
+    private String formattedAmount;
+    private String formattedAmountKhr;
     private PaymentMethod paymentMethod;
     private PaymentStatus status;
     private String statusDescription;

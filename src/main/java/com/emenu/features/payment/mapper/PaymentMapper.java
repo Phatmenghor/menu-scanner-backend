@@ -21,7 +21,7 @@ public abstract class PaymentMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "plan", ignore = true)
-    @Mapping(target = "subscription", ignore = true) // ✅ ADDED: Ignore subscription entity mapping
+    @Mapping(target = "subscription", ignore = true) //
     @Mapping(target = "amountKhr", ignore = true) // Will be calculated
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -35,12 +35,12 @@ public abstract class PaymentMapper {
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "plan.name", target = "planName")
-    @Mapping(source = "subscription.id", target = "subscriptionId") // ✅ ADDED: Map subscription ID
+    @Mapping(source = "subscription.id", target = "subscriptionId")
     @Mapping(target = "subscriptionDisplayName", expression = "java(payment.getSubscriptionDisplayName())")
-    // ✅ ADDED: Map subscription display name
     @Mapping(target = "statusDescription", expression = "java(payment.getStatus().getDescription())")
     @Mapping(target = "formattedAmount", expression = "java(payment.getFormattedAmount())")
     @Mapping(target = "formattedAmountKhr", expression = "java(payment.getFormattedAmountKhr())")
+    @Mapping(source = "imageUrl", target = "imageUrl")
     public abstract PaymentResponse toResponse(Payment payment);
 
     public abstract List<PaymentResponse> toResponseList(List<Payment> payments);
