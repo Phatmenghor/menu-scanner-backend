@@ -3,10 +3,7 @@ package com.emenu.features.auth.service.impl;
 import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ValidationException;
-import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
-import com.emenu.features.auth.dto.request.LoginRequest;
-import com.emenu.features.auth.dto.request.PasswordChangeRequest;
-import com.emenu.features.auth.dto.request.RegisterRequest;
+import com.emenu.features.auth.dto.request.*;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.mapper.AuthMapper;
@@ -17,6 +14,8 @@ import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.AuthService;
+import com.emenu.features.auth.service.BusinessService;
+import com.emenu.features.subdomain.service.SubdomainService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.security.jwt.JWTGenerator;
 import com.emenu.security.jwt.TokenBlacklistService;
@@ -28,6 +27,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -39,6 +39,8 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final BusinessService businessService; // ✅ ADDED: Business service
+    private final SubdomainService subdomainService; // ✅ ADDED: Subdomain service
     private final AuthMapper authMapper;
     private final RegistrationMapper registrationMapper;
     private final UserMapper userMapper;
@@ -52,22 +54,15 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
 
-        // Authenticate user
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        // Get user details
         User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
                 .orElseThrow(() -> new ValidationException("User not found"));
 
-        // Additional security validation
         securityUtils.validateAccountStatus(user);
-
-        // Generate JWT token
         String token = jwtGenerator.generateAccessToken(authentication);
-
-        // Create response
         LoginResponse response = authMapper.toLoginResponse(user, token);
 
         log.info("Login successful for user: {}", user.getEmail());
@@ -77,20 +72,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(String authorizationHeader) {
         log.info("Processing logout request");
-
-        // Extract and validate token
         String token = extractToken(authorizationHeader);
 
         if (token == null || token.trim().isEmpty()) {
             throw new ValidationException("Invalid token format. Authorization header must contain 'Bearer <token>'");
         }
 
-        // Validate token before blacklisting
         if (!jwtGenerator.validateToken(token)) {
             throw new ValidationException("Token is invalid or expired");
         }
 
-        // Get user email from token
         String userEmail;
         try {
             userEmail = jwtGenerator.getUsernameFromJWT(token);
@@ -100,9 +91,7 @@ public class AuthServiceImpl implements AuthService {
             throw new ValidationException("Invalid token - cannot extract user information");
         }
 
-        // Add token to blacklist with 1 week expiry
         tokenBlacklistService.blacklistToken(token, userEmail, "LOGOUT");
-
         log.info("Logout successful for user: {} - token blacklisted", userEmail);
     }
 
@@ -112,16 +101,62 @@ public class AuthServiceImpl implements AuthService {
 
         validateRegistration(request);
 
-        // Create user entity based on type
+        // ✅ ENHANCED: Handle business user registration with subdomain
+        if (request.getUserType() == UserType.BUSINESS_USER) {
+            return registerBusinessUser(request);
+        } else {
+            return registerRegularUser(request);
+        }
+    }
+
+    // ✅ ADDED: Method to handle business user registration
+    private UserResponse registerBusinessUser(RegisterRequest request) {
+        log.info("Registering business user with business creation: {}", request.getEmail());
+
+        // Create business first
+        BusinessCreateRequest businessRequest = new BusinessCreateRequest();
+        businessRequest.setName(request.getBusinessName() != null ? request.getBusinessName() : 
+                               request.getFirstName() + "'s Business");
+        businessRequest.setEmail(request.getBusinessEmail());
+        businessRequest.setPhone(request.getBusinessPhone());
+        businessRequest.setAddress(request.getBusinessAddress());
+        businessRequest.setDescription(request.getBusinessDescription());
+
+        var businessResponse = businessService.createBusiness(businessRequest);
+        log.info("Business created for user registration: {}", businessResponse.getName());
+
+        // Create user with business association
         User user = createUserFromRequest(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setProfileImageUrl(request.getProfileImageUrl());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setAddress(request.getAddress());
+        user.setBusinessId(businessResponse.getId());
 
-        // Assign appropriate role based on user type
+        Role role = getRoleForUserType(request.getUserType());
+        user.setRoles(List.of(role));
+
+        User savedUser = userRepository.save(user);
+
+        // ✅ ADDED: Create subdomain if preferred subdomain is provided
+        if (StringUtils.hasText(request.getPreferredSubdomain())) {
+            try {
+                subdomainService.createSubdomainForBusiness(businessResponse.getId(), request.getPreferredSubdomain());
+                log.info("Subdomain created for business user: {} with subdomain: {}", 
+                        savedUser.getEmail(), request.getPreferredSubdomain());
+            } catch (Exception e) {
+                log.warn("Failed to create preferred subdomain for business user: {} - Error: {}", 
+                        savedUser.getEmail(), e.getMessage());
+            }
+        }
+
+        log.info("Business user registered successfully: {} with business: {}", 
+                savedUser.getEmail(), businessResponse.getName());
+        return userMapper.toResponse(savedUser);
+    }
+
+    // ✅ ADDED: Method to handle regular user registration
+    private UserResponse registerRegularUser(RegisterRequest request) {
+        User user = createUserFromRequest(request);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
         Role role = getRoleForUserType(request.getUserType());
         user.setRoles(List.of(role));
 
@@ -135,23 +170,18 @@ public class AuthServiceImpl implements AuthService {
     public UserResponse changePassword(PasswordChangeRequest request) {
         User currentUser = securityUtils.getCurrentUser();
 
-        // Verify current password
         if (!passwordEncoder.matches(request.getCurrentPassword(), currentUser.getPassword())) {
             throw new ValidationException("Current password is incorrect");
         }
 
-        // Verify new password confirmation
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new ValidationException("Password confirmation does not match");
         }
 
-        // Update password
         currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
         User savedUser = userRepository.save(currentUser);
 
-        // Optionally blacklist all existing tokens for security
         tokenBlacklistService.blacklistAllUserTokens(currentUser.getEmail(), "PASSWORD_CHANGE");
-
         log.info("Password changed successfully for user: {}", currentUser.getEmail());
 
         return userMapper.toResponse(savedUser);
@@ -161,28 +191,23 @@ public class AuthServiceImpl implements AuthService {
     public UserResponse adminResetPassword(AdminPasswordResetRequest request) {
         log.info("Admin password reset for user: {}", request.getUserId());
 
-        // Find user by ID
         User user = userRepository.findByIdAndIsDeletedFalse(request.getUserId())
                 .orElseThrow(() -> new ValidationException("User not found"));
 
-        // Validate password confirmation
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new ValidationException("Password confirmation does not match");
         }
 
-        // Update password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         User savedUser = userRepository.save(user);
 
-        // Blacklist all existing tokens for security
         tokenBlacklistService.blacklistAllUserTokens(user.getEmail(), "ADMIN_PASSWORD_RESET");
-
         log.info("Admin password reset successful for user: {} by admin", user.getEmail());
 
         return userMapper.toResponse(savedUser);
     }
 
-    // Helper method to extract token from Authorization header
+    // Helper methods remain the same...
     private String extractToken(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             return authorizationHeader.substring(7).trim();
@@ -226,6 +251,13 @@ public class AuthServiceImpl implements AuthService {
 
         if (request.getPhoneNumber() != null && !isPhoneAvailable(request.getPhoneNumber())) {
             throw new ValidationException("Phone number is already in use");
+        }
+
+        // ✅ ADDED: Validate business-specific fields for business users
+        if (request.getUserType() == UserType.BUSINESS_USER) {
+            if (!StringUtils.hasText(request.getBusinessName())) {
+                throw new ValidationException("Business name is required for business user registration");
+            }
         }
     }
 }

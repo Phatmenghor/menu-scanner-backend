@@ -6,13 +6,13 @@ import com.emenu.features.auth.dto.request.BusinessCreateRequest;
 import com.emenu.features.auth.dto.response.BusinessResponse;
 import com.emenu.features.auth.dto.update.BusinessUpdateRequest;
 import com.emenu.features.auth.mapper.BusinessMapper;
-import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.repository.BusinessRepository;
-import com.emenu.features.subscription.repository.SubscriptionRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.BusinessService;
 import com.emenu.features.auth.specification.BusinessSpecification;
+import com.emenu.features.subdomain.service.SubdomainService;
+import com.emenu.features.subscription.repository.SubscriptionRepository;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +35,8 @@ public class BusinessServiceImpl implements BusinessService {
     private final BusinessRepository businessRepository;
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final SubdomainService subdomainService; // ✅ ADDED: Subdomain service
     private final BusinessMapper businessMapper;
-    private final UserMapper userMapper;
 
     @Override
     public BusinessResponse createBusiness(BusinessCreateRequest request) {
@@ -49,6 +49,17 @@ public class BusinessServiceImpl implements BusinessService {
         Business business = businessMapper.toEntity(request);
         Business savedBusiness = businessRepository.save(business);
 
+        // ✅ ADDED: Auto-create subdomain for the business
+        try {
+            String preferredSubdomain = generateSubdomainFromBusinessName(request.getName());
+            subdomainService.createSubdomainForBusiness(savedBusiness.getId(), preferredSubdomain);
+            log.info("Subdomain created automatically for business: {}", savedBusiness.getName());
+        } catch (Exception e) {
+            log.warn("Failed to create subdomain for business: {} - Error: {}", 
+                    savedBusiness.getName(), e.getMessage());
+            // Don't fail the business creation if subdomain creation fails
+        }
+
         log.info("Business created successfully: {}", savedBusiness.getName());
         return businessMapper.toResponse(savedBusiness);
     }
@@ -56,7 +67,6 @@ public class BusinessServiceImpl implements BusinessService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<BusinessResponse> getBusinesses(BusinessFilterRequest filter) {
-        // ✅ Specification handles all filtering logic
         Specification<Business> spec = BusinessSpecification.buildSpecification(filter);
         
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
@@ -65,8 +75,6 @@ public class BusinessServiceImpl implements BusinessService {
         );
 
         Page<Business> businessPage = businessRepository.findAll(spec, pageable);
-
-        // ✅ Mapper handles pagination response conversion
         return businessMapper.toPaginationResponse(businessPage);
     }
 
@@ -97,7 +105,6 @@ public class BusinessServiceImpl implements BusinessService {
         Business business = businessRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
-        // ✅ Mapper handles entity updates
         businessMapper.updateEntity(request, business);
         Business updatedBusiness = businessRepository.save(business);
 
@@ -114,7 +121,6 @@ public class BusinessServiceImpl implements BusinessService {
         business = businessRepository.save(business);
 
         BusinessResponse response = businessMapper.toResponse(business);
-
         response.setTotalStaff((int) userRepository.countByBusinessIdAndIsDeletedFalse(id));
 
         // Check subscription status
@@ -124,8 +130,23 @@ public class BusinessServiceImpl implements BusinessService {
             response.setCurrentSubscriptionPlan(activeSubscription.get().getPlan().getDisplayName());
             response.setDaysRemaining(activeSubscription.get().getDaysRemaining());
         }
+        
         log.info("Business deleted successfully: {}", business.getName());
-
         return response;
+    }
+
+    // ✅ ADDED: Helper method to generate subdomain from business name
+    private String generateSubdomainFromBusinessName(String businessName) {
+        if (businessName == null || businessName.trim().isEmpty()) {
+            return "business";
+        }
+
+        return businessName.toLowerCase()
+                .trim()
+                .replaceAll("[^a-z0-9\\s-]", "") // Remove special characters
+                .replaceAll("\\s+", "-")          // Replace spaces with hyphens
+                .replaceAll("-{2,}", "-")         // Replace multiple hyphens with single
+                .replaceAll("^-+|-+$", "")        // Remove leading/trailing hyphens
+                .substring(0, Math.min(businessName.length(), 30)); // Limit length
     }
 }

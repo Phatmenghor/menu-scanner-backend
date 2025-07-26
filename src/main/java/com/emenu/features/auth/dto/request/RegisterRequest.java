@@ -24,9 +24,18 @@ public class RegisterRequest {
 
     private String firstName;
     private String lastName;
-
     private String profileImageUrl;
     private String phoneNumber;
     private String address;
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
+
+    // ✅ ADDED: Business-specific fields for business user registration
+    private String businessName;
+    private String businessEmail;
+    private String businessPhone;
+    private String businessAddress;
+    private String businessDescription;
+    
+    // ✅ ADDED: Preferred subdomain for business registration
+    private String preferredSubdomain;
 }
