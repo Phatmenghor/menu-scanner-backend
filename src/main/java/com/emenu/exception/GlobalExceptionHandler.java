@@ -31,9 +31,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 import javax.security.auth.login.AccountLockedException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -53,10 +51,11 @@ public class GlobalExceptionHandler {
         log.warn("Authentication failed - Invalid credentials from IP: {}", getClientIP(request));
 
         Map<String, Object> errorDetails = createErrorDetails(ErrorCodes.INVALID_CREDENTIALS, request);
-        errorDetails.put("hint", "Please check your email and password");
-        
-        ApiResponse<Object> response = new ApiResponse<>("error", 
-            "Invalid email or password. Please check your credentials and try again.", errorDetails);
+        errorDetails.put("field", "credentials");
+        errorDetails.put("suggestion", "Please verify your email and password");
+
+        ApiResponse<Object> response = new ApiResponse<>("error",
+                "Invalid email or password", errorDetails);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
@@ -163,21 +162,47 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationExceptions(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
-        Map<String, String> fieldErrors = new HashMap<>();
+
+        // ✅ ENHANCED: Detailed field-by-field validation errors
+        Map<String, Object> fieldErrors = new HashMap<>();
+        List<String> missingFields = new ArrayList<>();
+        List<String> invalidFields = new ArrayList<>();
+
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
-            fieldErrors.put(fieldName, errorMessage);
+            Object rejectedValue = ((FieldError) error).getRejectedValue();
+
+            fieldErrors.put(fieldName, Map.of(
+                    "message", errorMessage,
+                    "rejectedValue", rejectedValue,
+                    "field", fieldName
+            ));
+
+            // Categorize errors
+            if (errorMessage.toLowerCase().contains("required") ||
+                    errorMessage.toLowerCase().contains("must not be null") ||
+                    errorMessage.toLowerCase().contains("must not be blank")) {
+                missingFields.add(fieldName);
+            } else {
+                invalidFields.add(fieldName);
+            }
         });
 
-        log.warn("Validation failed for request to {}: {}", request.getRequestURI(), fieldErrors);
+        log.warn("Validation failed for request to {}: {} field errors", request.getRequestURI(), fieldErrors.size());
 
         Map<String, Object> errorDetails = createErrorDetails(ErrorCodes.VALIDATION_ERROR, request);
         errorDetails.put("fieldErrors", fieldErrors);
-        errorDetails.put("invalidFieldsCount", fieldErrors.size());
+        errorDetails.put("missingFields", missingFields);
+        errorDetails.put("invalidFields", invalidFields);
+        errorDetails.put("totalErrors", fieldErrors.size());
 
-        ApiResponse<Object> response = new ApiResponse<>("error", 
-            "Validation failed. Please check the provided data.", errorDetails);
+        // ✅ ENHANCED: Better error message
+        String message = String.format("Validation failed for %d field(s). Required fields: %s",
+                fieldErrors.size(),
+                missingFields.isEmpty() ? "none" : String.join(", ", missingFields));
+
+        ApiResponse<Object> response = new ApiResponse<>("error", message, errorDetails);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
@@ -206,7 +231,18 @@ public class GlobalExceptionHandler {
         log.warn("Business validation error: {}", ex.getMessage());
 
         Map<String, Object> errorDetails = createErrorDetails(ErrorCodes.VALIDATION_ERROR, request);
-        ApiResponse<Object> response = new ApiResponse<>("error", ex.getMessage(), errorDetails);
+
+        // ✅ Enhanced: Parse validation message for field information
+        String message = ex.getMessage();
+        if (message.toLowerCase().contains("email")) {
+            errorDetails.put("field", "email");
+        } else if (message.toLowerCase().contains("phone")) {
+            errorDetails.put("field", "phoneNumber");
+        } else if (message.toLowerCase().contains("subdomain")) {
+            errorDetails.put("field", "subdomain");
+        }
+
+        ApiResponse<Object> response = new ApiResponse<>("error", message, errorDetails);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
@@ -261,9 +297,9 @@ public class GlobalExceptionHandler {
         errorDetails.put("supportedMethods", ex.getSupportedHttpMethods());
         errorDetails.put("requestedMethod", ex.getMethod());
 
-        ApiResponse<Object> response = new ApiResponse<>("error", 
-            String.format("HTTP method '%s' is not supported for this endpoint.", ex.getMethod()), 
-            errorDetails);
+        ApiResponse<Object> response = new ApiResponse<>("error",
+                String.format("HTTP method '%s' is not supported for this endpoint", ex.getMethod()),
+                errorDetails);
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
     }
 
@@ -286,12 +322,13 @@ public class GlobalExceptionHandler {
         log.warn("Missing required parameter: {}", ex.getParameterName());
 
         Map<String, Object> errorDetails = createErrorDetails("MISSING_PARAMETER", request);
-        errorDetails.put("parameterName", ex.getParameterName());
+        errorDetails.put("field", ex.getParameterName());
         errorDetails.put("parameterType", ex.getParameterType());
+        errorDetails.put("missingFields", List.of(ex.getParameterName()));
 
-        ApiResponse<Object> response = new ApiResponse<>("error", 
-            String.format("Required parameter '%s' is missing.", ex.getParameterName()), 
-            errorDetails);
+        ApiResponse<Object> response = new ApiResponse<>("error",
+                String.format("Required parameter '%s' is missing", ex.getParameterName()),
+                errorDetails);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
@@ -320,30 +357,57 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolation(
             DataIntegrityViolationException ex, HttpServletRequest request) {
-        log.error("Data integrity violation in request to {}: {}", request.getRequestURI(), ex.getMessage());
 
-        String message = "Data constraint violation";
+        String message = "Data validation failed";
         String errorCode = ErrorCodes.VALIDATION_ERROR;
+        Map<String, Object> errorDetails = createErrorDetails(errorCode, request);
 
-        // Parse common constraint violations
+        // ✅ ENHANCED: Parse specific constraint violations
         String exceptionMessage = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
-        if (exceptionMessage.contains("email") || exceptionMessage.contains("unique.*email")) {
-            message = "Email address is already in use";
+        String rootCauseMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage().toLowerCase() : "";
+        String fullMessage = (exceptionMessage + " " + rootCauseMessage).toLowerCase();
+
+        // Enhanced duplicate detection patterns
+        if (containsPattern(fullMessage, new String[]{"email", "unique.*email", "users_email"})) {
+            message = "Email address is already registered";
             errorCode = ErrorCodes.EMAIL_ALREADY_EXISTS;
-        } else if (exceptionMessage.contains("phone") || exceptionMessage.contains("unique.*phone")) {
-            message = "Phone number is already in use";
+            errorDetails.put("field", "email");
+            errorDetails.put("constraint", "UNIQUE_EMAIL");
+        } else if (containsPattern(fullMessage, new String[]{"phone", "unique.*phone", "users_phone_number"})) {
+            message = "Phone number is already registered";
             errorCode = ErrorCodes.PHONE_ALREADY_EXISTS;
-        } else if (exceptionMessage.contains("unique")) {
-            message = "This value is already in use";
-        } else if (exceptionMessage.contains("foreign key")) {
+            errorDetails.put("field", "phoneNumber");
+            errorDetails.put("constraint", "UNIQUE_PHONE");
+        } else if (containsPattern(fullMessage, new String[]{"business.*email", "businesses_email"})) {
+            message = "Business email is already registered";
+            errorCode = ErrorCodes.EMAIL_ALREADY_EXISTS;
+            errorDetails.put("field", "businessEmail");
+            errorDetails.put("constraint", "UNIQUE_BUSINESS_EMAIL");
+        } else if (containsPattern(fullMessage, new String[]{"subdomain", "unique.*subdomain", "subdomains_subdomain"})) {
+            message = "Subdomain is already taken";
+            errorDetails.put("field", "subdomain");
+            errorDetails.put("constraint", "UNIQUE_SUBDOMAIN");
+        } else if (containsPattern(fullMessage, new String[]{"business.*name", "businesses_name"})) {
+            message = "Business name is already registered";
+            errorDetails.put("field", "businessName");
+            errorDetails.put("constraint", "UNIQUE_BUSINESS_NAME");
+        } else if (fullMessage.contains("foreign key")) {
             message = "Referenced data does not exist";
-        } else if (exceptionMessage.contains("not null")) {
+            errorDetails.put("constraint", "FOREIGN_KEY");
+        } else if (fullMessage.contains("not null")) {
             message = "Required field is missing";
+            errorDetails.put("constraint", "NOT_NULL");
+        } else {
+            message = "Data constraint violation";
+            errorDetails.put("constraint", "UNKNOWN");
         }
 
-        Map<String, Object> errorDetails = createErrorDetails(errorCode, request);
+        log.warn("Data integrity violation: {} - Parsed message: {}", fullMessage, message);
+
+        errorDetails.put("suggestion", getSuggestionForConstraint(errorCode));
+
         ApiResponse<Object> response = new ApiResponse<>("error", message, errorDetails);
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response); // ✅ Changed from CONFLICT to BAD_REQUEST
     }
 
     @ExceptionHandler(DataAccessException.class)
@@ -408,6 +472,23 @@ public class GlobalExceptionHandler {
     // HELPER METHODS
     // ================================
 
+    private boolean containsPattern(String text, String[] patterns) {
+        for (String pattern : patterns) {
+            if (text.contains(pattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String getSuggestionForConstraint(String errorCode) {
+        return switch (errorCode) {
+            case ErrorCodes.EMAIL_ALREADY_EXISTS -> "Please use a different email address or sign in if you already have an account";
+            case ErrorCodes.PHONE_ALREADY_EXISTS -> "Please use a different phone number or update your existing account";
+            default -> "Please check your input and try again";
+        };
+    }
+
     private Map<String, Object> createErrorDetails(String errorCode, HttpServletRequest request) {
         Map<String, Object> errorDetails = new HashMap<>();
         errorDetails.put("errorCode", errorCode);
@@ -425,4 +506,5 @@ public class GlobalExceptionHandler {
         }
         return xfHeader.split(",")[0];
     }
+
 }

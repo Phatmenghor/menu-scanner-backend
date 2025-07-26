@@ -224,7 +224,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse createBusinessOwner(BusinessOwnerCreateRequest request) {
-        log.info("Creating business owner with business: {} for email: {}", 
+        log.info("Creating business owner with business: {} for email: {}",
                 request.getBusinessName(), request.getOwnerEmail());
 
         // ✅ Security: Only platform users can create business owners
@@ -233,14 +233,18 @@ public class UserServiceImpl implements UserService {
             throw new ValidationException("Only platform administrators can create business owners");
         }
 
-        // Validate email uniqueness
+        // ✅ ENHANCED: Check for duplicate email and phone early
         if (existsByEmail(request.getOwnerEmail())) {
-            throw new ValidationException("Owner email already exists");
+            throw new ValidationException("Owner email already exists: " + request.getOwnerEmail());
         }
 
-        // Validate phone uniqueness if provided
         if (request.getOwnerPhone() != null && existsByPhone(request.getOwnerPhone())) {
-            throw new ValidationException("Owner phone number already exists");
+            throw new ValidationException("Owner phone number already exists: " + request.getOwnerPhone());
+        }
+
+        // ✅ ENHANCED: Check for duplicate business email early
+        if (request.getBusinessEmail() != null && businessRepository.existsByEmailAndIsDeletedFalse(request.getBusinessEmail())) {
+            throw new ValidationException("Business email already exists: " + request.getBusinessEmail());
         }
 
         try {
@@ -253,7 +257,7 @@ public class UserServiceImpl implements UserService {
             businessRequest.setDescription(request.getBusinessDescription());
 
             BusinessResponse businessResponse = businessService.createBusiness(businessRequest);
-            log.info("Business created for business owner: {} with ID: {}", 
+            log.info("Business created for business owner: {} with ID: {}",
                     businessResponse.getName(), businessResponse.getId());
 
             // ✅ STEP 2: Create business owner
@@ -275,25 +279,37 @@ public class UserServiceImpl implements UserService {
             user.setRoles(List.of(businessOwnerRole));
 
             User savedUser = userRepository.save(user);
-            log.info("Business owner created successfully: {} for business: {}", 
+            log.info("Business owner created successfully: {} for business: {}",
                     savedUser.getEmail(), businessResponse.getName());
 
             // ✅ STEP 3: Create subdomain with exact input
             try {
                 subdomainService.createExactSubdomainForBusiness(
-                        businessResponse.getId(), 
+                        businessResponse.getId(),
                         request.getPreferredSubdomain()
                 );
-                log.info("Subdomain created successfully: {} for business: {}", 
+                log.info("Subdomain created successfully: {} for business: {}",
                         request.getPreferredSubdomain(), businessResponse.getName());
             } catch (Exception e) {
-                log.warn("Failed to create subdomain for business owner: {} - Error: {}", 
+                log.warn("Failed to create subdomain for business owner: {} - Error: {}",
                         savedUser.getEmail(), e.getMessage());
                 // Don't fail the user creation if subdomain creation fails
             }
 
-            return userMapper.toResponse(savedUser);
+            // ✅ FIX: Load user with business relationship for proper response
+            User userWithBusiness = userRepository.findById(savedUser.getId())
+                    .orElse(savedUser);
 
+            // ✅ FIX: Manually set business name since JPA lazy loading might not work
+            UserResponse response = userMapper.toResponse(userWithBusiness);
+            response.setBusinessName(businessResponse.getName()); // Ensure business name is set
+            response.setBusinessId(businessResponse.getId());
+
+            return response;
+
+        } catch (ValidationException ve) {
+            // Re-throw validation exceptions as-is
+            throw ve;
         } catch (Exception e) {
             log.error("Failed to create business owner: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create business owner: " + e.getMessage(), e);

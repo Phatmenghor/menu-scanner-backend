@@ -11,9 +11,10 @@ public class PasswordChangeRequest {
     private String currentPassword;
     
     @NotBlank(message = "New password is required")
-    @Size(min = 8, message = "Password must be at least 8 characters long")
+    @Size(min = 4, message = "Password must be at least 4 characters long")
     private String newPassword;
     
     @NotBlank(message = "Password confirmation is required")
+    @Size(min = 4, message = "Password must be at least 4 characters long")
     private String confirmPassword;
 }
