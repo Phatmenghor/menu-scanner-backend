@@ -94,8 +94,8 @@ public class SubdomainController {
     /**
      * Generate subdomain by business name
      */
-    @GetMapping("/business/generate")
-    public ResponseEntity<ApiResponse<SubdomainGenerateResponse>> generateSubdomainByBusinessName(@RequestBody SubdomainGenerateRequest request) {
+    @PostMapping("/business/generate")
+    public ResponseEntity<ApiResponse<SubdomainGenerateResponse>> generateSubdomainByBusinessName(@Valid @RequestBody SubdomainGenerateRequest request) {
         log.info("Getting subdomain for business name: {}", request.getBusinessName());
         SubdomainGenerateResponse generateResponse = subdomainService.generateSubdomainSuggestions(request);
         return ResponseEntity.ok(ApiResponse.success("Subdomain name generate retrieved successfully", generateResponse));
