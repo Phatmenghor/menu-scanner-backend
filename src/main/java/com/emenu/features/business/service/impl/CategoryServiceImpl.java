@@ -63,8 +63,6 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<CategoryResponse> getAllCategories(CategoryFilterRequest filter) {
-        // Business users can only see their own categories
-        applySecurity(filter);
         
         Specification<Category> spec = CategorySpecification.buildSpecification(filter);
         
@@ -81,14 +79,12 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public CategoryResponse getCategoryById(UUID id) {
         Category category = findCategoryById(id);
-        validateBusinessAccess(category);
         return categoryMapper.toResponse(category);
     }
 
     @Override
     public CategoryResponse updateCategory(UUID id, CategoryUpdateRequest request) {
         Category category = findCategoryById(id);
-        validateBusinessAccess(category);
 
         // Check if new name already exists (if name is being changed)
         if (request.getName() != null && !request.getName().equals(category.getName())) {
@@ -108,7 +104,6 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryResponse deleteCategory(UUID id) {
         Category category = findCategoryById(id);
-        validateBusinessAccess(category);
 
         category.softDelete();
         category = categoryRepository.save(category);
@@ -121,28 +116,5 @@ public class CategoryServiceImpl implements CategoryService {
     private Category findCategoryById(UUID id) {
         return categoryRepository.findByIdWithBusiness(id)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
-    }
-
-    private void validateBusinessAccess(Category category) {
-        User currentUser = securityUtils.getCurrentUser();
-        
-        // Platform users can access all categories
-        if (currentUser.isPlatformUser()) {
-            return;
-        }
-        
-        // Business users can only access their own categories
-        if (!currentUser.getBusinessId().equals(category.getBusinessId())) {
-            throw new ValidationException("Access denied to category");
-        }
-    }
-
-    private void applySecurity(CategoryFilterRequest filter) {
-        User currentUser = securityUtils.getCurrentUser();
-        
-        // Business users can only see their own categories
-        if (currentUser.isBusinessUser() && filter.getBusinessId() == null) {
-            filter.setBusinessId(currentUser.getBusinessId());
-        }
     }
 }

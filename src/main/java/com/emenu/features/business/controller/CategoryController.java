@@ -1,10 +1,12 @@
 package com.emenu.features.business.controller;
 
+import com.emenu.features.auth.models.User;
 import com.emenu.features.business.dto.filter.CategoryFilterRequest;
 import com.emenu.features.business.dto.request.CategoryCreateRequest;
 import com.emenu.features.business.dto.response.CategoryResponse;
 import com.emenu.features.business.dto.update.CategoryUpdateRequest;
 import com.emenu.features.business.service.CategoryService;
+import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
@@ -23,6 +25,7 @@ import java.util.UUID;
 public class CategoryController {
 
     private final CategoryService categoryService;
+    private final SecurityUtils securityUtils;
 
     /**
      * Create new category (uses current user's business from token)
@@ -40,19 +43,21 @@ public class CategoryController {
      */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<CategoryResponse>>> getAllCategories(@Valid @RequestBody CategoryFilterRequest filter) {
-        log.info("Getting categories for current user's business");
+        log.info("Getting all categories for current user's business");
         PaginationResponse<CategoryResponse> categories = categoryService.getAllCategories(filter);
         return ResponseEntity.ok(ApiResponse.success("Categories retrieved successfully", categories));
     }
 
     /**
-     * Get my business categories
+     * Get all categories with filtering (uses current user's business from token)
      */
-    @PostMapping("/my-business")
-    public ResponseEntity<ApiResponse<PaginationResponse<CategoryResponse>>> getMyBusinessCategories(@Valid @RequestBody CategoryFilterRequest filter) {
-        log.info("Getting categories for current user's business");
+    @PostMapping("/my-business/all")
+    public ResponseEntity<ApiResponse<PaginationResponse<CategoryResponse>>> getMyBusinessAllCategories(@Valid @RequestBody CategoryFilterRequest filter) {
+        log.info("Getting my categories for current user's business");
+        User currentUser = securityUtils.getCurrentUser();
+        filter.setBusinessId(currentUser.getBusinessId());
         PaginationResponse<CategoryResponse> categories = categoryService.getAllCategories(filter);
-        return ResponseEntity.ok(ApiResponse.success("Business categories retrieved successfully", categories));
+        return ResponseEntity.ok(ApiResponse.success("Categories retrieved successfully", categories));
     }
 
     /**

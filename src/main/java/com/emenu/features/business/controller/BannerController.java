@@ -1,10 +1,12 @@
 package com.emenu.features.business.controller;
 
+import com.emenu.features.auth.models.User;
 import com.emenu.features.business.dto.filter.BannerFilterRequest;
 import com.emenu.features.business.dto.request.BannerCreateRequest;
 import com.emenu.features.business.dto.response.BannerResponse;
 import com.emenu.features.business.dto.update.BannerUpdateRequest;
 import com.emenu.features.business.service.BannerService;
+import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
@@ -23,9 +25,10 @@ import java.util.UUID;
 public class BannerController {
 
     private final BannerService bannerService;
+    private final SecurityUtils securityUtils;
 
     /**
-     * Create new banner (uses current user's business from token)
+     * Create new banner
      */
     @PostMapping
     public ResponseEntity<ApiResponse<BannerResponse>> createBanner(@Valid @RequestBody BannerCreateRequest request) {
@@ -36,11 +39,23 @@ public class BannerController {
     }
 
     /**
-     * Get all banners with filtering (uses current user's business from token)
+     * Get all banners with filtering
      */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<BannerResponse>>> getAllBanners(@Valid @RequestBody BannerFilterRequest filter) {
-        log.info("Getting banners for current user's business");
+        log.info("Getting all banners for current user's business");
+        PaginationResponse<BannerResponse> banners = bannerService.getAllBanners(filter);
+        return ResponseEntity.ok(ApiResponse.success("Banners retrieved successfully", banners));
+    }
+
+    /**
+     * Get all banners with filtering
+     */
+    @PostMapping("/my-business/all")
+    public ResponseEntity<ApiResponse<PaginationResponse<BannerResponse>>> getMyBusinessAllBanners(@Valid @RequestBody BannerFilterRequest filter) {
+        log.info("Getting my banners for current user's business");
+        User currentUser = securityUtils.getCurrentUser();
+        filter.setBusinessId(currentUser.getBusinessId());
         PaginationResponse<BannerResponse> banners = bannerService.getAllBanners(filter);
         return ResponseEntity.ok(ApiResponse.success("Banners retrieved successfully", banners));
     }

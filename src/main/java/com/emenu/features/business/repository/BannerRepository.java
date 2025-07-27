@@ -1,5 +1,6 @@
 package com.emenu.features.business.repository;
 
+import com.emenu.enums.common.Status;
 import com.emenu.features.business.models.Banner;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

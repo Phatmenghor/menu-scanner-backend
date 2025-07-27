@@ -1,8 +1,8 @@
 package com.emenu.features.business.service.impl;
 
 import com.emenu.exception.custom.NotFoundException;
+import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
-import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.business.dto.filter.BannerFilterRequest;
 import com.emenu.features.business.dto.request.BannerCreateRequest;
 import com.emenu.features.business.dto.response.BannerResponse;
@@ -32,29 +32,31 @@ import java.util.UUID;
 public class BannerServiceImpl implements BannerService {
 
     private final BannerRepository bannerRepository;
-    private final BusinessRepository businessRepository;
     private final BannerMapper bannerMapper;
     private final SecurityUtils securityUtils;
 
     @Override
     public BannerResponse createBanner(BannerCreateRequest request) {
-        log.info("Creating banner for business: {}", request.getBusinessId());
+        log.info("Creating banner for current user's business");
 
-        // Validate business exists
-        validateBusinessExists(request.getBusinessId());
+        User currentUser = securityUtils.getCurrentUser();
+        if (currentUser.getBusinessId() == null) {
+            throw new ValidationException("User is not associated with any business");
+        }
 
         Banner banner = bannerMapper.toEntity(request);
+        banner.setBusinessId(currentUser.getBusinessId());
+
         Banner savedBanner = bannerRepository.save(banner);
 
-        log.info("Banner created successfully: {} for business: {}", savedBanner.getId(), request.getBusinessId());
+        log.info("Banner created successfully: {} for business: {}", 
+                savedBanner.getId(), currentUser.getBusinessId());
         return bannerMapper.toResponse(savedBanner);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<BannerResponse> getAllBanners(BannerFilterRequest filter) {
-        // Security: Platform users can see all banners, business users only their own
-        applySecurity(filter);
         
         Specification<Banner> spec = BannerSpecification.buildSpecification(filter);
         
@@ -81,7 +83,6 @@ public class BannerServiceImpl implements BannerService {
         Banner banner = bannerRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Banner not found"));
 
-
         bannerMapper.updateEntity(request, banner);
         Banner updatedBanner = bannerRepository.save(banner);
 
@@ -101,19 +102,4 @@ public class BannerServiceImpl implements BannerService {
         return bannerMapper.toResponse(banner);
     }
 
-    // Private helper methods
-    private void validateBusinessExists(UUID businessId) {
-        if (!businessRepository.existsById(businessId)) {
-            throw new NotFoundException("Business not found");
-        }
-    }
-
-    private void applySecurity(BannerFilterRequest filter) {
-        User currentUser = securityUtils.getCurrentUser();
-        
-        // Business users can only see their own banners
-        if (currentUser.isBusinessUser() && filter.getBusinessId() == null) {
-            filter.setBusinessId(currentUser.getBusinessId());
-        }
-    }
 }
