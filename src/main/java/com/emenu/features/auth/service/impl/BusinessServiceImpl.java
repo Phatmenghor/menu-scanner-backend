@@ -50,16 +50,6 @@ public class BusinessServiceImpl implements BusinessService {
         Business business = businessMapper.toEntity(request);
         Business savedBusiness = businessRepository.save(business);
 
-        // ✅ FIXED: Auto-create subdomain for the business - ALWAYS create one
-        try {
-            String preferredSubdomain = generateSubdomainFromBusinessName(request.getName());
-            subdomainService.createSubdomainForBusiness(savedBusiness.getId(), preferredSubdomain);
-            log.info("Subdomain created automatically for business: {} -> {}", savedBusiness.getName(), preferredSubdomain);
-        } catch (Exception e) {
-            log.error("Failed to create subdomain for business: {} - Error: {}", savedBusiness.getName(), e.getMessage());
-            // Still proceed with business creation, but log the error
-        }
-
         log.info("Business created successfully: {}", savedBusiness.getName());
         return businessMapper.toResponse(savedBusiness);
     }

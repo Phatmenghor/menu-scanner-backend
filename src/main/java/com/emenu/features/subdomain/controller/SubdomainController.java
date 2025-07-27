@@ -1,7 +1,9 @@
 package com.emenu.features.subdomain.controller;
 
 import com.emenu.features.subdomain.dto.filter.SubdomainFilterRequest;
+import com.emenu.features.subdomain.dto.request.SubdomainGenerateRequest;
 import com.emenu.features.subdomain.dto.response.SubdomainCheckResponse;
+import com.emenu.features.subdomain.dto.response.SubdomainGenerateResponse;
 import com.emenu.features.subdomain.dto.response.SubdomainResponse;
 import com.emenu.features.subdomain.service.SubdomainService;
 import com.emenu.shared.dto.ApiResponse;
@@ -87,5 +89,15 @@ public class SubdomainController {
         log.info("Getting subdomain for business: {}", businessId);
         SubdomainResponse subdomain = subdomainService.getSubdomainByBusinessId(businessId);
         return ResponseEntity.ok(ApiResponse.success("Business subdomain retrieved successfully", subdomain));
+    }
+
+    /**
+     * Generate subdomain by business name
+     */
+    @GetMapping("/business/generate")
+    public ResponseEntity<ApiResponse<SubdomainGenerateResponse>> generateSubdomainByBusinessName(@RequestBody SubdomainGenerateRequest request) {
+        log.info("Getting subdomain for business name: {}", request.getBusinessName());
+        SubdomainGenerateResponse generateResponse = subdomainService.generateSubdomainSuggestions(request);
+        return ResponseEntity.ok(ApiResponse.success("Subdomain name generate retrieved successfully", generateResponse));
     }
 }

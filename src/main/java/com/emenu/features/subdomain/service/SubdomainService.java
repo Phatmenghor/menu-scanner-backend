@@ -1,7 +1,9 @@
 package com.emenu.features.subdomain.service;
 
 import com.emenu.features.subdomain.dto.filter.SubdomainFilterRequest;
+import com.emenu.features.subdomain.dto.request.SubdomainGenerateRequest;
 import com.emenu.features.subdomain.dto.response.SubdomainCheckResponse;
+import com.emenu.features.subdomain.dto.response.SubdomainGenerateResponse;
 import com.emenu.features.subdomain.dto.response.SubdomainResponse;
 import com.emenu.shared.dto.PaginationResponse;
 
@@ -22,4 +24,6 @@ public interface SubdomainService {
     
     // Auto-creation for business registration (MAIN METHOD)
     SubdomainResponse createSubdomainForBusiness(UUID businessId, String preferredSubdomain);
+
+    SubdomainGenerateResponse generateSubdomainSuggestions(SubdomainGenerateRequest request);
 }

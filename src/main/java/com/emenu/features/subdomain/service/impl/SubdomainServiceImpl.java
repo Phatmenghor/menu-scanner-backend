@@ -4,17 +4,22 @@ import com.emenu.exception.custom.NotFoundException;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.subdomain.dto.filter.SubdomainFilterRequest;
+import com.emenu.features.subdomain.dto.request.SubdomainGenerateRequest;
 import com.emenu.features.subdomain.dto.response.SubdomainCheckResponse;
+import com.emenu.features.subdomain.dto.response.SubdomainGenerateResponse;
 import com.emenu.features.subdomain.dto.response.SubdomainResponse;
+import com.emenu.features.subdomain.dto.response.SubdomainSuggestion;
 import com.emenu.features.subdomain.mapper.SubdomainMapper;
 import com.emenu.features.subdomain.models.Subdomain;
 import com.emenu.features.subdomain.repository.SubdomainRepository;
 import com.emenu.features.subdomain.service.SubdomainService;
 import com.emenu.features.subdomain.specification.SubdomainSpecification;
+import com.emenu.features.subdomain.utils.SubdomainUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -22,7 +27,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +41,9 @@ public class SubdomainServiceImpl implements SubdomainService {
     private final SubdomainRepository subdomainRepository;
     private final BusinessRepository businessRepository;
     private final SubdomainMapper subdomainMapper;
+
+    @Value("${app.subdomain.base-domain:menu.com}")
+    private String baseDomain;
 
     @Override
     @Transactional(readOnly = true)
@@ -154,6 +165,190 @@ public class SubdomainServiceImpl implements SubdomainService {
         return subdomainMapper.toResponse(savedSubdomain);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public SubdomainGenerateResponse generateSubdomainSuggestions(SubdomainGenerateRequest request) {
+        log.info("🎯 Generating subdomain suggestions for business: {}", request.getBusinessName());
+
+        String businessName = request.getBusinessName();
+        int suggestionCount = request.getSuggestionCount() != null ? request.getSuggestionCount() : 5;
+
+        // Ensure reasonable limits
+        suggestionCount = Math.min(Math.max(suggestionCount, 1), 20);
+
+        List<SubdomainSuggestion> suggestions = new ArrayList<>();
+
+        // 1. Primary suggestion - direct from business name
+        String primarySubdomain = generateSubdomainFromBusinessName(businessName);
+        addSuggestionIfValid(suggestions, primarySubdomain, "direct", 1);
+
+        // 2. Short versions
+        List<String> shortVersions = generateShortVersions(businessName);
+        for (int i = 0; i < Math.min(shortVersions.size(), 2); i++) {
+            addSuggestionIfValid(suggestions, shortVersions.get(i), "short", 2);
+        }
+
+        // 3. Numbered variations of primary
+        if (suggestions.size() < suggestionCount) {
+            for (int i = 1; i <= 10 && suggestions.size() < suggestionCount; i++) {
+                addSuggestionIfValid(suggestions, primarySubdomain + i, "numbered", 3);
+            }
+        }
+
+        // 4. Alternative word combinations
+        if (suggestions.size() < suggestionCount) {
+            List<String> alternatives = generateAlternatives(businessName);
+            for (String alt : alternatives) {
+                if (suggestions.size() >= suggestionCount) break;
+                addSuggestionIfValid(suggestions, alt, "alternative", 4);
+            }
+        }
+
+        // 5. Fallback random suggestions if still need more
+        if (suggestions.size() < suggestionCount) {
+            for (int i = 100; i < 999 && suggestions.size() < suggestionCount; i += 37) {
+                String fallback = cleanSubdomainName(businessName.split(" ")[0]) + i;
+                addSuggestionIfValid(suggestions, fallback, "fallback", 5);
+            }
+        }
+
+        // Sort by priority and limit results
+        List<SubdomainSuggestion> finalSuggestions = suggestions.stream()
+                .sorted((a, b) -> Integer.compare(a.getPriority(), b.getPriority()))
+                .limit(suggestionCount)
+                .collect(Collectors.toList());
+
+        // Get primary suggestion (first available one)
+        String primarySuggestion = finalSuggestions.stream()
+                .filter(SubdomainSuggestion::getIsAvailable)
+                .map(SubdomainSuggestion::getSubdomain)
+                .findFirst()
+                .orElse(primarySubdomain);
+
+        long availableCount = finalSuggestions.stream()
+                .filter(SubdomainSuggestion::getIsAvailable)
+                .count();
+
+        log.info("✅ Generated {} suggestions for '{}', {} available",
+                finalSuggestions.size(), businessName, availableCount);
+
+        return SubdomainGenerateResponse.builder()
+                .businessName(businessName)
+                .primarySuggestion(primarySuggestion)
+                .suggestions(finalSuggestions)
+                .totalSuggestions(finalSuggestions.size())
+                .availableSuggestions((int) availableCount)
+                .baseDomain(baseDomain)
+                .build();
+    }
+
+    private String generateSubdomainFromBusinessName(String businessName) {
+        if (businessName == null || businessName.trim().isEmpty()) {
+            return "business";
+        }
+
+        return businessName.toLowerCase()
+                .trim()
+                .replaceAll("[^a-z0-9\\s-]", "") // Remove special characters
+                .replaceAll("\\s+", "-")          // Replace spaces with hyphens
+                .replaceAll("-{2,}", "-")         // Replace multiple hyphens with single
+                .replaceAll("^-+|-+$", "")        // Remove leading/trailing hyphens
+                .substring(0, Math.min(businessName.length(), 30)); // Limit length
+    }
+
+    private List<String> generateShortVersions(String businessName) {
+        List<String> shortVersions = new ArrayList<>();
+
+        if (businessName == null || businessName.trim().isEmpty()) {
+            return shortVersions;
+        }
+
+        String[] words = businessName.toLowerCase().split("\\s+");
+
+        // Single word abbreviations
+        if (words.length > 1) {
+            // First letters of each word
+            StringBuilder abbreviation = new StringBuilder();
+            for (String word : words) {
+                if (!word.isEmpty()) {
+                    abbreviation.append(word.charAt(0));
+                }
+            }
+            if (abbreviation.length() >= 3) {
+                shortVersions.add(abbreviation.toString());
+            }
+
+            // First word only
+            String firstWord = cleanSubdomainName(words[0]);
+            if (firstWord.length() >= 3) {
+                shortVersions.add(firstWord);
+            }
+
+            // Last word only
+            String lastWord = cleanSubdomainName(words[words.length - 1]);
+            if (lastWord.length() >= 3 && !lastWord.equals(firstWord)) {
+                shortVersions.add(lastWord);
+            }
+        }
+
+        return shortVersions;
+    }
+
+    private void addSuggestionIfValid(List<SubdomainSuggestion> suggestions, String subdomain, String method, int priority) {
+        if (subdomain == null || subdomain.isEmpty()) return;
+
+        // Check if already exists in suggestions
+        boolean alreadyExists = suggestions.stream()
+                .anyMatch(s -> s.getSubdomain().equals(subdomain));
+        if (alreadyExists) return;
+
+        // Check format validity
+        if (!SubdomainUtils.isValidSubdomainFormat(subdomain)) return;
+
+        // Check if reserved
+        if (SubdomainUtils.isReservedSubdomain(subdomain)) return;
+
+        boolean isAvailable = isSubdomainAvailable(subdomain);
+
+        SubdomainSuggestion suggestion = SubdomainSuggestion.builder()
+                .subdomain(subdomain)
+                .fullDomain(subdomain + "." + baseDomain)
+                .fullUrl("https://" + subdomain + "." + baseDomain)
+                .isAvailable(isAvailable)
+                .generationMethod(method)
+                .priority(isAvailable ? priority : priority + 10) // Available ones get higher priority
+                .build();
+
+        suggestions.add(suggestion);
+    }
+
+    private List<String> generateAlternatives(String businessName) {
+        List<String> alternatives = new ArrayList<>();
+
+        String baseClean = cleanSubdomainName(businessName);
+
+        // Add common business suffixes
+        String[] suffixes = {"menu", "restaurant", "cafe", "kitchen", "food", "eat", "dine"};
+        for (String suffix : suffixes) {
+            if (baseClean.length() + suffix.length() <= 25) {
+                alternatives.add(baseClean + suffix);
+                alternatives.add(baseClean + "-" + suffix);
+            }
+        }
+
+        // Add common prefixes
+        String[] prefixes = {"my", "the", "best", "top"};
+        for (String prefix : prefixes) {
+            if (prefix.length() + baseClean.length() <= 25) {
+                alternatives.add(prefix + baseClean);
+                alternatives.add(prefix + "-" + baseClean);
+            }
+        }
+
+        return alternatives;
+    }
+
+
     // Private helper methods
     private boolean isValidSubdomainFormat(String subdomain) {
         if (subdomain == null || subdomain.length() < 3 || subdomain.length() > 63) {
@@ -163,6 +358,18 @@ public class SubdomainServiceImpl implements SubdomainService {
         // Must start and end with alphanumeric, can contain hyphens in between
         return subdomain.matches("^[a-z0-9][a-z0-9-]*[a-z0-9]$") || subdomain.matches("^[a-z0-9]{3,}$");
     }
+
+    private String cleanSubdomainName(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return "business";
+        }
+
+        return input.toLowerCase()
+                .trim()
+                .replaceAll("[^a-z0-9]", "")      // Remove all non-alphanumeric
+                .substring(0, Math.min(input.length(), 20)); // Limit length
+    }
+
 
     private String generateAvailableSubdomain(String preferredSubdomain) {
         if (preferredSubdomain == null || preferredSubdomain.trim().isEmpty()) {
@@ -185,14 +392,5 @@ public class SubdomainServiceImpl implements SubdomainService {
         }
 
         return candidateSubdomain;
-    }
-
-    private String cleanSubdomainName(String subdomain) {
-        if (subdomain == null) return "restaurant";
-        
-        return subdomain.toLowerCase()
-                .trim()
-                .replaceAll("[^a-z0-9]", "")      // Remove all non-alphanumeric
-                .substring(0, Math.min(subdomain.length(), 20)); // Limit length
     }
 }
