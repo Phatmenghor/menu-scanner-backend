@@ -5,11 +5,11 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class BannerCreateRequest {
+public class CategoryCreateRequest {
     
-    @NotBlank(message = "Image URL is required")
+    @NotBlank(message = "Category name is required")
+    private String name;
+    
     private String imageUrl;
-    
-    private String linkUrl;
     private Status status = Status.ACTIVE;
 }

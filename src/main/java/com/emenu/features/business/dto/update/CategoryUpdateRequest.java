@@ -4,8 +4,8 @@ import com.emenu.enums.common.Status;
 import lombok.Data;
 
 @Data
-public class BannerUpdateRequest {
+public class CategoryUpdateRequest {
+    private String name;
     private String imageUrl;
-    private String linkUrl;
     private Status status;
 }

@@ -1,7 +1,7 @@
 package com.emenu.features.business.specification;
 
-import com.emenu.features.business.dto.filter.BannerFilterRequest;
-import com.emenu.features.business.models.Banner;
+import com.emenu.features.business.dto.filter.CategoryFilterRequest;
+import com.emenu.features.business.models.Category;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -11,9 +11,9 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BannerSpecification {
+public class CategorySpecification {
 
-    public static Specification<Banner> buildSpecification(BannerFilterRequest filter) {
+    public static Specification<Category> buildSpecification(CategoryFilterRequest filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -36,12 +36,12 @@ public class BannerSpecification {
                 
                 Join<Object, Object> businessJoin = root.join("business", JoinType.LEFT);
                 
+                Predicate categoryNamePredicate = criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("name")), searchPattern);
                 Predicate businessNamePredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(businessJoin.get("name")), searchPattern);
-                Predicate linkUrlPredicate = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("linkUrl")), searchPattern);
 
-                predicates.add(criteriaBuilder.or(businessNamePredicate, linkUrlPredicate));
+                predicates.add(criteriaBuilder.or(categoryNamePredicate, businessNamePredicate));
                 
                 query.distinct(true);
             }

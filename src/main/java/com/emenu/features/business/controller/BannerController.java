@@ -14,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -26,34 +25,34 @@ public class BannerController {
     private final BannerService bannerService;
 
     /**
-     * Create new banner
+     * Create new banner (uses current user's business from token)
      */
     @PostMapping
     public ResponseEntity<ApiResponse<BannerResponse>> createBanner(@Valid @RequestBody BannerCreateRequest request) {
-        log.info("Creating banner for business: {}", request.getBusinessId());
+        log.info("Creating banner for current user's business");
         BannerResponse banner = bannerService.createBanner(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Banner created successfully", banner));
     }
 
     /**
-     * Get all banners with filtering
+     * Get all banners with filtering (uses current user's business from token)
      */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<BannerResponse>>> getAllBanners(@Valid @RequestBody BannerFilterRequest filter) {
-        log.info("Getting banners with filter");
+        log.info("Getting banners for current user's business");
         PaginationResponse<BannerResponse> banners = bannerService.getAllBanners(filter);
         return ResponseEntity.ok(ApiResponse.success("Banners retrieved successfully", banners));
     }
 
     /**
-     * Get all banners with filtering
+     * Get my business banners
      */
-    @PostMapping("my-business/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<BannerResponse>>> getMyBusinessAllBanners(@Valid @RequestBody BannerFilterRequest filter) {
-        log.info("Getting banners with filter");
+    @PostMapping("/my-business")
+    public ResponseEntity<ApiResponse<PaginationResponse<BannerResponse>>> getMyBusinessBanners(@Valid @RequestBody BannerFilterRequest filter) {
+        log.info("Getting banners for current user's business");
         PaginationResponse<BannerResponse> banners = bannerService.getAllBanners(filter);
-        return ResponseEntity.ok(ApiResponse.success("Banners retrieved successfully", banners));
+        return ResponseEntity.ok(ApiResponse.success("Business banners retrieved successfully", banners));
     }
 
     /**

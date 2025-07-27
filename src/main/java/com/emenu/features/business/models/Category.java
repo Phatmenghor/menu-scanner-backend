@@ -12,12 +12,12 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "banners")
+@Table(name = "categories")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Banner extends BaseUUIDEntity {
+public class Category extends BaseUUIDEntity {
 
     @Column(name = "business_id", nullable = false)
     private UUID businessId;
@@ -26,11 +26,11 @@ public class Banner extends BaseUUIDEntity {
     @JoinColumn(name = "business_id", insertable = false, updatable = false)
     private Business business;
 
-    @Column(name = "image_url", nullable = false)
-    private String imageUrl;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-    @Column(name = "link_url")
-    private String linkUrl;
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

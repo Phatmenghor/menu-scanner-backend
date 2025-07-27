@@ -9,10 +9,12 @@ import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class BannerResponse extends BaseAuditResponse {
+public class CategoryResponse extends BaseAuditResponse {
     private UUID businessId;
     private String businessName;
+    private String name;
     private String imageUrl;
-    private String linkUrl;
     private Status status;
+
+    private Long totalProducts; // Number of products in this category
 }

@@ -16,11 +16,11 @@ public interface BannerRepository extends JpaRepository<Banner, UUID>, JpaSpecif
     
     Optional<Banner> findByIdAndIsDeletedFalse(UUID id);
     
-    @Query("SELECT b FROM Banner b WHERE b.businessId = :businessId AND b.isDeleted = false ORDER BY b.displayOrder ASC")
-    List<Banner> findByBusinessIdOrderByDisplayOrder(@Param("businessId") UUID businessId);
+    @Query("SELECT b FROM Banner b WHERE b.businessId = :businessId AND b.isDeleted = false ORDER BY b.createdAt DESC")
+    List<Banner> findByBusinessIdOrderByCreatedAt(@Param("businessId") UUID businessId);
     
-    @Query("SELECT b FROM Banner b WHERE b.businessId = :businessId AND b.isActive = true AND b.isDeleted = false ORDER BY b.displayOrder ASC")
-    List<Banner> findActiveByBusinessId(@Param("businessId") UUID businessId);
+    @Query("SELECT b FROM Banner b WHERE b.businessId = :businessId AND b.status = :status AND b.isDeleted = false ORDER BY b.createdAt DESC")
+    List<Banner> findActiveByBusinessId(@Param("businessId") UUID businessId, @Param("status") Status status);
     
     @Query("SELECT b FROM Banner b " +
            "LEFT JOIN FETCH b.business " +
