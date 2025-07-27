@@ -19,9 +19,6 @@ public interface SubdomainRepository extends JpaRepository<Subdomain, UUID>, Jpa
     // Basic CRUD operations
     Optional<Subdomain> findByIdAndIsDeletedFalse(UUID id);
     
-    // Find by subdomain name
-    Optional<Subdomain> findBySubdomainAndIsDeletedFalse(String subdomain);
-    
     // Find by business
     Optional<Subdomain> findByBusinessIdAndIsDeletedFalse(UUID businessId);
 
