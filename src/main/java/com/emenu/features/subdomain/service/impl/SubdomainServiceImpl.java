@@ -1,21 +1,16 @@
 package com.emenu.features.subdomain.service.impl;
 
 import com.emenu.exception.custom.NotFoundException;
-import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.Business;
-import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.subdomain.dto.filter.SubdomainFilterRequest;
-import com.emenu.features.subdomain.dto.request.SubdomainCreateRequest;
 import com.emenu.features.subdomain.dto.response.SubdomainCheckResponse;
 import com.emenu.features.subdomain.dto.response.SubdomainResponse;
-import com.emenu.features.subdomain.dto.update.SubdomainUpdateRequest;
 import com.emenu.features.subdomain.mapper.SubdomainMapper;
 import com.emenu.features.subdomain.models.Subdomain;
 import com.emenu.features.subdomain.repository.SubdomainRepository;
 import com.emenu.features.subdomain.service.SubdomainService;
 import com.emenu.features.subdomain.specification.SubdomainSpecification;
-import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
@@ -38,36 +33,6 @@ public class SubdomainServiceImpl implements SubdomainService {
     private final SubdomainRepository subdomainRepository;
     private final BusinessRepository businessRepository;
     private final SubdomainMapper subdomainMapper;
-    private final SecurityUtils securityUtils;
-
-    @Override
-    public SubdomainResponse createSubdomain(SubdomainCreateRequest request) {
-        log.info("Creating subdomain: {} for business: {}", request.getSubdomain(), request.getBusinessId());
-
-        // Validate business exists
-        Business business = businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
-                .orElseThrow(() -> new NotFoundException("Business not found"));
-
-        // Check if business already has a subdomain
-        if (subdomainRepository.existsByBusinessIdAndIsDeletedFalse(request.getBusinessId())) {
-            throw new ValidationException("Business already has a subdomain");
-        }
-
-        // Check subdomain availability
-        if (!isSubdomainAvailable(request.getSubdomain())) {
-            throw new ValidationException("Subdomain '" + request.getSubdomain() + "' is already taken");
-        }
-
-        // Create subdomain
-        Subdomain subdomain = subdomainMapper.toEntity(request);
-        subdomain.setSubdomain(request.getSubdomain().toLowerCase().trim());
-
-        Subdomain savedSubdomain = subdomainRepository.save(subdomain);
-        log.info("Subdomain created successfully: {} for business: {}", 
-                savedSubdomain.getSubdomain(), business.getName());
-
-        return subdomainMapper.toResponse(savedSubdomain);
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -86,48 +51,9 @@ public class SubdomainServiceImpl implements SubdomainService {
     @Override
     @Transactional(readOnly = true)
     public SubdomainResponse getSubdomainById(UUID id) {
-        Subdomain subdomain = findSubdomainById(id);
+        Subdomain subdomain = subdomainRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new NotFoundException("Subdomain not found"));
         return subdomainMapper.toResponse(subdomain);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public SubdomainResponse getSubdomainByName(String subdomainName) {
-        Subdomain subdomain = subdomainRepository.findBySubdomainAndIsDeletedFalse(subdomainName)
-                .orElseThrow(() -> new NotFoundException("Subdomain not found: " + subdomainName));
-        return subdomainMapper.toResponse(subdomain);
-    }
-
-    @Override
-    public SubdomainResponse updateSubdomain(UUID id, SubdomainUpdateRequest request) {
-        Subdomain subdomain = findSubdomainById(id);
-
-        // Check subdomain name availability if being changed
-        if (request.getSubdomain() != null && 
-            !request.getSubdomain().equals(subdomain.getSubdomain())) {
-            if (!isSubdomainAvailable(request.getSubdomain())) {
-                throw new ValidationException("Subdomain '" + request.getSubdomain() + "' is already taken");
-            }
-        }
-
-        subdomainMapper.updateEntity(request, subdomain);
-        Subdomain updatedSubdomain = subdomainRepository.save(subdomain);
-
-        log.info("Subdomain updated successfully: {}", updatedSubdomain.getSubdomain());
-        return subdomainMapper.toResponse(updatedSubdomain);
-    }
-
-    @Override
-    public SubdomainResponse deleteSubdomain(UUID id) {
-        Subdomain subdomain = findSubdomainById(id);
-        
-        SubdomainResponse response = subdomainMapper.toResponse(subdomain);
-        
-        subdomain.softDelete();
-        subdomainRepository.save(subdomain);
-
-        log.info("Subdomain deleted successfully: {}", subdomain.getSubdomain());
-        return response;
     }
 
     @Override
@@ -140,23 +66,9 @@ public class SubdomainServiceImpl implements SubdomainService {
 
     @Override
     @Transactional(readOnly = true)
-    public PaginationResponse<SubdomainResponse> getCurrentUserBusinessSubdomains(SubdomainFilterRequest filter) {
-        User currentUser = securityUtils.getCurrentUser();
-        
-        if (currentUser.getBusinessId() == null) {
-            throw new ValidationException("User is not associated with any business");
-        }
-
-        filter.setBusinessId(currentUser.getBusinessId());
-        return getAllSubdomains(filter);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public SubdomainCheckResponse checkSubdomainAccess(String subdomainName) {
         log.debug("Checking subdomain access for: {}", subdomainName);
 
-        // ✅ FIXED: Find subdomain with business info loaded
         var subdomainOpt = subdomainRepository.findBySubdomainWithBusiness(subdomainName);
 
         if (subdomainOpt.isEmpty()) {
@@ -180,7 +92,7 @@ public class SubdomainServiceImpl implements SubdomainService {
             return SubdomainCheckResponse.suspended(subdomainName, business.getName(), business.getId());
         }
 
-        // ✅ FIXED: Check subscription status properly
+        // Check subscription status
         if (!business.hasActiveSubscription()) {
             log.debug("Business subscription expired for subdomain: {}", subdomainName);
             return SubdomainCheckResponse.subscriptionExpired(subdomainName, business.getName(), business.getId());
@@ -210,42 +122,8 @@ public class SubdomainServiceImpl implements SubdomainService {
     }
 
     @Override
-    public SubdomainResponse enableSSL(UUID id) {
-        Subdomain subdomain = findSubdomainById(id);
-        
-        subdomain.setSslEnabled(true);
-        Subdomain updatedSubdomain = subdomainRepository.save(subdomain);
-        
-        log.info("SSL enabled for subdomain: {}", updatedSubdomain.getSubdomain());
-        return subdomainMapper.toResponse(updatedSubdomain);
-    }
-
-
-    @Override
-    public void createSubdomainForBusiness(UUID businessId, String preferredSubdomain) {
-        log.info("Auto-creating subdomain for business: {} with preferred name: {}", businessId, preferredSubdomain);
-
-        // Check if business already has a subdomain
-        if (subdomainRepository.existsByBusinessIdAndIsDeletedFalse(businessId)) {
-            log.debug("Business already has a subdomain, returning existing one");
-            getSubdomainByBusinessId(businessId);
-            return;
-        }
-
-        // Generate available subdomain name (with formatting)
-        String availableSubdomain = generateAvailableSubdomain(preferredSubdomain);
-
-        SubdomainCreateRequest request = new SubdomainCreateRequest();
-        request.setBusinessId(businessId);
-        request.setSubdomain(availableSubdomain);
-        request.setNotes("Auto-created during business registration");
-
-        createSubdomain(request);
-    }
-
-    @Override
-    public void createExactSubdomainForBusiness(UUID businessId, String exactSubdomain) {
-        log.info("✅ Creating EXACT subdomain for business: {} with exact name: {}", businessId, exactSubdomain);
+    public SubdomainResponse createSubdomainForBusiness(UUID businessId, String preferredSubdomain) {
+        log.info("✅ Auto-creating subdomain for business: {} with preferred name: {}", businessId, preferredSubdomain);
 
         // Validate business exists
         Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)
@@ -254,44 +132,29 @@ public class SubdomainServiceImpl implements SubdomainService {
         // Check if business already has a subdomain
         if (subdomainRepository.existsByBusinessIdAndIsDeletedFalse(businessId)) {
             log.debug("Business already has a subdomain, returning existing one");
-            getSubdomainByBusinessId(businessId);
-            return;
+            return getSubdomainByBusinessId(businessId);
         }
 
-        // ✅ SIMPLIFIED: Minimal cleaning - only lowercase and basic validation
-        String cleanedSubdomain = exactSubdomain.toLowerCase().trim();
+        // Generate available subdomain name
+        String availableSubdomain = generateAvailableSubdomain(preferredSubdomain);
+
+        // Create subdomain entity
+        Subdomain subdomain = new Subdomain();
+        subdomain.setSubdomain(availableSubdomain);
+        subdomain.setBusinessId(businessId);
+        subdomain.setStatus(com.emenu.enums.subdomain.SubdomainStatus.ACTIVE); // Always active
+        subdomain.setAccessCount(0L);
+        subdomain.setNotes("Auto-created during business registration");
+
+        Subdomain savedSubdomain = subdomainRepository.save(subdomain);
         
-        // Basic validation
-        if (cleanedSubdomain.length() < 3) {
-            throw new ValidationException("Subdomain must be at least 3 characters long");
-        }
-        
-        if (cleanedSubdomain.length() > 63) {
-            throw new ValidationException("Subdomain cannot exceed 63 characters");
-        }
+        log.info("✅ Subdomain created successfully: {} for business: {}", 
+                availableSubdomain, business.getName());
 
-        // If exact subdomain is taken, throw error (no auto-generation for admin)
-        if (!isSubdomainAvailable(cleanedSubdomain)) {
-            throw new ValidationException("Subdomain '" + cleanedSubdomain + "' is already taken");
-        }
-
-        SubdomainCreateRequest request = new SubdomainCreateRequest();
-        request.setBusinessId(businessId);
-        request.setSubdomain(cleanedSubdomain);
-        request.setNotes("Created by admin with exact input: " + exactSubdomain);
-
-        SubdomainResponse response = createSubdomain(request);
-        log.info("✅ Exact subdomain created successfully: {} (from input: {}) for business: {}", 
-                cleanedSubdomain, exactSubdomain, business.getName());
-
+        return subdomainMapper.toResponse(savedSubdomain);
     }
 
     // Private helper methods
-    private Subdomain findSubdomainById(UUID id) {
-        return subdomainRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new NotFoundException("Subdomain not found"));
-    }
-
     private boolean isValidSubdomainFormat(String subdomain) {
         if (subdomain == null || subdomain.length() < 3 || subdomain.length() > 63) {
             return false;
@@ -303,7 +166,7 @@ public class SubdomainServiceImpl implements SubdomainService {
 
     private String generateAvailableSubdomain(String preferredSubdomain) {
         if (preferredSubdomain == null || preferredSubdomain.trim().isEmpty()) {
-            preferredSubdomain = "business";
+            preferredSubdomain = "restaurant";
         }
 
         String baseSubdomain = cleanSubdomainName(preferredSubdomain);
@@ -316,7 +179,7 @@ public class SubdomainServiceImpl implements SubdomainService {
             
             // Prevent infinite loop
             if (counter > 1000) {
-                candidateSubdomain = "business" + System.currentTimeMillis();
+                candidateSubdomain = "restaurant" + System.currentTimeMillis();
                 break;
             }
         }
@@ -325,7 +188,7 @@ public class SubdomainServiceImpl implements SubdomainService {
     }
 
     private String cleanSubdomainName(String subdomain) {
-        if (subdomain == null) return "business";
+        if (subdomain == null) return "restaurant";
         
         return subdomain.toLowerCase()
                 .trim()

@@ -215,7 +215,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse createBusinessOwner(BusinessOwnerCreateRequest request) {
-        log.info("Creating business owner with business: {} for email: {}",
+        log.info("🚀 Creating business owner with business: {} for email: {}",
                 request.getBusinessName(), request.getOwnerEmail());
 
         // ✅ Security: Only platform users can create business owners
@@ -224,86 +224,76 @@ public class UserServiceImpl implements UserService {
             throw new ValidationException("Only platform administrators can create business owners");
         }
 
-        // ✅ ENHANCED: Check for duplicate email and phone early
-        if (existsByEmail(request.getOwnerEmail())) {
-            throw new ValidationException("Owner email already exists: " + request.getOwnerEmail());
-        }
-
-        if (request.getOwnerPhone() != null && existsByPhone(request.getOwnerPhone())) {
-            throw new ValidationException("Owner phone number already exists: " + request.getOwnerPhone());
-        }
-
-        // ✅ ENHANCED: Check for duplicate business email early
-        if (request.getBusinessEmail() != null && businessRepository.existsByEmailAndIsDeletedFalse(request.getBusinessEmail())) {
-            throw new ValidationException("Business email already exists: " + request.getBusinessEmail());
-        }
+        // ✅ Early validation checks
+        validateBusinessOwnerCreation(request);
 
         try {
             // ✅ STEP 1: Create business first
-            BusinessCreateRequest businessRequest = new BusinessCreateRequest();
-            businessRequest.setName(request.getBusinessName());
-            businessRequest.setEmail(request.getBusinessEmail());
-            businessRequest.setPhone(request.getBusinessPhone());
-            businessRequest.setAddress(request.getBusinessAddress());
-            businessRequest.setDescription(request.getBusinessDescription());
-
-            BusinessResponse businessResponse = businessService.createBusiness(businessRequest);
-            log.info("Business created for business owner: {} with ID: {}",
-                    businessResponse.getName(), businessResponse.getId());
+            log.info("📊 Step 1: Creating business: {}", request.getBusinessName());
+            BusinessResponse businessResponse = createBusinessForOwner(request);
 
             // ✅ STEP 2: Create business owner
-            User user = new User();
-            user.setEmail(request.getOwnerEmail());
-            user.setPassword(passwordEncoder.encode(request.getOwnerPassword()));
-            user.setFirstName(request.getOwnerFirstName());
-            user.setLastName(request.getOwnerLastName());
-            user.setPhoneNumber(request.getOwnerPhone());
-            user.setAddress(request.getOwnerAddress());
-            user.setUserType(UserType.BUSINESS_USER);
-            user.setAccountStatus(AccountStatus.ACTIVE);
-            user.setBusinessId(businessResponse.getId());
-            user.setPosition("Owner");
+            log.info("👤 Step 2: Creating business owner: {}", request.getOwnerEmail());
+            UserResponse userResponse = createOwnerUser(request, businessResponse.getId());
 
-            // Set business owner role
-            Role businessOwnerRole = roleRepository.findByName(RoleEnum.BUSINESS_OWNER)
-                    .orElseThrow(() -> new ValidationException("Business owner role not found"));
-            user.setRoles(List.of(businessOwnerRole));
+            // ✅ STEP 3: Auto-create subdomain (MAIN FEATURE)
+            log.info("🌐 Step 3: Auto-creating subdomain: {}", request.getPreferredSubdomain());
+            createSubdomainForBusiness(businessResponse.getId(), request.getPreferredSubdomain());
 
-            User savedUser = userRepository.save(user);
-            log.info("Business owner created successfully: {} for business: {}",
-                    savedUser.getEmail(), businessResponse.getName());
+            // ✅ Set business name in response
+            userResponse.setBusinessName(businessResponse.getName());
+            userResponse.setBusinessId(businessResponse.getId());
 
-            // ✅ STEP 3: Create subdomain with exact input using admin method
-            try {
-                subdomainService.createExactSubdomainForBusiness(
-                        businessResponse.getId(),
-                        request.getPreferredSubdomain()
-                );
-                log.info("✅ Subdomain created successfully: {} for business: {}",
-                        request.getPreferredSubdomain(), businessResponse.getName());
-            } catch (Exception e) {
-                log.warn("❌ Failed to create subdomain for business owner: {} - Error: {}",
-                        savedUser.getEmail(), e.getMessage());
-                // Don't fail the user creation if subdomain creation fails, but log it
-            }
-
-            // ✅ FIX: Load user with business relationship for proper response
-            User userWithBusiness = userRepository.findById(savedUser.getId())
-                    .orElse(savedUser);
-
-            // ✅ FIX: Manually set business name since JPA lazy loading might not work
-            UserResponse response = userMapper.toResponse(userWithBusiness);
-            response.setBusinessName(businessResponse.getName()); // Ensure business name is set
-            response.setBusinessId(businessResponse.getId());
-
-            return response;
+            log.info("✅ Business owner creation completed successfully: {}", userResponse.getEmail());
+            return userResponse;
 
         } catch (ValidationException ve) {
-            // Re-throw validation exceptions as-is
+            log.error("❌ Validation error creating business owner: {}", ve.getMessage());
             throw ve;
         } catch (Exception e) {
-            log.error("Failed to create business owner: {}", e.getMessage(), e);
+            log.error("❌ Failed to create business owner: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create business owner: " + e.getMessage(), e);
+        }
+    }
+
+    private UserResponse createOwnerUser(BusinessOwnerCreateRequest request, UUID businessId) {
+        User user = new User();
+        user.setEmail(request.getOwnerEmail());
+        user.setPassword(passwordEncoder.encode(request.getOwnerPassword()));
+        user.setFirstName(request.getOwnerFirstName());
+        user.setLastName(request.getOwnerLastName());
+        user.setPhoneNumber(request.getOwnerPhone());
+        user.setAddress(request.getOwnerAddress());
+        user.setUserType(UserType.BUSINESS_USER);
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        user.setBusinessId(businessId);
+        user.setPosition("Owner");
+
+        // Set business owner role
+        Role businessOwnerRole = roleRepository.findByName(RoleEnum.BUSINESS_OWNER)
+                .orElseThrow(() -> new ValidationException("Business owner role not found"));
+        user.setRoles(List.of(businessOwnerRole));
+
+        User savedUser = userRepository.save(user);
+        log.info("✅ Business owner created successfully: {} for business ID: {}",
+                savedUser.getEmail(), businessId);
+
+        return userMapper.toResponse(savedUser);
+    }
+
+    private void createSubdomainForBusiness(UUID businessId, String preferredSubdomain) {
+        try {
+            log.info("🌐 Creating subdomain for business: {} with preferred: {}", businessId, preferredSubdomain);
+
+            var subdomainResponse = subdomainService.createSubdomainForBusiness(businessId, preferredSubdomain);
+
+            log.info("✅ Subdomain created successfully: {} -> {}",
+                    preferredSubdomain, subdomainResponse.getFullDomain());
+
+        } catch (Exception e) {
+            log.error("❌ Failed to create subdomain for business: {} - Error: {}", businessId, e.getMessage());
+            // Don't fail the user creation if subdomain creation fails
+            log.warn("⚠️ Continuing with business owner creation despite subdomain failure");
         }
     }
 
@@ -324,6 +314,42 @@ public class UserServiceImpl implements UserService {
     // ================================
     // PRIVATE HELPER METHODS
     // ================================
+
+    private void validateBusinessOwnerCreation(BusinessOwnerCreateRequest request) {
+        log.debug("🔍 Validating business owner creation request");
+
+        // Check owner email uniqueness
+        if (userRepository.existsByEmailAndIsDeletedFalse(request.getOwnerEmail())) {
+            throw new ValidationException("Owner email already exists: " + request.getOwnerEmail());
+        }
+
+        // Check owner phone uniqueness
+        if (request.getOwnerPhone() != null && userRepository.existsByPhoneNumberAndIsDeletedFalse(request.getOwnerPhone())) {
+            throw new ValidationException("Owner phone number already exists: " + request.getOwnerPhone());
+        }
+
+        // Check business email uniqueness
+        if (request.getBusinessEmail() != null && businessRepository.existsByEmailAndIsDeletedFalse(request.getBusinessEmail())) {
+            throw new ValidationException("Business email already exists: " + request.getBusinessEmail());
+        }
+
+        log.debug("✅ Validation passed for business owner creation");
+    }
+
+    private BusinessResponse createBusinessForOwner(BusinessOwnerCreateRequest request) {
+        BusinessCreateRequest businessRequest = new BusinessCreateRequest();
+        businessRequest.setName(request.getBusinessName());
+        businessRequest.setEmail(request.getBusinessEmail());
+        businessRequest.setPhone(request.getBusinessPhone());
+        businessRequest.setAddress(request.getBusinessAddress());
+        businessRequest.setDescription(request.getBusinessDescription());
+
+        BusinessResponse businessResponse = businessService.createBusiness(businessRequest);
+        log.info("✅ Business created successfully: {} with ID: {}",
+                businessResponse.getName(), businessResponse.getId());
+
+        return businessResponse;
+    }
 
     private void validateAndAssignBusiness(User user, UUID businessId) {
         // Validate business exists

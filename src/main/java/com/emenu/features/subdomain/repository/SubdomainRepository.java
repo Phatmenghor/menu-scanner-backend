@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,7 +29,7 @@ public interface SubdomainRepository extends JpaRepository<Subdomain, UUID>, Jpa
     boolean existsBySubdomainAndIsDeletedFalse(String subdomain);
     boolean existsByBusinessIdAndIsDeletedFalse(UUID businessId);
     
-    // Check subdomain availability for frontend
+    // Main method for frontend subdomain checking
     @Query("SELECT s FROM Subdomain s " +
            "JOIN FETCH s.business b " +
            "WHERE s.subdomain = :subdomain " +
@@ -44,23 +43,10 @@ public interface SubdomainRepository extends JpaRepository<Subdomain, UUID>, Jpa
            "WHERE s.id = :id")
     void incrementAccessCount(@Param("id") UUID id, @Param("accessTime") LocalDateTime accessTime);
 
-
-    // ✅ FIXED: Changed hasActiveSubscription to isSubscriptionActive
-    @Query("SELECT s FROM Subdomain s " +
-           "JOIN s.business b " +
-           "WHERE s.isDeleted = false " +
-           "AND b.isDeleted = false " +
-           "AND (b.isSubscriptionActive = false OR b.subscriptionEndDate < :now)")
-    List<Subdomain> findExpiredSubdomains(@Param("now") LocalDateTime now);
-    
     // Statistics queries
     @Query("SELECT COUNT(s) FROM Subdomain s WHERE s.isDeleted = false")
     long countTotalSubdomains();
     
-    @Query("SELECT COUNT(s) FROM Subdomain s WHERE s.isActive = true AND s.isDeleted = false")
-    long countActiveSubdomains();
-    
     @Query("SELECT COUNT(s) FROM Subdomain s WHERE s.status = :status AND s.isDeleted = false")
     long countByStatus(@Param("status") SubdomainStatus status);
-
 }

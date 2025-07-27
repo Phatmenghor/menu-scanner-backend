@@ -15,11 +15,6 @@ public class SubdomainResponse extends BaseAuditResponse {
     private UUID businessId;
     private String businessName;
     private SubdomainStatus status;
-    private Boolean isActive;
-    private Boolean domainVerified;
-    private Boolean sslEnabled;
-    private String customDomain;
-    private LocalDateTime verifiedAt;
     private LocalDateTime lastAccessed;
     private Long accessCount;
     private String notes;
@@ -28,11 +23,10 @@ public class SubdomainResponse extends BaseAuditResponse {
     private String fullDomain;
     private String fullUrl;
     private Boolean isAccessible;
-    private Boolean hasActiveSubscription;
     private Boolean canAccess;
+    private Boolean hasActiveSubscription;
     
     // Business subscription info
-    private Boolean businessHasActiveSubscription;
     private String currentSubscriptionPlan;
     private Long subscriptionDaysRemaining;
 }

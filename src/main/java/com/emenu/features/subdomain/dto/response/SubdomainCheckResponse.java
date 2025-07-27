@@ -13,29 +13,26 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class SubdomainCheckResponse {
-    private Boolean isValid;
-    private Boolean hasActiveSubscription;
     private Boolean canAccess;
     private String subdomain;
     private String fullDomain;
+    private String fullUrl;
     private UUID businessId;
     private String businessName;
-    private String subscriptionStatus;
+    private String status;
     private String message;
-    private String redirectUrl;
     private LocalDateTime lastChecked;
     
-    // Static factory methods
+    // Static factory methods for easy creation
     public static SubdomainCheckResponse accessible(String subdomain, String businessName, UUID businessId) {
         return SubdomainCheckResponse.builder()
-                .isValid(true)
-                .hasActiveSubscription(true)
                 .canAccess(true)
                 .subdomain(subdomain)
                 .fullDomain(subdomain + ".menu.com")
+                .fullUrl("https://" + subdomain + ".menu.com")
                 .businessId(businessId)
                 .businessName(businessName)
-                .subscriptionStatus("ACTIVE")
+                .status("ACTIVE")
                 .message("Domain is accessible")
                 .lastChecked(LocalDateTime.now())
                 .build();
@@ -43,46 +40,40 @@ public class SubdomainCheckResponse {
     
     public static SubdomainCheckResponse notFound(String subdomain) {
         return SubdomainCheckResponse.builder()
-                .isValid(false)
-                .hasActiveSubscription(false)
                 .canAccess(false)
                 .subdomain(subdomain)
                 .fullDomain(subdomain + ".menu.com")
-                .subscriptionStatus("NOT_FOUND")
+                .fullUrl("https://" + subdomain + ".menu.com")
+                .status("NOT_FOUND")
                 .message("Subdomain not found")
-                .redirectUrl("https://menu.com/register")
                 .lastChecked(LocalDateTime.now())
                 .build();
     }
     
     public static SubdomainCheckResponse subscriptionExpired(String subdomain, String businessName, UUID businessId) {
         return SubdomainCheckResponse.builder()
-                .isValid(true)
-                .hasActiveSubscription(false)
                 .canAccess(false)
                 .subdomain(subdomain)
                 .fullDomain(subdomain + ".menu.com")
+                .fullUrl("https://" + subdomain + ".menu.com")
                 .businessId(businessId)
                 .businessName(businessName)
-                .subscriptionStatus("EXPIRED")
+                .status("SUBSCRIPTION_EXPIRED")
                 .message("Subscription has expired")
-                .redirectUrl("https://menu.com/subscription")
                 .lastChecked(LocalDateTime.now())
                 .build();
     }
     
     public static SubdomainCheckResponse suspended(String subdomain, String businessName, UUID businessId) {
         return SubdomainCheckResponse.builder()
-                .isValid(true)
-                .hasActiveSubscription(false)
                 .canAccess(false)
                 .subdomain(subdomain)
                 .fullDomain(subdomain + ".menu.com")
+                .fullUrl("https://" + subdomain + ".menu.com")
                 .businessId(businessId)
                 .businessName(businessName)
-                .subscriptionStatus("SUSPENDED")
+                .status("SUSPENDED")
                 .message("Domain is suspended")
-                .redirectUrl("https://menu.com/support")
                 .lastChecked(LocalDateTime.now())
                 .build();
     }
