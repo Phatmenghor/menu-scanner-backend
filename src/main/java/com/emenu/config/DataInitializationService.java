@@ -39,10 +39,10 @@ public class DataInitializationService {
     @Value("${app.init.create-admin:true}")
     private boolean createDefaultAdmin;
 
-    @Value("${app.init.admin-email:admin@emenu-platform.com}")
+    @Value("${app.init.admin-email:phatmenghor19@gmail.com}")
     private String defaultAdminEmail;
 
-    @Value("${app.init.admin-password:Admin123!@#}")
+    @Value("${app.init.admin-password:88889999}")
     private String defaultAdminPassword;
 
     @EventListener(ApplicationReadyEvent.class)
@@ -150,9 +150,13 @@ public class DataInitializationService {
 
     private void createPlatformOwner() {
         try {
-            if (!userRepository.existsByEmailAndIsDeletedFalse(defaultAdminEmail)) {
+            // ✅ UPDATED: Use userIdentifier from config (defaultAdminEmail) as userIdentifier
+            String adminUserIdentifier = defaultAdminEmail; // Use email as userIdentifier for admin
+
+            if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(adminUserIdentifier)) {
                 User admin = new User();
-                admin.setEmail(defaultAdminEmail);
+                admin.setUserIdentifier(adminUserIdentifier);
+                admin.setEmail(defaultAdminEmail); // Optional email
                 admin.setPassword(passwordEncoder.encode(defaultAdminPassword));
                 admin.setFirstName("Platform");
                 admin.setLastName("Administrator");
@@ -165,9 +169,9 @@ public class DataInitializationService {
                 admin.setRoles(List.of(platformOwnerRole));
 
                 admin = userRepository.save(admin);
-                log.info("Created platform owner: {} with ID: {}", defaultAdminEmail, admin.getId());
+                log.info("Created platform owner: {} with ID: {}", adminUserIdentifier, admin.getId());
             } else {
-                log.info("Platform owner already exists: {}", defaultAdminEmail);
+                log.info("Platform owner already exists: {}", adminUserIdentifier);
             }
         } catch (Exception e) {
             log.error("Error creating platform owner: {}", e.getMessage(), e);
@@ -177,11 +181,12 @@ public class DataInitializationService {
 
     private void createDemoBusinessOwner() {
         try {
-            String businessEmail = "demo-business@emenu-platform.com";
-            if (!userRepository.existsByEmailAndIsDeletedFalse(businessEmail)) {
+            String businessUserIdentifier = "demo-business-owner";
+            if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(businessUserIdentifier)) {
                 User businessOwner = new User();
-                businessOwner.setEmail(businessEmail);
-                businessOwner.setPassword(passwordEncoder.encode("Business123!"));
+                businessOwner.setUserIdentifier(businessUserIdentifier);
+                businessOwner.setEmail("demo-business@emenu-platform.com"); // Optional email
+                businessOwner.setPassword(passwordEncoder.encode("88889999"));
                 businessOwner.setFirstName("Demo");
                 businessOwner.setLastName("Restaurant Owner");
                 businessOwner.setUserType(UserType.BUSINESS_USER);
@@ -195,9 +200,9 @@ public class DataInitializationService {
                 businessOwner.setRoles(List.of(businessOwnerRole));
 
                 businessOwner = userRepository.save(businessOwner);
-                log.info("Created demo business owner: {} with ID: {}", businessEmail, businessOwner.getId());
+                log.info("Created demo business owner: {} with ID: {}", businessUserIdentifier, businessOwner.getId());
             } else {
-                log.info("Demo business owner already exists: {}", businessEmail);
+                log.info("Demo business owner already exists: {}", businessUserIdentifier);
             }
         } catch (Exception e) {
             log.error("Error creating demo business owner: {}", e.getMessage(), e);
@@ -207,11 +212,12 @@ public class DataInitializationService {
 
     private void createDemoCustomer() {
         try {
-            String customerEmail = "demo-customer@emenu-platform.com";
-            if (!userRepository.existsByEmailAndIsDeletedFalse(customerEmail)) {
+            String customerUserIdentifier = "demo-customer";
+            if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(customerUserIdentifier)) {
                 User customer = new User();
-                customer.setEmail(customerEmail);
-                customer.setPassword(passwordEncoder.encode("Customer123!"));
+                customer.setUserIdentifier(customerUserIdentifier);
+                customer.setEmail("demo-customer@emenu-platform.com"); // Optional email
+                customer.setPassword(passwordEncoder.encode("88889999"));
                 customer.setFirstName("Demo");
                 customer.setLastName("Customer");
                 customer.setUserType(UserType.CUSTOMER);
@@ -223,9 +229,9 @@ public class DataInitializationService {
                 customer.setRoles(List.of(customerRole));
 
                 customer = userRepository.save(customer);
-                log.info("Created demo customer: {} with ID: {}", customerEmail, customer.getId());
+                log.info("Created demo customer: {} with ID: {}", customerUserIdentifier, customer.getId());
             } else {
-                log.info("Demo customer already exists: {}", customerEmail);
+                log.info("Demo customer already exists: {}", customerUserIdentifier);
             }
         } catch (Exception e) {
             log.error("Error creating demo customer: {}", e.getMessage(), e);
@@ -238,15 +244,15 @@ public class DataInitializationService {
             log.info("Creating test accounts with different statuses...");
 
             // Inactive user
-            createTestUser("inactive-user@emenu-platform.com", "Test", "Inactive",
+            createTestUser("inactive-user", "Test", "Inactive",
                     AccountStatus.INACTIVE, RoleEnum.CUSTOMER);
 
             // Locked user
-            createTestUser("locked-user@emenu-platform.com", "Test", "Locked",
+            createTestUser("locked-user", "Test", "Locked",
                     AccountStatus.LOCKED, RoleEnum.CUSTOMER);
 
             // Suspended user
-            createTestUser("suspended-user@emenu-platform.com", "Test", "Suspended",
+            createTestUser("suspended-user", "Test", "Suspended",
                     AccountStatus.SUSPENDED, RoleEnum.BUSINESS_OWNER);
 
         } catch (Exception e) {
@@ -255,13 +261,14 @@ public class DataInitializationService {
         }
     }
 
-    private void createTestUser(String email, String firstName, String lastName,
+    private void createTestUser(String userIdentifier, String firstName, String lastName,
                                 AccountStatus status, RoleEnum roleEnum) {
         try {
-            if (!userRepository.existsByEmailAndIsDeletedFalse(email)) {
+            if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(userIdentifier)) {
                 User user = new User();
-                user.setEmail(email);
-                user.setPassword(passwordEncoder.encode("Test123!"));
+                user.setUserIdentifier(userIdentifier);
+                user.setEmail(userIdentifier + "@emenu-platform.com"); // Optional email based on userIdentifier
+                user.setPassword(passwordEncoder.encode("88889999"));
                 user.setFirstName(firstName);
                 user.setLastName(lastName);
                 user.setUserType(roleEnum.isCustomerRole() ? UserType.CUSTOMER :
@@ -273,13 +280,13 @@ public class DataInitializationService {
                 user.setRoles(List.of(role));
 
                 user = userRepository.save(user);
-                log.info("Created test user: {} with status: {} and ID: {}", email, status, user.getId());
+                log.info("Created test user: {} with status: {} and ID: {}", userIdentifier, status, user.getId());
             } else {
-                log.info("Test user already exists: {}", email);
+                log.info("Test user already exists: {}", userIdentifier);
             }
         } catch (Exception e) {
-            log.error("Error creating test user {}: {}", email, e.getMessage(), e);
-            throw new RuntimeException("Failed to create test user: " + email, e);
+            log.error("Error creating test user {}: {}", userIdentifier, e.getMessage(), e);
+            throw new RuntimeException("Failed to create test user: " + userIdentifier, e);
         }
     }
 }
