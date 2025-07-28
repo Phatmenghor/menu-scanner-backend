@@ -27,26 +27,11 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     
     Optional<Product> findByIdAndIsDeletedFalse(UUID id);
     
-    @Query("SELECT p FROM Product p WHERE p.businessId = :businessId AND p.isDeleted = false ORDER BY p.createdAt DESC")
-    List<Product> findByBusinessIdOrderByCreatedAt(@Param("businessId") UUID businessId);
-    
-    @Query("SELECT p FROM Product p WHERE p.businessId = :businessId AND p.status = :status AND p.isDeleted = false ORDER BY p.createdAt DESC")
-    List<Product> findActiveByBusinessId(@Param("businessId") UUID businessId, @Param("status") ProductStatus status);
-    
     @Query("SELECT p FROM Product p WHERE p.categoryId = :categoryId AND p.status = :status AND p.isDeleted = false ORDER BY p.createdAt DESC")
     List<Product> findByCategoryIdAndStatus(@Param("categoryId") UUID categoryId, @Param("status") ProductStatus status);
     
     @Query("SELECT p FROM Product p WHERE p.brandId = :brandId AND p.isDeleted = false ORDER BY p.createdAt DESC")
     List<Product> findByBrandId(@Param("brandId") UUID brandId);
-    
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.businessId = :businessId AND p.isDeleted = false")
-    long countByBusinessId(@Param("businessId") UUID businessId);
-    
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.categoryId = :categoryId AND p.isDeleted = false")
-    long countByCategoryId(@Param("categoryId") UUID categoryId);
-    
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.brandId = :brandId AND p.isDeleted = false")
-    long countByBrandId(@Param("brandId") UUID brandId);
     
     boolean existsByNameAndBusinessIdAndIsDeletedFalse(String name, UUID businessId);
     

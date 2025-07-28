@@ -17,9 +17,6 @@ public interface BrandRepository extends JpaRepository<Brand, UUID>, JpaSpecific
     
     Optional<Brand> findByIdAndIsDeletedFalse(UUID id);
     
-    @Query("SELECT b FROM Brand b WHERE b.businessId = :businessId AND b.isDeleted = false ORDER BY b.name ASC")
-    List<Brand> findByBusinessIdOrderByName(@Param("businessId") UUID businessId);
-    
     @Query("SELECT b FROM Brand b WHERE b.businessId = :businessId AND b.status = :status AND b.isDeleted = false ORDER BY b.name ASC")
     List<Brand> findActiveByBusinessId(@Param("businessId") UUID businessId, @Param("status") Status status);
     

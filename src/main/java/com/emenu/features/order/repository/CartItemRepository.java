@@ -22,9 +22,6 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
                                                           @Param("productId") UUID productId, 
                                                           @Param("productSizeId") UUID productSizeId);
     
-    @Query("SELECT ci FROM CartItem ci WHERE ci.cartId = :cartId AND ci.isDeleted = false")
-    List<CartItem> findByCartIdAndIsDeletedFalse(@Param("cartId") UUID cartId);
-    
     // HARD DELETE methods - these will permanently remove cart items
     @Modifying
     @Query("DELETE FROM CartItem ci WHERE ci.productId IN (SELECT p.id FROM Product p WHERE p.isDeleted = true)")

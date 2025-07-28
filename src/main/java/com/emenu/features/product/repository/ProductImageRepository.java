@@ -16,8 +16,5 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, UUID
     @Query("SELECT pi FROM ProductImage pi WHERE pi.productId = :productId AND pi.isDeleted = false ORDER BY pi.imageType DESC, pi.createdAt ASC")
     List<ProductImage> findByProductIdOrderByMainAndSort(@Param("productId") UUID productId);
     
-    @Query("SELECT pi FROM ProductImage pi WHERE pi.productId = :productId AND pi.imageType = 'MAIN' AND pi.isDeleted = false")
-    Optional<ProductImage> findMainImageByProductId(@Param("productId") UUID productId);
-    
     void deleteByProductIdAndIsDeletedFalse(UUID productId);
 }

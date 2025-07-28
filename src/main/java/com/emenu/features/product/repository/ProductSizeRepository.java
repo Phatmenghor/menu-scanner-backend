@@ -14,15 +14,6 @@ import java.util.UUID;
 @Repository
 public interface ProductSizeRepository extends JpaRepository<ProductSize, UUID> {
     
-    @Query("SELECT ps FROM ProductSize ps WHERE ps.productId = :productId AND ps.isDeleted = false ORDER BY ps.price ASC")
-    List<ProductSize> findByProductIdOrderBySortAndPrice(@Param("productId") UUID productId);
-    
-    @Query("SELECT ps FROM ProductSize ps WHERE ps.productId = :productId AND ps.isDeleted = false ORDER BY ps.createdAt ASC")
-    List<ProductSize> findByProductIdOrderByCreated(@Param("productId") UUID productId);
-    
-    @Query("SELECT ps FROM ProductSize ps WHERE ps.productId = :productId AND ps.promotionValue IS NOT NULL AND ps.isDeleted = false ORDER BY ps.price ASC")
-    List<ProductSize> findPromotionalSizesByProductId(@Param("productId") UUID productId);
-    
     void deleteByProductIdAndIsDeletedFalse(UUID productId);
 
     @Modifying

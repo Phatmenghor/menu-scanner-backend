@@ -21,7 +21,4 @@ public interface CartRepository extends JpaRepository<Cart, UUID> {
     Optional<Cart> findByUserIdAndBusinessIdWithItems(@Param("userId") UUID userId, @Param("businessId") UUID businessId);
     
     Optional<Cart> findByUserIdAndBusinessIdAndIsDeletedFalse(UUID userId, UUID businessId);
-    
-    @Query("SELECT c FROM Cart c WHERE c.userId = :userId AND c.isDeleted = false")
-    Optional<Cart> findByUserIdAndIsDeletedFalse(@Param("userId") UUID userId);
 }
