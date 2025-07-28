@@ -1,6 +1,7 @@
 package com.emenu.features.order.service.impl;
 
 import com.emenu.exception.custom.NotFoundException;
+import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.order.dto.request.CartItemRequest;
 import com.emenu.features.order.dto.response.CartResponse;
@@ -11,7 +12,9 @@ import com.emenu.features.order.models.CartItem;
 import com.emenu.features.order.repository.CartItemRepository;
 import com.emenu.features.order.repository.CartRepository;
 import com.emenu.features.order.service.CartService;
+import com.emenu.features.product.models.Product;
 import com.emenu.features.product.models.ProductSize;
+import com.emenu.features.product.repository.ProductRepository;
 import com.emenu.features.product.repository.ProductSizeRepository;
 import com.emenu.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,7 @@ public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final ProductRepository productRepository;
     private final ProductSizeRepository productSizeRepository;
     private final CartMapper cartMapper;
     private final SecurityUtils securityUtils;
@@ -41,11 +45,8 @@ public class CartServiceImpl implements CartService {
 
         User currentUser = securityUtils.getCurrentUser();
         
-        // Get product size to determine business and pricing
-        ProductSize productSize = productSizeRepository.findById(request.getProductSizeId())
-                .orElseThrow(() -> new NotFoundException("Product size not found"));
-
-        UUID businessId = productSize.getProduct().getBusinessId();
+        // Validate product and get business ID
+        UUID businessId = validateProductAndGetBusinessId(request.getProductId(), request.getProductSizeId());
         
         // Get or create cart for user and business
         Cart cart = getOrCreateCart(currentUser.getId(), businessId);
@@ -62,14 +63,12 @@ public class CartServiceImpl implements CartService {
             cartItemRepository.save(item);
             log.info("Updated existing cart item quantity to: {}", item.getQuantity());
         } else {
-            // Create new cart item
+            // Create new cart item (no price storage)
             CartItem newItem = new CartItem(
                     cart.getId(),
                     request.getProductId(),
                     request.getProductSizeId(),
                     request.getQuantity(),
-                    productSize.getPrice(),
-                    productSize.getFinalPrice(),
                     request.getNotes()
             );
             cartItemRepository.save(newItem);
@@ -87,6 +86,9 @@ public class CartServiceImpl implements CartService {
         
         CartItem cartItem = cartItemRepository.findByIdAndIsDeletedFalse(request.getCartItemId())
                 .orElseThrow(() -> new NotFoundException("Cart item not found"));
+
+        // Validate product is still available
+        validateProductAvailability(cartItem.getProductId(), cartItem.getProductSizeId());
 
         if (request.getQuantity() == 0) {
             // Remove item from cart
@@ -142,7 +144,13 @@ public class CartServiceImpl implements CartService {
         
         if (cartOpt.isPresent()) {
             Cart cart = cartOpt.get();
-            cartItemRepository.deleteByCartIdAndIsDeletedFalse(cart.getId());
+            
+            // Soft delete all cart items
+            cart.getItems().forEach(item -> {
+                item.softDelete();
+                cartItemRepository.save(item);
+            });
+            
             log.info("Cleared cart for user: {} and business: {}", currentUser.getId(), businessId);
         }
 
@@ -165,6 +173,52 @@ public class CartServiceImpl implements CartService {
     }
 
     // Private helper methods
+    private UUID validateProductAndGetBusinessId(UUID productId, UUID productSizeId) {
+        if (productSizeId != null) {
+            // Product with size
+            ProductSize productSize = productSizeRepository.findById(productSizeId)
+                    .orElseThrow(() -> new NotFoundException("Product size not found"));
+            
+            Product product = productSize.getProduct();
+            validateProductAvailability(product);
+            
+            return product.getBusinessId();
+        } else {
+            // Product without size
+            Product product = productRepository.findByIdAndIsDeletedFalse(productId)
+                    .orElseThrow(() -> new NotFoundException("Product not found"));
+            
+            validateProductAvailability(product);
+            
+            return product.getBusinessId();
+        }
+    }
+
+    private void validateProductAvailability(UUID productId, UUID productSizeId) {
+        if (productSizeId != null) {
+            ProductSize productSize = productSizeRepository.findById(productSizeId)
+                    .orElseThrow(() -> new ValidationException("Product size no longer available"));
+            validateProductAvailability(productSize.getProduct());
+        } else {
+            Product product = productRepository.findByIdAndIsDeletedFalse(productId)
+                    .orElseThrow(() -> new ValidationException("Product no longer available"));
+            validateProductAvailability(product);
+        }
+    }
+
+    private void validateProductAvailability(Product product) {
+        if (product == null) {
+            throw new ValidationException("Product not found");
+        }
+        if (product.getIsDeleted()) {
+            throw new ValidationException("Product has been removed");
+        }
+        if (!product.isActive()) {
+            throw new ValidationException("Product is no longer available");
+        }
+        // Note: OUT_OF_STOCK products can still be added to cart for future purchase
+    }
+
     private Cart getOrCreateCart(UUID userId, UUID businessId) {
         Optional<Cart> existingCart = cartRepository.findByUserIdAndBusinessIdAndIsDeletedFalse(userId, businessId);
         
@@ -183,7 +237,12 @@ public class CartServiceImpl implements CartService {
         Optional<Cart> cartOpt = cartRepository.findByUserIdAndBusinessIdWithItems(userId, businessId);
         
         if (cartOpt.isPresent()) {
-            return cartMapper.toResponse(cartOpt.get());
+            Cart cart = cartOpt.get();
+            
+            // Filter out items for deleted/inactive products
+            cart.getItems().removeIf(item -> !item.isProductAvailable());
+            
+            return cartMapper.toResponse(cart);
         }
         
         // Return empty cart response

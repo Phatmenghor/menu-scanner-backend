@@ -17,7 +17,6 @@ public abstract class CartMapper {
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "productSize", ignore = true)
-    @Mapping(target = "unitPrice", ignore = true) // Will be set from product/size
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -31,11 +30,32 @@ public abstract class CartMapper {
     @Mapping(source = "product.name", target = "productName")
     @Mapping(target = "sizeName", expression = "java(cartItem.getSizeName())")
     @Mapping(target = "productImageUrl", expression = "java(cartItem.getProduct().getMainImageUrl())")
+    @Mapping(target = "currentPrice", expression = "java(cartItem.getCurrentPrice())")
     @Mapping(target = "finalPrice", expression = "java(cartItem.getFinalPrice())")
     @Mapping(target = "totalPrice", expression = "java(cartItem.getTotalPrice())")
     @Mapping(target = "hasPromotion", expression = "java(cartItem.hasDiscount())")
+    @Mapping(target = "discountAmount", expression = "java(cartItem.getDiscountAmount())")
+    @Mapping(target = "isAvailable", expression = "java(cartItem.isProductAvailable())")
+    @Mapping(target = "isInStock", expression = "java(cartItem.isProductInStock())")
+    @Mapping(target = "unavailabilityReason", expression = "java(cartItem.getUnavailabilityReason())")
     @Mapping(source = "createdAt", target = "addedAt")
     public abstract CartItemResponse toItemResponse(CartItem cartItem);
+
+    @AfterMapping
+    protected void setPromotionDetails(@MappingTarget CartItemResponse response, CartItem cartItem) {
+        // Set promotion details from product or product size
+        if (cartItem.getProductSize() != null && cartItem.getProductSize().isPromotionActive()) {
+            response.setPromotionType(cartItem.getProductSize().getPromotionType() != null ? 
+                cartItem.getProductSize().getPromotionType().name() : null);
+            response.setPromotionValue(cartItem.getProductSize().getPromotionValue());
+            response.setPromotionEndDate(cartItem.getProductSize().getPromotionToDate());
+        } else if (cartItem.getProduct() != null && cartItem.getProduct().isPromotionActive()) {
+            response.setPromotionType(cartItem.getProduct().getPromotionType() != null ? 
+                cartItem.getProduct().getPromotionType().name() : null);
+            response.setPromotionValue(cartItem.getProduct().getPromotionValue());
+            response.setPromotionEndDate(cartItem.getProduct().getPromotionToDate());
+        }
+    }
 
     public abstract List<CartItemResponse> toItemResponseList(List<CartItem> cartItems);
 

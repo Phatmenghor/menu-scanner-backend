@@ -30,7 +30,7 @@ public abstract class ProductMapper {
     @Mapping(target = "sizes", ignore = true) // Will be handled separately
     @Mapping(target = "viewCount", constant = "0L")
     @Mapping(target = "favoriteCount", constant = "0L")
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "mapStringToPromotionType")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -44,7 +44,7 @@ public abstract class ProductMapper {
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "brand.name", target = "brandName")
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "mapPromotionTypeToString")
     public abstract ProductResponse toResponse(Product product);
 
     public abstract List<ProductResponse> toResponseList(List<Product> products);
@@ -65,7 +65,7 @@ public abstract class ProductMapper {
     @Mapping(target = "sizes", ignore = true) // Will be handled separately
     @Mapping(target = "viewCount", ignore = true)
     @Mapping(target = "favoriteCount", ignore = true)
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "mapStringToPromotionType")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -80,15 +80,15 @@ public abstract class ProductMapper {
     protected void setCalculatedFields(@MappingTarget ProductResponse response, Product product) {
         // Set main image URL
         response.setMainImageUrl(product.getMainImageUrl());
-        
+
         // Set pricing information
         response.setDisplayPrice(product.getDisplayPrice());
         response.setHasPromotionActive(product.isPromotionActive());
         response.setHasSizes(product.hasSizes());
-        
+
         // Set public URL (will be implemented based on subdomain)
         response.setPublicUrl("/products/" + product.getId());
-        
+
         // Set favorite status (will be overridden in service if user is logged in)
         response.setIsFavorited(false);
     }
@@ -97,21 +97,21 @@ public abstract class ProductMapper {
     protected void setSummaryCalculatedFields(@MappingTarget ProductSummaryResponse response, Product product) {
         // Set main image URL
         response.setMainImageUrl(product.getMainImageUrl());
-        
+
         // Set pricing information
         response.setDisplayPrice(product.getDisplayPrice());
         response.setHasPromotion(product.isPromotionActive());
         response.setHasMultipleSizes(product.hasMultipleSizes());
-        
+
         // Set public URL
         response.setPublicUrl("/products/" + product.getId());
-        
+
         // Set favorite status
         response.setIsFavorited(false);
     }
 
-    @Named("stringToPromotionType")
-    protected PromotionType stringToPromotionType(String promotionType) {
+    @Named("mapStringToPromotionType")
+    protected PromotionType mapStringToPromotionType(String promotionType) {
         if (promotionType == null || promotionType.trim().isEmpty()) return null;
         try {
             return PromotionType.valueOf(promotionType.toUpperCase());
@@ -120,8 +120,8 @@ public abstract class ProductMapper {
         }
     }
 
-    @Named("promotionTypeToString")
-    protected String promotionTypeToString(PromotionType promotionType) {
+    @Named("mapPromotionTypeToString")
+    protected String mapPromotionTypeToString(PromotionType promotionType) {
         return promotionType != null ? promotionType.name() : null;
     }
 

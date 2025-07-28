@@ -44,18 +44,27 @@ public class CartItem extends BaseUUIDEntity {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal unitPrice; // Original price at time of adding to cart
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes; // Special instructions
 
-    // Business Methods
+    // Business Methods - Always get current pricing from product/size
+    public BigDecimal getCurrentPrice() {
+        if (productSize != null) {
+            return productSize.getPrice();
+        } else if (product != null) {
+            return product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+        }
+        return BigDecimal.ZERO;
+    }
+
     public BigDecimal getFinalPrice() {
-        // Calculate current final price (with active promotions)
+        // Always get current final price with active promotions
         if (productSize != null) {
             return productSize.getFinalPrice();
         } else if (product != null) {
             return product.getFinalPrice();
         }
-        return unitPrice; // Fallback to stored price
+        return getCurrentPrice();
     }
 
     public BigDecimal getTotalPrice() {
@@ -63,23 +72,41 @@ public class CartItem extends BaseUUIDEntity {
     }
 
     public BigDecimal getDiscountAmount() {
-        return unitPrice.subtract(getFinalPrice()).multiply(BigDecimal.valueOf(quantity));
+        return getCurrentPrice().subtract(getFinalPrice()).multiply(BigDecimal.valueOf(quantity));
     }
 
     public Boolean hasDiscount() {
-        return unitPrice.compareTo(getFinalPrice()) > 0;
+        return getCurrentPrice().compareTo(getFinalPrice()) > 0;
     }
 
     public String getSizeName() {
         return productSize != null ? productSize.getName() : "Standard";
     }
 
-    // Constructor for creating cart item
-    public CartItem(UUID cartId, UUID productId, UUID productSizeId, Integer quantity, BigDecimal unitPrice) {
+    // Product availability checks
+    public Boolean isProductAvailable() {
+        if (product == null) return false;
+        return product.isActive() && !product.getIsDeleted();
+    }
+
+    public Boolean isProductInStock() {
+        if (product == null) return false;
+        return product.isAvailable(); // ACTIVE or OUT_OF_STOCK
+    }
+
+    public String getUnavailabilityReason() {
+        if (product == null) return "Product not found";
+        if (product.getIsDeleted()) return "Product has been removed";
+        if (!product.isActive()) return "Product is no longer available";
+        return null;
+    }
+
+    // Constructor for creating cart item (no price storage)
+    public CartItem(UUID cartId, UUID productId, UUID productSizeId, Integer quantity, String notes) {
         this.cartId = cartId;
         this.productId = productId;
         this.productSizeId = productSizeId;
         this.quantity = quantity;
-        this.unitPrice = unitPrice;
+        this.notes = notes;
     }
 }

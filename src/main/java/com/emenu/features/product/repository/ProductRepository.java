@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -62,4 +63,13 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     @Modifying
     @Query("UPDATE Product p SET p.favoriteCount = GREATEST(0, COALESCE(p.favoriteCount, 0) - 1) WHERE p.id = :productId")
     void decrementFavoriteCount(@Param("productId") UUID productId);
+
+    @Modifying
+    @Query("UPDATE Product p SET p.promotionType = NULL, p.promotionValue = NULL, " +
+            "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
+            "WHERE p.promotionToDate < :now AND p.promotionToDate IS NOT NULL")
+    int clearExpiredPromotions(@Param("now") LocalDateTime now);
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.promotionToDate < :now AND p.promotionToDate IS NOT NULL")
+    long countExpiredPromotions(@Param("now") LocalDateTime now);
 }
