@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 public class ProductSizeRequest {
@@ -18,10 +19,8 @@ public class ProductSizeRequest {
     private BigDecimal price;
     
     // Promotion fields
-    private Boolean hasPromotion = false;
     private String promotionType; // PERCENTAGE or FIXED_AMOUNT
     private BigDecimal promotionValue;
-    private BigDecimal finalPrice; // Calculated price after promotion
-    
-    private Boolean isDefault = false; // First size to be selected
+    private LocalDateTime promotionFromDate;
+    private LocalDateTime promotionToDate;
 }

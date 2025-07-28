@@ -3,6 +3,7 @@ package com.emenu.features.product.dto.response;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -10,10 +11,10 @@ public class ProductSizeResponse {
     private UUID id;
     private String name;
     private BigDecimal price;
-    private Boolean hasPromotion;
     private String promotionType;
     private BigDecimal promotionValue;
-    private BigDecimal finalPrice;
-    private Boolean isDefault;
-    private Integer sortOrder;
+    private LocalDateTime promotionFromDate;
+    private LocalDateTime promotionToDate;
+    private BigDecimal finalPrice; // Calculated field
+    private Boolean isPromotionActive; // Calculated field
 }

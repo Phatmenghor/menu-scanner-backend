@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,16 +24,24 @@ public class ProductResponse extends BaseAuditResponse {
     private String description;
     private ProductStatus status;
     
+    // Price for products without sizes
+    private BigDecimal price;
+    
+    // Promotion fields for products without sizes
+    private String promotionType;
+    private BigDecimal promotionValue;
+    private LocalDateTime promotionFromDate;
+    private LocalDateTime promotionToDate;
+    
     // Images
     private List<ProductImageResponse> images;
     private String mainImageUrl; // Main image for listing
     
     // Sizes and Pricing
     private List<ProductSizeResponse> sizes;
-    private BigDecimal startingPrice; // Lowest price among all sizes
-    private BigDecimal displayPrice; // Price to show on listing (after promotion)
-    private Boolean hasPromotion;
-    private Boolean hasMultipleSizes;
+    private BigDecimal displayPrice; // Price to show on listing (lowest price with promotion)
+    private Boolean hasPromotionActive; // Calculated field
+    private Boolean hasSizes; // Calculated field
     
     // Public URL for customers
     private String publicUrl;

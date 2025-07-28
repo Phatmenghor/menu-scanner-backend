@@ -12,7 +12,7 @@ public class CartItemRequest {
     @NotNull(message = "Product ID is required")
     private UUID productId;
     
-    @NotNull(message = "Product size ID is required")
+    // Optional - only required for products with sizes
     private UUID productSizeId;
     
     @NotNull(message = "Quantity is required")

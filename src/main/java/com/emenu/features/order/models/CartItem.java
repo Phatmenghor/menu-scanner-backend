@@ -34,8 +34,8 @@ public class CartItem extends BaseUUIDEntity {
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private Product product;
 
-    @Column(name = "product_size_id", nullable = false)
-    private UUID productSizeId;
+    @Column(name = "product_size_id")
+    private UUID productSizeId; // Nullable for products without sizes
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_size_id", insertable = false, updatable = false)
@@ -45,36 +45,41 @@ public class CartItem extends BaseUUIDEntity {
     private Integer quantity;
 
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal unitPrice; // Original price
-
-    @Column(name = "final_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal finalPrice; // Price after promotion
-
-    @Column(name = "notes")
-    private String notes;
+    private BigDecimal unitPrice; // Original price at time of adding to cart
 
     // Business Methods
+    public BigDecimal getFinalPrice() {
+        // Calculate current final price (with active promotions)
+        if (productSize != null) {
+            return productSize.getFinalPrice();
+        } else if (product != null) {
+            return product.getFinalPrice();
+        }
+        return unitPrice; // Fallback to stored price
+    }
+
     public BigDecimal getTotalPrice() {
-        return finalPrice.multiply(BigDecimal.valueOf(quantity));
+        return getFinalPrice().multiply(BigDecimal.valueOf(quantity));
     }
 
     public BigDecimal getDiscountAmount() {
-        return unitPrice.subtract(finalPrice).multiply(BigDecimal.valueOf(quantity));
+        return unitPrice.subtract(getFinalPrice()).multiply(BigDecimal.valueOf(quantity));
     }
 
     public Boolean hasDiscount() {
-        return unitPrice.compareTo(finalPrice) > 0;
+        return unitPrice.compareTo(getFinalPrice()) > 0;
+    }
+
+    public String getSizeName() {
+        return productSize != null ? productSize.getName() : "Standard";
     }
 
     // Constructor for creating cart item
-    public CartItem(UUID cartId, UUID productId, UUID productSizeId, Integer quantity, 
-                    BigDecimal unitPrice, BigDecimal finalPrice, String notes) {
+    public CartItem(UUID cartId, UUID productId, UUID productSizeId, Integer quantity, BigDecimal unitPrice) {
         this.cartId = cartId;
         this.productId = productId;
         this.productSizeId = productSizeId;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
-        this.finalPrice = finalPrice;
-        this.notes = notes;
     }
 }

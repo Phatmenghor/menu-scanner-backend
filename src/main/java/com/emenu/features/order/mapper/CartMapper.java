@@ -17,8 +17,7 @@ public abstract class CartMapper {
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "productSize", ignore = true)
-    @Mapping(target = "unitPrice", ignore = true) // Will be set from product size
-    @Mapping(target = "finalPrice", ignore = true) // Will be set from product size
+    @Mapping(target = "unitPrice", ignore = true) // Will be set from product/size
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -30,8 +29,9 @@ public abstract class CartMapper {
     public abstract CartItem toEntity(CartItemRequest request);
 
     @Mapping(source = "product.name", target = "productName")
-    @Mapping(source = "productSize.name", target = "sizeName")
+    @Mapping(target = "sizeName", expression = "java(cartItem.getSizeName())")
     @Mapping(target = "productImageUrl", expression = "java(cartItem.getProduct().getMainImageUrl())")
+    @Mapping(target = "finalPrice", expression = "java(cartItem.getFinalPrice())")
     @Mapping(target = "totalPrice", expression = "java(cartItem.getTotalPrice())")
     @Mapping(target = "hasPromotion", expression = "java(cartItem.hasDiscount())")
     @Mapping(source = "createdAt", target = "addedAt")

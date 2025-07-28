@@ -1,6 +1,8 @@
 package com.emenu.features.product.models;
 
 import com.emenu.enums.product.ProductStatus;
+import com.emenu.enums.product.PromotionType;
+import com.emenu.enums.product.ImageType;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.business.models.Category;
 import com.emenu.shared.domain.BaseUUIDEntity;
@@ -11,6 +13,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,6 +56,24 @@ public class Product extends BaseUUIDEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private ProductStatus status = ProductStatus.ACTIVE;
+
+    // Price fields for products without sizes
+    @Column(name = "price", precision = 10, scale = 2)
+    private BigDecimal price;
+
+    // Promotion fields for products without sizes
+    @Enumerated(EnumType.STRING)
+    @Column(name = "promotion_type")
+    private PromotionType promotionType;
+
+    @Column(name = "promotion_value", precision = 10, scale = 2)
+    private BigDecimal promotionValue;
+
+    @Column(name = "promotion_from_date")
+    private LocalDateTime promotionFromDate;
+
+    @Column(name = "promotion_to_date")
+    private LocalDateTime promotionToDate;
 
     // Statistics
     @Column(name = "view_count")
@@ -99,15 +121,91 @@ public class Product extends BaseUUIDEntity {
         this.favoriteCount = Math.max(0L, (this.favoriteCount == null ? 0L : this.favoriteCount) - 1);
     }
 
-    // Helper methods for pricing
-    public BigDecimal getStartingPrice() {
-        if (sizes == null || sizes.isEmpty()) {
-            return BigDecimal.ZERO;
+    // Product price logic
+    public boolean hasSizes() {
+        return sizes != null && !sizes.isEmpty();
+    }
+
+    public BigDecimal getDisplayPrice() {
+        if (hasSizes()) {
+            // Get the lowest price from sizes (with active promotions considered)
+            return sizes.stream()
+                    .map(ProductSize::getFinalPrice)
+                    .min(BigDecimal::compareTo)
+                    .orElse(BigDecimal.ZERO);
+        } else {
+            // Use product-level price with promotion
+            return getFinalPrice();
         }
-        return sizes.stream()
-                .map(ProductSize::getFinalPrice)
-                .min(BigDecimal::compareTo)
-                .orElse(BigDecimal.ZERO);
+    }
+
+    public BigDecimal getStartingPrice() {
+        return getDisplayPrice();
+    }
+
+    // Product-level promotion methods (for products without sizes)
+    public BigDecimal getFinalPrice() {
+        if (hasSizes()) {
+            return getDisplayPrice(); // Delegate to sizes
+        }
+
+        if (!isPromotionActive()) {
+            return this.price != null ? this.price : BigDecimal.ZERO;
+        }
+
+        BigDecimal basePrice = this.price != null ? this.price : BigDecimal.ZERO;
+
+        switch (promotionType) {
+            case PERCENTAGE -> {
+                BigDecimal discount = basePrice.multiply(promotionValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                return basePrice.subtract(discount);
+            }
+            case FIXED_AMOUNT -> {
+                BigDecimal finalPrice = basePrice.subtract(promotionValue);
+                return finalPrice.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : finalPrice;
+            }
+            default -> {
+                return basePrice;
+            }
+        }
+    }
+
+    public boolean isPromotionActive() {
+        if (hasSizes()) {
+            // Check if any size has active promotion
+            return sizes.stream().anyMatch(ProductSize::isPromotionActive);
+        }
+
+        // Check product-level promotion
+        if (promotionValue == null || promotionType == null) {
+            return false;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        
+        if (promotionFromDate != null && now.isBefore(promotionFromDate)) {
+            return false;
+        }
+        
+        if (promotionToDate != null && now.isAfter(promotionToDate)) {
+            return false;
+        }
+        
+        return true;
+    }
+
+    public void setPromotion(PromotionType type, BigDecimal value, LocalDateTime fromDate, LocalDateTime toDate) {
+        this.promotionType = type;
+        this.promotionValue = value;
+        this.promotionFromDate = fromDate;
+        this.promotionToDate = toDate;
+    }
+
+    public void removePromotion() {
+        this.promotionType = null;
+        this.promotionValue = null;
+        this.promotionFromDate = null;
+        this.promotionToDate = null;
     }
 
     public String getMainImageUrl() {
@@ -115,17 +213,17 @@ public class Product extends BaseUUIDEntity {
             return null;
         }
         return images.stream()
-                .filter(ProductImage::getIsMain)
+                .filter(ProductImage::isMain)
                 .findFirst()
                 .map(ProductImage::getImageUrl)
                 .orElse(images.get(0).getImageUrl());
     }
 
     public boolean hasPromotion() {
-        if (sizes == null || sizes.isEmpty()) {
-            return false;
+        if (hasSizes()) {
+            return sizes.stream().anyMatch(ProductSize::isPromotionActive);
         }
-        return sizes.stream().anyMatch(ProductSize::getHasPromotion);
+        return isPromotionActive();
     }
 
     public boolean hasMultipleSizes() {

@@ -41,11 +41,11 @@ public class ProductImage extends BaseUUIDEntity {
         this.imageType = ImageType.GALLERY;
     }
 
-    public Boolean getIsMain() {
+    public boolean isMain() {
         return ImageType.MAIN.equals(imageType);
     }
 
-    public Boolean getIsGallery() {
+    public boolean isGallery() {
         return ImageType.GALLERY.equals(imageType);
     }
 }

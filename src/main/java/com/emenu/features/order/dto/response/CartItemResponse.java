@@ -12,11 +12,11 @@ public class CartItemResponse {
     private UUID productId;
     private String productName;
     private String productImageUrl;
-    private UUID productSizeId;
-    private String sizeName;
-    private BigDecimal unitPrice;
-    private BigDecimal finalPrice; // After promotion
-    private Boolean hasPromotion;
+    private UUID productSizeId; // Nullable for products without sizes
+    private String sizeName; // "Standard" for products without sizes
+    private BigDecimal unitPrice; // Original price when added to cart
+    private BigDecimal finalPrice; // Current price with active promotions
+    private Boolean hasPromotion; // If current price is different from unit price
     private Integer quantity;
     private BigDecimal totalPrice; // finalPrice * quantity
     private String notes;

@@ -1,5 +1,6 @@
 package com.emenu.features.product.mapper;
 
+import com.emenu.enums.product.PromotionType;
 import com.emenu.features.product.dto.request.ProductCreateRequest;
 import com.emenu.features.product.dto.response.ProductResponse;
 import com.emenu.features.product.dto.response.ProductSummaryResponse;
@@ -29,6 +30,7 @@ public abstract class ProductMapper {
     @Mapping(target = "sizes", ignore = true) // Will be handled separately
     @Mapping(target = "viewCount", constant = "0L")
     @Mapping(target = "favoriteCount", constant = "0L")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -42,6 +44,7 @@ public abstract class ProductMapper {
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "brand.name", target = "brandName")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
     public abstract ProductResponse toResponse(Product product);
 
     public abstract List<ProductResponse> toResponseList(List<Product> products);
@@ -62,6 +65,7 @@ public abstract class ProductMapper {
     @Mapping(target = "sizes", ignore = true) // Will be handled separately
     @Mapping(target = "viewCount", ignore = true)
     @Mapping(target = "favoriteCount", ignore = true)
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -78,10 +82,9 @@ public abstract class ProductMapper {
         response.setMainImageUrl(product.getMainImageUrl());
         
         // Set pricing information
-        response.setStartingPrice(product.getStartingPrice());
-        response.setDisplayPrice(product.getStartingPrice()); // Use starting price as display price
-        response.setHasPromotion(product.hasPromotion());
-        response.setHasMultipleSizes(product.hasMultipleSizes());
+        response.setDisplayPrice(product.getDisplayPrice());
+        response.setHasPromotionActive(product.isPromotionActive());
+        response.setHasSizes(product.hasSizes());
         
         // Set public URL (will be implemented based on subdomain)
         response.setPublicUrl("/products/" + product.getId());
@@ -96,8 +99,8 @@ public abstract class ProductMapper {
         response.setMainImageUrl(product.getMainImageUrl());
         
         // Set pricing information
-        response.setDisplayPrice(product.getStartingPrice());
-        response.setHasPromotion(product.hasPromotion());
+        response.setDisplayPrice(product.getDisplayPrice());
+        response.setHasPromotion(product.isPromotionActive());
         response.setHasMultipleSizes(product.hasMultipleSizes());
         
         // Set public URL
@@ -105,6 +108,21 @@ public abstract class ProductMapper {
         
         // Set favorite status
         response.setIsFavorited(false);
+    }
+
+    @Named("stringToPromotionType")
+    protected PromotionType stringToPromotionType(String promotionType) {
+        if (promotionType == null || promotionType.trim().isEmpty()) return null;
+        try {
+            return PromotionType.valueOf(promotionType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    @Named("promotionTypeToString")
+    protected String promotionTypeToString(PromotionType promotionType) {
+        return promotionType != null ? promotionType.name() : null;
     }
 
     public PaginationResponse<ProductResponse> toPaginationResponse(Page<Product> productPage) {

@@ -8,6 +8,5 @@ import java.util.UUID;
 public class ProductImageResponse {
     private UUID id;
     private String imageUrl;
-    private Boolean isMain;
-    private Integer sortOrder;
+    private String imageType; // MAIN or GALLERY
 }

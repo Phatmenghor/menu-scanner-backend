@@ -34,7 +34,7 @@ public class ProductSize extends BaseUUIDEntity {
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    // Promotion fields with date range
+    // Promotion fields
     @Enumerated(EnumType.STRING)
     @Column(name = "promotion_type")
     private PromotionType promotionType;
@@ -49,18 +49,8 @@ public class ProductSize extends BaseUUIDEntity {
     private LocalDateTime promotionToDate;
 
     // Business Methods
-    public boolean hasActivePromotion() {
-        LocalDateTime now = LocalDateTime.now();
-        return promotionType != null && 
-               promotionValue != null &&
-               promotionFromDate != null && 
-               promotionToDate != null &&
-               !now.isBefore(promotionFromDate) && 
-               !now.isAfter(promotionToDate);
-    }
-
     public BigDecimal getFinalPrice() {
-        if (!hasActivePromotion()) {
+        if (!isPromotionActive()) {
             return this.price;
         }
 
@@ -79,6 +69,25 @@ public class ProductSize extends BaseUUIDEntity {
         }
     }
 
+    public boolean isPromotionActive() {
+        if (promotionValue == null || promotionType == null) {
+            return false;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Check if promotion is within date range
+        if (promotionFromDate != null && now.isBefore(promotionFromDate)) {
+            return false;
+        }
+        
+        if (promotionToDate != null && now.isAfter(promotionToDate)) {
+            return false;
+        }
+        
+        return true;
+    }
+
     public void setPromotion(PromotionType type, BigDecimal value, LocalDateTime fromDate, LocalDateTime toDate) {
         this.promotionType = type;
         this.promotionValue = value;
@@ -94,17 +103,9 @@ public class ProductSize extends BaseUUIDEntity {
     }
 
     public BigDecimal getDiscountAmount() {
-        if (!hasActivePromotion()) {
+        if (!isPromotionActive()) {
             return BigDecimal.ZERO;
         }
         return price.subtract(getFinalPrice());
-    }
-
-    public boolean isPromotionExpired() {
-        return promotionToDate != null && LocalDateTime.now().isAfter(promotionToDate);
-    }
-
-    public boolean isPromotionNotStarted() {
-        return promotionFromDate != null && LocalDateTime.now().isBefore(promotionFromDate);
     }
 }
