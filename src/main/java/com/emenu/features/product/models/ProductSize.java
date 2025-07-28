@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -33,9 +34,7 @@ public class ProductSize extends BaseUUIDEntity {
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "has_promotion", nullable = false)
-    private Boolean hasPromotion = false;
-
+    // Promotion fields with date range
     @Enumerated(EnumType.STRING)
     @Column(name = "promotion_type")
     private PromotionType promotionType;
@@ -43,61 +42,69 @@ public class ProductSize extends BaseUUIDEntity {
     @Column(name = "promotion_value", precision = 10, scale = 2)
     private BigDecimal promotionValue;
 
-    @Column(name = "final_price", precision = 10, scale = 2)
-    private BigDecimal finalPrice;
+    @Column(name = "promotion_from_date")
+    private LocalDateTime promotionFromDate;
 
-    @Column(name = "is_default", nullable = false)
-    private Boolean isDefault = false;
-
-    @Column(name = "sort_order")
-    private Integer sortOrder = 0;
+    @Column(name = "promotion_to_date")
+    private LocalDateTime promotionToDate;
 
     // Business Methods
-    public void calculateFinalPrice() {
-        if (!Boolean.TRUE.equals(hasPromotion) || promotionValue == null || promotionType == null) {
-            this.finalPrice = this.price;
-            return;
+    public boolean hasActivePromotion() {
+        LocalDateTime now = LocalDateTime.now();
+        return promotionType != null && 
+               promotionValue != null &&
+               promotionFromDate != null && 
+               promotionToDate != null &&
+               !now.isBefore(promotionFromDate) && 
+               !now.isAfter(promotionToDate);
+    }
+
+    public BigDecimal getFinalPrice() {
+        if (!hasActivePromotion()) {
+            return this.price;
         }
 
         switch (promotionType) {
             case PERCENTAGE -> {
                 BigDecimal discount = price.multiply(promotionValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                this.finalPrice = price.subtract(discount);
+                return price.subtract(discount);
             }
             case FIXED_AMOUNT -> {
-                this.finalPrice = price.subtract(promotionValue);
-                if (this.finalPrice.compareTo(BigDecimal.ZERO) < 0) {
-                    this.finalPrice = BigDecimal.ZERO;
-                }
+                BigDecimal finalPrice = price.subtract(promotionValue);
+                return finalPrice.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : finalPrice;
+            }
+            default -> {
+                return this.price;
             }
         }
     }
 
-    public void setPromotion(PromotionType type, BigDecimal value) {
+    public void setPromotion(PromotionType type, BigDecimal value, LocalDateTime fromDate, LocalDateTime toDate) {
         this.promotionType = type;
         this.promotionValue = value;
-        this.hasPromotion = true;
-        calculateFinalPrice();
+        this.promotionFromDate = fromDate;
+        this.promotionToDate = toDate;
     }
 
     public void removePromotion() {
-        this.hasPromotion = false;
         this.promotionType = null;
         this.promotionValue = null;
-        this.finalPrice = this.price;
+        this.promotionFromDate = null;
+        this.promotionToDate = null;
     }
 
     public BigDecimal getDiscountAmount() {
-        if (!Boolean.TRUE.equals(hasPromotion)) {
+        if (!hasActivePromotion()) {
             return BigDecimal.ZERO;
         }
-        return price.subtract(finalPrice);
+        return price.subtract(getFinalPrice());
     }
 
-    // Ensure final price is calculated when price changes
-    @PrePersist
-    @PreUpdate
-    public void prePersist() {
-        calculateFinalPrice();
+    public boolean isPromotionExpired() {
+        return promotionToDate != null && LocalDateTime.now().isAfter(promotionToDate);
+    }
+
+    public boolean isPromotionNotStarted() {
+        return promotionFromDate != null && LocalDateTime.now().isBefore(promotionFromDate);
     }
 }

@@ -1,5 +1,6 @@
 package com.emenu.features.product.models;
 
+import com.emenu.enums.product.ImageType;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -27,18 +28,24 @@ public class ProductImage extends BaseUUIDEntity {
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
-    @Column(name = "is_main", nullable = false)
-    private Boolean isMain = false;
-
-    @Column(name = "sort_order")
-    private Integer sortOrder = 0;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "image_type", nullable = false)
+    private ImageType imageType = ImageType.GALLERY;
 
     // Business Methods
     public void setAsMain() {
-        this.isMain = true;
+        this.imageType = ImageType.MAIN;
     }
 
-    public void unsetAsMain() {
-        this.isMain = false;
+    public void setAsGallery() {
+        this.imageType = ImageType.GALLERY;
+    }
+
+    public Boolean getIsMain() {
+        return ImageType.MAIN.equals(imageType);
+    }
+
+    public Boolean getIsGallery() {
+        return ImageType.GALLERY.equals(imageType);
     }
 }
