@@ -45,19 +45,8 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - Authentication
-                        .requestMatchers("/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/auth/register").permitAll()
-                        .requestMatchers("/api/v1/auth/logout").permitAll()
-
-                        // ✅ NEW: Social login public endpoints
-                        .requestMatchers("/api/v1/auth/social/login").permitAll()
-                        .requestMatchers("/api/v1/auth/social/google/**").permitAll()
-                        .requestMatchers("/api/v1/auth/social/telegram/**").permitAll()
-                        .requestMatchers("/api/v1/auth/social/providers").permitAll()
-                        .requestMatchers("/api/v1/auth/social/status").permitAll()
-
-                        // Other public endpoints
+                        // Public endpoints
+                        .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/images/**").permitAll()
 
@@ -69,21 +58,9 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health/**").permitAll()
                         .requestMatchers("/actuator/**").hasRole("PLATFORM_OWNER")
 
-                        // ✅ NEW: OAuth2 endpoints (if using Spring Security OAuth2)
-                        .requestMatchers("/oauth2/**").permitAll()
-                        .requestMatchers("/login/oauth2/**").permitAll()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
-                )
-                // ✅ NEW: OAuth2 login configuration (optional - for Spring Security OAuth2)
-                .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(authorization -> authorization
-                                .baseUri("/oauth2/authorize"))
-                        .redirectionEndpoint(redirection -> redirection
-                                .baseUri("/oauth2/callback/*"))
-                        .defaultSuccessUrl("/oauth2/login/success", true)
-                        .failureUrl("/oauth2/login/error")
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

@@ -31,28 +31,6 @@ spring:
         show_sql: false
         use_sql_comments: false
 
-  # ✅ NEW: OAuth2 Configuration
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
-            client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
-            redirect-uri: ${GOOGLE_REDIRECT_URI:http://152.42.219.13:8080/oauth2/callback/google}
-            scope:
-              - openid
-              - email
-              - profile
-            authorization-grant-type: authorization_code
-            client-name: Google
-        provider:
-          google:
-            authorization-uri: https://accounts.google.com/o/oauth2/auth
-            token-uri: https://oauth2.googleapis.com/token
-            user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
-            user-name-attribute: id
-
   # Cache Configuration
   cache:
     type: caffeine
@@ -118,25 +96,6 @@ app:
     allowed-headers: "*"
     allow-credentials: true
 
-  # ✅ NEW: Social Login Configuration
-  social:
-    enabled: true
-    allow-customer-registration: true
-    allow-account-linking: true
-
-    # Google OAuth2 Settings
-    google:
-      enabled: true
-      client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
-      client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
-      redirect-uri: ${GOOGLE_REDIRECT_URI:http://152.42.219.13:8080/oauth2/callback/google}
-
-    # Telegram Login Settings
-    telegram:
-      enabled: true
-      bot-token: ${TELEGRAM_BOT_TOKEN:your-telegram-bot-token}
-      bot-username: ${TELEGRAM_BOT_USERNAME:your-bot-username}
-
   # Security Configuration
   security:
     token-cleanup:
@@ -165,7 +124,6 @@ logging:
   level:
     com.emenu: INFO
     com.emenu.config.DataInitializationService: DEBUG # Enable detailed logging for initialization
-    com.emenu.features.auth.service.social: DEBUG # Debug social login
     com.emenu.security: INFO
     org.springframework.security: WARN
     org.springframework.web: WARN
@@ -210,6 +168,5 @@ logging:
   level:
     com.emenu: INFO
     com.emenu.config.DataInitializationService: DEBUG # Debug initialization
-    com.emenu.features.auth.service.social: DEBUG # Debug social login
     com.emenu.security.jwt: DEBUG # Debug JWT operations
     org.hibernate.SQL: OFF

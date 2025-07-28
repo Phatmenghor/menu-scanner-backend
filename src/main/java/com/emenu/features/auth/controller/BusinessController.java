@@ -1,7 +1,6 @@
 package com.emenu.features.auth.controller;
 
 import com.emenu.features.auth.dto.filter.BusinessFilterRequest;
-import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.BusinessCreateRequest;
 import com.emenu.features.auth.dto.response.BusinessResponse;
 import com.emenu.features.auth.dto.update.BusinessUpdateRequest;
