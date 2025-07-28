@@ -10,8 +10,10 @@ import com.emenu.features.auth.mapper.AuthMapper;
 import com.emenu.features.auth.mapper.RegistrationMapper;
 import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.auth.models.Role;
+import com.emenu.features.auth.models.SocialUserAccount;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
+import com.emenu.features.auth.repository.SocialUserAccountRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.AuthService;
 import com.emenu.security.SecurityUtils;
@@ -36,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final SocialUserAccountRepository socialUserAccountRepository;
     private final AuthMapper authMapper;
     private final RegistrationMapper registrationMapper;
     private final UserMapper userMapper;
@@ -104,6 +107,10 @@ public class AuthServiceImpl implements AuthService {
         user.setPhoneNumber(request.getPhoneNumber()); // Optional - can be null
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
+        // ✅ NEW: Mark as regular account (not social-only)
+        user.setHasPassword(true);
+        user.setSocialOnlyAccount(false);
+
         // Set customer role
         Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
                 .orElseThrow(() -> new ValidationException("Customer role not found"));
@@ -119,19 +126,31 @@ public class AuthServiceImpl implements AuthService {
     public UserResponse changePassword(PasswordChangeRequest request) {
         User currentUser = securityUtils.getCurrentUser();
 
-        if (!passwordEncoder.matches(request.getCurrentPassword(), currentUser.getPassword())) {
-            throw new ValidationException("Current password is incorrect");
+        // ✅ NEW: Handle social-only accounts
+        if (currentUser.isSocialOnlyAccount() || !currentUser.canLoginWithPassword()) {
+            // User is setting password for the first time
+            if (request.getCurrentPassword() != null && !request.getCurrentPassword().trim().isEmpty()) {
+                throw new ValidationException("Current password should be empty for social-only accounts");
+            }
+        } else {
+            // Verify current password for regular accounts
+            if (!passwordEncoder.matches(request.getCurrentPassword(), currentUser.getPassword())) {
+                throw new ValidationException("Current password is incorrect");
+            }
         }
 
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new ValidationException("Password confirmation does not match");
         }
 
-        currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        // ✅ NEW: Enable password login
+        currentUser.enablePasswordLogin(passwordEncoder.encode(request.getNewPassword()));
         User savedUser = userRepository.save(currentUser);
 
         tokenBlacklistService.blacklistAllUserTokens(currentUser.getUserIdentifier(), "PASSWORD_CHANGE");
-        log.info("Password changed successfully for user: {}", currentUser.getUserIdentifier());
+        log.info("Password {} for user: {}", 
+                currentUser.isSocialOnlyAccount() ? "set" : "changed", 
+                currentUser.getUserIdentifier());
 
         return userMapper.toResponse(savedUser);
     }
@@ -147,13 +166,80 @@ public class AuthServiceImpl implements AuthService {
             throw new ValidationException("Password confirmation does not match");
         }
 
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        // ✅ NEW: Enable password login for the user
+        user.enablePasswordLogin(passwordEncoder.encode(request.getNewPassword()));
         User savedUser = userRepository.save(user);
 
         tokenBlacklistService.blacklistAllUserTokens(user.getUserIdentifier(), "ADMIN_PASSWORD_RESET");
         log.info("Admin password reset successful for user: {} by admin", user.getUserIdentifier());
 
         return userMapper.toResponse(savedUser);
+    }
+
+    // ✅ NEW: Check if user can login with different methods
+    @Transactional(readOnly = true)
+    public LoginMethodsResponse getLoginMethods(String userIdentifier) {
+        log.info("Checking login methods for user: {}", userIdentifier);
+
+        User user = userRepository.findByUserIdentifierAndIsDeletedFalse(userIdentifier)
+                .orElseThrow(() -> new ValidationException("User not found"));
+
+        boolean canLoginWithPassword = user.canLoginWithPassword();
+        boolean canLoginSocially = user.canLoginSocially();
+        
+        List<String> availableProviders = List.of();
+        if (canLoginSocially) {
+            availableProviders = socialUserAccountRepository.findByUserIdAndIsDeletedFalse(user.getId())
+                    .stream()
+                    .map(account -> account.getProvider().name())
+                    .distinct()
+                    .toList();
+        }
+
+        return LoginMethodsResponse.builder()
+                .userIdentifier(userIdentifier)
+                .canLoginWithPassword(canLoginWithPassword)
+                .canLoginSocially(canLoginSocially)
+                .availableSocialProviders(availableProviders)
+                .accountStatus(user.getAccountStatus().name())
+                .userType(user.getUserType().name())
+                .build();
+    }
+
+    // ✅ NEW: Update user profile with social account data
+    @Transactional
+    public void syncUserProfileWithSocialAccount(User user, SocialUserAccount socialAccount) {
+        log.info("Syncing user profile with social account: {} for user: {}", 
+                socialAccount.getProvider(), user.getUserIdentifier());
+
+        boolean updated = false;
+
+        // Update profile picture if not set
+        if (user.getProfileImageUrl() == null && socialAccount.getProviderPictureUrl() != null) {
+            user.setProfileImageUrl(socialAccount.getProviderPictureUrl());
+            updated = true;
+        }
+
+        // Update name if not set
+        if (user.getFirstName() == null && socialAccount.getProviderName() != null) {
+            String[] nameParts = socialAccount.getProviderName().trim().split("\\s+", 2);
+            user.setFirstName(nameParts[0]);
+            if (nameParts.length > 1) {
+                user.setLastName(nameParts[1]);
+            }
+            updated = true;
+        }
+
+        // Update email if not set (for Google accounts)
+        if (user.getEmail() == null && socialAccount.getProviderEmail() != null) {
+            user.setEmail(socialAccount.getProviderEmail());
+            updated = true;
+        }
+
+        if (updated) {
+            userRepository.save(user);
+            log.info("User profile updated with social account data for: {}", user.getUserIdentifier());
+        }
     }
 
     // Helper methods
@@ -177,5 +263,17 @@ public class AuthServiceImpl implements AuthService {
 
         // ✅ REMOVED: No email/phone uniqueness checks for regular customers
         // Email and phone are now optional and don't need to be unique
+    }
+
+    // ✅ NEW: Response DTO for login methods
+    @lombok.Data
+    @lombok.Builder
+    public static class LoginMethodsResponse {
+        private String userIdentifier;
+        private boolean canLoginWithPassword;
+        private boolean canLoginSocially;
+        private List<String> availableSocialProviders;
+        private String accountStatus;
+        private String userType;
     }
 }

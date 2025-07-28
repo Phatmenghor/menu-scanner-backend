@@ -27,7 +27,7 @@ public class User extends BaseUUIDEntity {
     @Column(name = "email")
     private String email;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "password") // ✅ UPDATED: Made nullable for social-only accounts
     private String password;
 
     @Column(name = "first_name")
@@ -59,11 +59,15 @@ public class User extends BaseUUIDEntity {
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private List<Role> roles;
+
+    // ✅ NEW: Social accounts relationship
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<SocialUserAccount> socialAccounts;
 
     @Column(name = "position")
     private String position;
@@ -73,6 +77,13 @@ public class User extends BaseUUIDEntity {
 
     @Column(name = "notes")
     private String notes;
+
+    // ✅ NEW: Social login related fields
+    @Column(name = "has_password")
+    private Boolean hasPassword = true;
+
+    @Column(name = "social_only_account")
+    private Boolean socialOnlyAccount = false;
 
     // Methods
     public String getFullName() {
@@ -104,5 +115,80 @@ public class User extends BaseUUIDEntity {
 
     public boolean hasBusinessAccess() {
         return businessId != null && (isBusinessUser() || isPlatformUser());
+    }
+
+    // ✅ NEW: Social login helper methods
+    public boolean hasSocialAccounts() {
+        return socialAccounts != null && !socialAccounts.isEmpty();
+    }
+
+    public boolean canLoginWithPassword() {
+        return hasPassword != null && hasPassword && password != null && !password.trim().isEmpty();
+    }
+
+    public boolean canLoginSocially() {
+        return hasSocialAccounts();
+    }
+
+    public boolean isSocialOnlyAccount() {
+        return Boolean.TRUE.equals(socialOnlyAccount) || !canLoginWithPassword();
+    }
+
+    public void setSocialOnlyAccount() {
+        this.socialOnlyAccount = true;
+        this.hasPassword = false;
+        this.password = null;
+    }
+
+    public void enablePasswordLogin(String encodedPassword) {
+        this.password = encodedPassword;
+        this.hasPassword = true;
+        this.socialOnlyAccount = false;
+    }
+
+    // ✅ NEW: Get primary social account
+    public SocialUserAccount getPrimarySocialAccount() {
+        if (socialAccounts == null || socialAccounts.isEmpty()) {
+            return null;
+        }
+
+        return socialAccounts.stream()
+                .filter(account -> Boolean.TRUE.equals(account.getIsPrimary()))
+                .findFirst()
+                .orElse(socialAccounts.get(0)); // Fallback to first account
+    }
+
+    // ✅ NEW: Update profile from social account
+    public void updateProfileFromSocialAccount(SocialUserAccount socialAccount) {
+        // Update profile picture if not set or if from social account
+        if (profileImageUrl == null || profileImageUrl.trim().isEmpty()) {
+            if (socialAccount.getProviderPictureUrl() != null) {
+                this.profileImageUrl = socialAccount.getProviderPictureUrl();
+            }
+        }
+
+        // Update name if not set
+        if ((firstName == null || firstName.trim().isEmpty()) &&
+                socialAccount.getProviderName() != null) {
+            String[] nameParts = socialAccount.getProviderName().trim().split("\\s+", 2);
+            this.firstName = nameParts[0];
+            if (nameParts.length > 1) {
+                this.lastName = nameParts[1];
+            }
+        }
+
+        // Update email if not set (Google accounts)
+        if ((email == null || email.trim().isEmpty()) &&
+                socialAccount.getProviderEmail() != null) {
+            this.email = socialAccount.getProviderEmail();
+        }
+    }
+
+    // ✅ NEW: Check if user has specific social provider
+    public boolean hasSocialProvider(com.emenu.enums.auth.SocialProvider provider) {
+        if (socialAccounts == null) return false;
+
+        return socialAccounts.stream()
+                .anyMatch(account -> account.getProvider() == provider && !account.getIsDeleted());
     }
 }
