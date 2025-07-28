@@ -12,7 +12,11 @@ public class LoginResponse {
     private String accessToken;
     private String tokenType = "Bearer";
     private UUID userId;
-    private String email;
+    
+    // ✅ ADDED: Primary identifier for login
+    private String userIdentifier;
+    
+    private String email; // Optional - can be null
     private String fullName;
     private String profileImageUrl;
     private UserType userType;

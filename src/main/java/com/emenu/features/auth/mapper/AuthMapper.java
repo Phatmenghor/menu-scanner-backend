@@ -16,8 +16,10 @@ public abstract class AuthMapper {
     @Mapping(source = "user.business.name", target = "businessName")
     @Mapping(source = "user.businessId", target = "businessId")
     @Mapping(source = "user.id", target = "userId")
+    @Mapping(source = "user.userIdentifier", target = "userIdentifier")
     @Mapping(source = "user.email", target = "email")
     @Mapping(source = "user.userType", target = "userType")
+    @Mapping(source = "user.profileImageUrl", target = "profileImageUrl")
     @Mapping(source = "token", target = "accessToken")
     @Mapping(target = "tokenType", constant = "Bearer")
     @Mapping(target = "welcomeMessage", expression = "java(createWelcomeMessage(user))")
@@ -43,7 +45,8 @@ public abstract class AuthMapper {
         if (user == null) return "Welcome!";
 
         String timeOfDay = getTimeOfDayGreeting();
-        String userName = user.getFirstName() != null ? user.getFirstName() : "User";
+        String userName = user.getFirstName() != null ? user.getFirstName() : 
+                         user.getUserIdentifier() != null ? user.getUserIdentifier() : "User";
 
         return String.format("%s, %s! Welcome to Cambodia E-Menu Platform", timeOfDay, userName);
     }

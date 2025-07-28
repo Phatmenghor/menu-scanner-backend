@@ -67,10 +67,15 @@ public class ApplicationStartupListener {
             // Log default credentials in development
             if (environment.acceptsProfiles("dev", "test")) {
                 log.info("\n" +
-                        "🔐 Default Credentials (Development Only):\n" +
-                        "   Platform Owner:  admin@emenu-platform.com / Admin123!@#\n" +
-                        "   Business Owner:  demo-business@emenu-platform.com / Business123!\n" +
-                        "   Customer:        demo-customer@emenu-platform.com / Customer123!\n"
+                        "🔐 Default Credentials (UserIdentifier / Password):\n" +
+                        "   Platform Owner:  phatmenghor19@gmail.com / 88889999\n" +
+                        "   Business Owner:  demo-business-owner / Business123!\n" +
+                        "   Customer:        demo-customer / Customer123!\n" +
+                        "\n" +
+                        "📝 Test Accounts (UserIdentifier / Password):\n" +
+                        "   Inactive User:   inactive-user / Test123!\n" +
+                        "   Locked User:     locked-user / Test123!\n" +
+                        "   Suspended User:  suspended-user / Test123!\n"
                 );
             }
             

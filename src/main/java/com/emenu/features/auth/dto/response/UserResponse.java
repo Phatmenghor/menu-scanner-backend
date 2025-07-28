@@ -15,6 +15,7 @@ import java.util.UUID;
 @Data
 public class UserResponse extends BaseAuditResponse {
 
+    // ✅ PRIMARY: UserIdentifier for login (always present)
     private String userIdentifier;
 
     private String email;
