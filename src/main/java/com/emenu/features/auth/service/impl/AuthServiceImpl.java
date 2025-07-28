@@ -47,20 +47,21 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        log.info("Login attempt for email: {}", request.getEmail());
+        log.info("Login attempt for userIdentifier: {}", request.getUserIdentifier());
 
+        // ✅ UPDATED: Use userIdentifier for authentication
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(request.getUserIdentifier(), request.getPassword())
         );
 
-        User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
+        User user = userRepository.findByUserIdentifierAndIsDeletedFalse(request.getUserIdentifier())
                 .orElseThrow(() -> new ValidationException("User not found"));
 
         securityUtils.validateAccountStatus(user);
         String token = jwtGenerator.generateAccessToken(authentication);
         LoginResponse response = authMapper.toLoginResponse(user, token);
 
-        log.info("Login successful for user: {}", user.getEmail());
+        log.info("Login successful for user: {}", user.getUserIdentifier());
         return response;
     }
 
@@ -77,27 +78,30 @@ public class AuthServiceImpl implements AuthService {
             throw new ValidationException("Token is invalid or expired");
         }
 
-        String userEmail;
+        String userIdentifier;
         try {
-            userEmail = jwtGenerator.getUsernameFromJWT(token);
-            log.info("Processing logout for user: {}", userEmail);
+            userIdentifier = jwtGenerator.getUsernameFromJWT(token);
+            log.info("Processing logout for user: {}", userIdentifier);
         } catch (Exception e) {
-            log.error("Failed to extract username from token during logout: {}", e.getMessage());
+            log.error("Failed to extract userIdentifier from token during logout: {}", e.getMessage());
             throw new ValidationException("Invalid token - cannot extract user information");
         }
 
-        tokenBlacklistService.blacklistToken(token, userEmail, "LOGOUT");
-        log.info("Logout successful for user: {} - token blacklisted", userEmail);
+        tokenBlacklistService.blacklistToken(token, userIdentifier, "LOGOUT");
+        log.info("Logout successful for user: {} - token blacklisted", userIdentifier);
     }
 
     @Override
     public UserResponse registerCustomer(RegisterRequest request) {
-        log.info("Registering new customer: {}", request.getEmail());
+        log.info("Registering new customer: {}", request.getUserIdentifier());
 
         validateCustomerRegistration(request);
 
         // Create customer user
         User user = registrationMapper.toCustomerEntity(request);
+        user.setUserIdentifier(request.getUserIdentifier());
+        user.setEmail(request.getEmail()); // Optional - can be null
+        user.setPhoneNumber(request.getPhoneNumber()); // Optional - can be null
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         // Set customer role
@@ -106,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
         user.setRoles(List.of(customerRole));
 
         User savedUser = userRepository.save(user);
-        log.info("Customer registered successfully: {}", savedUser.getEmail());
+        log.info("Customer registered successfully: {}", savedUser.getUserIdentifier());
 
         return userMapper.toResponse(savedUser);
     }
@@ -126,8 +130,8 @@ public class AuthServiceImpl implements AuthService {
         currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
         User savedUser = userRepository.save(currentUser);
 
-        tokenBlacklistService.blacklistAllUserTokens(currentUser.getEmail(), "PASSWORD_CHANGE");
-        log.info("Password changed successfully for user: {}", currentUser.getEmail());
+        tokenBlacklistService.blacklistAllUserTokens(currentUser.getUserIdentifier(), "PASSWORD_CHANGE");
+        log.info("Password changed successfully for user: {}", currentUser.getUserIdentifier());
 
         return userMapper.toResponse(savedUser);
     }
@@ -146,8 +150,8 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         User savedUser = userRepository.save(user);
 
-        tokenBlacklistService.blacklistAllUserTokens(user.getEmail(), "ADMIN_PASSWORD_RESET");
-        log.info("Admin password reset successful for user: {} by admin", user.getEmail());
+        tokenBlacklistService.blacklistAllUserTokens(user.getUserIdentifier(), "ADMIN_PASSWORD_RESET");
+        log.info("Admin password reset successful for user: {} by admin", user.getUserIdentifier());
 
         return userMapper.toResponse(savedUser);
     }
@@ -161,22 +165,17 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Transactional(readOnly = true)
-    private boolean isEmailAvailable(String email) {
-        return !userRepository.existsByEmailAndIsDeletedFalse(email);
-    }
-
-    @Transactional(readOnly = true)
-    private boolean isPhoneAvailable(String phoneNumber) {
-        return !userRepository.existsByPhoneNumberAndIsDeletedFalse(phoneNumber);
+    private boolean isUserIdentifierAvailable(String userIdentifier) {
+        return !userRepository.existsByUserIdentifierAndIsDeletedFalse(userIdentifier);
     }
 
     private void validateCustomerRegistration(RegisterRequest request) {
-        if (!isEmailAvailable(request.getEmail())) {
-            throw new ValidationException("Email is already in use");
+        // ✅ UPDATED: Only check userIdentifier uniqueness
+        if (!isUserIdentifierAvailable(request.getUserIdentifier())) {
+            throw new ValidationException("User identifier is already in use");
         }
 
-        if (request.getPhoneNumber() != null && !isPhoneAvailable(request.getPhoneNumber())) {
-            throw new ValidationException("Phone number is already in use");
-        }
+        // ✅ REMOVED: No email/phone uniqueness checks for regular customers
+        // Email and phone are now optional and don't need to be unique
     }
 }

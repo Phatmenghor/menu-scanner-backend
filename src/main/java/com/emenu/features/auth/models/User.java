@@ -20,16 +20,20 @@ import java.util.UUID;
 @AllArgsConstructor
 public class User extends BaseUUIDEntity {
 
-    @Column(name = "email", nullable = false, unique = true)
+    // ✅ NEW: User identifier for login (can be anything)
+    @Column(name = "user_identifier", nullable = false, unique = true)
+    private String userIdentifier;
+
+    @Column(name = "email")
     private String email;
 
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "first_name", nullable = false)
+    @Column(name = "first_name")
     private String firstName;
 
-    @Column(name = "last_name", nullable = false)
+    @Column(name = "last_name")
     private String lastName;
 
     @Column(name = "phone_number")
@@ -72,7 +76,14 @@ public class User extends BaseUUIDEntity {
 
     // Methods
     public String getFullName() {
-        return firstName + " " + lastName;
+        if (firstName != null && lastName != null) {
+            return firstName + " " + lastName;
+        } else if (firstName != null) {
+            return firstName;
+        } else if (lastName != null) {
+            return lastName;
+        }
+        return userIdentifier; // Fallback to userIdentifier
     }
 
     public boolean isActive() {

@@ -35,14 +35,17 @@ public abstract class UserMapper {
     @Mapping(target = "password", ignore = true)
     public abstract User toEntity(UserCreateRequest request);
 
+    // ✅ UPDATED: Include userIdentifier in response mapping
     @Mapping(source = "roles", target = "roles", qualifiedByName = "rolesToRoleEnums")
+    @Mapping(source = "business.name", target = "businessName")
     public abstract UserResponse toResponse(User user);
 
     public abstract List<UserResponse> toResponseList(List<User> users);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "userIdentifier", ignore = true) // Don't allow updating userIdentifier
+    @Mapping(target = "email", ignore = true) // Don't allow updating email via general update
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "userType", ignore = true)
     @Mapping(target = "roles", ignore = true)
@@ -62,7 +65,8 @@ public abstract class UserMapper {
      */
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "userIdentifier", ignore = true) // Can't change userIdentifier
+    @Mapping(target = "email", ignore = true) // Can't change email
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "userType", ignore = true)
     @Mapping(target = "roles", ignore = true)

@@ -18,13 +18,14 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
 
+    // ✅ NEW: Primary login method using userIdentifier
+    Optional<User> findByUserIdentifierAndIsDeletedFalse(String userIdentifier);
+    boolean existsByUserIdentifierAndIsDeletedFalse(String userIdentifier);
+
+    // ✅ UPDATED: Keep email methods for backward compatibility (but no uniqueness required)
     Optional<User> findByEmailAndIsDeletedFalse(String email);
 
     Optional<User> findByIdAndIsDeletedFalse(UUID id);
-
-    boolean existsByEmailAndIsDeletedFalse(String email);
-
-    boolean existsByPhoneNumberAndIsDeletedFalse(String phoneNumber);
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.businessId = :businessId AND u.isDeleted = false")
     long countByBusinessIdAndIsDeletedFalse(@Param("businessId") UUID businessId);

@@ -58,26 +58,24 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
-        log.info("Creating user: {} with type: {}", request.getEmail(), request.getUserType());
+        log.info("Creating user: {} with type: {}", request.getUserIdentifier(), request.getUserType());
 
-        // Validate email uniqueness
-        if (existsByEmail(request.getEmail())) {
-            throw new ValidationException("Email already exists");
+        // ✅ UPDATED: Only validate userIdentifier uniqueness
+        if (existsByUserIdentifier(request.getUserIdentifier())) {
+            throw new ValidationException("User identifier already exists");
         }
 
-        // Validate phone uniqueness if provided
-        if (request.getPhoneNumber() != null && existsByPhone(request.getPhoneNumber())) {
-            throw new ValidationException("Phone number already exists");
-        }
+        // ✅ REMOVED: No email/phone uniqueness validation for regular users
 
         try {
             // ✅ Create user entity
             User user = new User();
-            user.setEmail(request.getEmail());
+            user.setUserIdentifier(request.getUserIdentifier());
+            user.setEmail(request.getEmail()); // Optional - can be null
+            user.setPhoneNumber(request.getPhoneNumber()); // Optional - can be null
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setFirstName(request.getFirstName());
             user.setLastName(request.getLastName());
-            user.setPhoneNumber(request.getPhoneNumber());
             user.setProfileImageUrl(request.getProfileImageUrl());
             user.setPosition(request.getPosition());
             user.setAddress(request.getAddress());
@@ -94,7 +92,7 @@ public class UserServiceImpl implements UserService {
             setUserRoles(user, request.getRoles());
 
             User savedUser = userRepository.save(user);
-            log.info("User created successfully: {} with type: {}", savedUser.getEmail(), savedUser.getUserType());
+            log.info("User created successfully: {} with type: {}", savedUser.getUserIdentifier(), savedUser.getUserType());
 
             return userMapper.toResponse(savedUser);
 
@@ -158,7 +156,7 @@ public class UserServiceImpl implements UserService {
         userMapper.updateEntity(request, user);
         User updatedUser = userRepository.save(user);
 
-        log.info("User updated successfully: {}", updatedUser.getEmail());
+        log.info("User updated successfully: {}", updatedUser.getUserIdentifier());
         return userMapper.toResponse(updatedUser);
     }
 
@@ -177,7 +175,7 @@ public class UserServiceImpl implements UserService {
 
         user.softDelete();
         user = userRepository.save(user);
-        log.info("User deleted: {}", user.getEmail());
+        log.info("User deleted: {}", user.getUserIdentifier());
         
         return userMapper.toResponse(user);
     }
@@ -204,7 +202,7 @@ public class UserServiceImpl implements UserService {
         userMapper.updateCurrentUserProfile(request, currentUser);
 
         User updatedUser = userRepository.save(currentUser);
-        log.info("Current user profile updated: {}", updatedUser.getEmail());
+        log.info("Current user profile updated: {}", updatedUser.getUserIdentifier());
 
         return userMapper.toResponse(updatedUser);
     }
@@ -215,8 +213,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse createBusinessOwner(BusinessOwnerCreateRequest request) {
-        log.info("🚀 Creating business owner with business: {} for email: {}",
-                request.getBusinessName(), request.getOwnerEmail());
+        log.info("🚀 Creating business owner with business: {} for userIdentifier: {}",
+                request.getBusinessName(), request.getOwnerUserIdentifier());
 
         // ✅ Security: Only platform users can create business owners
         User currentUser = securityUtils.getCurrentUser();
@@ -224,7 +222,7 @@ public class UserServiceImpl implements UserService {
             throw new ValidationException("Only platform administrators can create business owners");
         }
 
-        // ✅ Early validation checks
+        // ✅ UPDATED: Validate business owner creation (only userIdentifier required)
         validateBusinessOwnerCreation(request);
 
         try {
@@ -233,7 +231,7 @@ public class UserServiceImpl implements UserService {
             BusinessResponse businessResponse = createBusinessForOwner(request);
 
             // ✅ STEP 2: Create business owner
-            log.info("👤 Step 2: Creating business owner: {}", request.getOwnerEmail());
+            log.info("👤 Step 2: Creating business owner: {}", request.getOwnerUserIdentifier());
             UserResponse userResponse = createOwnerUser(request, businessResponse.getId());
 
             // ✅ STEP 3: Auto-create subdomain (MAIN FEATURE)
@@ -244,7 +242,7 @@ public class UserServiceImpl implements UserService {
             userResponse.setBusinessName(businessResponse.getName());
             userResponse.setBusinessId(businessResponse.getId());
 
-            log.info("✅ Business owner creation completed successfully: {}", userResponse.getEmail());
+            log.info("✅ Business owner creation completed successfully: {}", userResponse.getUserIdentifier());
             return userResponse;
 
         } catch (ValidationException ve) {
@@ -258,11 +256,14 @@ public class UserServiceImpl implements UserService {
 
     private UserResponse createOwnerUser(BusinessOwnerCreateRequest request, UUID businessId) {
         User user = new User();
-        user.setEmail(request.getOwnerEmail());
+        
+        // ✅ UPDATED: Use ownerUserIdentifier instead of email
+        user.setUserIdentifier(request.getOwnerUserIdentifier());
+        user.setEmail(request.getOwnerEmail()); // Optional - can be null
         user.setPassword(passwordEncoder.encode(request.getOwnerPassword()));
         user.setFirstName(request.getOwnerFirstName());
         user.setLastName(request.getOwnerLastName());
-        user.setPhoneNumber(request.getOwnerPhone());
+        user.setPhoneNumber(request.getOwnerPhone()); // Optional - can be null
         user.setAddress(request.getOwnerAddress());
         user.setUserType(UserType.BUSINESS_USER);
         user.setAccountStatus(AccountStatus.ACTIVE);
@@ -276,7 +277,7 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
         log.info("✅ Business owner created successfully: {} for business ID: {}",
-                savedUser.getEmail(), businessId);
+                savedUser.getUserIdentifier(), businessId);
 
         return userMapper.toResponse(savedUser);
     }
@@ -302,13 +303,8 @@ public class UserServiceImpl implements UserService {
     // ================================
 
     @Transactional(readOnly = true)
-    private boolean existsByEmail(String email) {
-        return userRepository.existsByEmailAndIsDeletedFalse(email);
-    }
-
-    @Transactional(readOnly = true)
-    private boolean existsByPhone(String phoneNumber) {
-        return userRepository.existsByPhoneNumberAndIsDeletedFalse(phoneNumber);
+    private boolean existsByUserIdentifier(String userIdentifier) {
+        return userRepository.existsByUserIdentifierAndIsDeletedFalse(userIdentifier);
     }
 
     // ================================
@@ -318,18 +314,15 @@ public class UserServiceImpl implements UserService {
     private void validateBusinessOwnerCreation(BusinessOwnerCreateRequest request) {
         log.debug("🔍 Validating business owner creation request");
 
-        // Check owner email uniqueness
-        if (userRepository.existsByEmailAndIsDeletedFalse(request.getOwnerEmail())) {
-            throw new ValidationException("Owner email already exists: " + request.getOwnerEmail());
+        // ✅ UPDATED: Only check userIdentifier uniqueness
+        if (userRepository.existsByUserIdentifierAndIsDeletedFalse(request.getOwnerUserIdentifier())) {
+            throw new ValidationException("Owner user identifier already exists: " + request.getOwnerUserIdentifier());
         }
 
-        // Check owner phone uniqueness
-        if (request.getOwnerPhone() != null && userRepository.existsByPhoneNumberAndIsDeletedFalse(request.getOwnerPhone())) {
-            throw new ValidationException("Owner phone number already exists: " + request.getOwnerPhone());
-        }
-
-        // Check business email uniqueness
-        if (request.getBusinessEmail() != null && businessRepository.existsByEmailAndIsDeletedFalse(request.getBusinessEmail())) {
+        // ✅ UPDATED: Only check business email uniqueness if provided
+        if (request.getBusinessEmail() != null && 
+            !request.getBusinessEmail().trim().isEmpty() && 
+            businessRepository.existsByEmailAndIsDeletedFalse(request.getBusinessEmail())) {
             throw new ValidationException("Business email already exists: " + request.getBusinessEmail());
         }
 

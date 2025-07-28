@@ -15,6 +15,8 @@ import java.util.UUID;
 @Data
 public class UserResponse extends BaseAuditResponse {
 
+    private String userIdentifier;
+
     private String email;
     private String firstName;
     private String lastName;

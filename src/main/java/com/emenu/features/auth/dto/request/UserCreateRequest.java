@@ -3,7 +3,6 @@ package com.emenu.features.auth.dto.request;
 import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,18 +14,20 @@ import java.util.UUID;
 @Data
 public class UserCreateRequest {
 
-    // ✅ USER INFORMATION ONLY
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email format is invalid")
-    private String email;
+    // ✅ NEW: Required userIdentifier for login (no validation - can be anything)
+    @NotBlank(message = "User identifier is required")
+    private String userIdentifier;
+
+    // ✅ UPDATED: Email is now optional for regular users
+    private String email; // Optional - can be null
 
     @NotBlank(message = "Password is required")
-    @Size(min = 4, max = 100, message = "Owner password must be between 4 and 100 characters")
+    @Size(min = 4, max = 100, message = "Password must be between 4 and 100 characters")
     private String password;
 
     private String firstName;
     private String lastName;
-    private String phoneNumber;
+    private String phoneNumber; // Optional - can be null
     private String profileImageUrl;
     private String position;
     private String address;

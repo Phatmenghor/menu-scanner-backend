@@ -1,6 +1,5 @@
 package com.emenu.features.auth.dto.request;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -8,16 +7,19 @@ import lombok.Data;
 
 @Data
 public class BusinessOwnerCreateRequest {
+
+    // ✅ OWNER INFORMATION - UPDATED: userIdentifier required, email optional
+    @NotBlank(message = "Owner user identifier is required")
+    private String ownerUserIdentifier; // ✅ NEW: Required - can be anything
     
     // ✅ BUSINESS INFORMATION
     @NotBlank(message = "Business name is required")
     private String businessName;
 
-    @Email(message = "Business email format is invalid")
-    private String businessEmail;
+    private String businessEmail; // ✅ UPDATED: Optional - can be null
 
     @Pattern(regexp = "^(\\+855|0)?[1-9][0-9]{7,8}$", message = "Invalid phone number format for Cambodia")
-    private String businessPhone;
+    private String businessPhone; // Optional - can be null
     
     private String businessAddress;
     private String businessDescription;
@@ -28,14 +30,12 @@ public class BusinessOwnerCreateRequest {
     @Pattern(regexp = "^[a-z0-9][a-z0-9-]*[a-z0-9]$", 
              message = "Subdomain can only contain lowercase letters, numbers, and hyphens. Cannot start or end with hyphen")
     private String preferredSubdomain;
-    
-    // ✅ OWNER INFORMATION
-    @NotBlank(message = "Owner email is required")
-    @Email(message = "Owner email format is invalid")
-    private String ownerEmail;
+
+
+    private String ownerEmail; // ✅ UPDATED: Optional - can be null
 
     @NotBlank(message = "Owner password is required")
-    @Size(min = 4, max = 100, message = "Owner password must be between 8 and 100 characters")
+    @Size(min = 4, max = 100, message = "Owner password must be between 4 and 100 characters")
     private String ownerPassword;
 
     @NotBlank(message = "Owner first name is required")
@@ -47,6 +47,7 @@ public class BusinessOwnerCreateRequest {
     private String ownerLastName;
 
     @Pattern(regexp = "^(\\+855|0)?[1-9][0-9]{7,8}$", message = "Invalid phone number format for Cambodia")
-    private String ownerPhone;
+    private String ownerPhone; // ✅ UPDATED: Optional - can be null
+    
     private String ownerAddress;
 }

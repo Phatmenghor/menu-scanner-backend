@@ -22,12 +22,17 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByEmailAndIsDeletedFalse(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + username));
+    public UserDetails loadUserByUsername(String userIdentifier) throws UsernameNotFoundException {
+        log.debug("Attempting to load user with userIdentifier: {}", userIdentifier);
+        
+        // ✅ UPDATED: Search by userIdentifier
+        User user = userRepository.findByUserIdentifierAndIsDeletedFalse(userIdentifier)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with userIdentifier: " + userIdentifier));
+
+        log.debug("User found: {} with userIdentifier: {}", user.getFullName(), user.getUserIdentifier());
 
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
+                user.getUserIdentifier(), // Use userIdentifier as the principal name
                 user.getPassword(),
                 user.getAccountStatus().name().equals("ACTIVE"),
                 true,

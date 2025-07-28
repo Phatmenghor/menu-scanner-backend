@@ -29,9 +29,11 @@ public class SecurityUtils {
             throw new UserNotFoundException("User not authenticated");
         }
 
-        String username = authentication.getName();
-        User user = userRepository.findByEmailAndIsDeletedFalse(username)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + username));
+        String userIdentifier = authentication.getName();
+        
+        // ✅ UPDATED: Find user by userIdentifier instead of email
+        User user = userRepository.findByUserIdentifierAndIsDeletedFalse(userIdentifier)
+                .orElseThrow(() -> new UserNotFoundException("User not found with userIdentifier: " + userIdentifier));
 
         // Double-check account status for security
         validateAccountStatus(user);
@@ -42,11 +44,11 @@ public class SecurityUtils {
     public void validateAccountStatus(User user) {
         switch (user.getAccountStatus()) {
             case INACTIVE -> {
-                log.warn("Access attempt by inactive user: {}", user.getEmail());
+                log.warn("Access attempt by inactive user: {}", user.getUserIdentifier());
                 throw new AccountInactiveException("Account is inactive. Please contact support.");
             }
             case LOCKED -> {
-                log.warn("Access attempt by locked user: {}", user.getEmail());
+                log.warn("Access attempt by locked user: {}", user.getUserIdentifier());
                 try {
                     throw new AccountLockedException("Account is locked due to security reasons. Please contact support.");
                 } catch (AccountLockedException e) {
@@ -54,14 +56,14 @@ public class SecurityUtils {
                 }
             }
             case SUSPENDED -> {
-                log.warn("Access attempt by suspended user: {}", user.getEmail());
+                log.warn("Access attempt by suspended user: {}", user.getUserIdentifier());
                 throw new AccountSuspendedException("Account is suspended. Please contact support for reactivation.");
             }
             case ACTIVE -> {
                 // All good, continue
             }
             default -> {
-                log.error("Unknown account status for user: {} - Status: {}", user.getEmail(), user.getAccountStatus());
+                log.error("Unknown account status for user: {} - Status: {}", user.getUserIdentifier(), user.getAccountStatus());
                 throw new AccountInactiveException("Account status is unknown. Please contact support.");
             }
         }
@@ -80,8 +82,14 @@ public class SecurityUtils {
         return getCurrentUser().getId();
     }
 
+    public String getCurrentUserIdentifier() {
+        return getCurrentUser().getUserIdentifier();
+    }
+    
+    // ✅ UPDATED: Keep email method for backward compatibility
     public String getCurrentUserEmail() {
-        return getCurrentUser().getEmail();
+        User user = getCurrentUser();
+        return user.getEmail(); // Can be null now
     }
 
     public boolean hasBusinessAccess(UUID businessId) {
