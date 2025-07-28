@@ -23,7 +23,6 @@ public class CartItemResponse {
     
     private Integer quantity;
     private BigDecimal totalPrice; // finalPrice * quantity
-    private String notes;
     private LocalDateTime addedAt;
     
     // Product availability

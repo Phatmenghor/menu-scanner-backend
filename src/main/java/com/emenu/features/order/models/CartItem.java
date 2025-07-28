@@ -44,9 +44,6 @@ public class CartItem extends BaseUUIDEntity {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @Column(name = "notes", columnDefinition = "TEXT")
-    private String notes; // Special instructions
-
     // Business Methods - Always get current pricing from product/size
     public BigDecimal getCurrentPrice() {
         if (productSize != null) {
@@ -83,6 +80,11 @@ public class CartItem extends BaseUUIDEntity {
         return productSize != null ? productSize.getName() : "Standard";
     }
 
+    // NEW: Added missing method for compilation
+    public BigDecimal getUnitPrice() {
+        return getCurrentPrice();
+    }
+
     // Product availability checks
     public Boolean isProductAvailable() {
         if (product == null) return false;
@@ -102,11 +104,10 @@ public class CartItem extends BaseUUIDEntity {
     }
 
     // Constructor for creating cart item (no price storage)
-    public CartItem(UUID cartId, UUID productId, UUID productSizeId, Integer quantity, String notes) {
+    public CartItem(UUID cartId, UUID productId, UUID productSizeId, Integer quantity) {
         this.cartId = cartId;
         this.productId = productId;
         this.productSizeId = productSizeId;
         this.quantity = quantity;
-        this.notes = notes;
     }
 }

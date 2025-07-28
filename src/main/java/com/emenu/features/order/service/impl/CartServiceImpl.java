@@ -59,7 +59,6 @@ public class CartServiceImpl implements CartService {
             // Update quantity of existing item
             CartItem item = existingItem.get();
             item.setQuantity(item.getQuantity() + request.getQuantity());
-            item.setNotes(request.getNotes());
             cartItemRepository.save(item);
             log.info("Updated existing cart item quantity to: {}", item.getQuantity());
         } else {
@@ -68,8 +67,7 @@ public class CartServiceImpl implements CartService {
                     cart.getId(),
                     request.getProductId(),
                     request.getProductSizeId(),
-                    request.getQuantity(),
-                    request.getNotes()
+                    request.getQuantity()
             );
             cartItemRepository.save(newItem);
             log.info("Added new item to cart: {}", newItem.getId());
@@ -91,14 +89,12 @@ public class CartServiceImpl implements CartService {
         validateProductAvailability(cartItem.getProductId(), cartItem.getProductSizeId());
 
         if (request.getQuantity() == 0) {
-            // Remove item from cart
-            cartItem.softDelete();
-            cartItemRepository.save(cartItem);
-            log.info("Removed cart item: {}", request.getCartItemId());
+            // HARD DELETE - Remove item from cart completely
+            cartItemRepository.delete(cartItem);
+            log.info("Hard deleted cart item: {}", request.getCartItemId());
         } else {
             // Update quantity
             cartItem.setQuantity(request.getQuantity());
-            cartItem.setNotes(request.getNotes());
             cartItemRepository.save(cartItem);
             log.info("Updated cart item quantity to: {}", request.getQuantity());
         }
@@ -119,10 +115,10 @@ public class CartServiceImpl implements CartService {
 
         UUID businessId = cartItem.getCart().getBusinessId();
         
-        cartItem.softDelete();
-        cartItemRepository.save(cartItem);
+        // HARD DELETE - Remove item from cart completely
+        cartItemRepository.delete(cartItem);
         
-        log.info("Removed cart item: {}", cartItemId);
+        log.info("Hard deleted cart item: {}", cartItemId);
         return getCartResponse(currentUser.getId(), businessId);
     }
 
@@ -145,13 +141,10 @@ public class CartServiceImpl implements CartService {
         if (cartOpt.isPresent()) {
             Cart cart = cartOpt.get();
             
-            // Soft delete all cart items
-            cart.getItems().forEach(item -> {
-                item.softDelete();
-                cartItemRepository.save(item);
-            });
+            // HARD DELETE all cart items
+            cart.getItems().forEach(cartItemRepository::delete);
             
-            log.info("Cleared cart for user: {} and business: {}", currentUser.getId(), businessId);
+            log.info("Hard deleted all cart items for user: {} and business: {}", currentUser.getId(), businessId);
         }
 
         return getCartResponse(currentUser.getId(), businessId);
@@ -172,7 +165,7 @@ public class CartServiceImpl implements CartService {
         return 0;
     }
 
-    // Private helper methods
+    // Private helper methods remain the same but simplified...
     private UUID validateProductAndGetBusinessId(UUID productId, UUID productSizeId) {
         if (productSizeId != null) {
             // Product with size

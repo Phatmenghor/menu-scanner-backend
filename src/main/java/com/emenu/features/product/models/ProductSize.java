@@ -76,7 +76,6 @@ public class ProductSize extends BaseUUIDEntity {
 
         LocalDateTime now = LocalDateTime.now();
         
-        // Check if promotion is within date range
         if (promotionFromDate != null && now.isBefore(promotionFromDate)) {
             return false;
         }

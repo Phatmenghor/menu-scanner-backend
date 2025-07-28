@@ -309,13 +309,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private void createProductSizes(UUID productId, List<ProductSizeRequest> sizeRequests) {
-        AtomicInteger sortOrder = new AtomicInteger(0);
-        boolean hasDefaultSet = false;
+        if (sizeRequests == null || sizeRequests.isEmpty()) {
+            return;
+        }
 
         for (ProductSizeRequest sizeRequest : sizeRequests) {
             ProductSize productSize = productSizeMapper.toEntity(sizeRequest);
             productSize.setProductId(productId);
-            productSize.setSortOrder(sortOrder.getAndIncrement());
 
             // Set promotion type enum
             if (sizeRequest.getPromotionType() != null) {
@@ -326,46 +326,28 @@ public class ProductServiceImpl implements ProductService {
                 }
             }
 
-            // Ensure only one default size
-            if (Boolean.TRUE.equals(sizeRequest.getIsDefault())) {
-                if (!hasDefaultSet) {
-                    productSize.setIsDefault(true);
-                    hasDefaultSet = true;
-                } else {
-                    productSize.setIsDefault(false);
-                }
-            }
-
             productSizeRepository.save(productSize);
-        }
-
-        // If no default was set, set the first one as default
-        if (!hasDefaultSet && !sizeRequests.isEmpty()) {
-            List<ProductSize> sizes = productSizeRepository.findByProductIdOrderBySortAndPrice(productId);
-            if (!sizes.isEmpty()) {
-                ProductSize firstSize = sizes.get(0);
-                firstSize.setIsDefault(true);
-                productSizeRepository.save(firstSize);
-            }
         }
     }
 
     private void createProductImages(UUID productId, List<ProductImageRequest> imageRequests) {
-        AtomicInteger sortOrder = new AtomicInteger(0);
+        if (imageRequests == null || imageRequests.isEmpty()) {
+            return;
+        }
+
         boolean hasMainSet = false;
 
         for (ProductImageRequest imageRequest : imageRequests) {
             ProductImage productImage = productImageMapper.toEntity(imageRequest);
             productImage.setProductId(productId);
-            productImage.setSortOrder(sortOrder.getAndIncrement());
 
             // Ensure only one main image
-            if (Boolean.TRUE.equals(imageRequest.getIsMain())) {
+            if ("MAIN".equalsIgnoreCase(imageRequest.getImageType())) {
                 if (!hasMainSet) {
-                    productImage.setIsMain(true);
+                    productImage.setAsMain();
                     hasMainSet = true;
                 } else {
-                    productImage.setIsMain(false);
+                    productImage.setAsGallery();
                 }
             }
 
@@ -373,11 +355,11 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // If no main was set, set the first one as main
-        if (!hasMainSet && !imageRequests.isEmpty()) {
+        if (!hasMainSet) {
             List<ProductImage> images = productImageRepository.findByProductIdOrderByMainAndSort(productId);
             if (!images.isEmpty()) {
                 ProductImage firstImage = images.get(0);
-                firstImage.setIsMain(true);
+                firstImage.setAsMain();
                 productImageRepository.save(firstImage);
             }
         }

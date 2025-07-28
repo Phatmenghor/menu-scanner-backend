@@ -15,6 +15,4 @@ public class CartUpdateRequest {
     @NotNull(message = "Quantity is required")
     @Min(value = 0, message = "Quantity must be non-negative")
     private Integer quantity; // 0 means remove item
-    
-    private String notes;
 }
