@@ -14,6 +14,7 @@ import com.emenu.features.auth.dto.response.BusinessOwnerCreateResponse;
 import com.emenu.features.auth.dto.response.BusinessResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
+import com.emenu.features.auth.mapper.BusinessOwnerCreateResponseMapper;
 import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.Role;
@@ -32,6 +33,8 @@ import com.emenu.features.subdomain.dto.response.SubdomainResponse;
 import com.emenu.features.subdomain.service.SubdomainService;
 import com.emenu.features.subscription.dto.request.SubscriptionCreateRequest;
 import com.emenu.features.subscription.dto.response.SubscriptionResponse;
+import com.emenu.features.subscription.models.SubscriptionPlan;
+import com.emenu.features.subscription.repository.SubscriptionPlanRepository;
 import com.emenu.features.subscription.service.SubscriptionService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
@@ -64,8 +67,8 @@ public class UserServiceImpl implements UserService {
     private final SecurityUtils securityUtils;
     private final PaymentService paymentService;
     private final SubscriptionService subscriptionService;
-    private final BusinessSettingsService businessSettingsService;
-
+    private final SubscriptionPlanRepository subscriptionPlanRepository; // ✅ ADDED: Subscription plan repository
+    private final BusinessOwnerCreateResponseMapper businessOwnerResponseMapper;
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
@@ -93,7 +96,7 @@ public class UserServiceImpl implements UserService {
             user.setNotes(request.getNotes());
             user.setUserType(request.getUserType());
             user.setAccountStatus(request.getAccountStatus());
-            
+
             // ✅ Handle business assignment with security checks
             if (request.getBusinessId() != null) {
                 validateAndAssignBusiness(user, request.getBusinessId());
@@ -116,7 +119,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<UserResponse> getAllUsers(UserFilterRequest request) {
-        log.debug("Getting all users with filter - UserType: {}, AccountStatus: {}, BusinessId: {}", 
+        log.debug("Getting all users with filter - UserType: {}, AccountStatus: {}, BusinessId: {}",
                 request.getUserType(), request.getAccountStatus(), request.getBusinessId());
 
         // ✅ Security: Business users can only see users from their business
@@ -187,7 +190,7 @@ public class UserServiceImpl implements UserService {
         user.softDelete();
         user = userRepository.save(user);
         log.info("User deleted: {}", user.getUserIdentifier());
-        
+
         return userMapper.toResponse(user);
     }
 
@@ -227,12 +230,6 @@ public class UserServiceImpl implements UserService {
         log.info("🚀 Creating comprehensive business owner with business: {} for userIdentifier: {}",
                 request.getBusinessName(), request.getOwnerUserIdentifier());
 
-        // ✅ Security check
-        User currentUser = securityUtils.getCurrentUser();
-        if (!currentUser.isPlatformUser()) {
-            throw new ValidationException("Only platform administrators can create business owners");
-        }
-
         // ✅ Validate business owner creation
         validateBusinessOwnerCreation(request);
 
@@ -249,27 +246,24 @@ public class UserServiceImpl implements UserService {
             log.info("🌐 Step 3: Auto-creating subdomain: {}", request.getPreferredSubdomain());
             SubdomainResponse subdomainResponse = createSubdomainForBusiness(businessResponse.getId(), request.getPreferredSubdomain());
 
-            // ✅ STEP 4: Create subscription if requested
-            SubscriptionResponse subscriptionResponse = null;
-            if (request.hasSubscriptionInfo()) {
-                log.info("📋 Step 4: Creating subscription with plan: {}", request.getSubscriptionPlanId());
-                subscriptionResponse = createSubscriptionForBusiness(request, businessResponse.getId());
-            }
+            // ✅ STEP 4: Create subscription (ALWAYS - never null)
+            log.info("📋 Step 4: Creating subscription with plan: {}", request.getSubscriptionPlanId());
+            SubscriptionResponse subscriptionResponse = createSubscriptionForBusiness(request, businessResponse.getId());
 
-            // ✅ STEP 5: Create payment if requested
+            // ✅ STEP 5: Create payment if requested (OPTIONAL)
             PaymentResponse paymentResponse = null;
             if (request.hasPaymentInfo() && request.isPaymentInfoComplete()) {
                 log.info("💳 Step 5: Creating payment record: ${}", request.getPaymentAmount());
                 paymentResponse = createPaymentForBusiness(request, businessResponse.getId(), subscriptionResponse);
             }
 
-            // ✅ STEP 6: Create comprehensive response
-            BusinessOwnerCreateResponse response = BusinessOwnerCreateResponse.create(
+            // ✅ STEP 6: Use mapper to create comprehensive response
+            BusinessOwnerCreateResponse response = businessOwnerResponseMapper.create(
                     userResponse,
                     businessResponse,
                     subdomainResponse,
-                    subscriptionResponse,
-                    paymentResponse
+                    subscriptionResponse, // Never null
+                    paymentResponse       // Can be null
             );
 
             log.info("✅ Comprehensive business owner creation completed successfully: {}", userResponse.getUserIdentifier());
@@ -286,6 +280,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+
     // ✅ NEW: Enhanced business creation with settings
     private BusinessResponse createBusinessForOwnerEnhanced(BusinessOwnerCreateRequest request) {
         BusinessCreateRequest businessRequest = new BusinessCreateRequest();
@@ -301,11 +296,22 @@ public class UserServiceImpl implements UserService {
         return businessResponse;
     }
 
-    // ✅ NEW: Create subscription for the business
     private SubscriptionResponse createSubscriptionForBusiness(BusinessOwnerCreateRequest request, UUID businessId) {
+        // ✅ ADDED: Validate subscription plan ID is not null
+        if (request.getSubscriptionPlanId() == null) {
+            throw new ValidationException("Subscription plan ID cannot be null");
+        }
+
+        // ✅ ADDED: Validate subscription plan exists
+        log.debug("🔍 Validating subscription plan exists: {}", request.getSubscriptionPlanId());
+        SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsDeletedFalse(request.getSubscriptionPlanId())
+                .orElseThrow(() -> new ValidationException("Subscription plan not found with ID: " + request.getSubscriptionPlanId()));
+
+        log.info("✅ Subscription plan validated: {} - {}", subscriptionPlan.getId(), subscriptionPlan.getName());
+
         SubscriptionCreateRequest subscriptionRequest = new SubscriptionCreateRequest();
         subscriptionRequest.setBusinessId(businessId);
-        subscriptionRequest.setPlanId(request.getSubscriptionPlanId());
+        subscriptionRequest.setPlanId(request.getSubscriptionPlanId()); // Now safe to use
         subscriptionRequest.setStartDate(request.getSubscriptionStartDate());
         subscriptionRequest.setAutoRenew(request.getAutoRenew());
         subscriptionRequest.setNotes(request.getSubscriptionNotes());
@@ -337,7 +343,7 @@ public class UserServiceImpl implements UserService {
 
     private UserResponse createOwnerUser(BusinessOwnerCreateRequest request, UUID businessId) {
         User user = new User();
-        
+
         // ✅ UPDATED: Use ownerUserIdentifier instead of email
         user.setUserIdentifier(request.getOwnerUserIdentifier());
         user.setEmail(request.getOwnerEmail()); // Optional - can be null
@@ -413,9 +419,9 @@ public class UserServiceImpl implements UserService {
         }
 
         // ✅ UPDATED: Only check business email uniqueness if provided
-        if (request.getBusinessEmail() != null && 
-            !request.getBusinessEmail().trim().isEmpty() && 
-            businessRepository.existsByEmailAndIsDeletedFalse(request.getBusinessEmail())) {
+        if (request.getBusinessEmail() != null &&
+                !request.getBusinessEmail().trim().isEmpty() &&
+                businessRepository.existsByEmailAndIsDeletedFalse(request.getBusinessEmail())) {
             throw new ValidationException("Business email already exists: " + request.getBusinessEmail());
         }
 
@@ -427,13 +433,13 @@ public class UserServiceImpl implements UserService {
         // Validate business exists
         Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)
                 .orElseThrow(() -> new ValidationException("Business not found"));
-        
+
         // ✅ Security check: Only platform users or business owners can assign users to businesses
         User currentUser = securityUtils.getCurrentUser();
         if (!currentUser.isPlatformUser() && !currentUser.getBusinessId().equals(businessId)) {
             throw new ValidationException("You can only assign users to your own business");
         }
-        
+
         user.setBusinessId(businessId);
         log.debug("Assigned user to business: {}", business.getName());
     }
@@ -448,34 +454,8 @@ public class UserServiceImpl implements UserService {
             throw new ValidationException("One or more roles not found");
         }
 
-        // ✅ Validate role assignment permissions
-        validateRoleAssignment(user, roleEnums);
-
         user.setRoles(roles);
         log.debug("Assigned roles to user: {}", roleEnums);
     }
 
-    private void validateRoleAssignment(User user, List<RoleEnum> roleEnums) {
-        User currentUser = securityUtils.getCurrentUser();
-
-        // ✅ Platform users can assign any role
-        if (currentUser.isPlatformUser()) {
-            return;
-        }
-
-        // ✅ Business users can only assign business roles
-        if (currentUser.isBusinessUser()) {
-            boolean hasNonBusinessRole = roleEnums.stream()
-                    .anyMatch(role -> !role.isBusinessRole());
-            
-            if (hasNonBusinessRole) {
-                throw new ValidationException("Business users can only assign business roles");
-            }
-
-            // ✅ Business users can only assign to their own business
-            if (user.getBusinessId() != null && !user.getBusinessId().equals(currentUser.getBusinessId())) {
-                throw new ValidationException("You can only assign roles to users in your business");
-            }
-        }
-    }
 }

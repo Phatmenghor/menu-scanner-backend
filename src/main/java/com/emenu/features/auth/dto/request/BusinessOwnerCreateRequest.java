@@ -25,11 +25,9 @@ public class BusinessOwnerCreateRequest {
     @Size(min = 4, max = 100, message = "Owner password must be between 4 and 100 characters")
     private String ownerPassword;
 
-    @NotBlank(message = "Owner first name is required")
     @Size(min = 1, max = 50, message = "First name must be between 1 and 50 characters")
     private String ownerFirstName;
 
-    @NotBlank(message = "Owner last name is required") 
     @Size(min = 1, max = 50, message = "Last name must be between 1 and 50 characters")
     private String ownerLastName;
 
@@ -57,7 +55,7 @@ public class BusinessOwnerCreateRequest {
              message = "Subdomain can only contain lowercase letters, numbers, and hyphens. Cannot start or end with hyphen")
     private String preferredSubdomain;
 
-    // ✅ NEW: SUBSCRIPTION INFORMATION (Optional - if provided, creates subscription)
+    @NotBlank(message = "SubscriptionPlanId is required")
     private UUID subscriptionPlanId; // Optional - if provided, creates subscription
     private LocalDateTime subscriptionStartDate; // Optional - defaults to now
     private Boolean autoRenew = false;
