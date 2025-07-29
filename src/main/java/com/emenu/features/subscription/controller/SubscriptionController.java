@@ -3,8 +3,10 @@ package com.emenu.features.subscription.controller;
 import com.emenu.features.subscription.dto.filter.SubscriptionFilterRequest;
 import com.emenu.features.subscription.dto.request.SubscriptionCancelRequest;
 import com.emenu.features.subscription.dto.request.SubscriptionCreateRequest;
+import com.emenu.features.subscription.dto.response.SubscriptionCancellationResponse;
+import com.emenu.features.subscription.dto.response.SubscriptionRenewalResponse;
 import com.emenu.features.subscription.dto.response.SubscriptionResponse;
-import com.emenu.features.subscription.dto.update.SubscriptionRenewRequest;
+import com.emenu.features.subscription.dto.request.SubscriptionRenewRequest;
 import com.emenu.features.subscription.dto.update.SubscriptionUpdateRequest;
 import com.emenu.features.subscription.service.SubscriptionService;
 import com.emenu.shared.dto.ApiResponse;
@@ -95,23 +97,63 @@ public class SubscriptionController {
      * Renew subscription (now uses request body)
      */
     @PostMapping("/{id}/renew")
-    public ResponseEntity<ApiResponse<SubscriptionResponse>> renewSubscription(
+    public ResponseEntity<ApiResponse<SubscriptionRenewalResponse>> renewSubscription(
             @PathVariable UUID id,
             @Valid @RequestBody SubscriptionRenewRequest request) {
-        log.info("Renewing subscription: {}", id);
+
+        log.info("Renewing subscription: {} with payment creation: {}", id, request.shouldCreatePayment());
+
+        // ✅ Call enhanced service method
         SubscriptionResponse subscription = subscriptionService.renewSubscription(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Subscription renewed successfully", subscription));
+
+        // ✅ Create comprehensive response
+        SubscriptionRenewalResponse response = new SubscriptionRenewalResponse();
+        response.setSubscription(subscription);
+        response.setPaymentCreated(request.shouldCreatePayment());
+
+        if (request.shouldCreatePayment()) {
+            response.setPaymentAmount(request.getPaymentAmount());
+            response.setPaymentMethod(request.getPaymentMethod());
+        }
+
+        String message = request.shouldCreatePayment() ?
+                "Subscription renewed successfully with payment record" :
+                "Subscription renewed successfully";
+
+        return ResponseEntity.ok(ApiResponse.success(message, response));
     }
+
 
     /**
      * Cancel subscription (now uses request body and clears dates)
      */
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<ApiResponse<SubscriptionResponse>> cancelSubscription(
+    public ResponseEntity<ApiResponse<SubscriptionCancellationResponse>> cancelSubscription(
             @PathVariable UUID id,
             @Valid @RequestBody SubscriptionCancelRequest request) {
-        log.info("Cancelling subscription: {}", id);
+
+        log.info("Cancelling subscription: {} - Clear payments: {}, Create refund: {}",
+                id, request.shouldClearPayments(), request.shouldCreateRefundRecord());
+
+        // ✅ Call enhanced service method
         SubscriptionResponse subscription = subscriptionService.cancelSubscription(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Subscription cancelled successfully", subscription));
+
+        // ✅ Create comprehensive response
+        SubscriptionCancellationResponse response = new SubscriptionCancellationResponse();
+        response.setSubscription(subscription);
+        response.setPaymentsCleared(request.shouldClearPayments());
+        response.setRefundCreated(request.shouldCreateRefundRecord());
+
+        if (request.shouldCreateRefundRecord()) {
+            response.setRefundAmount(request.getRefundAmount());
+        }
+
+        String message = "Subscription cancelled successfully";
+        if (request.shouldClearPayments() || request.shouldCreateRefundRecord()) {
+            message += " with payment handling";
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(message, response));
     }
+
 }

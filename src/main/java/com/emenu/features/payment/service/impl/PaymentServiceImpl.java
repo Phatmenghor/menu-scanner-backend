@@ -1,8 +1,11 @@
 package com.emenu.features.payment.service.impl;
 
+import com.emenu.enums.payment.PaymentType;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.Business;
+import com.emenu.features.auth.models.User;
+import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.payment.dto.filter.PaymentFilterRequest;
 import com.emenu.features.payment.dto.request.PaymentCreateRequest;
 import com.emenu.features.payment.dto.response.PaymentResponse;
@@ -30,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -44,52 +48,39 @@ public class PaymentServiceImpl implements PaymentService {
     private final SubscriptionRepository subscriptionRepository;
     private final ExchangeRateService exchangeRateService;
     private final PaymentMapper paymentMapper;
+    private final UserRepository userRepository;
 
     @Override
     public PaymentResponse createPayment(PaymentCreateRequest request) {
-        log.info("Creating payment for subscription: {} with amount: {}", request.getSubscriptionId(), request.getAmount());
+        log.info("Creating enhanced payment - Amount: {}, Type: {}", request.getAmount(), request.getPaymentType());
 
-        // ✅ Get subscription with business and plan loaded
-        Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(request.getSubscriptionId())
-                .orElseThrow(() -> new NotFoundException("Subscription not found"));
+        // ✅ Validate payment request
+        if (!request.isValidPaymentRequest()) {
+            throw new ValidationException("Invalid payment request: must specify exactly one payment target (subscription, user+plan, or business)");
+        }
 
-        // ✅ Validate business and plan exist (via subscription)
-        businessRepository.findByIdAndIsDeletedFalse(subscription.getBusinessId())
-                .orElseThrow(() -> new NotFoundException("Business not found"));
-
-        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
-                .orElseThrow(() -> new NotFoundException("Subscription plan not found"));
-
-        // Validate reference number uniqueness if provided
+        // ✅ Validate reference number uniqueness if provided
         if (request.getReferenceNumber() != null && isReferenceNumberUnique(request.getReferenceNumber())) {
             throw new ValidationException("Reference number already exists: " + request.getReferenceNumber());
         }
 
-        // ✅ Create payment entity with derived values
-        Payment payment = new Payment();
-        payment.setImageUrl(request.getImageUrl());
-        payment.setBusinessId(subscription.getBusinessId()); // From subscription
-        payment.setPlanId(subscription.getPlanId());         // From subscription
-        payment.setSubscriptionId(subscription.getId());
-        payment.setAmount(request.getAmount());
-        payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setStatus(request.getStatus());
-        payment.setNotes(request.getNotes());
+        try {
+            // ✅ Handle different payment creation scenarios
+            PaymentResponse response = switch (determinePaymentType(request)) {
+                case SUBSCRIPTION -> createPaymentForSubscription(request);
+                case USER_PLAN -> createPaymentForUserWithPlan(request);
+                case BUSINESS_RECORD -> createPaymentForBusinessRecord(request);
+            };
 
-        // Calculate KHR amount using current system exchange rate
-        Double currentRate = exchangeRateService.getCurrentRateValue();
-        payment.calculateAmountKhr(currentRate);
+            log.info("Payment created successfully: {} for amount: ${}", response.getId(), response.getAmount());
+            return response;
 
-        // Generate reference number if not provided
-        if (request.getReferenceNumber() != null) {
-            payment.setReferenceNumber(request.getReferenceNumber());
+        } catch (Exception e) {
+            log.error("Failed to create payment: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create payment: " + e.getMessage(), e);
         }
-
-        Payment savedPayment = paymentRepository.save(payment);
-
-        log.info("Payment created successfully: {} for subscription: {}", savedPayment.getId(), subscription.getId());
-        return paymentMapper.toResponse(savedPayment);
     }
+
 
 
     @Override
@@ -156,6 +147,131 @@ public class PaymentServiceImpl implements PaymentService {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String random = String.valueOf((int) (Math.random() * 1000));
         return "PAY-" + timestamp + "-" + String.format("%03d", Integer.parseInt(random));
+    }
+
+    private PaymentType determinePaymentType(PaymentCreateRequest request) {
+        if (request.hasSubscriptionInfo()) {
+            return PaymentType.SUBSCRIPTION;
+        } else if (request.hasUserPlanInfo()) {
+            return PaymentType.USER_PLAN;
+        } else if (request.hasBusinessInfo()) {
+            return PaymentType.BUSINESS_RECORD;
+        }
+        throw new ValidationException("Cannot determine payment type from request");
+    }
+
+    // ✅ EXISTING: Payment for subscription (unchanged)
+    private PaymentResponse createPaymentForSubscription(PaymentCreateRequest request) {
+        log.info("Creating payment for subscription: {}", request.getSubscriptionId());
+
+        Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(request.getSubscriptionId())
+                .orElseThrow(() -> new NotFoundException("Subscription not found"));
+
+        // Validate business and plan exist
+        businessRepository.findByIdAndIsDeletedFalse(subscription.getBusinessId())
+                .orElseThrow(() -> new NotFoundException("Business not found"));
+
+        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
+                .orElseThrow(() -> new NotFoundException("Subscription plan not found"));
+
+        // Create payment entity
+        Payment payment = createPaymentEntity(request);
+        payment.setBusinessId(subscription.getBusinessId());
+        payment.setPlanId(subscription.getPlanId());
+        payment.setSubscriptionId(subscription.getId());
+
+        return finalizePayment(payment);
+    }
+
+    // ✅ NEW: Payment for user with plan selection
+    private PaymentResponse createPaymentForUserWithPlan(PaymentCreateRequest request) {
+        log.info("Creating payment for user: {} with plan: {}", request.getUserId(), request.getPlanId());
+
+        // ✅ Validate user exists and get business
+        User user = userRepository.findByIdAndIsDeletedFalse(request.getUserId())
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (user.getBusinessId() == null) {
+            throw new ValidationException("User is not associated with any business");
+        }
+
+        // ✅ Validate business exists
+        Business business = businessRepository.findByIdAndIsDeletedFalse(user.getBusinessId())
+                .orElseThrow(() -> new NotFoundException("Business not found"));
+
+        // ✅ Validate plan exists
+        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(request.getPlanId())
+                .orElseThrow(() -> new NotFoundException("Subscription plan not found"));
+
+        // ✅ Check if user has active subscription for this plan
+        Optional<Subscription> activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(
+                user.getBusinessId(), LocalDateTime.now());
+
+        // ✅ Create payment entity
+        Payment payment = createPaymentEntity(request);
+        payment.setBusinessId(user.getBusinessId());
+        payment.setPlanId(plan.getId());
+
+        // ✅ Link to subscription if exists
+        activeSubscription.ifPresent(subscription -> payment.setSubscriptionId(subscription.getId()));
+
+        return finalizePayment(payment);
+    }
+
+    // ✅ NEW: Payment for business record (history only)
+    private PaymentResponse createPaymentForBusinessRecord(PaymentCreateRequest request) {
+        log.info("Creating payment record for business: {}", request.getBusinessId());
+
+        // ✅ Validate business exists
+        Business business = businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
+                .orElseThrow(() -> new NotFoundException("Business not found"));
+
+        // ✅ Create payment entity (no subscription or plan required)
+        Payment payment = createPaymentEntity(request);
+        payment.setBusinessId(business.getId());
+
+        // ✅ Try to link to current active plan if available
+        Optional<Subscription> activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(
+                business.getId(), LocalDateTime.now());
+
+        activeSubscription.ifPresent(subscription -> {
+            payment.setPlanId(subscription.getPlanId());
+            payment.setSubscriptionId(subscription.getId());
+        });
+
+        return finalizePayment(payment);
+    }
+
+    // ✅ NEW: Create payment entity from request
+    private Payment createPaymentEntity(PaymentCreateRequest request) {
+        Payment payment = new Payment();
+        payment.setImageUrl(request.getImageUrl());
+        payment.setAmount(request.getAmount());
+        payment.setPaymentMethod(request.getPaymentMethod());
+        payment.setStatus(request.getStatus());
+        payment.setNotes(request.getNotes());
+
+        // Set reference number if provided
+        if (request.getReferenceNumber() != null) {
+            payment.setReferenceNumber(request.getReferenceNumber());
+        }
+
+        return payment;
+    }
+
+    // ✅ NEW: Finalize payment creation
+    private PaymentResponse finalizePayment(Payment payment) {
+        // Calculate KHR amount using current system exchange rate
+        Double currentRate = exchangeRateService.getCurrentRateValue();
+        payment.calculateAmountKhr(currentRate);
+
+        Payment savedPayment = paymentRepository.save(payment);
+
+        // ✅ Load with relationships for response
+        Payment paymentWithRelations = paymentRepository.findByIdWithRelationships(savedPayment.getId())
+                .orElse(savedPayment);
+
+        return paymentMapper.toResponse(paymentWithRelations);
     }
 
     private boolean isReferenceNumberUnique(String referenceNumber) {

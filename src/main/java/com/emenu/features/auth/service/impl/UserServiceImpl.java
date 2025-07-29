@@ -1,5 +1,6 @@
 package com.emenu.features.auth.service.impl;
 
+import com.emenu.enums.payment.PaymentType;
 import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
@@ -7,7 +8,9 @@ import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.BusinessCreateRequest;
 import com.emenu.features.auth.dto.request.BusinessOwnerCreateRequest;
+import com.emenu.features.auth.dto.request.BusinessSettingsRequest;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
+import com.emenu.features.auth.dto.response.BusinessOwnerCreateResponse;
 import com.emenu.features.auth.dto.response.BusinessResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
@@ -19,9 +22,17 @@ import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.BusinessService;
+import com.emenu.features.auth.service.BusinessSettingsService;
 import com.emenu.features.auth.service.UserService;
 import com.emenu.features.auth.specification.UserSpecification;
+import com.emenu.features.payment.dto.request.PaymentCreateRequest;
+import com.emenu.features.payment.dto.response.PaymentResponse;
+import com.emenu.features.payment.service.PaymentService;
+import com.emenu.features.subdomain.dto.response.SubdomainResponse;
 import com.emenu.features.subdomain.service.SubdomainService;
+import com.emenu.features.subscription.dto.request.SubscriptionCreateRequest;
+import com.emenu.features.subscription.dto.response.SubscriptionResponse;
+import com.emenu.features.subscription.service.SubscriptionService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -51,10 +62,10 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final SecurityUtils securityUtils;
+    private final PaymentService paymentService;
+    private final SubscriptionService subscriptionService;
+    private final BusinessSettingsService businessSettingsService;
 
-    // ================================
-    // BASIC USER CRUD OPERATIONS
-    // ================================
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
@@ -212,46 +223,116 @@ public class UserServiceImpl implements UserService {
     // ================================
 
     @Override
-    public UserResponse createBusinessOwner(BusinessOwnerCreateRequest request) {
-        log.info("🚀 Creating business owner with business: {} for userIdentifier: {}",
+    public BusinessOwnerCreateResponse createBusinessOwner(BusinessOwnerCreateRequest request) {
+        log.info("🚀 Creating comprehensive business owner with business: {} for userIdentifier: {}",
                 request.getBusinessName(), request.getOwnerUserIdentifier());
 
-        // ✅ Security: Only platform users can create business owners
+        // ✅ Security check
         User currentUser = securityUtils.getCurrentUser();
         if (!currentUser.isPlatformUser()) {
             throw new ValidationException("Only platform administrators can create business owners");
         }
 
-        // ✅ UPDATED: Validate business owner creation (only userIdentifier required)
+        // ✅ Validate business owner creation
         validateBusinessOwnerCreation(request);
 
         try {
-            // ✅ STEP 1: Create business first
-            log.info("📊 Step 1: Creating business: {}", request.getBusinessName());
-            BusinessResponse businessResponse = createBusinessForOwner(request);
+            // ✅ STEP 1: Create business with enhanced settings
+            log.info("📊 Step 1: Creating business with settings: {}", request.getBusinessName());
+            BusinessResponse businessResponse = createBusinessForOwnerEnhanced(request);
 
             // ✅ STEP 2: Create business owner
             log.info("👤 Step 2: Creating business owner: {}", request.getOwnerUserIdentifier());
             UserResponse userResponse = createOwnerUser(request, businessResponse.getId());
 
-            // ✅ STEP 3: Auto-create subdomain (MAIN FEATURE)
+            // ✅ STEP 3: Auto-create subdomain
             log.info("🌐 Step 3: Auto-creating subdomain: {}", request.getPreferredSubdomain());
-            createSubdomainForBusiness(businessResponse.getId(), request.getPreferredSubdomain());
+            SubdomainResponse subdomainResponse = createSubdomainForBusiness(businessResponse.getId(), request.getPreferredSubdomain());
 
-            // ✅ Set business name in response
-            userResponse.setBusinessName(businessResponse.getName());
-            userResponse.setBusinessId(businessResponse.getId());
+            // ✅ STEP 4: Create subscription if requested
+            SubscriptionResponse subscriptionResponse = null;
+            if (request.hasSubscriptionInfo()) {
+                log.info("📋 Step 4: Creating subscription with plan: {}", request.getSubscriptionPlanId());
+                subscriptionResponse = createSubscriptionForBusiness(request, businessResponse.getId());
+            }
 
-            log.info("✅ Business owner creation completed successfully: {}", userResponse.getUserIdentifier());
-            return userResponse;
+            // ✅ STEP 5: Create payment if requested
+            PaymentResponse paymentResponse = null;
+            if (request.hasPaymentInfo() && request.isPaymentInfoComplete()) {
+                log.info("💳 Step 5: Creating payment record: ${}", request.getPaymentAmount());
+                paymentResponse = createPaymentForBusiness(request, businessResponse.getId(), subscriptionResponse);
+            }
+
+            // ✅ STEP 6: Create comprehensive response
+            BusinessOwnerCreateResponse response = BusinessOwnerCreateResponse.create(
+                    userResponse,
+                    businessResponse,
+                    subdomainResponse,
+                    subscriptionResponse,
+                    paymentResponse
+            );
+
+            log.info("✅ Comprehensive business owner creation completed successfully: {}", userResponse.getUserIdentifier());
+            log.info("📋 {}", response.getSummary());
+
+            return response;
 
         } catch (ValidationException ve) {
             log.error("❌ Validation error creating business owner: {}", ve.getMessage());
             throw ve;
         } catch (Exception e) {
-            log.error("❌ Failed to create business owner: {}", e.getMessage(), e);
+            log.error("❌ Failed to create comprehensive business owner: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create business owner: " + e.getMessage(), e);
         }
+    }
+
+    // ✅ NEW: Enhanced business creation with settings
+    private BusinessResponse createBusinessForOwnerEnhanced(BusinessOwnerCreateRequest request) {
+        BusinessCreateRequest businessRequest = new BusinessCreateRequest();
+        businessRequest.setName(request.getBusinessName());
+        businessRequest.setEmail(request.getBusinessEmail());
+        businessRequest.setPhone(request.getBusinessPhone());
+        businessRequest.setAddress(request.getBusinessAddress());
+        businessRequest.setDescription(request.getBusinessDescription());
+
+        BusinessResponse businessResponse = businessService.createBusiness(businessRequest);
+
+        log.info("✅ Enhanced business created: {} with ID: {}", businessResponse.getName(), businessResponse.getId());
+        return businessResponse;
+    }
+
+    // ✅ NEW: Create subscription for the business
+    private SubscriptionResponse createSubscriptionForBusiness(BusinessOwnerCreateRequest request, UUID businessId) {
+        SubscriptionCreateRequest subscriptionRequest = new SubscriptionCreateRequest();
+        subscriptionRequest.setBusinessId(businessId);
+        subscriptionRequest.setPlanId(request.getSubscriptionPlanId());
+        subscriptionRequest.setStartDate(request.getSubscriptionStartDate());
+        subscriptionRequest.setAutoRenew(request.getAutoRenew());
+        subscriptionRequest.setNotes(request.getSubscriptionNotes());
+
+        return subscriptionService.createSubscription(subscriptionRequest);
+    }
+
+    // ✅ NEW: Create payment for the business
+    private PaymentResponse createPaymentForBusiness(BusinessOwnerCreateRequest request, UUID businessId, SubscriptionResponse subscription) {
+        PaymentCreateRequest paymentRequest = new PaymentCreateRequest();
+        paymentRequest.setImageUrl(request.getPaymentImageUrl());
+        paymentRequest.setAmount(request.getPaymentAmount());
+        paymentRequest.setPaymentMethod(request.getPaymentMethod());
+        paymentRequest.setStatus(request.getPaymentStatus());
+        paymentRequest.setReferenceNumber(request.getPaymentReferenceNumber());
+        paymentRequest.setNotes(request.getPaymentNotes());
+
+        // ✅ Link payment to subscription if available, otherwise to business
+        if (subscription != null) {
+            paymentRequest.setSubscriptionId(subscription.getId());
+            paymentRequest.setPaymentType(PaymentType.SUBSCRIPTION);
+        } else {
+            paymentRequest.setBusinessId(businessId);
+            paymentRequest.setPaymentType(PaymentType.BUSINESS_RECORD);
+        }
+
+        return paymentService.createPayment(paymentRequest);
     }
 
     private UserResponse createOwnerUser(BusinessOwnerCreateRequest request, UUID businessId) {
@@ -282,21 +363,33 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(savedUser);
     }
 
-    private void createSubdomainForBusiness(UUID businessId, String preferredSubdomain) {
+    private SubdomainResponse createSubdomainForBusiness(UUID businessId, String preferredSubdomain) {
         try {
             log.info("🌐 Creating subdomain for business: {} with preferred: {}", businessId, preferredSubdomain);
 
-            var subdomainResponse = subdomainService.createSubdomainForBusiness(businessId, preferredSubdomain);
+            SubdomainResponse subdomainResponse = subdomainService.createSubdomainForBusiness(businessId, preferredSubdomain);
 
             log.info("✅ Subdomain created successfully: {} -> {}",
                     preferredSubdomain, subdomainResponse.getFullDomain());
 
+            return subdomainResponse;
+
         } catch (Exception e) {
             log.error("❌ Failed to create subdomain for business: {} - Error: {}", businessId, e.getMessage());
-            // Don't fail the user creation if subdomain creation fails
-            log.warn("⚠️ Continuing with business owner creation despite subdomain failure");
+
+            // ✅ Create a fallback response instead of returning null
+            SubdomainResponse fallbackResponse = new SubdomainResponse();
+            fallbackResponse.setSubdomain("subdomain-creation-failed");
+            fallbackResponse.setFullDomain("subdomain-creation-failed.menu.com");
+            fallbackResponse.setFullUrl("https://subdomain-creation-failed.menu.com");
+            fallbackResponse.setCanAccess(false);
+            fallbackResponse.setNotes("Failed to create subdomain: " + e.getMessage());
+
+            log.warn("⚠️ Returning fallback subdomain response due to creation failure");
+            return fallbackResponse;
         }
     }
+
 
     // ================================
     // UTILITY METHODS
@@ -329,20 +422,6 @@ public class UserServiceImpl implements UserService {
         log.debug("✅ Validation passed for business owner creation");
     }
 
-    private BusinessResponse createBusinessForOwner(BusinessOwnerCreateRequest request) {
-        BusinessCreateRequest businessRequest = new BusinessCreateRequest();
-        businessRequest.setName(request.getBusinessName());
-        businessRequest.setEmail(request.getBusinessEmail());
-        businessRequest.setPhone(request.getBusinessPhone());
-        businessRequest.setAddress(request.getBusinessAddress());
-        businessRequest.setDescription(request.getBusinessDescription());
-
-        BusinessResponse businessResponse = businessService.createBusiness(businessRequest);
-        log.info("✅ Business created successfully: {} with ID: {}",
-                businessResponse.getName(), businessResponse.getId());
-
-        return businessResponse;
-    }
 
     private void validateAndAssignBusiness(User user, UUID businessId) {
         // Validate business exists

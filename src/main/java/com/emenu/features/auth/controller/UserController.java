@@ -5,6 +5,7 @@ import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
 import com.emenu.features.auth.dto.request.BusinessOwnerCreateRequest;
 import com.emenu.features.auth.dto.request.PasswordChangeRequest;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
+import com.emenu.features.auth.dto.response.BusinessOwnerCreateResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
 import com.emenu.features.auth.service.AuthService;
@@ -99,13 +100,15 @@ public class UserController {
     // ================================
 
     @PostMapping("/business-owner")
-    public ResponseEntity<ApiResponse<UserResponse>> createBusinessOwner(
+    public ResponseEntity<ApiResponse<BusinessOwnerCreateResponse>> createBusinessOwner(
             @Valid @RequestBody BusinessOwnerCreateRequest request) {
-        log.info("Creating business owner with business: {} for email: {}",
-                request.getBusinessName(), request.getOwnerEmail());
-        UserResponse response = userService.createBusinessOwner(request);
+        log.info("Creating comprehensive business owner with business: {} for userIdentifier: {}",
+                request.getBusinessName(), request.getOwnerUserIdentifier());
+
+        BusinessOwnerCreateResponse response = userService.createBusinessOwner(request);
+
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Business owner and business created successfully", response));
+                .body(ApiResponse.success("Business owner created successfully with full setup", response));
     }
 
     // ================================

@@ -26,11 +26,30 @@ public class PaymentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(@Valid @RequestBody PaymentCreateRequest request) {
-        log.info("Creating payment for subscription: {}", request.getSubscriptionId());
+
+        // ✅ Determine payment type for logging
+        String paymentType = "Unknown";
+        String targetInfo = "";
+
+        if (request.hasSubscriptionInfo()) {
+            paymentType = "Subscription Payment";
+            targetInfo = "Subscription ID: " + request.getSubscriptionId();
+        } else if (request.hasUserPlanInfo()) {
+            paymentType = "User-Plan Payment";
+            targetInfo = "User ID: " + request.getUserId() + ", Plan ID: " + request.getPlanId();
+        } else if (request.hasBusinessInfo()) {
+            paymentType = "Business Record";
+            targetInfo = "Business ID: " + request.getBusinessId();
+        }
+
+        log.info("Creating {} - Amount: ${}, Target: {}", paymentType, request.getAmount(), targetInfo);
+
         PaymentResponse payment = paymentService.createPayment(request);
+
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Payment created successfully", payment));
+                .body(ApiResponse.success(paymentType + " created successfully", payment));
     }
+
 
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<PaymentResponse>>> getAllPayments(@Valid @RequestBody PaymentFilterRequest filter) {
@@ -65,4 +84,5 @@ public class PaymentController {
         String referenceNumber = paymentService.generateReferenceNumber();
         return ResponseEntity.ok(ApiResponse.success("Reference number generated successfully", referenceNumber));
     }
+
 }
