@@ -2,10 +2,7 @@ package com.emenu.features.auth.dto.request;
 
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -55,7 +52,7 @@ public class BusinessOwnerCreateRequest {
              message = "Subdomain can only contain lowercase letters, numbers, and hyphens. Cannot start or end with hyphen")
     private String preferredSubdomain;
 
-    @NotBlank(message = "SubscriptionPlanId is required")
+    @NotNull(message = "Subscription plan ID is required")
     private UUID subscriptionPlanId;
     
     // UPDATED: Changed from LocalDateTime to LocalDate
