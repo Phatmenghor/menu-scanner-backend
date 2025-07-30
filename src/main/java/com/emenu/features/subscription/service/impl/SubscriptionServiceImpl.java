@@ -73,8 +73,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscription.setBusinessId(request.getBusinessId());
         subscription.setPlanId(request.getPlanId());
         
-        // Use provided startDate or current time if not provided
-        LocalDateTime startDate = request.getStartDate() != null ? request.getStartDate() : LocalDateTime.now();
+        // ✅ FIXED: Use LocalDate and convert to LocalDateTime properly
+        LocalDateTime startDate = request.getStartDate() != null ? 
+            request.getStartDate().atStartOfDay() : LocalDateTime.now();
         subscription.setStartDate(startDate);
         subscription.setEndDate(startDate.plusDays(plan.getDurationDays()));
 
@@ -196,7 +197,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         newSubscription.setEndDate(oldSubscription.getEndDate().plusDays(durationDays));
         newSubscription.setIsActive(true);
         newSubscription.setAutoRenew(oldSubscription.getAutoRenew());
-        newSubscription.setNotes(request.getNotes());
 
         // ✅ Deactivate old subscription
         oldSubscription.setIsActive(false);
@@ -234,19 +234,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public SubscriptionResponse cancelSubscription(UUID subscriptionId, SubscriptionCancelRequest request) {
-        log.info("Cancelling subscription: {} with payment handling - Clear: {}, Refund: {}",
-                subscriptionId, request.shouldClearPayments(), request.shouldCreateRefundRecord());
+        log.info("Cancelling subscription: {} with refund amount: {}", subscriptionId, request.getRefundAmount());
 
         // ✅ Load subscription with relationships
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
-        // ✅ Handle payment clearing/refunds before cancellation
-        if (request.shouldClearPayments()) {
-            clearSubscriptionPayments(subscription);
-        }
+        // ✅ Always clear payments when cancelling
+        clearSubscriptionPayments(subscription);
 
-        if (request.shouldCreateRefundRecord()) {
+        // ✅ Create refund if amount provided
+        if (request.hasRefundAmount()) {
             createRefundPayment(request, subscription);
         }
 
@@ -254,9 +252,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscription.cancel();
         subscription.setStartDate(null);
         subscription.setEndDate(null);
-
-        // ✅ Add cancellation notes
-        addCancellationNotes(subscription, request);
 
         Subscription savedSubscription = subscriptionRepository.save(subscription);
 
@@ -337,25 +332,5 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             log.error("Failed to create refund payment for subscription: {}", subscription.getId(), e);
             // Don't fail the cancellation if refund creation fails
         }
-    }
-
-    // ✅ Helper method: Add cancellation notes
-    private void addCancellationNotes(Subscription subscription, SubscriptionCancelRequest request) {
-        StringBuilder notes = new StringBuilder();
-        if (subscription.getNotes() != null) {
-            notes.append(subscription.getNotes()).append("\n");
-        }
-
-        notes.append("Cancelled on: ").append(LocalDateTime.now());
-
-        if (request.getReason() != null) {
-            notes.append("\nReason: ").append(request.getReason());
-        }
-
-        if (request.getNotes() != null) {
-            notes.append("\nNotes: ").append(request.getNotes());
-        }
-
-        subscription.setNotes(notes.toString());
     }
 }

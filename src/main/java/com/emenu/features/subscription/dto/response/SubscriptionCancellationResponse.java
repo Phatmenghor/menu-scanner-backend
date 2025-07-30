@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Data
 public class SubscriptionCancellationResponse {
     private SubscriptionResponse subscription;
+    private Boolean paymentsCleared;
     private Boolean refundCreated;
     private BigDecimal refundAmount;
     

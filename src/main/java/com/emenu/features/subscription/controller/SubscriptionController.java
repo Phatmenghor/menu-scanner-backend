@@ -125,15 +125,14 @@ public class SubscriptionController {
 
 
     /**
-     * Cancel subscription (now uses request body and clears dates)
+     * Cancel subscription (now uses request body and handles payments automatically)
      */
     @PostMapping("/{id}/cancel")
     public ResponseEntity<ApiResponse<SubscriptionCancellationResponse>> cancelSubscription(
             @PathVariable UUID id,
             @Valid @RequestBody SubscriptionCancelRequest request) {
 
-        log.info("Cancelling subscription: {} - Clear payments: {}, Create refund: {}",
-                id, request.shouldClearPayments(), request.shouldCreateRefundRecord());
+        log.info("Cancelling subscription: {} with refund amount: {}", id, request.getRefundAmount());
 
         // ✅ Call enhanced service method
         SubscriptionResponse subscription = subscriptionService.cancelSubscription(id, request);
@@ -141,16 +140,16 @@ public class SubscriptionController {
         // ✅ Create comprehensive response
         SubscriptionCancellationResponse response = new SubscriptionCancellationResponse();
         response.setSubscription(subscription);
-        response.setPaymentsCleared(request.shouldClearPayments());
-        response.setRefundCreated(request.shouldCreateRefundRecord());
+        response.setPaymentsCleared(true); // Always clear payments
+        response.setRefundCreated(request.hasRefundAmount());
 
-        if (request.shouldCreateRefundRecord()) {
+        if (request.hasRefundAmount()) {
             response.setRefundAmount(request.getRefundAmount());
         }
 
         String message = "Subscription cancelled successfully";
-        if (request.shouldClearPayments() || request.shouldCreateRefundRecord()) {
-            message += " with payment handling";
+        if (request.hasRefundAmount()) {
+            message += " with refund record";
         }
 
         return ResponseEntity.ok(ApiResponse.success(message, response));

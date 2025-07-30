@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 @Data
 public class SubscriptionCancelRequest {
     private String reason;
+    private String notes;
     
     // Refund amount to be processed when cancelling
     private BigDecimal refundAmount; 

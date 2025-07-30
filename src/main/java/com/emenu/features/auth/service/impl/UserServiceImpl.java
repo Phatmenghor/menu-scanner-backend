@@ -312,9 +312,8 @@ public class UserServiceImpl implements UserService {
         SubscriptionCreateRequest subscriptionRequest = new SubscriptionCreateRequest();
         subscriptionRequest.setBusinessId(businessId);
         subscriptionRequest.setPlanId(request.getSubscriptionPlanId()); // Now safe to use
-        subscriptionRequest.setStartDate(request.getSubscriptionStartDate());
+        subscriptionRequest.setStartDate(request.getSubscriptionStartDate()); // ✅ FIXED: Now uses LocalDate
         subscriptionRequest.setAutoRenew(request.getAutoRenew());
-        subscriptionRequest.setNotes(request.getSubscriptionNotes());
 
         return subscriptionService.createSubscription(subscriptionRequest);
     }

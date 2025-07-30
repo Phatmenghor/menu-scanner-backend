@@ -29,20 +29,13 @@ public class PaymentController {
 
         // ✅ Determine payment type for logging
         String paymentType = "Unknown";
-        String targetInfo = "";
 
         if (request.hasSubscriptionInfo()) {
             paymentType = "Subscription Payment";
-            targetInfo = "Subscription ID: " + request.getSubscriptionId();
-        } else if (request.hasUserPlanInfo()) {
-            paymentType = "User-Plan Payment";
-            targetInfo = "User ID: " + request.getUserId() + ", Plan ID: " + request.getPlanId();
         } else if (request.hasBusinessInfo()) {
             paymentType = "Business Record";
-            targetInfo = "Business ID: " + request.getBusinessId();
         }
 
-        log.info("Creating {} - Amount: ${}, Target: {}", paymentType, request.getAmount(), targetInfo);
 
         PaymentResponse payment = paymentService.createPayment(request);
 
@@ -80,7 +73,7 @@ public class PaymentController {
     }
 
     @GetMapping("/generate-reference")
-    public ResponseEntity<ApiResponse<String>> generateRfeferenceNumber() {
+    public ResponseEntity<ApiResponse<String>> generateReferenceNumber() {
         String referenceNumber = paymentService.generateReferenceNumber();
         return ResponseEntity.ok(ApiResponse.success("Reference number generated successfully", referenceNumber));
     }
