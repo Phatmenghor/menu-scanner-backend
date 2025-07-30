@@ -65,7 +65,7 @@ public abstract class SubscriptionMapper {
         response.setDaysRemaining(subscription.getDaysRemaining());
         response.setDisplayName(subscription.getDisplayName());
         
-        // ✅ FIXED: Handle null business and plan
+        // Handle null business and plan
         if (subscription.getBusiness() != null) {
             response.setBusinessName(subscription.getBusiness().getName());
         } else {
@@ -82,7 +82,7 @@ public abstract class SubscriptionMapper {
             response.setPlanDurationDays(0);
         }
         
-        // ✅ FIXED: Set payment-related fields
+        // Set payment-related fields
         response.setTotalPaidAmount(subscription.getTotalPaidAmount());
         response.setIsFullyPaid(subscription.isFullyPaid());
         response.setPaymentStatusSummary(subscription.getPaymentStatusSummary());

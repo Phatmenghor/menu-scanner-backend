@@ -15,7 +15,7 @@ import java.util.UUID;
 @Data
 public class BusinessOwnerCreateRequest {
 
-    // ✅ OWNER INFORMATION
+    // OWNER INFORMATION
     @NotBlank(message = "Owner user identifier is required")
     private String ownerUserIdentifier;
     
@@ -36,7 +36,7 @@ public class BusinessOwnerCreateRequest {
     
     private String ownerAddress;
 
-    // ✅ BUSINESS INFORMATION
+    // BUSINESS INFORMATION
     @NotBlank(message = "Business name is required")
     private String businessName;
 
@@ -48,7 +48,7 @@ public class BusinessOwnerCreateRequest {
     private String businessAddress;
     private String businessDescription;
 
-    // ✅ SUBDOMAIN INFORMATION
+    // SUBDOMAIN INFORMATION
     @NotBlank(message = "Preferred subdomain is required")
     @Size(min = 3, max = 63, message = "Subdomain must be between 3 and 63 characters")
     @Pattern(regexp = "^[a-z0-9][a-z0-9-]*[a-z0-9]$", 
@@ -58,11 +58,11 @@ public class BusinessOwnerCreateRequest {
     @NotBlank(message = "SubscriptionPlanId is required")
     private UUID subscriptionPlanId;
     
-    // ✅ UPDATED: Changed from LocalDateTime to LocalDate
+    // UPDATED: Changed from LocalDateTime to LocalDate
     private LocalDate subscriptionStartDate; // Optional - defaults to today
     private Boolean autoRenew = false;
 
-    // ✅ PAYMENT INFORMATION (Optional - creates payment record for platform)
+    // PAYMENT INFORMATION (Optional - creates payment record for platform)
     private String paymentImageUrl; // Receipt image URL
     @Positive(message = "Payment amount must be positive")
     private BigDecimal paymentAmount; // If provided, creates payment
@@ -71,7 +71,7 @@ public class BusinessOwnerCreateRequest {
     private String paymentReferenceNumber; // Optional, will auto-generate if not provided
     private String paymentNotes;
 
-    // ✅ Helper methods for validation
+    // Helper methods for validation
     public boolean hasSubscriptionInfo() {
         return subscriptionPlanId != null;
     }

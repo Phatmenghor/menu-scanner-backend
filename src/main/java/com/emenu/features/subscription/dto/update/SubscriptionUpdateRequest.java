@@ -15,5 +15,4 @@ public class SubscriptionUpdateRequest {
     
     private Boolean isActive;
     private Boolean autoRenew;
-    private String notes;
 }

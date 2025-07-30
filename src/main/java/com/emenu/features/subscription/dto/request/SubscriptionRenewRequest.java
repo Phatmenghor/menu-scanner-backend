@@ -11,9 +11,8 @@ import java.util.UUID;
 public class SubscriptionRenewRequest {
     private UUID newPlanId;
     private Integer customDurationDays;
-    private String notes;
     
-    // ✅ NEW: Auto-create payment when renewing
+    // Auto-create payment when renewing
     private Boolean createPayment = false; // If true, creates payment record
     private String paymentImageUrl; // Receipt image URL
     private BigDecimal paymentAmount; // Payment amount
@@ -22,7 +21,7 @@ public class SubscriptionRenewRequest {
     private String paymentReferenceNumber; // Optional, will auto-generate
     private String paymentNotes;
 
-    // ✅ Helper methods
+    // Helper methods
     public boolean shouldCreatePayment() {
         return Boolean.TRUE.equals(createPayment) && paymentAmount != null && 
                paymentAmount.compareTo(BigDecimal.ZERO) > 0 && paymentMethod != null;

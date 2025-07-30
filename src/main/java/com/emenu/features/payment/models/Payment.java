@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "payments")
+@Table(name = "payment_service")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

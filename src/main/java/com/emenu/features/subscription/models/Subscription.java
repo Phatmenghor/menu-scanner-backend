@@ -47,9 +47,7 @@ public class Subscription extends BaseUUIDEntity {
     @Column(name = "auto_renew", nullable = false)
     private Boolean autoRenew = false;
 
-    // ✅ REMOVED: notes field as requested
-
-    // ✅ FIXED: Proper payment relationship
+    // Proper payment relationship
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payment> payments;
 

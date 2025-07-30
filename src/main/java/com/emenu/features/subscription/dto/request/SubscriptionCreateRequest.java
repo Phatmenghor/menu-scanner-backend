@@ -14,7 +14,7 @@ public class SubscriptionCreateRequest {
     @NotNull(message = "Plan ID is required")
     private UUID planId;
     
-    // ✅ UPDATED: Use LocalDate instead of LocalDateTime
+    // Use LocalDate instead of LocalDateTime - defaults to today
     private LocalDate startDate;
     
     private Boolean autoRenew = false;

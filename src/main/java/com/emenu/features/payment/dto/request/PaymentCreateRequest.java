@@ -16,14 +16,10 @@ public class PaymentCreateRequest {
 
     private String imageUrl; // Receipt image URL
 
-    // Option 1: Traditional - Payment for specific subscription (existing functionality)
+    // Option 1: Payment for specific subscription (existing functionality)
     private UUID subscriptionId;
     
-    // Option 2: NEW - Payment for user with plan (dynamic selection)
-    private UUID userId; // Select user first
-    private UUID planId; // Then select plan for that user
-    
-    // Option 3: NEW - Payment for business directly (for history recording)
+    // Option 2: Payment for business directly (for history recording)
     private UUID businessId; // Direct business payment recording
     
     @NotNull(message = "Amount is required")
@@ -40,16 +36,12 @@ public class PaymentCreateRequest {
     @Size(max = 1000, message = "Notes cannot exceed 1000 characters")
     private String notes;
 
-    // ✅ NEW: Payment type for different scenarios
+    // Payment type for different scenarios
     private PaymentType paymentType = PaymentType.SUBSCRIPTION; // Default to existing behavior
 
-    // ✅ Helper methods for validation
+    // Helper methods for validation
     public boolean hasSubscriptionInfo() {
         return subscriptionId != null;
-    }
-
-    public boolean hasUserPlanInfo() {
-        return userId != null && planId != null;
     }
 
     public boolean hasBusinessInfo() {
@@ -60,10 +52,8 @@ public class PaymentCreateRequest {
         // Must have exactly one way to identify what the payment is for
         int methods = 0;
         if (hasSubscriptionInfo()) methods++;
-        if (hasUserPlanInfo()) methods++;
         if (hasBusinessInfo()) methods++;
         
         return methods == 1;
     }
-
 }

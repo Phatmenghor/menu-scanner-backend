@@ -26,12 +26,11 @@ public class SubscriptionResponse extends BaseAuditResponse {
     private Boolean isExpired;
     private Long daysRemaining;
     private Boolean autoRenew;
-    private String notes;
     
     // Display information
     private String displayName;
     
-    // ✅ ADDED: Payment information
+    // Payment information
     private BigDecimal totalPaidAmount;
     private Boolean isFullyPaid;
     private String paymentStatusSummary;
