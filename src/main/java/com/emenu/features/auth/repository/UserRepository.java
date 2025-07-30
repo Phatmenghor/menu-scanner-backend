@@ -1,10 +1,6 @@
 package com.emenu.features.auth.repository;
 
-import com.emenu.enums.user.AccountStatus;
-import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.models.User;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -21,9 +17,6 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
     // ✅ NEW: Primary login method using userIdentifier
     Optional<User> findByUserIdentifierAndIsDeletedFalse(String userIdentifier);
     boolean existsByUserIdentifierAndIsDeletedFalse(String userIdentifier);
-
-    // ✅ UPDATED: Keep email methods for backward compatibility (but no uniqueness required)
-    Optional<User> findByEmailAndIsDeletedFalse(String email);
 
     Optional<User> findByIdAndIsDeletedFalse(UUID id);
 

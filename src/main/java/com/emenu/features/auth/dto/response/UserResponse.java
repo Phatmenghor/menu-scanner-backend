@@ -7,15 +7,12 @@ import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class UserResponse extends BaseAuditResponse {
-
-    // ✅ PRIMARY: UserIdentifier for login (always present)
     private String userIdentifier;
 
     private String email;

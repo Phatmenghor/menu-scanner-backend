@@ -1,7 +1,6 @@
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.user.RoleEnum;
-import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.request.*;
 import com.emenu.features.auth.dto.response.LoginResponse;

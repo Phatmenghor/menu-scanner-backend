@@ -66,6 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
             PaymentResponse response = switch (determinePaymentType(request)) {
                 case SUBSCRIPTION -> createPaymentForSubscription(request);
                 case BUSINESS_RECORD -> createPaymentForBusinessRecord(request);
+                case USER_PLAN -> throw new ValidationException("USER_PLAN payment type is not yet implemented");
             };
 
             log.info("Payment created successfully: {} for amount: ${}", response.getId(), response.getAmount());

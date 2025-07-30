@@ -2,8 +2,6 @@ package com.emenu.features.auth.dto.filter;
 
 import com.emenu.enums.user.BusinessStatus;
 import com.emenu.shared.dto.BaseFilterRequest;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

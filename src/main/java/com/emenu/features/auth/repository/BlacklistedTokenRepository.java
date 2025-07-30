@@ -20,11 +20,6 @@ public interface BlacklistedTokenRepository extends JpaRepository<BlacklistedTok
     boolean existsByTokenHash(String tokenHash);
     
     /**
-     * Find blacklisted token by hash
-     */
-    Optional<BlacklistedToken> findByTokenHash(String tokenHash);
-    
-    /**
      * Delete expired tokens (cleanup job)
      * Tokens older than 1 week will be deleted
      */
@@ -37,12 +32,6 @@ public interface BlacklistedTokenRepository extends JpaRepository<BlacklistedTok
      */
     @Query("SELECT COUNT(bt) FROM BlacklistedToken bt WHERE bt.expiresAt < :cutoffTime")
     long countExpiredTokens(@Param("cutoffTime") LocalDateTime cutoffTime);
-    
-    /**
-     * Count active blacklisted tokens for user
-     */
-    @Query("SELECT COUNT(bt) FROM BlacklistedToken bt WHERE bt.userEmail = :userEmail AND bt.expiresAt > :now")
-    long countActiveTokensForUser(@Param("userEmail") String userEmail, @Param("now") LocalDateTime now);
     
     /**
      * Delete all tokens for a specific user (for admin operations)

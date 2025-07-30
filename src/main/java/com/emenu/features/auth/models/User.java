@@ -20,7 +20,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class User extends BaseUUIDEntity {
 
-    // ✅ NEW: User identifier for login (can be anything)
     @Column(name = "user_identifier", nullable = false, unique = true)
     private String userIdentifier;
 

@@ -4,8 +4,6 @@ import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.shared.dto.BaseFilterRequest;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
