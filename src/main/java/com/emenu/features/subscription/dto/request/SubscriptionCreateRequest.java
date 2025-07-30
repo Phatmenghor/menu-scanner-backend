@@ -3,7 +3,7 @@ package com.emenu.features.subscription.dto.request;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -14,9 +14,8 @@ public class SubscriptionCreateRequest {
     @NotNull(message = "Plan ID is required")
     private UUID planId;
     
-    // Admin can set when subscription starts (if null, starts now)
-    private LocalDateTime startDate;
+    // ✅ UPDATED: Use LocalDate instead of LocalDateTime
+    private LocalDate startDate;
     
     private Boolean autoRenew = false;
-    private String notes;
 }

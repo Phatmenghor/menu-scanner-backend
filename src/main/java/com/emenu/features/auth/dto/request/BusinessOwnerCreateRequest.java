@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -56,12 +56,13 @@ public class BusinessOwnerCreateRequest {
     private String preferredSubdomain;
 
     @NotBlank(message = "SubscriptionPlanId is required")
-    private UUID subscriptionPlanId; // Optional - if provided, creates subscription
-    private LocalDateTime subscriptionStartDate; // Optional - defaults to now
+    private UUID subscriptionPlanId;
+    
+    // ✅ UPDATED: Changed from LocalDateTime to LocalDate
+    private LocalDate subscriptionStartDate; // Optional - defaults to today
     private Boolean autoRenew = false;
-    private String subscriptionNotes;
 
-    // ✅ NEW: PAYMENT INFORMATION (Optional - if provided, creates payment record)
+    // ✅ PAYMENT INFORMATION (Optional - creates payment record for platform)
     private String paymentImageUrl; // Receipt image URL
     @Positive(message = "Payment amount must be positive")
     private BigDecimal paymentAmount; // If provided, creates payment
