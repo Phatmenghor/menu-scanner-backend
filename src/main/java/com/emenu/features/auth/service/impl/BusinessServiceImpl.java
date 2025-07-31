@@ -1,6 +1,5 @@
 package com.emenu.features.auth.service.impl;
 
-import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.BusinessFilterRequest;
 import com.emenu.features.auth.dto.request.BusinessCreateRequest;
 import com.emenu.features.auth.dto.response.BusinessResponse;
@@ -24,8 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -43,9 +40,6 @@ public class BusinessServiceImpl implements BusinessService {
     @Override
     public BusinessResponse createBusiness(BusinessCreateRequest request) {
         log.info("Creating business: {}", request.getName());
-
-        // ✅ ENHANCED: Early validation with specific error messages
-        validateBusinessCreation(request);
 
         Business business = businessMapper.toEntity(request);
         Business savedBusiness = businessRepository.save(business);
@@ -134,82 +128,5 @@ public class BusinessServiceImpl implements BusinessService {
         
         log.info("Business deleted successfully: {}", business.getName());
         return response;
-    }
-
-    private void validateBusinessCreation(BusinessCreateRequest request) {
-        List<String> errors = new ArrayList<>();
-
-        // Check required fields
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            errors.add("Business name is required");
-        }
-
-        // Check business name uniqueness (case-insensitive)
-        if (request.getName() != null && isBusinessNameTaken(request.getName())) {
-            errors.add("Business name '" + request.getName() + "' is already taken");
-        }
-
-        // Check email format and uniqueness
-        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
-            if (!isValidEmail(request.getEmail())) {
-                errors.add("Business email format is invalid");
-            } else if (businessRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
-                errors.add("Business email '" + request.getEmail() + "' is already registered");
-            }
-        }
-
-        // Check phone format
-        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
-            if (!isValidPhone(request.getPhone())) {
-                errors.add("Business phone number format is invalid");
-            }
-        }
-
-        // Throw validation exception with all errors
-        if (!errors.isEmpty()) {
-            String errorMessage = "Business validation failed: " + String.join(", ", errors);
-            throw new ValidationException(errorMessage);
-        }
-    }
-
-    private boolean isValidPhone(String phone) {
-        if (phone == null || phone.trim().isEmpty()) {
-            return true; // Phone is optional
-        }
-
-        // Cambodia phone number patterns: +855, 0, or direct numbers
-        String cleanPhone = phone.replaceAll("[^0-9+]", "");
-
-        // Valid patterns for Cambodia
-        return cleanPhone.matches("^(\\+855|0)?[1-9][0-9]{7,8}$");
-    }
-
-    private boolean isValidEmail(String email) {
-        if (email == null || email.trim().isEmpty()) {
-            return false;
-        }
-
-        String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
-        return email.matches(emailRegex);
-    }
-
-    @Transactional(readOnly = true)
-    private boolean isBusinessNameTaken(String name) {
-        return businessRepository.existsByNameIgnoreCaseAndIsDeletedFalse(name);
-    }
-
-    // ✅ IMPROVED: Better subdomain generation from business name
-    private String generateSubdomainFromBusinessName(String businessName) {
-        if (businessName == null || businessName.trim().isEmpty()) {
-            return "business";
-        }
-
-        return businessName.toLowerCase()
-                .trim()
-                .replaceAll("[^a-z0-9\\s-]", "") // Remove special characters
-                .replaceAll("\\s+", "-")          // Replace spaces with hyphens
-                .replaceAll("-{2,}", "-")         // Replace multiple hyphens with single
-                .replaceAll("^-+|-+$", "")        // Remove leading/trailing hyphens
-                .substring(0, Math.min(businessName.length(), 30)); // Limit length
     }
 }

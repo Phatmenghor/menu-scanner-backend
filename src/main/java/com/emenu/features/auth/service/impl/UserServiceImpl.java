@@ -327,23 +327,6 @@ public class UserServiceImpl implements UserService {
             errors.add("Owner user identifier '" + request.getOwnerUserIdentifier() + "' is already taken");
         }
 
-        // ✅ Check business email uniqueness if provided
-        if (request.getBusinessEmail() != null &&
-                !request.getBusinessEmail().trim().isEmpty() &&
-                businessRepository.existsByEmailAndIsDeletedFalse(request.getBusinessEmail())) {
-            errors.add("Business email '" + request.getBusinessEmail() + "' is already registered");
-        }
-
-        // ✅ Check owner email uniqueness if provided
-        if (request.getOwnerEmail() != null && !request.getOwnerEmail().trim().isEmpty()) {
-            // Check if any user has this email (since it's optional, only check if provided)
-            boolean emailExists = userRepository.findAll().stream()
-                    .anyMatch(user -> request.getOwnerEmail().equals(user.getEmail()) && !user.getIsDeleted());
-            if (emailExists) {
-                errors.add("Owner email '" + request.getOwnerEmail() + "' is already registered");
-            }
-        }
-
         // ✅ Check subdomain availability
         if (!subdomainService.isSubdomainAvailable(request.getPreferredSubdomain())) {
             errors.add("Subdomain '" + request.getPreferredSubdomain() + "' is not available. Please choose a different subdomain");
@@ -357,32 +340,6 @@ public class UserServiceImpl implements UserService {
         // ✅ Validate payment info if provided
         if (request.hasPaymentInfo() && !request.isPaymentInfoComplete()) {
             errors.add("Payment method is required when payment amount is provided");
-        }
-
-        // ✅ Validate phone numbers if provided (simple format)
-        if (request.getOwnerPhone() != null && !request.getOwnerPhone().trim().isEmpty()) {
-            if (!isValidSimplePhone(request.getOwnerPhone())) {
-                errors.add("Owner phone number format is invalid. Use format like: 070 411260");
-            }
-        }
-
-        if (request.getBusinessPhone() != null && !request.getBusinessPhone().trim().isEmpty()) {
-            if (!isValidSimplePhone(request.getBusinessPhone())) {
-                errors.add("Business phone number format is invalid. Use format like: 087 654321");
-            }
-        }
-
-        // ✅ Validate email formats if provided
-        if (request.getOwnerEmail() != null && !request.getOwnerEmail().trim().isEmpty()) {
-            if (!isValidEmail(request.getOwnerEmail())) {
-                errors.add("Owner email format is invalid");
-            }
-        }
-
-        if (request.getBusinessEmail() != null && !request.getBusinessEmail().trim().isEmpty()) {
-            if (!isValidEmail(request.getBusinessEmail())) {
-                errors.add("Business email format is invalid");
-            }
         }
 
         // ✅ Throw single validation exception with all errors
@@ -443,11 +400,11 @@ public class UserServiceImpl implements UserService {
 
         // ✅ UPDATED: Use ownerUserIdentifier instead of email
         user.setUserIdentifier(request.getOwnerUserIdentifier());
-        user.setEmail(request.getOwnerEmail()); // Optional - can be null
+        user.setEmail(request.getOwnerEmail());
         user.setPassword(passwordEncoder.encode(request.getOwnerPassword()));
         user.setFirstName(request.getOwnerFirstName());
         user.setLastName(request.getOwnerLastName());
-        user.setPhoneNumber(request.getOwnerPhone()); // Optional - can be null
+        user.setPhoneNumber(request.getOwnerPhone());
         user.setAddress(request.getOwnerAddress());
         user.setUserType(UserType.BUSINESS_USER);
         user.setAccountStatus(AccountStatus.ACTIVE);
