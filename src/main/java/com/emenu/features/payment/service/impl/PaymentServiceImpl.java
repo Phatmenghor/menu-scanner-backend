@@ -81,8 +81,6 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
-
-
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<PaymentResponse> getAllPayments(PaymentFilterRequest filter) {

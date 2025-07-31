@@ -20,7 +20,6 @@ import java.util.List;
 @AllArgsConstructor
 public class Business extends BaseUUIDEntity {
 
-    // Basic Information
     @Column(name = "name", nullable = false)
     private String name;
 

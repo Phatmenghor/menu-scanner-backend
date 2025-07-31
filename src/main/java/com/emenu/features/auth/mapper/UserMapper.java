@@ -65,8 +65,8 @@ public abstract class UserMapper {
      */
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "userIdentifier", ignore = true) // Can't change userIdentifier
-    @Mapping(target = "email", ignore = true) // Can't change email
+    @Mapping(target = "userIdentifier", ignore = true)
+    @Mapping(target = "email", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "userType", ignore = true)
     @Mapping(target = "roles", ignore = true)
