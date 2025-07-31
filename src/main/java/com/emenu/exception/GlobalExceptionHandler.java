@@ -225,6 +225,47 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Object>> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
+        log.error("Runtime exception in request to {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+
+        String message = "An unexpected error occurred while processing your request.";
+        Map<String, Object> errorDetails = createErrorDetails(ErrorCodes.INTERNAL_SERVER_ERROR, request);
+
+        // ✅ ENHANCED: Better error message parsing
+        if (ex.getMessage() != null) {
+            String exMessage = ex.getMessage().toLowerCase();
+            if (exMessage.contains("subdomain")) {
+                if (exMessage.contains("already taken") || exMessage.contains("not available")) {
+                    message = "The subdomain you chose is not available. Please select a different subdomain.";
+                    errorDetails.put("field", "subdomain");
+                    errorDetails.put("type", "duplicate");
+                } else if (exMessage.contains("invalid") || exMessage.contains("format")) {
+                    message = "Invalid subdomain format. Please use only lowercase letters, numbers, and hyphens.";
+                    errorDetails.put("field", "subdomain");
+                    errorDetails.put("type", "format");
+                }
+            } else if (exMessage.contains("business name")) {
+                message = "The business name you chose is not available. Please select a different name.";
+                errorDetails.put("field", "businessName");
+                errorDetails.put("type", "duplicate");
+            } else if (exMessage.contains("email")) {
+                message = "The email address is already in use. Please use a different email.";
+                errorDetails.put("field", "email");
+                errorDetails.put("type", "duplicate");
+            } else if (exMessage.contains("timeout")) {
+                message = "The request timed out. Please try again.";
+            } else if (exMessage.contains("connection")) {
+                message = "A connection error occurred. Please try again later.";
+            } else if (exMessage.contains("not found")) {
+                message = "The requested resource could not be found.";
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("error", message, errorDetails));
+    }
+
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationException(
             ValidationException ex, HttpServletRequest request) {
@@ -232,14 +273,41 @@ public class GlobalExceptionHandler {
 
         Map<String, Object> errorDetails = createErrorDetails(ErrorCodes.VALIDATION_ERROR, request);
 
-        // ✅ Enhanced: Parse validation message for field information
+        // ✅ ENHANCED: Parse validation message for specific field information
         String message = ex.getMessage();
+
+        // Extract specific field information from error message
         if (message.toLowerCase().contains("email")) {
             errorDetails.put("field", "email");
+            if (message.contains("already registered") || message.contains("already taken")) {
+                errorDetails.put("type", "duplicate");
+            } else if (message.contains("format") || message.contains("invalid")) {
+                errorDetails.put("type", "format");
+            }
         } else if (message.toLowerCase().contains("phone")) {
             errorDetails.put("field", "phoneNumber");
+            errorDetails.put("type", "format");
+            errorDetails.put("example", "070 411260");
         } else if (message.toLowerCase().contains("subdomain")) {
             errorDetails.put("field", "subdomain");
+            if (message.contains("already taken") || message.contains("not available")) {
+                errorDetails.put("type", "duplicate");
+                errorDetails.put("suggestion", "Please choose a different subdomain name");
+            } else if (message.contains("reserved")) {
+                errorDetails.put("type", "reserved");
+                errorDetails.put("suggestion", "This subdomain is reserved. Please choose a different name");
+            } else if (message.contains("format") || message.contains("invalid")) {
+                errorDetails.put("type", "format");
+                errorDetails.put("suggestion", "Use only lowercase letters, numbers, and hyphens (3-63 characters)");
+            }
+        } else if (message.toLowerCase().contains("business name")) {
+            errorDetails.put("field", "businessName");
+            errorDetails.put("type", "duplicate");
+            errorDetails.put("suggestion", "Please choose a different business name");
+        } else if (message.toLowerCase().contains("user identifier")) {
+            errorDetails.put("field", "userIdentifier");
+            errorDetails.put("type", "duplicate");
+            errorDetails.put("suggestion", "Please choose a different user identifier");
         }
 
         ApiResponse<Object> response = new ApiResponse<>("error", message, errorDetails);
@@ -362,52 +430,64 @@ public class GlobalExceptionHandler {
         String errorCode = ErrorCodes.VALIDATION_ERROR;
         Map<String, Object> errorDetails = createErrorDetails(errorCode, request);
 
-        // ✅ ENHANCED: Parse specific constraint violations
+        // ✅ ENHANCED: Better constraint violation parsing
         String exceptionMessage = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
         String rootCauseMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage().toLowerCase() : "";
         String fullMessage = (exceptionMessage + " " + rootCauseMessage).toLowerCase();
 
         // Enhanced duplicate detection patterns
         if (containsPattern(fullMessage, new String[]{"email", "unique.*email", "users_email"})) {
-            message = "Email address is already registered";
+            message = "Email address is already registered. Please use a different email or sign in if you already have an account.";
             errorCode = ErrorCodes.EMAIL_ALREADY_EXISTS;
             errorDetails.put("field", "email");
+            errorDetails.put("type", "duplicate");
             errorDetails.put("constraint", "UNIQUE_EMAIL");
         } else if (containsPattern(fullMessage, new String[]{"phone", "unique.*phone", "users_phone_number"})) {
-            message = "Phone number is already registered";
+            message = "Phone number is already registered. Please use a different phone number.";
             errorCode = ErrorCodes.PHONE_ALREADY_EXISTS;
             errorDetails.put("field", "phoneNumber");
+            errorDetails.put("type", "duplicate");
             errorDetails.put("constraint", "UNIQUE_PHONE");
         } else if (containsPattern(fullMessage, new String[]{"business.*email", "businesses_email"})) {
-            message = "Business email is already registered";
+            message = "Business email is already registered. Please use a different email for your business.";
             errorCode = ErrorCodes.EMAIL_ALREADY_EXISTS;
             errorDetails.put("field", "businessEmail");
+            errorDetails.put("type", "duplicate");
             errorDetails.put("constraint", "UNIQUE_BUSINESS_EMAIL");
         } else if (containsPattern(fullMessage, new String[]{"subdomain", "unique.*subdomain", "subdomains_subdomain"})) {
-            message = "Subdomain is already taken";
+            message = "Subdomain is already taken. Please choose a different subdomain name.";
             errorDetails.put("field", "subdomain");
+            errorDetails.put("type", "duplicate");
             errorDetails.put("constraint", "UNIQUE_SUBDOMAIN");
+            errorDetails.put("suggestion", "Try adding numbers or modify the name (e.g., myrestaurant2, myrestaurant-kh)");
         } else if (containsPattern(fullMessage, new String[]{"business.*name", "businesses_name"})) {
-            message = "Business name is already registered";
+            message = "Business name is already registered. Please choose a different business name.";
             errorDetails.put("field", "businessName");
+            errorDetails.put("type", "duplicate");
             errorDetails.put("constraint", "UNIQUE_BUSINESS_NAME");
+        } else if (containsPattern(fullMessage, new String[]{"user_identifier", "users_user_identifier"})) {
+            message = "User identifier is already taken. Please choose a different identifier.";
+            errorDetails.put("field", "userIdentifier");
+            errorDetails.put("type", "duplicate");
+            errorDetails.put("constraint", "UNIQUE_USER_IDENTIFIER");
         } else if (fullMessage.contains("foreign key")) {
-            message = "Referenced data does not exist";
+            message = "Referenced data does not exist. Please check your input and try again.";
             errorDetails.put("constraint", "FOREIGN_KEY");
+            errorDetails.put("type", "reference");
         } else if (fullMessage.contains("not null")) {
-            message = "Required field is missing";
+            message = "Required field is missing. Please provide all mandatory information.";
             errorDetails.put("constraint", "NOT_NULL");
+            errorDetails.put("type", "required");
         } else {
-            message = "Data constraint violation";
+            message = "Data constraint violation. Please check your input and try again.";
             errorDetails.put("constraint", "UNKNOWN");
+            errorDetails.put("type", "validation");
         }
 
         log.warn("Data integrity violation: {} - Parsed message: {}", fullMessage, message);
 
-        errorDetails.put("suggestion", getSuggestionForConstraint(errorCode));
-
         ApiResponse<Object> response = new ApiResponse<>("error", message, errorDetails);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response); // ✅ Changed from CONFLICT to BAD_REQUEST
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(DataAccessException.class)

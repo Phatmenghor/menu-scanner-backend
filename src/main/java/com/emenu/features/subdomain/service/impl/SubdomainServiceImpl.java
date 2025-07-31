@@ -1,6 +1,7 @@
 package com.emenu.features.subdomain.service.impl;
 
 import com.emenu.exception.custom.NotFoundException;
+import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.subdomain.dto.filter.SubdomainFilterRequest;
@@ -119,10 +120,15 @@ public class SubdomainServiceImpl implements SubdomainService {
             return false;
         }
 
-        String cleanedSubdomain = subdomainName.toLowerCase().trim();
+        String cleanedSubdomain = cleanSubdomain(subdomainName);
 
         // Check format
-        if (!isValidSubdomainFormat(cleanedSubdomain)) {
+        if (!SubdomainUtils.isValidSubdomainFormat(cleanedSubdomain)) {
+            return false;
+        }
+
+        // Check if reserved
+        if (SubdomainUtils.isReservedSubdomain(cleanedSubdomain)) {
             return false;
         }
 
@@ -132,35 +138,64 @@ public class SubdomainServiceImpl implements SubdomainService {
 
     @Override
     public SubdomainResponse createSubdomainForBusiness(UUID businessId, String preferredSubdomain) {
-        log.info("✅ Auto-creating subdomain for business: {} with preferred name: {}", businessId, preferredSubdomain);
+        log.info("Creating subdomain for business: {} with subdomain: {}", businessId, preferredSubdomain);
 
-        // Validate business exists
+        // ✅ FIXED: Validate business exists
         Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)
-                .orElseThrow(() -> new NotFoundException("Business not found"));
+                .orElseThrow(() -> new ValidationException("Business not found"));
 
-        // Check if business already has a subdomain
+        // ✅ FIXED: Check if business already has a subdomain
         if (subdomainRepository.existsByBusinessIdAndIsDeletedFalse(businessId)) {
-            log.debug("Business already has a subdomain, returning existing one");
+            log.warn("Business already has a subdomain, returning existing one");
             return getSubdomainByBusinessId(businessId);
         }
 
-        // Generate available subdomain name
-        String availableSubdomain = generateAvailableSubdomain(preferredSubdomain);
+        // ✅ FIXED: Clean and validate the subdomain format
+        String cleanedSubdomain = cleanSubdomain(preferredSubdomain);
 
-        // Create subdomain entity
+        // ✅ FIXED: Validate subdomain format
+        if (!SubdomainUtils.isValidSubdomainFormat(cleanedSubdomain)) {
+            throw new ValidationException(
+                    String.format("Invalid subdomain format: '%s'. Subdomain must be 3-63 characters, contain only lowercase letters, numbers, and hyphens, and cannot start or end with hyphen.",
+                            preferredSubdomain)
+            );
+        }
+
+        // ✅ FIXED: Check if subdomain is reserved
+        if (SubdomainUtils.isReservedSubdomain(cleanedSubdomain)) {
+            throw new ValidationException(
+                    String.format("Subdomain '%s' is reserved and cannot be used. Please choose a different subdomain.",
+                            cleanedSubdomain)
+            );
+        }
+
+        // ✅ FIXED: Check if subdomain is already taken - NO AUTO-GENERATION
+        if (subdomainRepository.existsBySubdomainAndIsDeletedFalse(cleanedSubdomain)) {
+            throw new ValidationException(
+                    String.format("Subdomain '%s' is already taken. Please choose a different subdomain.",
+                            cleanedSubdomain)
+            );
+        }
+
+        // ✅ FIXED: Create subdomain entity
         Subdomain subdomain = new Subdomain();
-        subdomain.setSubdomain(availableSubdomain);
+        subdomain.setSubdomain(cleanedSubdomain);
         subdomain.setBusinessId(businessId);
         subdomain.setStatus(com.emenu.enums.subdomain.SubdomainStatus.ACTIVE);
         subdomain.setAccessCount(0L);
-        subdomain.setNotes("Auto-created during business registration");
+        subdomain.setNotes("Created during business registration");
 
-        Subdomain savedSubdomain = subdomainRepository.save(subdomain);
-
-        log.info("✅ Subdomain created successfully: {} for business: {}",
-                availableSubdomain, business.getName());
-
-        return subdomainMapper.toResponse(savedSubdomain);
+        try {
+            Subdomain savedSubdomain = subdomainRepository.save(subdomain);
+            log.info("✅ Subdomain created successfully: {} for business: {}",
+                    cleanedSubdomain, business.getName());
+            return subdomainMapper.toResponse(savedSubdomain);
+        } catch (Exception e) {
+            log.error("Failed to save subdomain: {}", e.getMessage(), e);
+            throw new ValidationException(
+                    String.format("Failed to create subdomain '%s': %s", cleanedSubdomain, e.getMessage())
+            );
+        }
     }
 
     @Override
@@ -232,6 +267,14 @@ public class SubdomainServiceImpl implements SubdomainService {
                 .availableSuggestions((int) availableCount)
                 .baseDomain(baseDomain)
                 .build();
+    }
+
+    private String cleanSubdomain(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            throw new ValidationException("Subdomain cannot be empty");
+        }
+
+        return input.toLowerCase().trim();
     }
 
     // ✅ NEW: Generate creative short versions even for single words

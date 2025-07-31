@@ -48,6 +48,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -230,7 +231,7 @@ public class UserServiceImpl implements UserService {
         log.info("🚀 Creating comprehensive business owner with business: {} for userIdentifier: {}",
                 request.getBusinessName(), request.getOwnerUserIdentifier());
 
-        // ✅ Validate business owner creation
+        // ✅ ENHANCED: Validate business owner creation early
         validateBusinessOwnerCreation(request);
 
         try {
@@ -242,9 +243,23 @@ public class UserServiceImpl implements UserService {
             log.info("👤 Step 2: Creating business owner: {}", request.getOwnerUserIdentifier());
             UserResponse userResponse = createOwnerUser(request, businessResponse.getId());
 
-            // ✅ STEP 3: Auto-create subdomain
-            log.info("🌐 Step 3: Auto-creating subdomain: {}", request.getPreferredSubdomain());
-            SubdomainResponse subdomainResponse = createSubdomainForBusiness(businessResponse.getId(), request.getPreferredSubdomain());
+            // ✅ STEP 3: Create subdomain - FIXED: Handle errors properly without auto-generation
+            log.info("🌐 Step 3: Creating subdomain: {}", request.getPreferredSubdomain());
+            SubdomainResponse subdomainResponse;
+            try {
+                subdomainResponse = subdomainService.createSubdomainForBusiness(
+                        businessResponse.getId(),
+                        request.getPreferredSubdomain()
+                );
+                log.info("✅ Subdomain created successfully: {}", subdomainResponse.getFullUrl());
+            } catch (ValidationException e) {
+                log.error("❌ Subdomain creation failed: {}", e.getMessage());
+                // ✅ FIXED: Don't continue with fallback, throw meaningful error
+                throw new ValidationException("Subdomain creation failed: " + e.getMessage());
+            } catch (Exception e) {
+                log.error("❌ Unexpected error creating subdomain: {}", e.getMessage(), e);
+                throw new ValidationException("Failed to create subdomain '" + request.getPreferredSubdomain() + "': " + e.getMessage());
+            }
 
             // ✅ STEP 4: Create subscription (ALWAYS - never null)
             log.info("📋 Step 4: Creating subscription with plan: {}", request.getSubscriptionPlanId());
@@ -254,7 +269,13 @@ public class UserServiceImpl implements UserService {
             PaymentResponse paymentResponse = null;
             if (request.hasPaymentInfo() && request.isPaymentInfoComplete()) {
                 log.info("💳 Step 5: Creating payment record: ${}", request.getPaymentAmount());
-                paymentResponse = createPaymentForBusiness(request, businessResponse.getId(), subscriptionResponse);
+                try {
+                    paymentResponse = createPaymentForBusiness(request, businessResponse.getId(), subscriptionResponse);
+                    log.info("✅ Payment created successfully: {}", paymentResponse.getId());
+                } catch (Exception e) {
+                    log.warn("⚠️ Payment creation failed, continuing without payment: {}", e.getMessage());
+                    // Continue without payment - don't fail the entire process
+                }
             }
 
             // ✅ STEP 6: Use mapper to create comprehensive response
@@ -273,7 +294,7 @@ public class UserServiceImpl implements UserService {
 
         } catch (ValidationException ve) {
             log.error("❌ Validation error creating business owner: {}", ve.getMessage());
-            throw ve;
+            throw ve; // Re-throw validation exceptions as-is
         } catch (Exception e) {
             log.error("❌ Failed to create comprehensive business owner: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create business owner: " + e.getMessage(), e);
@@ -294,6 +315,83 @@ public class UserServiceImpl implements UserService {
 
         log.info("✅ Enhanced business created: {} with ID: {}", businessResponse.getName(), businessResponse.getId());
         return businessResponse;
+    }
+
+    private void validateBusinessOwnerCreation(BusinessOwnerCreateRequest request) {
+        log.debug("🔍 Validating business owner creation request");
+
+        List<String> errors = new ArrayList<>();
+
+        // ✅ Check userIdentifier uniqueness
+        if (userRepository.existsByUserIdentifierAndIsDeletedFalse(request.getOwnerUserIdentifier())) {
+            errors.add("Owner user identifier '" + request.getOwnerUserIdentifier() + "' is already taken");
+        }
+
+        // ✅ Check business email uniqueness if provided
+        if (request.getBusinessEmail() != null &&
+                !request.getBusinessEmail().trim().isEmpty() &&
+                businessRepository.existsByEmailAndIsDeletedFalse(request.getBusinessEmail())) {
+            errors.add("Business email '" + request.getBusinessEmail() + "' is already registered");
+        }
+
+        // ✅ Check owner email uniqueness if provided
+        if (request.getOwnerEmail() != null && !request.getOwnerEmail().trim().isEmpty()) {
+            // Check if any user has this email (since it's optional, only check if provided)
+            boolean emailExists = userRepository.findAll().stream()
+                    .anyMatch(user -> request.getOwnerEmail().equals(user.getEmail()) && !user.getIsDeleted());
+            if (emailExists) {
+                errors.add("Owner email '" + request.getOwnerEmail() + "' is already registered");
+            }
+        }
+
+        // ✅ Check subdomain availability
+        if (!subdomainService.isSubdomainAvailable(request.getPreferredSubdomain())) {
+            errors.add("Subdomain '" + request.getPreferredSubdomain() + "' is not available. Please choose a different subdomain");
+        }
+
+        // ✅ Validate subscription plan exists
+        if (!subscriptionPlanRepository.existsById(request.getSubscriptionPlanId())) {
+            errors.add("Subscription plan not found");
+        }
+
+        // ✅ Validate payment info if provided
+        if (request.hasPaymentInfo() && !request.isPaymentInfoComplete()) {
+            errors.add("Payment method is required when payment amount is provided");
+        }
+
+        // ✅ Validate phone numbers if provided (simple format)
+        if (request.getOwnerPhone() != null && !request.getOwnerPhone().trim().isEmpty()) {
+            if (!isValidSimplePhone(request.getOwnerPhone())) {
+                errors.add("Owner phone number format is invalid. Use format like: 070 411260");
+            }
+        }
+
+        if (request.getBusinessPhone() != null && !request.getBusinessPhone().trim().isEmpty()) {
+            if (!isValidSimplePhone(request.getBusinessPhone())) {
+                errors.add("Business phone number format is invalid. Use format like: 087 654321");
+            }
+        }
+
+        // ✅ Validate email formats if provided
+        if (request.getOwnerEmail() != null && !request.getOwnerEmail().trim().isEmpty()) {
+            if (!isValidEmail(request.getOwnerEmail())) {
+                errors.add("Owner email format is invalid");
+            }
+        }
+
+        if (request.getBusinessEmail() != null && !request.getBusinessEmail().trim().isEmpty()) {
+            if (!isValidEmail(request.getBusinessEmail())) {
+                errors.add("Business email format is invalid");
+            }
+        }
+
+        // ✅ Throw single validation exception with all errors
+        if (!errors.isEmpty()) {
+            String errorMessage = "Business owner creation validation failed: " + String.join(", ", errors);
+            throw new ValidationException(errorMessage);
+        }
+
+        log.debug("✅ Validation passed for business owner creation");
     }
 
     private SubscriptionResponse createSubscriptionForBusiness(BusinessOwnerCreateRequest request, UUID businessId) {
@@ -409,24 +507,65 @@ public class UserServiceImpl implements UserService {
     // PRIVATE HELPER METHODS
     // ================================
 
-    private void validateBusinessOwnerCreation(BusinessOwnerCreateRequest request) {
-        log.debug("🔍 Validating business owner creation request");
+    private void validateBusinessCreation(BusinessCreateRequest request) {
+        List<String> errors = new ArrayList<>();
 
-        // ✅ UPDATED: Only check userIdentifier uniqueness
-        if (userRepository.existsByUserIdentifierAndIsDeletedFalse(request.getOwnerUserIdentifier())) {
-            throw new ValidationException("Owner user identifier already exists: " + request.getOwnerUserIdentifier());
+        // Check required fields
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            errors.add("Business name is required");
         }
 
-        // ✅ UPDATED: Only check business email uniqueness if provided
-        if (request.getBusinessEmail() != null &&
-                !request.getBusinessEmail().trim().isEmpty() &&
-                businessRepository.existsByEmailAndIsDeletedFalse(request.getBusinessEmail())) {
-            throw new ValidationException("Business email already exists: " + request.getBusinessEmail());
+        // Check business name uniqueness (case-insensitive)
+        if (request.getName() != null && isBusinessNameTaken(request.getName())) {
+            errors.add("Business name '" + request.getName() + "' is already taken");
         }
 
-        log.debug("✅ Validation passed for business owner creation");
+        // Check email format and uniqueness
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            if (!isValidEmail(request.getEmail())) {
+                errors.add("Business email format is invalid");
+            } else if (businessRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
+                errors.add("Business email '" + request.getEmail() + "' is already registered");
+            }
+        }
+
+        // ✅ FIXED: Simple phone validation
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            if (!isValidSimplePhone(request.getPhone())) {
+                errors.add("Phone number format is invalid. Use format like: 070 411260");
+            }
+        }
+
+        // Throw validation exception with all errors
+        if (!errors.isEmpty()) {
+            String errorMessage = "Business validation failed: " + String.join(", ", errors);
+            throw new ValidationException(errorMessage);
+        }
     }
 
+    @Transactional(readOnly = true)
+    private boolean isBusinessNameTaken(String name) {
+        return businessRepository.existsByNameIgnoreCaseAndIsDeletedFalse(name);
+    }
+
+    private boolean isValidSimplePhone(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return true; // Phone is optional
+        }
+
+        // Simple validation: 8-12 digits with optional spaces
+        String cleanPhone = phone.replaceAll("\\s", ""); // Remove spaces
+        return cleanPhone.matches("^[0-9]{8,12}$");
+    }
+
+    private boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+
+        String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+        return email.matches(emailRegex);
+    }
 
     private void validateAndAssignBusiness(User user, UUID businessId) {
         // Validate business exists
