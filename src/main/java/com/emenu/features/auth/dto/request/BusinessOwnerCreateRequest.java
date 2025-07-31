@@ -60,7 +60,7 @@ public class BusinessOwnerCreateRequest {
 
     // PAYMENT INFORMATION (Optional)
     private String paymentImageUrl;
-    @Positive(message = "Payment amount must be positive")
+    @DecimalMin(value = "0.0", message = "Payment amount must be non-negative")
     private BigDecimal paymentAmount;
     private PaymentMethod paymentMethod;
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
@@ -73,7 +73,7 @@ public class BusinessOwnerCreateRequest {
     }
 
     public boolean hasPaymentInfo() {
-        return paymentAmount != null && paymentAmount.compareTo(BigDecimal.ZERO) > 0;
+        return paymentAmount != null && paymentAmount.compareTo(BigDecimal.ZERO) >= 0;
     }
 
     public boolean isPaymentInfoComplete() {

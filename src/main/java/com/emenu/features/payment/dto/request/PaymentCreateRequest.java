@@ -3,8 +3,8 @@ package com.emenu.features.payment.dto.request;
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.enums.payment.PaymentType;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -23,7 +23,7 @@ public class PaymentCreateRequest {
     private UUID businessId; // Direct business payment recording
     
     @NotNull(message = "Amount is required")
-    @Positive(message = "Amount must be positive")
+    @DecimalMin(value = "0.0", message = "Amount must be non-negative")
     private BigDecimal amount;
     
     @NotNull(message = "Payment method is required")

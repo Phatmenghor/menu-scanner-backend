@@ -507,42 +507,6 @@ public class UserServiceImpl implements UserService {
     // PRIVATE HELPER METHODS
     // ================================
 
-    private void validateBusinessCreation(BusinessCreateRequest request) {
-        List<String> errors = new ArrayList<>();
-
-        // Check required fields
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            errors.add("Business name is required");
-        }
-
-        // Check business name uniqueness (case-insensitive)
-        if (request.getName() != null && isBusinessNameTaken(request.getName())) {
-            errors.add("Business name '" + request.getName() + "' is already taken");
-        }
-
-        // Check email format and uniqueness
-        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
-            if (!isValidEmail(request.getEmail())) {
-                errors.add("Business email format is invalid");
-            } else if (businessRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
-                errors.add("Business email '" + request.getEmail() + "' is already registered");
-            }
-        }
-
-        // ✅ FIXED: Simple phone validation
-        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
-            if (!isValidSimplePhone(request.getPhone())) {
-                errors.add("Phone number format is invalid. Use format like: 070 411260");
-            }
-        }
-
-        // Throw validation exception with all errors
-        if (!errors.isEmpty()) {
-            String errorMessage = "Business validation failed: " + String.join(", ", errors);
-            throw new ValidationException(errorMessage);
-        }
-    }
-
     @Transactional(readOnly = true)
     private boolean isBusinessNameTaken(String name) {
         return businessRepository.existsByNameIgnoreCaseAndIsDeletedFalse(name);
