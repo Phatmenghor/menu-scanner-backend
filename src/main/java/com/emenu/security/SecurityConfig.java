@@ -50,14 +50,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/images/**").permitAll()
 
-                        // Documentation endpoints
+                        // Documentation endpoints - ✅ ENHANCED: More Swagger patterns
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-config", "/api-docs/**").permitAll()
 
                         // Actuator endpoints
                         .requestMatchers("/actuator/health/**").permitAll()
                         .requestMatchers("/actuator/**").hasRole("PLATFORM_OWNER")
-
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
@@ -70,11 +71,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
+        // ✅ ENHANCED: Better CORS configuration for Swagger
         configuration.setAllowedOriginPatterns(Arrays.asList(allowedOrigins));
+
+        // ✅ Add server-specific origins for Swagger UI
+        configuration.addAllowedOriginPattern("http://152.42.219.13:*");
+        configuration.addAllowedOriginPattern("http://localhost:*");
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition", "Content-Type"));
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

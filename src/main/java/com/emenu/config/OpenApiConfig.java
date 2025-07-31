@@ -26,7 +26,10 @@ public class OpenApiConfig {
     @Value("${app.description:Simple E-Menu Platform for Restaurant Management}")
     private String appDescription;
 
-    // ✅ FIXED: Support both localhost and production URLs
+    // ✅ FIXED: Use server.url from application.yaml
+    @Value("${server.url:http://localhost:8080}")
+    private String serverUrl;
+
     @Value("${server.port:8080}")
     private String serverPort;
 
@@ -44,16 +47,16 @@ public class OpenApiConfig {
                         .license(new License()
                                 .name("Proprietary")
                                 .url("https://emenu-platform.com/license")))
-                // ✅ FIXED: Add multiple servers for different environments
+                // ✅ FIXED: Use configured server URL as primary server
                 .servers(List.of(
+                        new Server()
+                                .url(serverUrl)
+                                .description("Primary Server"),
                         new Server()
                                 .url("http://localhost:" + serverPort)
                                 .description("Local Development Server"),
                         new Server()
                                 .url("http://152.42.219.13:" + serverPort)
-                                .description("Development Server"),
-                        new Server()
-                                .url("https://152.42.219.13:" + serverPort)
                                 .description("Development Server (HTTPS)")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
