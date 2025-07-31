@@ -13,10 +13,9 @@ public class LoginResponse {
     private String tokenType = "Bearer";
     private UUID userId;
     
-    // ✅ ADDED: Primary identifier for login
     private String userIdentifier;
     
-    private String email; // Optional - can be null
+    private String email;
     private String fullName;
     private String profileImageUrl;
     private UserType userType;

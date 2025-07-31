@@ -68,7 +68,7 @@ public class UserServiceImpl implements UserService {
     private final SecurityUtils securityUtils;
     private final PaymentService paymentService;
     private final SubscriptionService subscriptionService;
-    private final SubscriptionPlanRepository subscriptionPlanRepository; // ✅ ADDED: Subscription plan repository
+    private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final BusinessOwnerCreateResponseMapper businessOwnerResponseMapper;
 
     @Override
