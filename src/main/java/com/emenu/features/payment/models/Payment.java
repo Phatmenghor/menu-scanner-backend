@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -62,7 +61,8 @@ public class Payment extends BaseUUIDEntity {
     @Column(name = "status", nullable = false)
     private PaymentStatus status = PaymentStatus.PENDING;
 
-    @Column(name = "reference_number", unique = true)
+    // ✅ FIXED: Removed unique = true constraint to allow duplicate reference numbers
+    @Column(name = "reference_number")
     private String referenceNumber;
 
     @Column(name = "notes", columnDefinition = "TEXT")
@@ -123,5 +123,4 @@ public class Payment extends BaseUUIDEntity {
     public String getSubscriptionDisplayName() {
         return subscription != null ? subscription.getDisplayName() : "No Subscription";
     }
-
 }

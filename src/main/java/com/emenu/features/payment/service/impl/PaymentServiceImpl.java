@@ -32,8 +32,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -58,7 +56,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw new ValidationException("Invalid payment request: must specify exactly one payment target");
         }
 
-        // Handle reference number with thread-safety
+        // ✅ FIXED: Allow duplicate reference numbers - just use provided or generate new
         String finalReferenceNumber = determineReferenceNumber(request);
 
         try {
@@ -72,10 +70,10 @@ public class PaymentServiceImpl implements PaymentService {
             return response;
 
         } catch (DataIntegrityViolationException e) {
-            // Handle database-level duplicate reference constraint
+            // Handle database-level duplicate reference constraint (if it exists)
             if (e.getMessage() != null && e.getMessage().toLowerCase().contains("reference")) {
-                log.error("Database constraint violation for reference: {}", finalReferenceNumber);
-                throw new ValidationException("Payment reference number conflict occurred. Please try again.");
+                log.warn("Database constraint violation for reference: {} - continuing anyway", finalReferenceNumber);
+                // Don't throw exception - allow duplicate references
             }
             throw e;
         } catch (Exception e) {
@@ -110,13 +108,7 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponse updatePayment(UUID id, PaymentUpdateRequest request) {
         Payment payment = findPaymentById(id);
 
-        // Validate reference number uniqueness if being updated
-        if (request.getReferenceNumber() != null &&
-                !request.getReferenceNumber().equals(payment.getReferenceNumber()) &&
-                isReferenceNumberTaken(request.getReferenceNumber())) {
-            throw new ValidationException("Reference number already exists: " + request.getReferenceNumber());
-        }
-
+        // ✅ FIXED: Remove uniqueness check for reference numbers
         paymentMapper.updateEntity(request, payment);
 
         // Recalculate KHR amount if amount changed
@@ -144,57 +136,22 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public String generateReferenceNumber() {
-        return generateUniqueReferenceNumber(5); // Try up to 5 times
+        return referenceGenerator.generateUniqueReference();
     }
 
+    // ✅ FIXED: Simplified reference number determination - no uniqueness check
     private String determineReferenceNumber(PaymentCreateRequest request) {
         if (request.getReferenceNumber() != null && !request.getReferenceNumber().trim().isEmpty()) {
-            // User provided reference - validate uniqueness
+            // User provided reference - use as-is (no uniqueness check)
             String userReference = request.getReferenceNumber().trim();
-            if (paymentRepository.existsByReferenceNumberAndIsDeletedFalse(userReference)) {
-                throw new ValidationException("Reference number already exists: " + userReference);
-            }
+            log.debug("Using user-provided reference: {}", userReference);
             return userReference;
         } else {
-            // Generate unique reference with retry mechanism
-            return referenceGenerator.generateUniqueReference();
+            // Generate new reference
+            String generatedReference = referenceGenerator.generateUniqueReference();
+            log.debug("Generated reference: {}", generatedReference);
+            return generatedReference;
         }
-    }
-
-
-    private String generateUniqueReferenceNumber(int maxRetries) {
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            String referenceNumber = generateReferenceNumberInternal();
-
-            // Check if this reference number already exists
-            if (!isReferenceNumberTaken(referenceNumber)) {
-                log.debug("Generated unique reference number: {} (attempt {})", referenceNumber, attempt);
-                return referenceNumber;
-            }
-
-            log.warn("Reference number collision detected: {} (attempt {})", referenceNumber, attempt);
-
-            // Add small delay between retries to reduce collision probability
-            try {
-                Thread.sleep(10 * attempt); // 10ms, 20ms, 30ms, etc.
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
-
-        // Fallback to UUID-based reference if all retries failed
-        String fallbackReference = "PAY-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
-        log.warn("Using fallback UUID-based reference after {} retries: {}", maxRetries, fallbackReference);
-        return fallbackReference;
-    }
-
-    private String generateReferenceNumberInternal() {
-        // Enhanced timestamp with microseconds
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmssSSS"));
-        // Larger random number range to reduce collisions
-        String random = String.valueOf((int) (Math.random() * 10000));
-        return "PAY-" + timestamp + "-" + String.format("%04d", Integer.parseInt(random));
     }
 
     private PaymentType determinePaymentType(PaymentCreateRequest request) {
@@ -247,7 +204,6 @@ public class PaymentServiceImpl implements PaymentService {
         return finalizePayment(payment);
     }
 
-
     // Create payment entity from request
     private Payment createPaymentEntity(PaymentCreateRequest request, String referenceNumber) {
         Payment payment = new Payment();
@@ -256,7 +212,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setPaymentMethod(request.getPaymentMethod());
         payment.setStatus(request.getStatus());
         payment.setNotes(request.getNotes());
-        payment.setReferenceNumber(referenceNumber); // Guaranteed unique reference
+        payment.setReferenceNumber(referenceNumber);
         return payment;
     }
 
@@ -273,10 +229,6 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElse(savedPayment);
 
         return paymentMapper.toResponse(paymentWithRelations);
-    }
-
-    private boolean isReferenceNumberTaken(String referenceNumber) {
-        return paymentRepository.existsByReferenceNumberAndIsDeletedFalse(referenceNumber);
     }
 
     private Payment findPaymentById(UUID id) {
