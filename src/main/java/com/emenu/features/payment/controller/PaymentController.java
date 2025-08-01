@@ -7,6 +7,7 @@ import com.emenu.features.payment.dto.update.PaymentUpdateRequest;
 import com.emenu.features.payment.service.PaymentService;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.generate.PaymentReferenceGenerator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -23,6 +26,7 @@ import java.util.UUID;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final PaymentReferenceGenerator referenceGenerator;
 
     @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(@Valid @RequestBody PaymentCreateRequest request) {
@@ -72,10 +76,15 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success("Payment deleted successfully", payment));
     }
 
+
     @GetMapping("/generate-reference")
-    public ResponseEntity<ApiResponse<String>> generateReferenceNumber() {
-        String referenceNumber = paymentService.generateReferenceNumber();
-        return ResponseEntity.ok(ApiResponse.success("Reference number generated successfully", referenceNumber));
+    public ResponseEntity<Map<String, String>> generateTestReference() {
+        String reference = referenceGenerator.generateUniqueReference();
+        Map<String, String> response = Map.of(
+                "reference", reference,
+                "timestamp", LocalDateTime.now().toString()
+        );
+        return ResponseEntity.ok(response);
     }
 
 }

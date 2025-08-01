@@ -20,9 +20,11 @@ import com.emenu.features.payment.service.ExchangeRateService;
 import com.emenu.features.payment.service.PaymentService;
 import com.emenu.features.payment.specification.PaymentSpecification;
 import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.generate.PaymentReferenceGenerator;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -46,34 +48,38 @@ public class PaymentServiceImpl implements PaymentService {
     private final SubscriptionRepository subscriptionRepository;
     private final ExchangeRateService exchangeRateService;
     private final PaymentMapper paymentMapper;
+    private final PaymentReferenceGenerator referenceGenerator;
 
     @Override
     public PaymentResponse createPayment(PaymentCreateRequest request) {
         log.info("Creating payment - Amount: {}, Type: {}", request.getAmount(), request.getPaymentType());
 
-        // Validate payment request
         if (!request.isValidPaymentRequest()) {
-            throw new ValidationException("Invalid payment request: must specify exactly one payment target (subscription or business)");
+            throw new ValidationException("Invalid payment request: must specify exactly one payment target");
         }
 
-        // Validate reference number uniqueness if provided
-        if (request.getReferenceNumber() != null && isReferenceNumberTaken(request.getReferenceNumber())) {
-            throw new ValidationException("Reference number already exists: " + request.getReferenceNumber());
-        }
+        // Handle reference number with thread-safety
+        String finalReferenceNumber = determineReferenceNumber(request);
 
         try {
-            // Handle different payment creation scenarios
             PaymentResponse response = switch (determinePaymentType(request)) {
-                case SUBSCRIPTION -> createPaymentForSubscription(request);
-                case BUSINESS_RECORD -> createPaymentForBusinessRecord(request);
-                case USER_PLAN -> throw new ValidationException("USER_PLAN payment type is not yet implemented");
+                case SUBSCRIPTION -> createPaymentForSubscription(request, finalReferenceNumber);
+                case BUSINESS_RECORD -> createPaymentForBusinessRecord(request, finalReferenceNumber);
+                case USER_PLAN -> throw new ValidationException("USER_PLAN payment type not implemented");
             };
 
-            log.info("Payment created successfully: {} for amount: ${}", response.getId(), response.getAmount());
+            log.info("✅ Payment created: {} with reference: {}", response.getId(), finalReferenceNumber);
             return response;
 
+        } catch (DataIntegrityViolationException e) {
+            // Handle database-level duplicate reference constraint
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("reference")) {
+                log.error("Database constraint violation for reference: {}", finalReferenceNumber);
+                throw new ValidationException("Payment reference number conflict occurred. Please try again.");
+            }
+            throw e;
         } catch (Exception e) {
-            log.error("Failed to create payment: {}", e.getMessage(), e);
+            log.error("Failed to create payment with reference {}: {}", finalReferenceNumber, e.getMessage(), e);
             throw new RuntimeException("Failed to create payment: " + e.getMessage(), e);
         }
     }
@@ -138,9 +144,57 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public String generateReferenceNumber() {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String random = String.valueOf((int) (Math.random() * 1000));
-        return "PAY-" + timestamp + "-" + String.format("%03d", Integer.parseInt(random));
+        return generateUniqueReferenceNumber(5); // Try up to 5 times
+    }
+
+    private String determineReferenceNumber(PaymentCreateRequest request) {
+        if (request.getReferenceNumber() != null && !request.getReferenceNumber().trim().isEmpty()) {
+            // User provided reference - validate uniqueness
+            String userReference = request.getReferenceNumber().trim();
+            if (paymentRepository.existsByReferenceNumberAndIsDeletedFalse(userReference)) {
+                throw new ValidationException("Reference number already exists: " + userReference);
+            }
+            return userReference;
+        } else {
+            // Generate unique reference with retry mechanism
+            return referenceGenerator.generateUniqueReference();
+        }
+    }
+
+
+    private String generateUniqueReferenceNumber(int maxRetries) {
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            String referenceNumber = generateReferenceNumberInternal();
+
+            // Check if this reference number already exists
+            if (!isReferenceNumberTaken(referenceNumber)) {
+                log.debug("Generated unique reference number: {} (attempt {})", referenceNumber, attempt);
+                return referenceNumber;
+            }
+
+            log.warn("Reference number collision detected: {} (attempt {})", referenceNumber, attempt);
+
+            // Add small delay between retries to reduce collision probability
+            try {
+                Thread.sleep(10 * attempt); // 10ms, 20ms, 30ms, etc.
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        // Fallback to UUID-based reference if all retries failed
+        String fallbackReference = "PAY-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+        log.warn("Using fallback UUID-based reference after {} retries: {}", maxRetries, fallbackReference);
+        return fallbackReference;
+    }
+
+    private String generateReferenceNumberInternal() {
+        // Enhanced timestamp with microseconds
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmssSSS"));
+        // Larger random number range to reduce collisions
+        String random = String.valueOf((int) (Math.random() * 10000));
+        return "PAY-" + timestamp + "-" + String.format("%04d", Integer.parseInt(random));
     }
 
     private PaymentType determinePaymentType(PaymentCreateRequest request) {
@@ -153,21 +207,19 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     // Payment for subscription (unchanged)
-    private PaymentResponse createPaymentForSubscription(PaymentCreateRequest request) {
-        log.info("Creating payment for subscription: {}", request.getSubscriptionId());
+    private PaymentResponse createPaymentForSubscription(PaymentCreateRequest request, String referenceNumber) {
+        log.info("Creating subscription payment with reference: {}", referenceNumber);
 
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(request.getSubscriptionId())
                 .orElseThrow(() -> new NotFoundException("Subscription not found"));
 
-        // Validate business and plan exist
         businessRepository.findByIdAndIsDeletedFalse(subscription.getBusinessId())
                 .orElseThrow(() -> new NotFoundException("Business not found"));
 
-        SubscriptionPlan plan = planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
+        planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
                 .orElseThrow(() -> new NotFoundException("Subscription plan not found"));
 
-        // Create payment entity
-        Payment payment = createPaymentEntity(request);
+        Payment payment = createPaymentEntity(request, referenceNumber);
         payment.setBusinessId(subscription.getBusinessId());
         payment.setPlanId(subscription.getPlanId());
         payment.setSubscriptionId(subscription.getId());
@@ -176,49 +228,41 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     // Payment for business record (history only)
-    private PaymentResponse createPaymentForBusinessRecord(PaymentCreateRequest request) {
-        log.info("Creating payment record for business: {}", request.getBusinessId());
+    private PaymentResponse createPaymentForBusinessRecord(PaymentCreateRequest request, String referenceNumber) {
+        log.info("Creating business payment record with reference: {}", referenceNumber);
 
-        // Validate business exists
         Business business = businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
                 .orElseThrow(() -> new NotFoundException("Business not found"));
 
-        // Create payment entity (no subscription or plan required)
-        Payment payment = createPaymentEntity(request);
+        Payment payment = createPaymentEntity(request, referenceNumber);
         payment.setBusinessId(business.getId());
 
-        // Try to link to current active plan if available
-        Optional<Subscription> activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(
-                business.getId(), LocalDateTime.now());
-
-        activeSubscription.ifPresent(subscription -> {
-            payment.setPlanId(subscription.getPlanId());
-            payment.setSubscriptionId(subscription.getId());
-        });
+        // Link to active subscription if available
+        subscriptionRepository.findCurrentActiveByBusinessId(business.getId(), LocalDateTime.now())
+                .ifPresent(subscription -> {
+                    payment.setPlanId(subscription.getPlanId());
+                    payment.setSubscriptionId(subscription.getId());
+                });
 
         return finalizePayment(payment);
     }
 
+
     // Create payment entity from request
-    private Payment createPaymentEntity(PaymentCreateRequest request) {
+    private Payment createPaymentEntity(PaymentCreateRequest request, String referenceNumber) {
         Payment payment = new Payment();
         payment.setImageUrl(request.getImageUrl());
         payment.setAmount(request.getAmount());
         payment.setPaymentMethod(request.getPaymentMethod());
         payment.setStatus(request.getStatus());
         payment.setNotes(request.getNotes());
-
-        // Set reference number if provided
-        if (request.getReferenceNumber() != null) {
-            payment.setReferenceNumber(request.getReferenceNumber());
-        }
-
+        payment.setReferenceNumber(referenceNumber); // Guaranteed unique reference
         return payment;
     }
 
     // Finalize payment creation
     private PaymentResponse finalizePayment(Payment payment) {
-        // Calculate KHR amount using current system exchange rate
+        // Calculate KHR amount
         Double currentRate = exchangeRateService.getCurrentRateValue();
         payment.calculateAmountKhr(currentRate);
 

@@ -1,6 +1,7 @@
 package com.emenu.features.subscription.service.impl;
 
 import com.emenu.enums.payment.PaymentType;
+import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.payment.dto.request.PaymentCreateRequest;
 import com.emenu.features.payment.dto.response.PaymentResponse;
 import com.emenu.features.payment.dto.update.PaymentUpdateRequest;
@@ -85,12 +86,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         business.activateSubscription(startDate, subscription.getEndDate());
         businessRepository.save(business);
 
-        // ✅ FIXED: Load the saved subscription with relationships
-        Subscription subscriptionWithRelations = subscriptionRepository.findByIdAndIsDeletedFalse(savedSubscription.getId())
-                .orElse(savedSubscription);
-
         log.info("Subscription created successfully: {} starting from {}", savedSubscription.getId(), startDate);
-        return subscriptionMapper.toResponse(subscriptionWithRelations);
+        
+        // ✅ FIXED: Use the new method to properly load relationships
+        return loadSubscriptionWithRelationships(savedSubscription.getId());
     }
 
     @Override
@@ -104,7 +103,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         );
 
         // ✅ FIXED: Use repository method that loads relationships
-        Page<Subscription> subscriptionPage = subscriptionRepository.findAll(spec, pageable);
+        Page<Subscription> subscriptionPage = subscriptionRepository.findAllWithRelationships(pageable);
         return subscriptionMapper.toPaginationResponse(subscriptionPage);
     }
 
@@ -117,17 +116,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             throw new RuntimeException("User is not associated with any business");
         }
 
-        filter.setBusinessId(currentUser.getBusinessId());
-        return getSubscriptions(filter);
+        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
+        Pageable pageable = PaginationUtils.createPageable(
+                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+        );
+
+        // ✅ FIXED: Use repository method that loads relationships for specific business
+        Page<Subscription> subscriptionPage = subscriptionRepository.findByBusinessIdWithRelationships(
+                currentUser.getBusinessId(), pageable);
+        return subscriptionMapper.toPaginationResponse(subscriptionPage);
     }
 
     @Override
     @Transactional(readOnly = true)
     public SubscriptionResponse getSubscriptionById(UUID id) {
-        // ✅ FIXED: Use repository method that loads relationships
-        Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Subscription not found"));
-        return subscriptionMapper.toResponse(subscription);
+        // ✅ FIXED: Use the helper method to properly load relationships
+        return loadSubscriptionWithRelationships(id);
     }
 
     @Override
@@ -139,22 +143,19 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscriptionMapper.updateEntity(request, subscription);
         Subscription updatedSubscription = subscriptionRepository.save(subscription);
 
-        // ✅ FIXED: Reload with relationships
-        Subscription subscriptionWithRelations = subscriptionRepository.findByIdAndIsDeletedFalse(updatedSubscription.getId())
-                .orElse(updatedSubscription);
-
         log.info("Subscription updated successfully: {}", id);
-        return subscriptionMapper.toResponse(subscriptionWithRelations);
+        
+        // ✅ FIXED: Use the helper method to properly load relationships
+        return loadSubscriptionWithRelationships(updatedSubscription.getId());
     }
 
     @Override
     public SubscriptionResponse deleteSubscription(UUID id) {
-        // ✅ FIXED: Load with relationships
+        // ✅ FIXED: Load with relationships first to get proper response data
+        SubscriptionResponse response = loadSubscriptionWithRelationships(id);
+        
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
-
-        // Get response before deleting
-        SubscriptionResponse response = subscriptionMapper.toResponse(subscription);
 
         subscription.softDelete();
         subscriptionRepository.save(subscription);
@@ -176,18 +177,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public SubscriptionResponse renewSubscription(UUID subscriptionId, SubscriptionRenewRequest request) {
         log.info("Renewing subscription: {} with payment creation: {}", subscriptionId, request.shouldCreatePayment());
 
-        // ✅ Load existing subscription with relationships
+        // ✅ FIXED: Load existing subscription with relationships
         Subscription oldSubscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
-        // ✅ Get plan (new plan or existing plan)
-        SubscriptionPlan plan = oldSubscription.getPlan();
+        // ✅ FIXED: Get plan (new plan or existing plan) - ensure we have the plan loaded
+        SubscriptionPlan plan;
         if (request.getNewPlanId() != null) {
             plan = planRepository.findByIdAndIsDeletedFalse(request.getNewPlanId())
                     .orElseThrow(() -> new RuntimeException("New subscription plan not found"));
+        } else {
+            // If no new plan specified, reload the existing plan to ensure it's properly loaded
+            plan = planRepository.findByIdAndIsDeletedFalse(oldSubscription.getPlanId())
+                    .orElseThrow(() -> new RuntimeException("Current subscription plan not found"));
         }
 
-        // ✅ Create new subscription
+        // ✅ FIXED: Create new subscription with proper data
         Subscription newSubscription = new Subscription();
         newSubscription.setBusinessId(oldSubscription.getBusinessId());
         newSubscription.setPlanId(plan.getId());
@@ -198,14 +203,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         newSubscription.setIsActive(true);
         newSubscription.setAutoRenew(oldSubscription.getAutoRenew());
 
-        // ✅ Deactivate old subscription
+        // ✅ FIXED: Deactivate old subscription
         oldSubscription.setIsActive(false);
         subscriptionRepository.save(oldSubscription);
 
-        // ✅ Save new subscription
+        // ✅ FIXED: Save new subscription
         Subscription savedNewSubscription = subscriptionRepository.save(newSubscription);
 
-        // ✅ Update business subscription status
+        // ✅ FIXED: Update business subscription status
         if (savedNewSubscription.getBusinessId() != null) {
             businessRepository.findByIdAndIsDeletedFalse(savedNewSubscription.getBusinessId())
                     .ifPresent(business -> {
@@ -214,48 +219,58 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                     });
         }
 
-        // ✅ NEW: Create payment if requested
+        // ✅ ENHANCED: Create payment if requested
         PaymentResponse paymentResponse = null;
         if (request.shouldCreatePayment()) {
             log.info("💳 Creating payment for subscription renewal: ${}", request.getPaymentAmount());
-            paymentResponse = createRenewalPayment(request, savedNewSubscription);
-            log.info("✅ Renewal payment created: {}", paymentResponse.getId());
+            try {
+                paymentResponse = createRenewalPayment(request, savedNewSubscription);
+                log.info("✅ Renewal payment created: {}", paymentResponse.getId());
+            } catch (Exception e) {
+                log.error("❌ Failed to create renewal payment: {}", e.getMessage(), e);
+                // Don't fail the renewal if payment creation fails
+            }
         }
-
-        // ✅ Reload with relationships
-        Subscription subscriptionWithRelations = subscriptionRepository.findByIdAndIsDeletedFalse(savedNewSubscription.getId())
-                .orElse(savedNewSubscription);
 
         log.info("✅ Subscription renewed successfully: {} -> {}, Payment: {}",
                 subscriptionId, savedNewSubscription.getId(), paymentResponse != null ? "✓" : "✗");
 
-        return subscriptionMapper.toResponse(subscriptionWithRelations);
+        // ✅ FIXED: Use helper method to properly load relationships
+        return loadSubscriptionWithRelationships(savedNewSubscription.getId());
     }
 
     @Override
     public SubscriptionResponse cancelSubscription(UUID subscriptionId, SubscriptionCancelRequest request) {
         log.info("Cancelling subscription: {} with refund amount: {}", subscriptionId, request.getRefundAmount());
 
-        // ✅ Load subscription with relationships
+        // ✅ FIXED: Load subscription with relationships
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
-        // ✅ Always clear payments when cancelling
-        clearSubscriptionPayments(subscription);
-
-        // ✅ Create refund if amount provided
-        if (request.hasRefundAmount()) {
-            createRefundPayment(request, subscription);
+        // ✅ ENHANCED: Always clear payments when cancelling
+        try {
+            clearSubscriptionPayments(subscription);
+        } catch (Exception e) {
+            log.warn("⚠️ Failed to clear payments during cancellation: {}", e.getMessage());
+            // Continue with cancellation even if payment clearing fails
         }
 
-        // ✅ Cancel subscription and clear all dates
-        subscription.cancel();
-        subscription.setStartDate(null);
-        subscription.setEndDate(null);
+        // ✅ ENHANCED: Create refund if amount provided
+        if (request.hasRefundAmount()) {
+            try {
+                createRefundPayment(request, subscription);
+                log.info("✅ Refund payment created for amount: ${}", request.getRefundAmount());
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to create refund payment: {}", e.getMessage());
+                // Continue with cancellation even if refund creation fails
+            }
+        }
 
+        // ✅ FIXED: Cancel subscription
+        subscription.cancel();
         Subscription savedSubscription = subscriptionRepository.save(subscription);
 
-        // ✅ Update business subscription status
+        // ✅ FIXED: Update business subscription status
         if (savedSubscription.getBusinessId() != null) {
             businessRepository.findByIdAndIsDeletedFalse(savedSubscription.getBusinessId())
                     .ifPresent(business -> {
@@ -265,30 +280,64 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         }
 
         log.info("✅ Subscription cancelled successfully: {}", subscriptionId);
-        return subscriptionMapper.toResponse(savedSubscription);
+        
+        // ✅ FIXED: Use helper method to properly load relationships after cancellation
+        return loadSubscriptionWithRelationships(savedSubscription.getId());
+    }
+
+    // ✅ NEW: Helper method to properly load subscription with relationships
+    private SubscriptionResponse loadSubscriptionWithRelationships(UUID subscriptionId) {
+        Subscription subscription = subscriptionRepository.findByIdWithRelationships(subscriptionId)
+                .orElseThrow(() -> new RuntimeException("Subscription not found"));
+        
+        log.debug("Loaded subscription with business: {} and plan: {}", 
+                subscription.getBusiness() != null ? subscription.getBusiness().getName() : "NULL",
+                subscription.getPlan() != null ? subscription.getPlan().getName() : "NULL");
+        
+        return subscriptionMapper.toResponse(subscription);
     }
 
     private PaymentResponse createRenewalPayment(SubscriptionRenewRequest request, Subscription subscription) {
         try {
+            log.info("💳 Creating renewal payment for subscription: {}", subscription.getId());
+
             PaymentCreateRequest paymentRequest = new PaymentCreateRequest();
             paymentRequest.setImageUrl(request.getPaymentImageUrl());
             paymentRequest.setSubscriptionId(subscription.getId());
             paymentRequest.setAmount(request.getPaymentAmount());
             paymentRequest.setPaymentMethod(request.getPaymentMethod());
             paymentRequest.setStatus(request.getPaymentStatus());
-            paymentRequest.setReferenceNumber(request.getPaymentReferenceNumber());
-            paymentRequest.setNotes("Renewal payment: " + (request.getPaymentNotes() != null ? request.getPaymentNotes() : ""));
             paymentRequest.setPaymentType(PaymentType.SUBSCRIPTION);
 
-            return paymentService.createPayment(paymentRequest);
+            // IMPORTANT: Don't set reference number - let PaymentService generate unique one
+            // Only set if user explicitly provided one
+            if (request.getPaymentReferenceNumber() != null &&
+                    !request.getPaymentReferenceNumber().trim().isEmpty()) {
+                paymentRequest.setReferenceNumber(request.getPaymentReferenceNumber().trim());
+            }
 
+            String notes = "Subscription renewal payment";
+            if (request.getPaymentNotes() != null && !request.getPaymentNotes().trim().isEmpty()) {
+                notes += " - " + request.getPaymentNotes();
+            }
+            paymentRequest.setNotes(notes);
+
+            PaymentResponse paymentResponse = paymentService.createPayment(paymentRequest);
+            log.info("✅ Renewal payment created: {} with reference: {}",
+                    paymentResponse.getId(), paymentResponse.getReferenceNumber());
+
+            return paymentResponse;
+
+        } catch (ValidationException e) {
+            log.error("❌ Validation error creating renewal payment: {}", e.getMessage());
+            throw e; // Re-throw validation exceptions as-is
         } catch (Exception e) {
-            log.error("Failed to create renewal payment for subscription: {}", subscription.getId(), e);
+            log.error("❌ Failed to create renewal payment for subscription: {}", subscription.getId(), e);
             throw new RuntimeException("Failed to create renewal payment: " + e.getMessage(), e);
         }
     }
 
-    // ✅ NEW: Clear subscription payments
+    // ✅ Enhanced: Clear subscription payments
     private void clearSubscriptionPayments(Subscription subscription) {
         try {
             if (subscription.getPayments() != null && !subscription.getPayments().isEmpty()) {
@@ -299,7 +348,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                         PaymentUpdateRequest updateRequest = new PaymentUpdateRequest();
                         updateRequest.setStatus(com.emenu.enums.payment.PaymentStatus.CANCELLED);
                         updateRequest.setNotes((payment.getNotes() != null ? payment.getNotes() + "\n" : "") +
-                                "Cancelled due to subscription cancellation");
+                                "Cancelled due to subscription cancellation at " + LocalDateTime.now());
 
                         paymentService.updatePayment(payment.getId(), updateRequest);
                         clearedCount++;
@@ -310,10 +359,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         } catch (Exception e) {
             log.error("Failed to clear payments for subscription: {}", subscription.getId(), e);
             // Don't fail the cancellation if payment clearing fails
+            throw e; // Re-throw to let caller handle it
         }
     }
 
-    // ✅ NEW: Create refund payment record
+    // ✅ Enhanced: Create refund payment record
     private void createRefundPayment(SubscriptionCancelRequest request, Subscription subscription) {
         try {
             PaymentCreateRequest refundRequest = new PaymentCreateRequest();
@@ -321,8 +371,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             refundRequest.setAmount(request.getRefundAmount().negate()); // Negative amount for refund
             refundRequest.setPaymentMethod(com.emenu.enums.payment.PaymentMethod.BANK_TRANSFER); // Default for refunds
             refundRequest.setStatus(com.emenu.enums.payment.PaymentStatus.COMPLETED); // Refund is processed
-            refundRequest.setNotes("Refund for cancelled subscription: " +
-                    (request.getRefundNotes() != null ? request.getRefundNotes() : ""));
+            refundRequest.setNotes("Refund for cancelled subscription at " + LocalDateTime.now() + 
+                    (request.getRefundNotes() != null ? ": " + request.getRefundNotes() : ""));
             refundRequest.setPaymentType(PaymentType.SUBSCRIPTION);
 
             PaymentResponse refundResponse = paymentService.createPayment(refundRequest);
@@ -331,6 +381,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         } catch (Exception e) {
             log.error("Failed to create refund payment for subscription: {}", subscription.getId(), e);
             // Don't fail the cancellation if refund creation fails
+            throw e; // Re-throw to let caller handle it
         }
     }
 }

@@ -47,18 +47,6 @@ public class OpenApiConfig {
                         .license(new License()
                                 .name("Proprietary")
                                 .url("https://emenu-platform.com/license")))
-                // ✅ FIXED: Use configured server URL as primary server
-                .servers(List.of(
-                        new Server()
-                                .url(serverUrl)
-                                .description("Primary Server"),
-                        new Server()
-                                .url("http://localhost:" + serverPort)
-                                .description("Local Development Server"),
-                        new Server()
-                                .url("http://152.42.219.13:" + serverPort)
-                                .description("Development Server (HTTPS)")
-                ))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth",

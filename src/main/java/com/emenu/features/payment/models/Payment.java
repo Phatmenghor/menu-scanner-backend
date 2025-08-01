@@ -124,12 +124,4 @@ public class Payment extends BaseUUIDEntity {
         return subscription != null ? subscription.getDisplayName() : "No Subscription";
     }
 
-    @PrePersist
-    public void generateReference() {
-        if (referenceNumber == null || referenceNumber.trim().isEmpty()) {
-            String timestamp = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            String random = String.valueOf((int)(Math.random() * 1000));
-            this.referenceNumber = "PAY-" + timestamp + "-" + String.format("%03d", Integer.parseInt(random));
-        }
-    }
 }
