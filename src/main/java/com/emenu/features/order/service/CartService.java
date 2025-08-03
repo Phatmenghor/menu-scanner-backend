@@ -22,7 +22,4 @@ public interface CartService {
     
     // Clear entire cart
     CartResponse clearCart(UUID businessId);
-    
-    // Get cart count (total items)
-    Integer getCartItemCount(UUID businessId);
 }

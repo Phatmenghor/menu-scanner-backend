@@ -68,10 +68,6 @@ public class CartItem extends BaseUUIDEntity {
         return getFinalPrice().multiply(BigDecimal.valueOf(quantity));
     }
 
-    public BigDecimal getDiscountAmount() {
-        return getCurrentPrice().subtract(getFinalPrice()).multiply(BigDecimal.valueOf(quantity));
-    }
-
     public Boolean hasDiscount() {
         return getCurrentPrice().compareTo(getFinalPrice()) > 0;
     }
@@ -85,12 +81,19 @@ public class CartItem extends BaseUUIDEntity {
         return getCurrentPrice();
     }
 
-    // Product availability checks
-    public Boolean isProductAvailable() {
+    // ✅ UPDATED: Single availability check that combines both availability and stock status
+    public Boolean isAvailable() {
         if (product == null) return false;
         return product.isActive() && !product.getIsDeleted();
     }
 
+    // ✅ DEPRECATED: Keep these methods for backward compatibility but use the single isAvailable() method
+    @Deprecated
+    public Boolean isProductAvailable() {
+        return isAvailable();
+    }
+
+    @Deprecated
     public Boolean isProductInStock() {
         if (product == null) return false;
         return product.isAvailable(); // ACTIVE or OUT_OF_STOCK

@@ -40,7 +40,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartResponse addToCart(CartItemRequest request) {
-        log.info("Adding item to cart - Product: {}, Size: {}, Quantity: {}", 
+        log.info("Adding/Updating item in cart - Product: {}, Size: {}, Quantity: {}", 
                 request.getProductId(), request.getProductSizeId(), request.getQuantity());
 
         User currentUser = securityUtils.getCurrentUser();
@@ -56,21 +56,32 @@ public class CartServiceImpl implements CartService {
                 cart.getId(), request.getProductId(), request.getProductSizeId());
         
         if (existingItem.isPresent()) {
-            // Update quantity of existing item
             CartItem item = existingItem.get();
-            item.setQuantity(item.getQuantity() + request.getQuantity());
-            cartItemRepository.save(item);
-            log.info("Updated existing cart item quantity to: {}", item.getQuantity());
+            
+            if (request.getQuantity() == 0) {
+                // Remove item when quantity is 0
+                cartItemRepository.delete(item);
+                log.info("Removed cart item: {}", item.getId());
+            } else {
+                // Set exact quantity (not add to existing)
+                item.setQuantity(request.getQuantity());
+                cartItemRepository.save(item);
+                log.info("Updated cart item quantity to: {}", item.getQuantity());
+            }
         } else {
-            // Create new cart item (no price storage)
-            CartItem newItem = new CartItem(
-                    cart.getId(),
-                    request.getProductId(),
-                    request.getProductSizeId(),
-                    request.getQuantity()
-            );
-            cartItemRepository.save(newItem);
-            log.info("Added new item to cart: {}", newItem.getId());
+            // Only create new item if quantity > 0
+            if (request.getQuantity() > 0) {
+                CartItem newItem = new CartItem(
+                        cart.getId(),
+                        request.getProductId(),
+                        request.getProductSizeId(),
+                        request.getQuantity()
+                );
+                cartItemRepository.save(newItem);
+                log.info("Added new item to cart with quantity: {}", newItem.getQuantity());
+            } else {
+                log.info("Skipping cart item creation - quantity is 0 and item doesn't exist");
+            }
         }
 
         return getCartResponse(currentUser.getId(), businessId);
@@ -150,21 +161,6 @@ public class CartServiceImpl implements CartService {
         return getCartResponse(currentUser.getId(), businessId);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Integer getCartItemCount(UUID businessId) {
-        User currentUser = securityUtils.getCurrentUser();
-        
-        Optional<Cart> cartOpt = cartRepository.findByUserIdAndBusinessIdWithItems(
-                currentUser.getId(), businessId);
-        
-        if (cartOpt.isPresent()) {
-            return cartOpt.get().getTotalItems();
-        }
-        
-        return 0;
-    }
-
     // Private helper methods remain the same but simplified...
     private UUID validateProductAndGetBusinessId(UUID productId, UUID productSizeId) {
         if (productSizeId != null) {
@@ -232,8 +228,8 @@ public class CartServiceImpl implements CartService {
         if (cartOpt.isPresent()) {
             Cart cart = cartOpt.get();
             
-            // Filter out items for deleted/inactive products
-            cart.getItems().removeIf(item -> !item.isProductAvailable());
+            // ✅ UPDATED: Filter out items using the single isAvailable() method
+            cart.getItems().removeIf(item -> !item.isAvailable());
             
             return cartMapper.toResponse(cart);
         }
@@ -243,7 +239,7 @@ public class CartServiceImpl implements CartService {
         emptyCart.setUserId(userId);
         emptyCart.setBusinessId(businessId);
         emptyCart.setTotalItems(0);
-        emptyCart.setIsEmpty(true);
+        emptyCart.setUnavailableItems(0);
         return emptyCart;
     }
 }

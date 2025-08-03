@@ -22,27 +22,37 @@ public class CartController {
     private final CartService cartService;
 
     /**
-     * Add item to cart
+     * Add/Update item in cart
+     * - If item exists: sets exact quantity (quantity = 0 removes item)
+     * - If item doesn't exist: creates new item (only if quantity > 0)
+     * Perfect for product detail pages where you set exact quantities
      */
     @PostMapping("/add")
-    public ResponseEntity<ApiResponse<CartResponse>> addToCart(@Valid @RequestBody CartItemRequest request) {
-        log.info("Adding item to cart");
+    public ResponseEntity<ApiResponse<CartResponse>> addOrUpdateCartItem(@Valid @RequestBody CartItemRequest request) {
+        log.info("Adding/Updating item in cart - Product: {}, Quantity: {}", request.getProductId(), request.getQuantity());
         CartResponse cart = cartService.addToCart(request);
-        return ResponseEntity.ok(ApiResponse.success("Item added to cart successfully", cart));
+
+        String message = request.getQuantity() == 0 ?
+                "Item removed from cart successfully" :
+                "Item added/updated in cart successfully";
+
+        return ResponseEntity.ok(ApiResponse.success(message, cart));
     }
 
     /**
-     * Update cart item quantity
+     * Update cart item quantity by cart item ID
+     * Legacy method - use addOrUpdateCartItem for new implementations
      */
     @PutMapping("/update")
     public ResponseEntity<ApiResponse<CartResponse>> updateCartItem(@Valid @RequestBody CartUpdateRequest request) {
-        log.info("Updating cart item");
+        log.info("Updating cart item by ID: {}", request.getCartItemId());
         CartResponse cart = cartService.updateCartItem(request);
         return ResponseEntity.ok(ApiResponse.success("Cart item updated successfully", cart));
     }
 
     /**
-     * Remove item from cart
+     * Remove item from cart by cart item ID
+     * Legacy method - use addOrUpdateCartItem with quantity=0 for new implementations
      */
     @DeleteMapping("/item/{cartItemId}")
     public ResponseEntity<ApiResponse<CartResponse>> removeFromCart(@PathVariable UUID cartItemId) {
@@ -69,15 +79,5 @@ public class CartController {
         log.info("Clearing cart for business: {}", businessId);
         CartResponse cart = cartService.clearCart(businessId);
         return ResponseEntity.ok(ApiResponse.success("Cart cleared successfully", cart));
-    }
-
-    /**
-     * Get cart item count for business
-     */
-    @GetMapping("/business/{businessId}/count")
-    public ResponseEntity<ApiResponse<Integer>> getCartItemCount(@PathVariable UUID businessId) {
-        log.info("Getting cart item count for business: {}", businessId);
-        Integer count = cartService.getCartItemCount(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Cart count retrieved successfully", count));
     }
 }

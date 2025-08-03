@@ -66,6 +66,16 @@ public class Cart extends BaseUUIDEntity {
                 .sum();
     }
 
+    // ✅ NEW: Count unavailable items
+    public Integer getUnavailableItemsCount() {
+        if (items == null || items.isEmpty()) {
+            return 0;
+        }
+        return (int) items.stream()
+                .filter(item -> !item.isAvailable())
+                .count();
+    }
+
     public Boolean isEmpty() {
         return items == null || items.isEmpty();
     }

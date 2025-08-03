@@ -19,14 +19,12 @@ public class CartItemResponse {
     private BigDecimal currentPrice; // Current base price
     private BigDecimal finalPrice; // Current price with active promotions
     private Boolean hasPromotion; // If current price has active promotion
-    private BigDecimal discountAmount; // Current discount amount
     
     private Integer quantity;
     private BigDecimal totalPrice; // finalPrice * quantity
 
-    // Product availability
-    private Boolean isAvailable; // Product is active and not deleted
-    private Boolean isInStock; // Product is available for purchase
+    // Product availability - merged into single field
+    private Boolean isAvailable; // Product is active, not deleted, and can be purchased
 
     // Promotion details (for display)
     private String promotionType; // PERCENTAGE or FIXED_AMOUNT

@@ -26,11 +26,7 @@ public abstract class CartMapper {
     @Mapping(target = "finalPrice", expression = "java(cartItem.getFinalPrice())")
     @Mapping(target = "totalPrice", expression = "java(cartItem.getTotalPrice())")
     @Mapping(target = "hasPromotion", expression = "java(cartItem.hasDiscount())")
-    @Mapping(target = "discountAmount", expression = "java(cartItem.getDiscountAmount())")
-    @Mapping(target = "isAvailable", expression = "java(cartItem.isProductAvailable())")
-    @Mapping(target = "isInStock", expression = "java(cartItem.isProductInStock())")
-    @Mapping(target = "unavailabilityReason", expression = "java(cartItem.getUnavailabilityReason())")
-    @Mapping(source = "createdAt", target = "addedAt")
+    @Mapping(target = "isAvailable", expression = "java(cartItem.isAvailable())")
     public abstract CartItemResponse toItemResponse(CartItem cartItem);
 
     @AfterMapping
@@ -56,8 +52,7 @@ public abstract class CartMapper {
     @Mapping(target = "subtotal", expression = "java(cart.getSubtotal())")
     @Mapping(target = "totalDiscount", expression = "java(cart.getTotalDiscount())")
     @Mapping(target = "finalTotal", expression = "java(cart.getSubtotal())")
-    @Mapping(target = "isEmpty", expression = "java(cart.isEmpty())")
-    @Mapping(source = "updatedAt", target = "lastUpdated")
+    @Mapping(target = "unavailableItems", expression = "java(cart.getUnavailableItemsCount())")
     public abstract CartResponse toResponse(Cart cart);
 
     @AfterMapping
