@@ -24,7 +24,6 @@ public class OrderCreateRequest {
     @NotNull(message = "Payment method is required")
     private PaymentMethod paymentMethod;
     
-    private String customerPaymentMethod; // "Cash", "Card", "ABA Pay", etc.
     private String customerNote;
     
     // Order type flags
