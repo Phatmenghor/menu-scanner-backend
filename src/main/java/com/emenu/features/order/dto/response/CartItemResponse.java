@@ -23,13 +23,11 @@ public class CartItemResponse {
     
     private Integer quantity;
     private BigDecimal totalPrice; // finalPrice * quantity
-    private LocalDateTime addedAt;
-    
+
     // Product availability
     private Boolean isAvailable; // Product is active and not deleted
     private Boolean isInStock; // Product is available for purchase
-    private String unavailabilityReason; // Reason if not available
-    
+
     // Promotion details (for display)
     private String promotionType; // PERCENTAGE or FIXED_AMOUNT
     private BigDecimal promotionValue;
