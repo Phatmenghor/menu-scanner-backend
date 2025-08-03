@@ -102,88 +102,6 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success("Product deleted successfully", product));
     }
 
-    // ================================
-    // ENHANCED FAVORITE OPERATIONS
-    // ================================
-
-    /**
-     * Toggle product favorite status (add if not favorite, remove if favorite)
-     */
-    @PostMapping("/{id}/favorite/toggle")
-    public ResponseEntity<ApiResponse<FavoriteToggleResponse>> toggleFavorite(@PathVariable UUID id) {
-        log.info("Toggling favorite status for product: {}", id);
-        FavoriteToggleResponse result = productService.toggleFavorite(id);
-        String action = result.getIsFavorited() ? "added to" : "removed from";
-        return ResponseEntity.ok(ApiResponse.success("Product " + action + " favorites successfully", result));
-    }
-
-    /**
-     * Set specific favorite status (true to add, false to remove)
-     */
-    @PostMapping("/{id}/favorite")
-    public ResponseEntity<ApiResponse<FavoriteToggleResponse>> setFavoriteStatus(
-            @PathVariable UUID id, 
-            @RequestParam boolean favorite) {
-        log.info("Setting favorite status to {} for product: {}", favorite, id);
-        FavoriteToggleResponse result = productService.setFavoriteStatus(id, favorite);
-        String action = favorite ? "added to" : "removed from";
-        return ResponseEntity.ok(ApiResponse.success("Product " + action + " favorites successfully", result));
-    }
-
-    /**
-     * Add product to favorites (legacy method)
-     */
-    @PostMapping("/{id}/favorite/add")
-    public ResponseEntity<ApiResponse<Void>> addToFavorites(@PathVariable UUID id) {
-        log.info("Adding product to favorites: {}", id);
-        productService.addToFavorites(id);
-        return ResponseEntity.ok(ApiResponse.success("Product added to favorites successfully", null));
-    }
-
-    /**
-     * Remove product from favorites (legacy method)
-     */
-    @DeleteMapping("/{id}/favorite")
-    public ResponseEntity<ApiResponse<Void>> removeFromFavorites(@PathVariable UUID id) {
-        log.info("Removing product from favorites: {}", id);
-        productService.removeFromFavorites(id);
-        return ResponseEntity.ok(ApiResponse.success("Product removed from favorites successfully", null));
-    }
-
-    /**
-     * Get user's favorite products with proper pagination
-     */
-    @PostMapping("/favorites")
-    public ResponseEntity<ApiResponse<PaginationResponse<ProductResponse>>> getUserFavorites(@Valid @RequestBody ProductFilterRequest filter) {
-        log.info("Getting user's favorite products - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
-        PaginationResponse<ProductResponse> favorites = productService.getUserFavorites(filter);
-        return ResponseEntity.ok(ApiResponse.success("Favorite products retrieved successfully", favorites));
-    }
-
-    /**
-     * Remove all favorite products for current user
-     */
-    @DeleteMapping("/favorites/all")
-    public ResponseEntity<ApiResponse<FavoriteRemoveAllResponse>> removeAllFavorites() {
-        log.info("Removing all favorites for current user");
-        FavoriteRemoveAllResponse result = productService.removeAllFavorites();
-        return ResponseEntity.ok(ApiResponse.success("All favorites removed successfully", result));
-    }
-
-    /**
-     * Get favorite count for current user
-     */
-    @GetMapping("/favorites/count")
-    public ResponseEntity<ApiResponse<FavoriteCountResponse>> getFavoriteCount() {
-        log.info("Getting favorite count for current user");
-        FavoriteCountResponse result = productService.getFavoriteCount();
-        return ResponseEntity.ok(ApiResponse.success("Favorite count retrieved successfully", result));
-    }
-
-    // ================================
-    // UNIFIED PROMOTION MANAGEMENT
-    // ================================
-
     /**
      * Reset promotion for product or specific size
      * - Without sizeId: resets entire product (all sizes)
@@ -203,16 +121,6 @@ public class ProductController {
             ProductPromotionResetResponse result = productService.resetProductPromotion(productId);
             return ResponseEntity.ok(ApiResponse.success("Product promotion reset successfully", result));
         }
-    }
-
-    /**
-     * Reset all expired promotions (admin operation)
-     */
-    @PostMapping("/promotion/reset-expired")
-    public ResponseEntity<ApiResponse<ExpiredPromotionResetResponse>> resetExpiredPromotions() {
-        log.info("Resetting all expired promotions");
-        ExpiredPromotionResetResponse result = productService.resetExpiredPromotions();
-        return ResponseEntity.ok(ApiResponse.success("Expired promotions reset successfully", result));
     }
 
     /**

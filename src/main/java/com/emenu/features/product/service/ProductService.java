@@ -20,18 +20,12 @@ public interface ProductService {
     // Public Operations (for customer-facing features)
     ProductResponse getProductByIdPublic(UUID id);
 
-    // Enhanced Favorite Operations
-    FavoriteToggleResponse toggleFavorite(UUID productId);
     FavoriteToggleResponse setFavoriteStatus(UUID productId, boolean favorite);
-    void addToFavorites(UUID productId);
-    void removeFromFavorites(UUID productId);
     PaginationResponse<ProductResponse> getUserFavorites(ProductFilterRequest filter);
     FavoriteRemoveAllResponse removeAllFavorites();
-    FavoriteCountResponse getFavoriteCount();
 
     // Unified Promotion Management
     ProductPromotionResetResponse resetProductPromotion(UUID productId);
     SizePromotionResetResponse resetSizePromotion(UUID productId, UUID sizeId);
-    ExpiredPromotionResetResponse resetExpiredPromotions();
     BusinessPromotionResetResponse resetAllBusinessPromotions();
 }
