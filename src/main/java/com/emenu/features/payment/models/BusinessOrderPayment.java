@@ -12,7 +12,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -49,24 +48,15 @@ public class BusinessOrderPayment extends BaseUUIDEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private PaymentStatus status = PaymentStatus.PENDING;
+    private PaymentStatus status = PaymentStatus.COMPLETED; // Auto-completed for POS orders
 
-    @Column(name = "payment_date")
-    private LocalDateTime paymentDate;
-
-    @Column(name = "confirmation_image_url")
-    private String confirmationImageUrl; // Payment proof image
-
-    @Column(name = "notes", columnDefinition = "TEXT")
-    private String notes;
-
+    // Customer payment method for POS orders (e.g., "Cash", "Card", "Mobile Payment")
     @Column(name = "customer_payment_method")
-    private String customerPaymentMethod; // How customer paid to business
+    private String customerPaymentMethod;
 
     // Business Methods
-    public void markAsPaid() {
+    public void markAsCompleted() {
         this.status = PaymentStatus.COMPLETED;
-        this.paymentDate = LocalDateTime.now();
     }
 
     public void markAsFailed() {
@@ -77,11 +67,27 @@ public class BusinessOrderPayment extends BaseUUIDEntity {
         this.status = PaymentStatus.CANCELLED;
     }
 
-    public boolean isPaid() {
+    public boolean isCompleted() {
         return PaymentStatus.COMPLETED.equals(status);
     }
 
     public boolean isPending() {
         return PaymentStatus.PENDING.equals(status);
+    }
+
+    public String getFormattedAmount() {
+        return amount != null ? String.format("$%.2f", amount) : "$0.00";
+    }
+
+    // Constructor for creating payment
+    public BusinessOrderPayment(UUID businessId, UUID orderId, String paymentReference, 
+                              BigDecimal amount, PaymentMethod paymentMethod, String customerPaymentMethod) {
+        this.businessId = businessId;
+        this.orderId = orderId;
+        this.paymentReference = paymentReference;
+        this.amount = amount;
+        this.paymentMethod = paymentMethod;
+        this.customerPaymentMethod = customerPaymentMethod;
+        this.status = PaymentStatus.COMPLETED; // Auto-complete for POS orders
     }
 }

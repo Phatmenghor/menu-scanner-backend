@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
@@ -19,11 +18,14 @@ public class BusinessOrderPaymentResponse extends BaseAuditResponse {
     private String orderNumber;
     private String paymentReference;
     private BigDecimal amount;
+    private String formattedAmount;
     private PaymentMethod paymentMethod;
     private PaymentStatus status;
-    private LocalDateTime paymentDate;
-    private String confirmationImageUrl;
-    private String notes;
     private String customerPaymentMethod;
-    private String formattedAmount;
+    
+    // Customer info from order
+    private String customerName;
+    private String customerPhone;
+    private Boolean isGuestOrder;
+    private Boolean isPosOrder;
 }

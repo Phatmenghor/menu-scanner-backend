@@ -1,6 +1,7 @@
 package com.emenu.features.order.models;
 
 import com.emenu.enums.order.OrderStatus;
+import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.customer.models.CustomerAddress;
@@ -27,12 +28,23 @@ public class Order extends BaseUUIDEntity {
     @Column(name = "order_number", nullable = false, unique = true)
     private String orderNumber; // Generated unique order number
 
-    @Column(name = "customer_id", nullable = false)
+    // Customer Info - can be null for guest orders
+    @Column(name = "customer_id")
     private UUID customerId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", insertable = false, updatable = false)
     private User customer;
+
+    // Guest customer info (when no login)
+    @Column(name = "guest_phone")
+    private String guestPhone; // Required for guest orders
+
+    @Column(name = "guest_name")
+    private String guestName;
+
+    @Column(name = "guest_location")
+    private String guestLocation; // Simple text location
 
     @Column(name = "business_id", nullable = false)
     private UUID businessId;
@@ -41,6 +53,7 @@ public class Order extends BaseUUIDEntity {
     @JoinColumn(name = "business_id", insertable = false, updatable = false)
     private Business business;
 
+    // Delivery info (optional)
     @Column(name = "delivery_address_id")
     private UUID deliveryAddressId;
 
@@ -60,10 +73,10 @@ public class Order extends BaseUUIDEntity {
     private OrderStatus status = OrderStatus.PENDING;
 
     @Column(name = "customer_note", columnDefinition = "TEXT")
-    private String customerNote; // Note from customer
+    private String customerNote;
 
     @Column(name = "business_note", columnDefinition = "TEXT")
-    private String businessNote; // Note from business
+    private String businessNote;
 
     // Pricing
     @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
@@ -75,21 +88,30 @@ public class Order extends BaseUUIDEntity {
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
+    // Payment info
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false)
+    private PaymentMethod paymentMethod;
+
+    @Column(name = "is_paid", nullable = false)
+    private Boolean isPaid = false;
+
+    // Order type
+    @Column(name = "is_pos_order", nullable = false)
+    private Boolean isPosOrder = false; // true when business creates order for customer
+
+    @Column(name = "is_guest_order", nullable = false)
+    private Boolean isGuestOrder = false; // true when customer orders without login
+
     // Timestamps
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
 
-    @Column(name = "prepared_at")
-    private LocalDateTime preparedAt;
-
-    @Column(name = "delivered_at")
-    private LocalDateTime deliveredAt;
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items;
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<OrderStatusHistory> statusHistory;
 
     // Business Methods
     public void confirm() {
@@ -97,22 +119,9 @@ public class Order extends BaseUUIDEntity {
         this.confirmedAt = LocalDateTime.now();
     }
 
-    public void prepare() {
-        this.status = OrderStatus.PREPARING;
-    }
-
-    public void markReady() {
-        this.status = OrderStatus.READY;
-        this.preparedAt = LocalDateTime.now();
-    }
-
-    public void markOutForDelivery() {
-        this.status = OrderStatus.OUT_FOR_DELIVERY;
-    }
-
-    public void deliver() {
+    public void complete() {
         this.status = OrderStatus.DELIVERED;
-        this.deliveredAt = LocalDateTime.now();
+        this.completedAt = LocalDateTime.now();
     }
 
     public void cancel() {
@@ -129,5 +138,31 @@ public class Order extends BaseUUIDEntity {
 
     public boolean canBeCancelled() {
         return status == OrderStatus.PENDING || status == OrderStatus.CONFIRMED;
+    }
+
+    public boolean isGuest() {
+        return Boolean.TRUE.equals(isGuestOrder) || customerId == null;
+    }
+
+    public boolean isPOS() {
+        return Boolean.TRUE.equals(isPosOrder);
+    }
+
+    public String getCustomerIdentifier() {
+        if (customerId != null && customer != null) {
+            return customer.getFullName();
+        }
+        return guestName != null ? guestName : "Guest Customer";
+    }
+
+    public String getCustomerContact() {
+        if (customerId != null && customer != null) {
+            return customer.getPhoneNumber();
+        }
+        return guestPhone;
+    }
+
+    public void markAsPaid() {
+        this.isPaid = true;
     }
 }

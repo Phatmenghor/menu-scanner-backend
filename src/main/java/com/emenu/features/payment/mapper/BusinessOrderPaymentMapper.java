@@ -1,45 +1,45 @@
 package com.emenu.features.payment.mapper;
 
-import com.emenu.features.payment.dto.request.BusinessOrderPaymentCreateRequest;
 import com.emenu.features.payment.dto.response.BusinessOrderPaymentResponse;
-import com.emenu.features.payment.dto.update.BusinessOrderPaymentUpdateRequest;
 import com.emenu.features.payment.models.BusinessOrderPayment;
-import org.mapstruct.*;
+import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 
-import java.text.DecimalFormat;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class BusinessOrderPaymentMapper {
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    @Mapping(target = "order", ignore = true)
-    @Mapping(target = "paymentReference", ignore = true)
-    @Mapping(target = "paymentDate", ignore = true)
-    public abstract BusinessOrderPayment toEntity(BusinessOrderPaymentCreateRequest request);
+    @Autowired
+    protected PaginationMapper paginationMapper;
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "order.orderNumber", target = "orderNumber")
-    @Mapping(target = "formattedAmount", expression = "java(formatAmount(payment.getAmount()))")
+    @Mapping(target = "formattedAmount", expression = "java(payment.getFormattedAmount())")
+    @Mapping(target = "customerName", expression = "java(getCustomerName(payment))")
+    @Mapping(target = "customerPhone", expression = "java(getCustomerPhone(payment))")
+    @Mapping(target = "isGuestOrder", expression = "java(payment.getOrder() != null ? payment.getOrder().getIsGuestOrder() : false)")
+    @Mapping(target = "isPosOrder", expression = "java(payment.getOrder() != null ? payment.getOrder().getIsPosOrder() : false)")
     public abstract BusinessOrderPaymentResponse toResponse(BusinessOrderPayment payment);
 
     public abstract List<BusinessOrderPaymentResponse> toResponseList(List<BusinessOrderPayment> payments);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    @Mapping(target = "orderId", ignore = true)
-    @Mapping(target = "order", ignore = true)
-    @Mapping(target = "paymentReference", ignore = true)
-    @Mapping(target = "paymentDate", ignore = true)
-    public abstract void updateEntity(BusinessOrderPaymentUpdateRequest request, @MappingTarget BusinessOrderPayment payment);
+    protected String getCustomerName(BusinessOrderPayment payment) {
+        if (payment.getOrder() == null) return null;
+        return payment.getOrder().getCustomerIdentifier();
+    }
 
-    protected String formatAmount(java.math.BigDecimal amount) {
-        if (amount == null) return "$0.00";
-        DecimalFormat df = new DecimalFormat("$#,##0.00");
-        return df.format(amount);
+    protected String getCustomerPhone(BusinessOrderPayment payment) {
+        if (payment.getOrder() == null) return null;
+        return payment.getOrder().getCustomerContact();
+    }
+
+    public PaginationResponse<BusinessOrderPaymentResponse> toPaginationResponse(Page<BusinessOrderPayment> paymentPage) {
+        return paginationMapper.toPaginationResponse(paymentPage, this::toResponseList);
     }
 }

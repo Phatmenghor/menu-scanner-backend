@@ -1,50 +1,42 @@
 package com.emenu.features.order.mapper;
 
 import com.emenu.features.customer.mapper.CustomerAddressMapper;
-import com.emenu.features.order.dto.response.OrderItemResponse;
 import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.models.Order;
-import com.emenu.features.order.models.OrderItem;
+import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
 import org.mapstruct.ReportingPolicy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        uses = {CustomerAddressMapper.class, DeliveryOptionMapper.class})
+        uses = {CustomerAddressMapper.class, DeliveryOptionMapper.class, OrderItemMapper.class})
 public abstract class OrderMapper {
 
+    @Autowired
+    protected PaginationMapper paginationMapper;
 
-    @Mapping(source = "customer", target = "customerName", qualifiedByName = "getCustomerName")
+    @Mapping(target = "customerName", expression = "java(order.getCustomerIdentifier())")
+    @Mapping(target = "customerPhone", expression = "java(order.getCustomerContact())")
+    @Mapping(source = "guestLocation", target = "customerLocation")
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(target = "canBeModified", expression = "java(order.canBeModified())")
     @Mapping(target = "canBeCancelled", expression = "java(order.canBeCancelled())")
+    @Mapping(target = "formattedAmount", expression = "java(formatAmount(order.getTotalAmount()))")
     public abstract OrderResponse toResponse(Order order);
 
     public abstract List<OrderResponse> toResponseList(List<Order> orders);
 
-    @Mapping(source = "product.name", target = "productName")
-    @Mapping(source = "product.images", target = "productImageUrl", qualifiedByName = "getMainImageUrl")
-    @Mapping(source = "productSize.name", target = "sizeName")
-    public abstract OrderItemResponse toItemResponse(OrderItem orderItem);
-
-    public abstract List<OrderItemResponse> toItemResponseList(List<OrderItem> orderItems);
-
-    @Named("getCustomerName")
-    protected String getCustomerName(com.emenu.features.auth.models.User customer) {
-        if (customer == null) return null;
-        return customer.getFullName();
+    protected String formatAmount(java.math.BigDecimal amount) {
+        if (amount == null) return "$0.00";
+        return String.format("$%.2f", amount);
     }
 
-    @Named("getMainImageUrl")
-    protected String getMainImageUrl(List<com.emenu.features.product.models.ProductImage> images) {
-        if (images == null || images.isEmpty()) return null;
-        return images.stream()
-                .filter(img -> img.getImageType() == com.emenu.enums.product.ImageType.MAIN)
-                .findFirst()
-                .map(com.emenu.features.product.models.ProductImage::getImageUrl)
-                .orElse(images.get(0).getImageUrl());
+    public PaginationResponse<OrderResponse> toPaginationResponse(Page<Order> orderPage) {
+        return paginationMapper.toPaginationResponse(orderPage, this::toResponseList);
     }
 }
