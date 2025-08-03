@@ -225,4 +225,3 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success("All business promotions reset successfully", result));
     }
 }
-}
