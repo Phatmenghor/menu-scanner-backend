@@ -69,23 +69,6 @@ public class DeliveryOptionController {
     }
 
     /**
-     * Get delivery options for specific business
-     */
-    @PostMapping("/business/{businessId}/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<DeliveryOptionResponse>>> getBusinessDeliveryOptions(
-            @PathVariable UUID businessId,
-            @Valid @RequestBody DeliveryOptionFilterRequest filter) {
-        log.info("Getting delivery options for business: {}", businessId);
-
-        filter.setBusinessId(businessId);
-
-        PaginationResponse<DeliveryOptionResponse> deliveryOptions =
-                deliveryOptionService.getAllDeliveryOptions(filter);
-
-        return ResponseEntity.ok(ApiResponse.success("Business delivery options retrieved successfully", deliveryOptions));
-    }
-
-    /**
      * Get delivery option by ID
      */
     @GetMapping("/{id}")
