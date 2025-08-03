@@ -69,14 +69,6 @@ public class SecurityUtils {
         }
     }
 
-    public boolean isCurrentUser(UUID userId) {
-        try {
-            User currentUser = getCurrentUser();
-            return currentUser.getId().equals(userId);
-        } catch (Exception e) {
-            return false;
-        }
-    }
 
     public UUID getCurrentUserId() {
         return getCurrentUser().getId();

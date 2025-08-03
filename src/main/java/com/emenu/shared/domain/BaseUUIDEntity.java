@@ -37,10 +37,6 @@ public abstract class BaseUUIDEntity {
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @Version
-    @Column(name = "version")
-    private Long version;
-
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 
