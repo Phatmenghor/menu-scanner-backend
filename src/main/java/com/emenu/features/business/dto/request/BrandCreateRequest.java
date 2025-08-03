@@ -1,4 +1,4 @@
-package com.emenu.features.product.dto.request;
+package com.emenu.features.business.dto.request;
 
 import com.emenu.enums.common.Status;
 import jakarta.validation.constraints.NotBlank;

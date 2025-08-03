@@ -19,7 +19,7 @@ public abstract class CategoryMapper {
     protected PaginationMapper paginationMapper;
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true) // Will be set from current user
+    @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -52,7 +52,6 @@ public abstract class CategoryMapper {
 
     @AfterMapping
     protected void setComputedFields(@MappingTarget CategoryResponse response, Category category) {
-        // Set totalProducts to 0 for now - will be calculated when products are implemented
         response.setTotalProducts(0L);
     }
 

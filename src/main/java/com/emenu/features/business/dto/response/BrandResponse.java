@@ -1,4 +1,4 @@
-package com.emenu.features.product.dto.response;
+package com.emenu.features.business.dto.response;
 
 import com.emenu.enums.common.Status;
 import com.emenu.shared.dto.BaseAuditResponse;

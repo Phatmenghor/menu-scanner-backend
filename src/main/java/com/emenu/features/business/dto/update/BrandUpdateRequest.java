@@ -1,4 +1,4 @@
-package com.emenu.features.product.dto.update;
+package com.emenu.features.business.dto.update;
 
 import com.emenu.enums.common.Status;
 import lombok.Data;

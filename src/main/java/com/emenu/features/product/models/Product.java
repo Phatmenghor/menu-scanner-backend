@@ -2,8 +2,8 @@ package com.emenu.features.product.models;
 
 import com.emenu.enums.product.ProductStatus;
 import com.emenu.enums.product.PromotionType;
-import com.emenu.enums.product.ImageType;
 import com.emenu.features.auth.models.Business;
+import com.emenu.features.business.models.Brand;
 import com.emenu.features.business.models.Category;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;

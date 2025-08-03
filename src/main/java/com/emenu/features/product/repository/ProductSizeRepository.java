@@ -21,7 +21,4 @@ public interface ProductSizeRepository extends JpaRepository<ProductSize, UUID> 
             "ps.promotionFromDate = NULL, ps.promotionToDate = NULL " +
             "WHERE ps.promotionToDate < :now AND ps.promotionToDate IS NOT NULL")
     int clearExpiredPromotions(@Param("now") LocalDateTime now);
-
-    @Query("SELECT COUNT(ps) FROM ProductSize ps WHERE ps.promotionToDate < :now AND ps.promotionToDate IS NOT NULL")
-    long countExpiredPromotions(@Param("now") LocalDateTime now);
 }

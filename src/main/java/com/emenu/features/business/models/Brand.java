@@ -1,7 +1,8 @@
-package com.emenu.features.product.models;
+package com.emenu.features.business.models;
 
 import com.emenu.enums.common.Status;
 import com.emenu.features.auth.models.Business;
+import com.emenu.features.product.models.Product;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

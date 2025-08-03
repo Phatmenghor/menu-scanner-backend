@@ -17,19 +17,10 @@ public interface CategoryRepository extends JpaRepository<Category, UUID>, JpaSp
     
     Optional<Category> findByIdAndIsDeletedFalse(UUID id);
     
-    @Query("SELECT c FROM Category c WHERE c.businessId = :businessId AND c.isDeleted = false ORDER BY c.name ASC")
-    List<Category> findByBusinessIdOrderByName(@Param("businessId") UUID businessId);
-    
-    @Query("SELECT c FROM Category c WHERE c.businessId = :businessId AND c.status = :status AND c.isDeleted = false ORDER BY c.name ASC")
-    List<Category> findActiveByBusinessId(@Param("businessId") UUID businessId, @Param("status") Status status);
-    
     @Query("SELECT c FROM Category c " +
            "LEFT JOIN FETCH c.business " +
            "WHERE c.id = :id AND c.isDeleted = false")
     Optional<Category> findByIdWithBusiness(@Param("id") UUID id);
-    
-    @Query("SELECT COUNT(c) FROM Category c WHERE c.businessId = :businessId AND c.isDeleted = false")
-    long countByBusinessId(@Param("businessId") UUID businessId);
-    
+
     boolean existsByNameAndBusinessIdAndIsDeletedFalse(String name, UUID businessId);
 }

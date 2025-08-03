@@ -3,7 +3,6 @@ package com.emenu.features.product.mapper;
 import com.emenu.enums.product.PromotionType;
 import com.emenu.features.product.dto.request.ProductCreateRequest;
 import com.emenu.features.product.dto.response.ProductResponse;
-import com.emenu.features.product.dto.response.ProductSummaryResponse;
 import com.emenu.features.product.dto.update.ProductUpdateRequest;
 import com.emenu.features.product.models.Product;
 import com.emenu.shared.dto.PaginationResponse;
@@ -49,12 +48,6 @@ public abstract class ProductMapper {
 
     public abstract List<ProductResponse> toResponseList(List<Product> products);
 
-    @Mapping(source = "category.name", target = "categoryName")
-    @Mapping(source = "brand.name", target = "brandName")
-    public abstract ProductSummaryResponse toSummaryResponse(Product product);
-
-    public abstract List<ProductSummaryResponse> toSummaryResponseList(List<Product> products);
-
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
@@ -93,23 +86,6 @@ public abstract class ProductMapper {
         response.setIsFavorited(false);
     }
 
-    @AfterMapping
-    protected void setSummaryCalculatedFields(@MappingTarget ProductSummaryResponse response, Product product) {
-        // Set main image URL
-        response.setMainImageUrl(product.getMainImageUrl());
-
-        // Set pricing information
-        response.setDisplayPrice(product.getDisplayPrice());
-        response.setHasPromotion(product.isPromotionActive());
-        response.setHasMultipleSizes(product.hasMultipleSizes());
-
-        // Set public URL
-        response.setPublicUrl("/products/" + product.getId());
-
-        // Set favorite status
-        response.setIsFavorited(false);
-    }
-
     @Named("mapStringToPromotionType")
     protected PromotionType mapStringToPromotionType(String promotionType) {
         if (promotionType == null || promotionType.trim().isEmpty()) return null;
@@ -129,7 +105,4 @@ public abstract class ProductMapper {
         return paginationMapper.toPaginationResponse(productPage, this::toResponseList);
     }
 
-    public PaginationResponse<ProductSummaryResponse> toSummaryPaginationResponse(Page<Product> productPage) {
-        return paginationMapper.toPaginationResponse(productPage, this::toSummaryResponseList);
-    }
 }

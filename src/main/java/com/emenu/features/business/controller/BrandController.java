@@ -1,11 +1,10 @@
-package com.emenu.features.product.controller;
+package com.emenu.features.business.controller;
 
-import com.emenu.features.auth.models.User;
-import com.emenu.features.product.dto.filter.BrandFilterRequest;
-import com.emenu.features.product.dto.request.BrandCreateRequest;
-import com.emenu.features.product.dto.response.BrandResponse;
-import com.emenu.features.product.dto.update.BrandUpdateRequest;
-import com.emenu.features.product.service.BrandService;
+import com.emenu.features.business.dto.filter.BrandFilterRequest;
+import com.emenu.features.business.dto.request.BrandCreateRequest;
+import com.emenu.features.business.dto.response.BrandResponse;
+import com.emenu.features.business.dto.update.BrandUpdateRequest;
+import com.emenu.features.business.service.BrandService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
@@ -16,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -55,21 +53,10 @@ public class BrandController {
     @PostMapping("/my-business/all")
     public ResponseEntity<ApiResponse<PaginationResponse<BrandResponse>>> getMyBusinessBrands(@Valid @RequestBody BrandFilterRequest filter) {
         log.info("Getting brands for current user's business");
-        User currentUser = securityUtils.getCurrentUser();
-        filter.setBusinessId(currentUser.getBusinessId());
+        UUID userId = securityUtils.getCurrentUserId();
+        filter.setBusinessId(userId);
         PaginationResponse<BrandResponse> brands = brandService.getAllBrands(filter);
         return ResponseEntity.ok(ApiResponse.success("Business brands retrieved successfully", brands));
-    }
-
-    /**
-     * Get active brands for current user's business (for dropdowns)
-     */
-    @GetMapping("/my-business/active")
-    public ResponseEntity<ApiResponse<List<BrandResponse>>> getMyBusinessActiveBrands() {
-        log.info("Getting active brands for current user's business");
-        User currentUser = securityUtils.getCurrentUser();
-        List<BrandResponse> brands = brandService.getActiveBrandsByBusiness(currentUser.getBusinessId());
-        return ResponseEntity.ok(ApiResponse.success("Active brands retrieved successfully", brands));
     }
 
     /**

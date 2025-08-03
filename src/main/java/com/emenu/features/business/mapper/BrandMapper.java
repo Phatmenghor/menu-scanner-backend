@@ -1,9 +1,9 @@
-package com.emenu.features.product.mapper;
+package com.emenu.features.business.mapper;
 
-import com.emenu.features.product.dto.request.BrandCreateRequest;
-import com.emenu.features.product.dto.response.BrandResponse;
-import com.emenu.features.product.dto.update.BrandUpdateRequest;
-import com.emenu.features.product.models.Brand;
+import com.emenu.features.business.dto.request.BrandCreateRequest;
+import com.emenu.features.business.dto.response.BrandResponse;
+import com.emenu.features.business.dto.update.BrandUpdateRequest;
+import com.emenu.features.business.models.Brand;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;

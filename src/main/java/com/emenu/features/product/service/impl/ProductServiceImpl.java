@@ -9,7 +9,6 @@ import com.emenu.features.product.dto.request.ProductCreateRequest;
 import com.emenu.features.product.dto.request.ProductImageRequest;
 import com.emenu.features.product.dto.request.ProductSizeRequest;
 import com.emenu.features.product.dto.response.ProductResponse;
-import com.emenu.features.product.dto.response.ProductSummaryResponse;
 import com.emenu.features.product.dto.update.ProductUpdateRequest;
 import com.emenu.features.product.mapper.ProductImageMapper;
 import com.emenu.features.product.mapper.ProductMapper;
@@ -37,7 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @RequiredArgsConstructor
@@ -63,25 +61,18 @@ public class ProductServiceImpl implements ProductService {
             throw new ValidationException("User is not associated with any business");
         }
 
-        // Check if product name already exists for this business
-        if (productRepository.existsByNameAndBusinessIdAndIsDeletedFalse(
-                request.getName(), currentUser.getBusinessId())) {
-            throw new ValidationException("Product name already exists in your business");
-        }
-
         // Create product entity
         Product product = productMapper.toEntity(request);
         product.setBusinessId(currentUser.getBusinessId());
 
         Product savedProduct = productRepository.save(product);
-
         // Create sizes
         createProductSizes(savedProduct.getId(), request.getSizes());
 
         // Create images
         createProductImages(savedProduct.getId(), request.getImages());
 
-        log.info("Product created successfully: {} for business: {}", 
+        log.info("Product created successfully: {} for business: {}",
                 savedProduct.getName(), currentUser.getBusinessId());
 
         return getProductById(savedProduct.getId());
@@ -90,15 +81,15 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<ProductResponse> getAllProducts(ProductFilterRequest filter) {
-        
+
         // Security: Business users can only see products from their business
         User currentUser = securityUtils.getCurrentUser();
         if (currentUser.isBusinessUser() && filter.getBusinessId() == null) {
             filter.setBusinessId(currentUser.getBusinessId());
         }
-        
+
         Specification<Product> spec = ProductSpecification.buildSpecification(filter);
-        
+
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
                 pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
@@ -106,78 +97,43 @@ public class ProductServiceImpl implements ProductService {
 
         Page<Product> productPage = productRepository.findAll(spec, pageable);
         PaginationResponse<ProductResponse> response = productMapper.toPaginationResponse(productPage);
-        
+
         // Set favorite status for current user
         setFavoriteStatusForUser(response.getContent());
-        
+
         return response;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PaginationResponse<ProductSummaryResponse> getAllProductsSummary(ProductFilterRequest filter) {
-        
-        // Security: Business users can only see products from their business
-        User currentUser = securityUtils.getCurrentUser();
-        if (currentUser.isBusinessUser() && filter.getBusinessId() == null) {
-            filter.setBusinessId(currentUser.getBusinessId());
-        }
-        
-        Specification<Product> spec = ProductSpecification.buildSpecification(filter);
-        
-        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
-        Pageable pageable = PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
-        );
-
-        Page<Product> productPage = productRepository.findAll(spec, pageable);
-        return productMapper.toSummaryPaginationResponse(productPage);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public ProductResponse getProductById(UUID id) {
+
         Product product = findProductByIdWithDetails(id);
+
         ProductResponse response = productMapper.toResponse(product);
-        
+
         // Set favorite status for current user
         setFavoriteStatusForUser(List.of(response));
-        
+
         return response;
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductResponse getProductByIdPublic(UUID id) {
+
         Product product = findProductByIdWithDetails(id);
-        
-        // Increment view count
         productRepository.incrementViewCount(id);
-        
         ProductResponse response = productMapper.toResponse(product);
-        
-        // Set favorite status for current user (if logged in)
-        try {
-            setFavoriteStatusForUser(List.of(response));
-        } catch (Exception e) {
-            // User not logged in, keep isFavorited as false
-            log.debug("User not logged in for product view: {}", id);
-        }
-        
+
+        setFavoriteStatusForUser(List.of(response));
+
         return response;
     }
 
     @Override
     public ProductResponse updateProduct(UUID id, ProductUpdateRequest request) {
         Product product = findProductByIdWithDetails(id);
-
-        // Check if new name already exists (if name is being changed)
-        if (request.getName() != null && !request.getName().equals(product.getName())) {
-            if (productRepository.existsByNameAndBusinessIdAndIsDeletedFalse(
-                    request.getName(), product.getBusinessId())) {
-                throw new ValidationException("Product name already exists in your business");
-            }
-        }
 
         // Update basic fields
         productMapper.updateEntity(request, product);
@@ -216,15 +172,9 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void incrementProductView(UUID id) {
-        productRepository.incrementViewCount(id);
-        log.debug("Incremented view count for product: {}", id);
-    }
-
-    @Override
     public void addToFavorites(UUID productId) {
         User currentUser = securityUtils.getCurrentUser();
-        
+
         // Check if already favorited
         if (productFavoriteRepository.existsByUserIdAndProductId(currentUser.getId(), productId)) {
             throw new ValidationException("Product is already in your favorites");
@@ -243,7 +193,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void removeFromFavorites(UUID productId) {
         User currentUser = securityUtils.getCurrentUser();
-        
+
         // Check if favorited
         if (!productFavoriteRepository.existsByUserIdAndProductId(currentUser.getId(), productId)) {
             throw new ValidationException("Product is not in your favorites");
@@ -261,16 +211,16 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<ProductResponse> getUserFavorites(ProductFilterRequest filter) {
-        User currentUser = securityUtils.getCurrentUser();
-        
-        List<ProductFavorite> favorites = productFavoriteRepository.findFavoritesByUserId(currentUser.getId());
+        UUID userId = securityUtils.getCurrentUserId();
+
+        List<ProductFavorite> favorites = productFavoriteRepository.findFavoritesByUserId(userId);
         List<Product> products = favorites.stream()
                 .map(ProductFavorite::getProduct)
                 .toList();
 
         List<ProductResponse> responses = productMapper.toResponseList(products);
-        
-        // Set all as favorited
+
+        // Set all as favorite
         responses.forEach(response -> response.setIsFavorited(true));
 
         // Create pagination response manually
@@ -286,22 +236,6 @@ public class ProductServiceImpl implements ProductService {
                 .hasPrevious(false)
                 .build();
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ProductResponse> getProductsByCategory(UUID categoryId) {
-        List<Product> products = productRepository.findByCategoryIdAndStatus(
-                categoryId, com.emenu.enums.product.ProductStatus.ACTIVE);
-        return productMapper.toResponseList(products);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ProductResponse> getProductsByBrand(UUID brandId) {
-        List<Product> products = productRepository.findByBrandId(brandId);
-        return productMapper.toResponseList(products);
-    }
-
     // Private helper methods
     private Product findProductByIdWithDetails(UUID id) {
         return productRepository.findByIdWithDetails(id)

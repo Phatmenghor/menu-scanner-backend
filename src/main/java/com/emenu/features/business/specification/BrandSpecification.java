@@ -1,7 +1,7 @@
-package com.emenu.features.product.specification;
+package com.emenu.features.business.specification;
 
-import com.emenu.features.product.dto.filter.BrandFilterRequest;
-import com.emenu.features.product.models.Brand;
+import com.emenu.features.business.dto.filter.BrandFilterRequest;
+import com.emenu.features.business.models.Brand;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;

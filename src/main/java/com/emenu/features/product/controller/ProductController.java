@@ -4,7 +4,6 @@ import com.emenu.features.auth.models.User;
 import com.emenu.features.product.dto.filter.ProductFilterRequest;
 import com.emenu.features.product.dto.request.ProductCreateRequest;
 import com.emenu.features.product.dto.response.ProductResponse;
-import com.emenu.features.product.dto.response.ProductSummaryResponse;
 import com.emenu.features.product.dto.update.ProductUpdateRequest;
 import com.emenu.features.product.service.ProductService;
 import com.emenu.security.SecurityUtils;
@@ -17,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -48,16 +46,6 @@ public class ProductController {
         log.info("Getting all products for current user's business");
         PaginationResponse<ProductResponse> products = productService.getAllProducts(filter);
         return ResponseEntity.ok(ApiResponse.success("Products retrieved successfully", products));
-    }
-
-    /**
-     * Get all products summary (for listing view)
-     */
-    @PostMapping("/summary")
-    public ResponseEntity<ApiResponse<PaginationResponse<ProductSummaryResponse>>> getAllProductsSummary(@Valid @RequestBody ProductFilterRequest filter) {
-        log.info("Getting products summary for listing");
-        PaginationResponse<ProductSummaryResponse> products = productService.getAllProductsSummary(filter);
-        return ResponseEntity.ok(ApiResponse.success("Products summary retrieved successfully", products));
     }
 
     /**
@@ -115,30 +103,6 @@ public class ProductController {
     }
 
     /**
-     * Get products by category
-     */
-    @GetMapping("/category/{categoryId}")
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductsByCategory(@PathVariable UUID categoryId) {
-        log.info("Getting products by category: {}", categoryId);
-        List<ProductResponse> products = productService.getProductsByCategory(categoryId);
-        return ResponseEntity.ok(ApiResponse.success("Products retrieved by category successfully", products));
-    }
-
-    /**
-     * Get products by brand
-     */
-    @GetMapping("/brand/{brandId}")
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductsByBrand(@PathVariable UUID brandId) {
-        log.info("Getting products by brand: {}", brandId);
-        List<ProductResponse> products = productService.getProductsByBrand(brandId);
-        return ResponseEntity.ok(ApiResponse.success("Products retrieved by brand successfully", products));
-    }
-
-    // ================================
-    // FAVORITE OPERATIONS
-    // ================================
-
-    /**
      * Add product to favorites
      */
     @PostMapping("/{id}/favorite")
@@ -166,15 +130,5 @@ public class ProductController {
         log.info("Getting user's favorite products");
         PaginationResponse<ProductResponse> favorites = productService.getUserFavorites(filter);
         return ResponseEntity.ok(ApiResponse.success("Favorite products retrieved successfully", favorites));
-    }
-
-    /**
-     * Increment product view count (for analytics)
-     */
-    @PostMapping("/{id}/view")
-    public ResponseEntity<ApiResponse<Void>> incrementProductView(@PathVariable UUID id) {
-        log.debug("Incrementing view count for product: {}", id);
-        productService.incrementProductView(id);
-        return ResponseEntity.ok(ApiResponse.success("View count incremented successfully", null));
     }
 }

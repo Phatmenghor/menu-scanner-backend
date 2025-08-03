@@ -27,14 +27,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     
     Optional<Product> findByIdAndIsDeletedFalse(UUID id);
     
-    @Query("SELECT p FROM Product p WHERE p.categoryId = :categoryId AND p.status = :status AND p.isDeleted = false ORDER BY p.createdAt DESC")
-    List<Product> findByCategoryIdAndStatus(@Param("categoryId") UUID categoryId, @Param("status") ProductStatus status);
-    
-    @Query("SELECT p FROM Product p WHERE p.brandId = :brandId AND p.isDeleted = false ORDER BY p.createdAt DESC")
-    List<Product> findByBrandId(@Param("brandId") UUID brandId);
-    
-    boolean existsByNameAndBusinessIdAndIsDeletedFalse(String name, UUID businessId);
-    
     // Increment view count
     @Modifying
     @Query("UPDATE Product p SET p.viewCount = COALESCE(p.viewCount, 0) + 1 WHERE p.id = :productId")
@@ -54,7 +46,4 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
             "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
             "WHERE p.promotionToDate < :now AND p.promotionToDate IS NOT NULL")
     int clearExpiredPromotions(@Param("now") LocalDateTime now);
-
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.promotionToDate < :now AND p.promotionToDate IS NOT NULL")
-    long countExpiredPromotions(@Param("now") LocalDateTime now);
 }

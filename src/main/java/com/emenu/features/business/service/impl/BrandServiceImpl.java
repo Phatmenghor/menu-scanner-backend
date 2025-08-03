@@ -1,18 +1,17 @@
-package com.emenu.features.product.service.impl;
+package com.emenu.features.business.service.impl;
 
-import com.emenu.enums.common.Status;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
-import com.emenu.features.product.dto.filter.BrandFilterRequest;
-import com.emenu.features.product.dto.request.BrandCreateRequest;
-import com.emenu.features.product.dto.response.BrandResponse;
-import com.emenu.features.product.dto.update.BrandUpdateRequest;
-import com.emenu.features.product.mapper.BrandMapper;
-import com.emenu.features.product.models.Brand;
-import com.emenu.features.product.repository.BrandRepository;
-import com.emenu.features.product.service.BrandService;
-import com.emenu.features.product.specification.BrandSpecification;
+import com.emenu.features.business.dto.filter.BrandFilterRequest;
+import com.emenu.features.business.dto.request.BrandCreateRequest;
+import com.emenu.features.business.dto.response.BrandResponse;
+import com.emenu.features.business.dto.update.BrandUpdateRequest;
+import com.emenu.features.business.mapper.BrandMapper;
+import com.emenu.features.business.models.Brand;
+import com.emenu.features.business.repository.BrandRepository;
+import com.emenu.features.business.service.BrandService;
+import com.emenu.features.business.specification.BrandSpecification;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -24,7 +23,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -124,13 +122,6 @@ public class BrandServiceImpl implements BrandService {
 
         log.info("Brand deleted successfully: {}", id);
         return brandMapper.toResponse(brand);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<BrandResponse> getActiveBrandsByBusiness(UUID businessId) {
-        List<Brand> brands = brandRepository.findActiveByBusinessId(businessId, Status.ACTIVE);
-        return brandMapper.toResponseList(brands);
     }
 
     // Private helper methods

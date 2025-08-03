@@ -1,4 +1,4 @@
-package com.emenu.features.product.dto.filter;
+package com.emenu.features.business.dto.filter;
 
 import com.emenu.enums.common.Status;
 import com.emenu.shared.dto.BaseFilterRequest;
