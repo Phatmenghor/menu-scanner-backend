@@ -2,11 +2,10 @@ package com.emenu.features.product.service;
 
 import com.emenu.features.product.dto.filter.ProductFilterRequest;
 import com.emenu.features.product.dto.request.ProductCreateRequest;
-import com.emenu.features.product.dto.response.ProductResponse;
+import com.emenu.features.product.dto.response.*;
 import com.emenu.features.product.dto.update.ProductUpdateRequest;
 import com.emenu.shared.dto.PaginationResponse;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface ProductService {
@@ -21,8 +20,18 @@ public interface ProductService {
     // Public Operations (for customer-facing features)
     ProductResponse getProductByIdPublic(UUID id);
 
-    // Favorite Operations
+    // Enhanced Favorite Operations
+    FavoriteToggleResponse toggleFavorite(UUID productId);
+    FavoriteToggleResponse setFavoriteStatus(UUID productId, boolean favorite);
     void addToFavorites(UUID productId);
     void removeFromFavorites(UUID productId);
     PaginationResponse<ProductResponse> getUserFavorites(ProductFilterRequest filter);
+    FavoriteRemoveAllResponse removeAllFavorites();
+    FavoriteCountResponse getFavoriteCount();
+
+    // Unified Promotion Management
+    ProductPromotionResetResponse resetProductPromotion(UUID productId);
+    SizePromotionResetResponse resetSizePromotion(UUID productId, UUID sizeId);
+    ExpiredPromotionResetResponse resetExpiredPromotions();
+    BusinessPromotionResetResponse resetAllBusinessPromotions();
 }

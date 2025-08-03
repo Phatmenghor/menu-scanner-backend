@@ -4,6 +4,7 @@ import com.emenu.features.business.dto.request.CategoryCreateRequest;
 import com.emenu.features.business.dto.response.CategoryResponse;
 import com.emenu.features.business.dto.update.CategoryUpdateRequest;
 import com.emenu.features.business.models.Category;
+import com.emenu.features.product.repository.ProductRepository;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;
@@ -17,6 +18,9 @@ public abstract class CategoryMapper {
 
     @Autowired
     protected PaginationMapper paginationMapper;
+
+    @Autowired
+    protected ProductRepository productRepository;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
@@ -52,7 +56,18 @@ public abstract class CategoryMapper {
 
     @AfterMapping
     protected void setComputedFields(@MappingTarget CategoryResponse response, Category category) {
-        response.setTotalProducts(0L);
+        // ✅ FIXED: Actually count products in this category
+        if (category.getId() != null) {
+            try {
+                long productCount = productRepository.countByCategoryId(category.getId());
+                response.setTotalProducts(productCount);
+            } catch (Exception e) {
+                // Fallback to 0 if there's an error
+                response.setTotalProducts(0L);
+            }
+        } else {
+            response.setTotalProducts(0L);
+        }
     }
 
     public PaginationResponse<CategoryResponse> toPaginationResponse(Page<Category> categoryPage) {

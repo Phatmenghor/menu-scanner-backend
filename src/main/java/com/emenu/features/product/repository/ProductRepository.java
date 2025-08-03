@@ -41,9 +41,26 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     @Query("UPDATE Product p SET p.favoriteCount = GREATEST(0, COALESCE(p.favoriteCount, 0) - 1) WHERE p.id = :productId")
     void decrementFavoriteCount(@Param("productId") UUID productId);
 
+    // Promotion management
     @Modifying
     @Query("UPDATE Product p SET p.promotionType = NULL, p.promotionValue = NULL, " +
             "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
             "WHERE p.promotionToDate < :now AND p.promotionToDate IS NOT NULL")
     int clearExpiredPromotions(@Param("now") LocalDateTime now);
+    
+    @Modifying
+    @Query("UPDATE Product p SET p.promotionType = NULL, p.promotionValue = NULL, " +
+            "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
+            "WHERE p.businessId = :businessId AND p.isDeleted = false")
+    int clearAllPromotionsForBusiness(@Param("businessId") UUID businessId);
+    
+    // Statistics
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.categoryId = :categoryId AND p.isDeleted = false")
+    long countByCategoryId(@Param("categoryId") UUID categoryId);
+    
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.brandId = :brandId AND p.isDeleted = false")
+    long countByBrandId(@Param("brandId") UUID brandId);
+    
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.businessId = :businessId AND p.isDeleted = false")
+    long countByBusinessId(@Param("businessId") UUID businessId);
 }

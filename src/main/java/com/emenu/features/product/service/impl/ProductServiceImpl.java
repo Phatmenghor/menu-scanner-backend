@@ -29,12 +29,16 @@ import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -171,6 +175,122 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(product);
     }
 
+    // ================================
+    // ENHANCED FAVORITE OPERATIONS
+    // ================================
+
+    @Override
+    public Map<String, Object> toggleFavorite(UUID productId) {
+        User currentUser = securityUtils.getCurrentUser();
+        boolean isFavorited = productFavoriteRepository.existsByUserIdAndProductId(currentUser.getId(), productId);
+
+        Map<String, Object> result = new HashMap<>();
+        
+        if (isFavorited) {
+            // Remove from favorites
+            productFavoriteRepository.deleteByUserIdAndProductId(currentUser.getId(), productId);
+            productRepository.decrementFavoriteCount(productId);
+            result.put("action", "removed");
+            result.put("isFavorited", false);
+            log.info("Removed product {} from favorites for user: {}", productId, currentUser.getId());
+        } else {
+            // Add to favorites
+            ProductFavorite favorite = new ProductFavorite(currentUser.getId(), productId);
+            productFavoriteRepository.save(favorite);
+            productRepository.incrementFavoriteCount(productId);
+            result.put("action", "added");
+            result.put("isFavorited", true);
+            log.info("Added product {} to favorites for user: {}", productId, currentUser.getId());
+        }
+
+        result.put("productId", productId);
+        result.put("userId", currentUser.getId());
+        result.put("timestamp", LocalDateTime.now());
+        
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> resetSizePromotion(UUID sizeId) {
+        // Find the size (only non-deleted)
+        ProductSize productSize = productSizeRepository.findByIdAndIsDeletedFalse(sizeId)
+                .orElseThrow(() -> new NotFoundException("Product size not found with ID: " + sizeId));
+        
+        // Check if user has access to this size (via business ownership)
+        User currentUser = securityUtils.getCurrentUser();
+        if (currentUser.getBusinessId() == null) {
+            throw new ValidationException("User is not associated with any business");
+        }
+        
+        // Load product to check business ownership
+        Product product = findProductByIdWithDetails(productSize.getProductId());
+        if (!product.getBusinessId().equals(currentUser.getBusinessId())) {
+            throw new ValidationException("You can only reset promotions for your own business products");
+        }
+        
+        // Store original promotion info for response
+        boolean hadPromotion = productSize.isPromotionActive();
+        String originalPromotionType = productSize.getPromotionType() != null ? 
+                productSize.getPromotionType().name() : null;
+        
+        // Reset the promotion
+        productSize.removePromotion();
+        ProductSize savedSize = productSizeRepository.save(productSize);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("sizeId", sizeId);
+        result.put("productId", product.getId());
+        result.put("productName", product.getName());
+        result.put("sizeName", productSize.getName());
+        result.put("businessId", currentUser.getBusinessId());
+        result.put("hadPromotion", hadPromotion);
+        result.put("originalPromotionType", originalPromotionType);
+        result.put("timestamp", LocalDateTime.now());
+        result.put("message", String.format("Reset promotion for size '%s' of product '%s'", 
+                productSize.getName(), product.getName()));
+        
+        log.info("Reset promotion for size {} ({}) of product {} for business {}", 
+                sizeId, productSize.getName(), product.getName(), currentUser.getBusinessId());
+        
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> setFavoriteStatus(UUID productId, boolean favorite) {
+        User currentUser = securityUtils.getCurrentUser();
+        boolean isFavorited = productFavoriteRepository.existsByUserIdAndProductId(currentUser.getId(), productId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("productId", productId);
+        result.put("userId", currentUser.getId());
+        result.put("requestedStatus", favorite);
+        result.put("timestamp", LocalDateTime.now());
+
+        if (favorite && !isFavorited) {
+            // Add to favorites
+            ProductFavorite favoriteEntity = new ProductFavorite(currentUser.getId(), productId);
+            productFavoriteRepository.save(favoriteEntity);
+            productRepository.incrementFavoriteCount(productId);
+            result.put("action", "added");
+            result.put("isFavorited", true);
+            log.info("Added product {} to favorites for user: {}", productId, currentUser.getId());
+        } else if (!favorite && isFavorited) {
+            // Remove from favorites
+            productFavoriteRepository.deleteByUserIdAndProductId(currentUser.getId(), productId);
+            productRepository.decrementFavoriteCount(productId);
+            result.put("action", "removed");
+            result.put("isFavorited", false);
+            log.info("Removed product {} from favorites for user: {}", productId, currentUser.getId());
+        } else {
+            // No change needed
+            result.put("action", "unchanged");
+            result.put("isFavorited", isFavorited);
+            result.put("message", favorite ? "Product is already in favorites" : "Product is not in favorites");
+        }
+
+        return result;
+    }
+
     @Override
     public void addToFavorites(UUID productId) {
         User currentUser = securityUtils.getCurrentUser();
@@ -213,30 +333,246 @@ public class ProductServiceImpl implements ProductService {
     public PaginationResponse<ProductResponse> getUserFavorites(ProductFilterRequest filter) {
         UUID userId = securityUtils.getCurrentUserId();
 
-        List<ProductFavorite> favorites = productFavoriteRepository.findFavoritesByUserId(userId);
-        List<Product> products = favorites.stream()
+        // Create specification for favorite products
+        Specification<ProductFavorite> favoriteSpec = (root, query, criteriaBuilder) -> {
+            query.distinct(true);
+            return criteriaBuilder.and(
+                criteriaBuilder.equal(root.get("userId"), userId),
+                criteriaBuilder.equal(root.get("isDeleted"), false)
+            );
+        };
+
+        // Create pageable
+        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
+        Pageable pageable = PaginationUtils.createPageable(
+                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+        );
+
+        // Get paginated favorites
+        Page<ProductFavorite> favoritePage = productFavoriteRepository.findAll(favoriteSpec, pageable);
+        
+        // Extract products and map to responses
+        List<Product> products = favoritePage.getContent().stream()
                 .map(ProductFavorite::getProduct)
                 .toList();
-
+        
         List<ProductResponse> responses = productMapper.toResponseList(products);
-
+        
         // Set all as favorite
         responses.forEach(response -> response.setIsFavorited(true));
 
-        // Create pagination response manually
+        // Create proper pagination response
         return PaginationResponse.<ProductResponse>builder()
                 .content(responses)
-                .pageNo(1)
-                .pageSize(responses.size())
-                .totalElements(responses.size())
-                .totalPages(1)
-                .first(true)
-                .last(true)
-                .hasNext(false)
-                .hasPrevious(false)
+                .pageNo(favoritePage.getNumber() + 1)
+                .pageSize(favoritePage.getSize())
+                .totalElements(favoritePage.getTotalElements())
+                .totalPages(favoritePage.getTotalPages())
+                .first(favoritePage.isFirst())
+                .last(favoritePage.isLast())
+                .hasNext(favoritePage.hasNext())
+                .hasPrevious(favoritePage.hasPrevious())
                 .build();
     }
-    // Private helper methods
+
+    @Override
+    public Map<String, Object> removeAllFavorites() {
+        UUID userId = securityUtils.getCurrentUserId();
+        
+        // Get all favorite product IDs for decrementing counts
+        List<ProductFavorite> favorites = productFavoriteRepository.findFavoritesByUserId(userId);
+        List<UUID> productIds = favorites.stream()
+                .map(ProductFavorite::getProductId)
+                .toList();
+
+        // Delete all favorites for user
+        int removedCount = productFavoriteRepository.deleteAllByUserId(userId);
+
+        // Decrement favorite counts for all products
+        productIds.forEach(productRepository::decrementFavoriteCount);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("removedCount", removedCount);
+        result.put("userId", userId);
+        result.put("timestamp", LocalDateTime.now());
+        result.put("message", String.format("Removed %d products from favorites", removedCount));
+
+        log.info("Removed all {} favorites for user: {}", removedCount, userId);
+        
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getFavoriteCount() {
+        UUID userId = securityUtils.getCurrentUserId();
+        
+        long favoriteCount = productFavoriteRepository.countByUserId(userId);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("favoriteCount", favoriteCount);
+        result.put("userId", userId);
+        result.put("timestamp", LocalDateTime.now());
+        
+        return result;
+    }
+
+    // ================================
+    // UNIFIED PROMOTION MANAGEMENT
+    // ================================
+
+    @Override
+    public Map<String, Object> resetProductPromotion(UUID productId) {
+        Product product = findProductByIdWithDetails(productId);
+        
+        // Check business ownership
+        User currentUser = securityUtils.getCurrentUser();
+        if (currentUser.getBusinessId() == null) {
+            throw new ValidationException("User is not associated with any business");
+        }
+        if (!product.getBusinessId().equals(currentUser.getBusinessId())) {
+            throw new ValidationException("You can only reset promotions for your own business products");
+        }
+        
+        // Track what was reset
+        boolean productHadPromotion = product.isPromotionActive();
+        int sizesWithPromotions = 0;
+        
+        // Reset product-level promotion
+        product.removePromotion();
+        
+        // Reset all size-level promotions
+        if (product.getSizes() != null && !product.getSizes().isEmpty()) {
+            for (ProductSize size : product.getSizes()) {
+                if (size.isPromotionActive()) {
+                    sizesWithPromotions++;
+                    size.removePromotion();
+                }
+            }
+            productSizeRepository.saveAll(product.getSizes());
+        }
+        
+        Product savedProduct = productRepository.save(product);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("productId", productId);
+        result.put("productName", product.getName());
+        result.put("businessId", currentUser.getBusinessId());
+        result.put("productHadPromotion", productHadPromotion);
+        result.put("sizesWithPromotions", sizesWithPromotions);
+        result.put("totalPromotionsReset", (productHadPromotion ? 1 : 0) + sizesWithPromotions);
+        result.put("timestamp", LocalDateTime.now());
+        result.put("message", String.format("Reset all promotions for product '%s' (%d total)", 
+                product.getName(), (productHadPromotion ? 1 : 0) + sizesWithPromotions));
+        
+        log.info("Reset all promotions for product {} - Product: {}, Sizes: {}", 
+                productId, productHadPromotion, sizesWithPromotions);
+        
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> resetSizePromotion(UUID productId, UUID sizeId) {
+        // Find and validate the product first
+        Product product = findProductByIdWithDetails(productId);
+        
+        // Check business ownership
+        User currentUser = securityUtils.getCurrentUser();
+        if (currentUser.getBusinessId() == null) {
+            throw new ValidationException("User is not associated with any business");
+        }
+        if (!product.getBusinessId().equals(currentUser.getBusinessId())) {
+            throw new ValidationException("You can only reset promotions for your own business products");
+        }
+        
+        // Find the specific size within this product
+        ProductSize productSize = product.getSizes().stream()
+                .filter(size -> size.getId().equals(sizeId))
+                .findFirst()
+                .orElseThrow(() -> new ValidationException("Size not found in this product"));
+        
+        // Store original promotion info for response
+        boolean hadPromotion = productSize.isPromotionActive();
+        String originalPromotionType = productSize.getPromotionType() != null ? 
+                productSize.getPromotionType().name() : null;
+        
+        // Reset the promotion
+        productSize.removePromotion();
+        ProductSize savedSize = productSizeRepository.save(productSize);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("productId", productId);
+        result.put("sizeId", sizeId);
+        result.put("productName", product.getName());
+        result.put("sizeName", productSize.getName());
+        result.put("businessId", currentUser.getBusinessId());
+        result.put("hadPromotion", hadPromotion);
+        result.put("originalPromotionType", originalPromotionType);
+        result.put("timestamp", LocalDateTime.now());
+        result.put("message", String.format("Reset promotion for size '%s' of product '%s'", 
+                productSize.getName(), product.getName()));
+        
+        log.info("Reset promotion for size {} ({}) of product {} for business {}", 
+                sizeId, productSize.getName(), product.getName(), currentUser.getBusinessId());
+        
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> resetExpiredPromotions() {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Reset expired product promotions
+        int productPromotionsReset = productRepository.clearExpiredPromotions(now);
+        
+        // Reset expired size promotions
+        int sizePromotionsReset = productSizeRepository.clearExpiredPromotions(now);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("productPromotionsReset", productPromotionsReset);
+        result.put("sizePromotionsReset", sizePromotionsReset);
+        result.put("totalReset", productPromotionsReset + sizePromotionsReset);
+        result.put("timestamp", now);
+        result.put("message", String.format("Reset %d expired promotions", productPromotionsReset + sizePromotionsReset));
+        
+        log.info("Reset {} expired promotions ({} products, {} sizes)", 
+                productPromotionsReset + sizePromotionsReset, productPromotionsReset, sizePromotionsReset);
+        
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> resetAllBusinessPromotions() {
+        User currentUser = securityUtils.getCurrentUser();
+        if (currentUser.getBusinessId() == null) {
+            throw new ValidationException("User is not associated with any business");
+        }
+
+        // Reset all product promotions for business
+        int productPromotionsReset = productRepository.clearAllPromotionsForBusiness(currentUser.getBusinessId());
+        
+        // Reset all size promotions for business products
+        int sizePromotionsReset = productSizeRepository.clearAllPromotionsForBusiness(currentUser.getBusinessId());
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("businessId", currentUser.getBusinessId());
+        result.put("productPromotionsReset", productPromotionsReset);
+        result.put("sizePromotionsReset", sizePromotionsReset);
+        result.put("totalReset", productPromotionsReset + sizePromotionsReset);
+        result.put("timestamp", LocalDateTime.now());
+        result.put("message", String.format("Reset all %d promotions for business", productPromotionsReset + sizePromotionsReset));
+        
+        log.info("Reset all {} promotions for business {} ({} products, {} sizes)", 
+                productPromotionsReset + sizePromotionsReset, currentUser.getBusinessId(), 
+                productPromotionsReset, sizePromotionsReset);
+        
+        return result;
+    }
+
+    // ================================
+    // PRIVATE HELPER METHODS
+    // ================================
+
     private Product findProductByIdWithDetails(UUID id) {
         return productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
