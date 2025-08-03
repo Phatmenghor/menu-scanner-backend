@@ -4,12 +4,19 @@ import com.emenu.features.order.dto.request.DeliveryOptionCreateRequest;
 import com.emenu.features.order.dto.response.DeliveryOptionResponse;
 import com.emenu.features.order.dto.update.DeliveryOptionUpdateRequest;
 import com.emenu.features.order.models.DeliveryOption;
+import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class DeliveryOptionMapper {
+
+    @Autowired
+    protected PaginationMapper paginationMapper;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
@@ -26,4 +33,8 @@ public abstract class DeliveryOptionMapper {
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
     public abstract void updateEntity(DeliveryOptionUpdateRequest request, @MappingTarget DeliveryOption deliveryOption);
+
+    public PaginationResponse<DeliveryOptionResponse> toPaginationResponse(Page<DeliveryOption> deliveryOptionPage) {
+        return paginationMapper.toPaginationResponse(deliveryOptionPage, this::toResponseList);
+    }
 }
