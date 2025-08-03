@@ -21,15 +21,8 @@ public abstract class PaymentMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "plan", ignore = true)
-    @Mapping(target = "subscription", ignore = true) //
-    @Mapping(target = "amountKhr", ignore = true) // Will be calculated
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
+    @Mapping(target = "subscription", ignore = true)
+    @Mapping(target = "amountKhr", ignore = true)
     public abstract Payment toEntity(PaymentCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
@@ -50,16 +43,9 @@ public abstract class PaymentMapper {
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "planId", ignore = true)
     @Mapping(target = "plan", ignore = true)
-    @Mapping(target = "subscriptionId", ignore = true) // ✅ ADDED: Don't update subscription via this method
+    @Mapping(target = "subscriptionId", ignore = true)
     @Mapping(target = "subscription", ignore = true)
-    @Mapping(target = "amountKhr", ignore = true) // Will be recalculated
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
+    @Mapping(target = "amountKhr", ignore = true)
     public abstract void updateEntity(PaymentUpdateRequest request, @MappingTarget Payment payment);
 
     public PaginationResponse<PaymentResponse> toPaginationResponse(Page<Payment> paymentPage) {

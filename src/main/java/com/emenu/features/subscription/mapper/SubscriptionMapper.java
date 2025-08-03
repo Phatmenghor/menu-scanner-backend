@@ -26,13 +26,6 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "payments", ignore = true)
     @Mapping(target = "startDate", ignore = true)
     @Mapping(target = "endDate", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "isActive", constant = "true")
     public abstract Subscription toEntity(SubscriptionCreateRequest request);
 
@@ -50,13 +43,6 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "plan", ignore = true)
     @Mapping(target = "payments", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateEntity(SubscriptionUpdateRequest request, @MappingTarget Subscription subscription);
 
     @AfterMapping

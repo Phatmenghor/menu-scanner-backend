@@ -48,13 +48,6 @@ public abstract class BusinessSettingsMapper {
     @Mapping(target = "isSubscriptionActive", ignore = true)
     @Mapping(target = "users", ignore = true)
     @Mapping(target = "subscriptions", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "currency", ignore = true) // Fixed for Cambodia
     @Mapping(target = "timezone", ignore = true) // Fixed for Cambodia
     public abstract void updateEntity(BusinessSettingsRequest request, @MappingTarget Business business);

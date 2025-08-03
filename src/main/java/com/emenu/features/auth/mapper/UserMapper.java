@@ -24,13 +24,6 @@ public abstract class UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "business", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "password", ignore = true)
     public abstract User toEntity(UserCreateRequest request);
 
@@ -49,13 +42,6 @@ public abstract class UserMapper {
     @Mapping(target = "userType", ignore = true)
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "business", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateEntity(UserUpdateRequest request, @MappingTarget User user);
 
     /**
@@ -73,13 +59,6 @@ public abstract class UserMapper {
     @Mapping(target = "accountStatus", ignore = true)
     @Mapping(target = "position", ignore = true)
     @Mapping(target = "notes", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateCurrentUserProfile(UserUpdateRequest request, @MappingTarget User user);
 
     @Named("rolesToRoleEnums")

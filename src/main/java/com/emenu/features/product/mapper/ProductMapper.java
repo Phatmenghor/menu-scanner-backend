@@ -53,18 +53,11 @@ public abstract class ProductMapper {
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "brand", ignore = true)
-    @Mapping(target = "images", ignore = true) // Will be handled separately
-    @Mapping(target = "sizes", ignore = true) // Will be handled separately
+    @Mapping(target = "images", ignore = true)
+    @Mapping(target = "sizes", ignore = true)
     @Mapping(target = "viewCount", ignore = true)
     @Mapping(target = "favoriteCount", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "mapStringToPromotionType")
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateEntity(ProductUpdateRequest request, @MappingTarget Product product);
 
     @AfterMapping

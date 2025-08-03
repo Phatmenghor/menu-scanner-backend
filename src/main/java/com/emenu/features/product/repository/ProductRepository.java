@@ -60,7 +60,4 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     
     @Query("SELECT COUNT(p) FROM Product p WHERE p.brandId = :brandId AND p.isDeleted = false")
     long countByBrandId(@Param("brandId") UUID brandId);
-    
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.businessId = :businessId AND p.isDeleted = false")
-    long countByBusinessId(@Param("businessId") UUID businessId);
 }

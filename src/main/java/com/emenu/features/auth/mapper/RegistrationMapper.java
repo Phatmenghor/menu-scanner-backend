@@ -19,13 +19,6 @@ public abstract class RegistrationMapper {
     @Mapping(target = "roles", ignore = true) // Set separately
     @Mapping(target = "position", ignore = true)
     @Mapping(target = "notes", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract User toEntity(RegisterRequest request);
 
     // Helper methods for different registration types

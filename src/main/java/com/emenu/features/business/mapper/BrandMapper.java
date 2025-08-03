@@ -23,16 +23,9 @@ public abstract class BrandMapper {
     protected ProductRepository productRepository;
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true) // Will be set from current user
+    @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "products", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract Brand toEntity(BrandCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
@@ -45,13 +38,6 @@ public abstract class BrandMapper {
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "products", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateEntity(BrandUpdateRequest request, @MappingTarget Brand brand);
 
     @AfterMapping
@@ -61,10 +47,7 @@ public abstract class BrandMapper {
             try {
                 long totalProducts = productRepository.countByBrandId(brand.getId());
                 response.setTotalProducts(totalProducts);
-
-                // For active products, we need a more complex query, but for now use repository
-                // You could add a method like countActiveBrandProducts if needed
-                response.setActiveProducts(totalProducts); // Simplified - could be enhanced
+                response.setActiveProducts(totalProducts);
             } catch (Exception e) {
                 // Fallback to 0 if there's an error
                 response.setTotalProducts(0L);

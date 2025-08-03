@@ -18,13 +18,6 @@ public abstract class BusinessOrderPaymentMapper {
     @Mapping(target = "order", ignore = true)
     @Mapping(target = "paymentReference", ignore = true)
     @Mapping(target = "paymentDate", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract BusinessOrderPayment toEntity(BusinessOrderPaymentCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
@@ -42,13 +35,6 @@ public abstract class BusinessOrderPaymentMapper {
     @Mapping(target = "order", ignore = true)
     @Mapping(target = "paymentReference", ignore = true)
     @Mapping(target = "paymentDate", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateEntity(BusinessOrderPaymentUpdateRequest request, @MappingTarget BusinessOrderPayment payment);
 
     protected String formatAmount(java.math.BigDecimal amount) {
