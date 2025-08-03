@@ -16,7 +16,8 @@ import java.util.List;
         uses = {CustomerAddressMapper.class, DeliveryOptionMapper.class})
 public abstract class OrderMapper {
 
-    @Mapping(source = "customer.firstName", target = "customerName", qualifiedByName = "getCustomerName")
+
+    @Mapping(source = "customer", target = "customerName", qualifiedByName = "getCustomerName")
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(target = "canBeModified", expression = "java(order.canBeModified())")
     @Mapping(target = "canBeCancelled", expression = "java(order.canBeCancelled())")
@@ -24,6 +25,9 @@ public abstract class OrderMapper {
 
     public abstract List<OrderResponse> toResponseList(List<Order> orders);
 
+    @Mapping(source = "product.name", target = "productName")
+    @Mapping(source = "product.images", target = "productImageUrl", qualifiedByName = "getMainImageUrl")
+    @Mapping(source = "productSize.name", target = "sizeName")
     public abstract OrderItemResponse toItemResponse(OrderItem orderItem);
 
     public abstract List<OrderItemResponse> toItemResponseList(List<OrderItem> orderItems);
@@ -32,5 +36,15 @@ public abstract class OrderMapper {
     protected String getCustomerName(com.emenu.features.auth.models.User customer) {
         if (customer == null) return null;
         return customer.getFullName();
+    }
+
+    @Named("getMainImageUrl")
+    protected String getMainImageUrl(List<com.emenu.features.product.models.ProductImage> images) {
+        if (images == null || images.isEmpty()) return null;
+        return images.stream()
+                .filter(img -> img.getImageType() == com.emenu.enums.product.ImageType.MAIN)
+                .findFirst()
+                .map(com.emenu.features.product.models.ProductImage::getImageUrl)
+                .orElse(images.get(0).getImageUrl());
     }
 }
