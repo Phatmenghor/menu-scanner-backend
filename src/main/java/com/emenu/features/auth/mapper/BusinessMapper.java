@@ -114,7 +114,6 @@ public abstract class BusinessMapper {
             response.setCurrentSubscriptionPlan(null);
         }
         
-        // Set default values if null
         if (response.getCurrentSubscriptionPlan() == null) {
             response.setCurrentSubscriptionPlan("No Active Plan");
         }
