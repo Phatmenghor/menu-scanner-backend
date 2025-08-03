@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 @Slf4j
 public class CartCleanupService {
 
-    private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final ProductSizeRepository productSizeRepository;
 
