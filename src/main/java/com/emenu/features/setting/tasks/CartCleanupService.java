@@ -1,6 +1,5 @@
 package com.emenu.features.setting.tasks;
 
-import com.emenu.features.order.repository.CartItemRepository;
 import com.emenu.features.product.repository.ProductRepository;
 import com.emenu.features.product.repository.ProductSizeRepository;
 import lombok.RequiredArgsConstructor;
