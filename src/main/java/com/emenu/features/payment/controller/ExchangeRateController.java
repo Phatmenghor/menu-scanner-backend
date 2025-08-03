@@ -1,4 +1,4 @@
-package com.emenu.features.auth.controller;
+package com.emenu.features.payment.controller;
 
 import com.emenu.features.payment.dto.filter.ExchangeRateFilterRequest;
 import com.emenu.features.payment.dto.request.ExchangeRateCreateRequest;
