@@ -40,8 +40,6 @@ public class OrderResponse extends BaseAuditResponse {
     private BigDecimal subtotal;
     private BigDecimal deliveryFee;
     private BigDecimal totalAmount;
-    
-    // ✅ ADDED: Formatted amount for display
     private String formattedAmount;
     
     // Payment info
