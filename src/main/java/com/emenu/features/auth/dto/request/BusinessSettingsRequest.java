@@ -8,7 +8,7 @@ import lombok.Data;
 public class BusinessSettingsRequest {
     
     // Basic Business Information
-    private String logoUrl;
+    private String imageUrl;
     private String name;
     private String description;
     private String phone;
