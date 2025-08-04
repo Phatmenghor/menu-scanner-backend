@@ -61,9 +61,6 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
         Business updatedBusiness = businessRepository.save(business);
         BusinessSettingsResponse response = businessSettingsMapper.toResponse(updatedBusiness);
 
-        // Log significant changes
-        logSignificantChanges(originalSettings, response);
-
         log.info("Business settings updated successfully for: {} - Exchange rate: {}",
                 business.getName(), business.getUsdToKhrRate());
 
@@ -108,13 +105,6 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
         return businessSettingsMapper.isValidExchangeRate(rate);
     }
 
-    public boolean hasActivePaymentMethod(Business business) {
-        return Boolean.TRUE.equals(business.getAcceptsCashPayment()) ||
-                Boolean.TRUE.equals(business.getAcceptsOnlinePayment()) ||
-                Boolean.TRUE.equals(business.getAcceptsBankTransfer()) ||
-                Boolean.TRUE.equals(business.getAcceptsMobilePayment());
-    }
-
     // Private helper methods
     private Business findBusinessById(UUID businessId) {
         return businessRepository.findByIdAndIsDeletedFalse(businessId)
@@ -124,8 +114,6 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
     private void validateBusinessSettingsRequest(BusinessSettingsRequest request) {
         validateExchangeRateRequest(request);
         validateTaxRateRequest(request);
-        validateServiceChargeRateRequest(request);
-        validatePaymentMethodsRequest(request);
         validateBusinessInformation(request);
     }
 
@@ -147,21 +135,6 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
         }
     }
 
-    private void validateServiceChargeRateRequest(BusinessSettingsRequest request) {
-        if (request.getServiceChargeRate() != null &&
-                !businessSettingsMapper.isValidServiceChargeRate(request.getServiceChargeRate())) {
-            throw new ValidationException(
-                    String.format("Service charge rate %.2f%% is invalid. Must be between 0%% and 100%%",
-                            request.getServiceChargeRate()));
-        }
-    }
-
-    private void validatePaymentMethodsRequest(BusinessSettingsRequest request) {
-        if (isAllPaymentMethodsDisabled(request)) {
-            throw new ValidationException("At least one payment method must be enabled");
-        }
-    }
-
     private void validateBusinessInformation(BusinessSettingsRequest request) {
         // Validate business name length
         if (request.getName() != null && request.getName().trim().length() > 100) {
@@ -171,75 +144,6 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
         // Validate description length
         if (request.getDescription() != null && request.getDescription().length() > 1000) {
             throw new ValidationException("Business description cannot exceed 1000 characters");
-        }
-
-        // Validate operating hours format (basic validation)
-        if (request.getOperatingHours() != null && request.getOperatingHours().length() > 500) {
-            throw new ValidationException("Operating hours cannot exceed 500 characters");
-        }
-    }
-
-    private boolean isAllPaymentMethodsDisabled(BusinessSettingsRequest request) {
-        // Only validate if payment method fields are provided in the request
-        boolean anyPaymentMethodProvided = request.getAcceptsCashPayment() != null ||
-                request.getAcceptsOnlinePayment() != null ||
-                request.getAcceptsBankTransfer() != null ||
-                request.getAcceptsMobilePayment() != null;
-
-        // If no payment method fields are provided, don't validate
-        if (!anyPaymentMethodProvided) {
-            return false;
-        }
-
-        // Check if all provided payment methods are explicitly disabled
-        return Boolean.FALSE.equals(request.getAcceptsCashPayment()) &&
-                Boolean.FALSE.equals(request.getAcceptsOnlinePayment()) &&
-                Boolean.FALSE.equals(request.getAcceptsBankTransfer()) &&
-                Boolean.FALSE.equals(request.getAcceptsMobilePayment());
-    }
-
-    private void logSignificantChanges(BusinessSettingsResponse original, BusinessSettingsResponse updated) {
-        // Log exchange rate changes
-        if (!original.getUsdToKhrRate().equals(updated.getUsdToKhrRate())) {
-            log.info("Exchange rate changed from {} to {} for business: {}",
-                    original.getUsdToKhrRate(), updated.getUsdToKhrRate(), updated.getName());
-        }
-
-        // Log tax rate changes
-        if (!original.getTaxRate().equals(updated.getTaxRate())) {
-            log.info("Tax rate changed from {}% to {}% for business: {}",
-                    original.getTaxRate(), updated.getTaxRate(), updated.getName());
-        }
-
-        // Log service charge changes
-        if (!original.getServiceChargeRate().equals(updated.getServiceChargeRate())) {
-            log.info("Service charge rate changed from {}% to {}% for business: {}",
-                    original.getServiceChargeRate(), updated.getServiceChargeRate(), updated.getName());
-        }
-
-        // Log payment method changes
-        logPaymentMethodChanges(original, updated);
-    }
-
-    private void logPaymentMethodChanges(BusinessSettingsResponse original, BusinessSettingsResponse updated) {
-        if (!original.getAcceptsCashPayment().equals(updated.getAcceptsCashPayment())) {
-            log.info("Cash payment acceptance changed from {} to {} for business: {}",
-                    original.getAcceptsCashPayment(), updated.getAcceptsCashPayment(), updated.getName());
-        }
-
-        if (!original.getAcceptsOnlinePayment().equals(updated.getAcceptsOnlinePayment())) {
-            log.info("Online payment acceptance changed from {} to {} for business: {}",
-                    original.getAcceptsOnlinePayment(), updated.getAcceptsOnlinePayment(), updated.getName());
-        }
-
-        if (!original.getAcceptsBankTransfer().equals(updated.getAcceptsBankTransfer())) {
-            log.info("Bank transfer acceptance changed from {} to {} for business: {}",
-                    original.getAcceptsBankTransfer(), updated.getAcceptsBankTransfer(), updated.getName());
-        }
-
-        if (!original.getAcceptsMobilePayment().equals(updated.getAcceptsMobilePayment())) {
-            log.info("Mobile payment acceptance changed from {} to {} for business: {}",
-                    original.getAcceptsMobilePayment(), updated.getAcceptsMobilePayment(), updated.getName());
         }
     }
 }

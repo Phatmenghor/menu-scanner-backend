@@ -12,32 +12,22 @@ public class BusinessSettingsResponse {
     private String name;
     
     // Business Display Settings
-    private String logoUrl;
+    private String imageUrl;
     private String description;
     private String phone;
     private String address;
-    private String website;
     private String businessType;
-    private String cuisineType;
-    private String operatingHours;
-    
+
     // Social Media
     private String facebookUrl;
     private String instagramUrl;
-    private String telegramContact;
+    private String telegramUrl;
     
     // Currency Exchange Rate (Frontend will use this for calculations)
     private Double usdToKhrRate;
     
     // Pricing Settings
     private Double taxRate;
-    private Double serviceChargeRate;
-    
-    // Payment Methods
-    private Boolean acceptsOnlinePayment;
-    private Boolean acceptsCashPayment;
-    private Boolean acceptsBankTransfer;
-    private Boolean acceptsMobilePayment;
     
     // Subscription Info (Read-only for business)
     private Boolean hasActiveSubscription;

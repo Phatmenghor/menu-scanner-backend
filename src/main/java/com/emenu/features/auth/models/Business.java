@@ -38,20 +38,11 @@ public class Business extends BaseUUIDEntity {
     private String description;
 
     // Business Settings
-    @Column(name = "logo_url")
-    private String logoUrl;
-
-    @Column(name = "website")
-    private String website;
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Column(name = "business_type")
     private String businessType; // Restaurant, Cafe, Bar, etc.
-
-    @Column(name = "cuisine_type")
-    private String cuisineType; // Khmer, Chinese, Thai, Western, etc.
-
-    @Column(name = "operating_hours", columnDefinition = "TEXT")
-    private String operatingHours; // Store as simple text or JSON
 
     // Contact & Social Media
     @Column(name = "facebook_url")
@@ -60,8 +51,8 @@ public class Business extends BaseUUIDEntity {
     @Column(name = "instagram_url")
     private String instagramUrl;
 
-    @Column(name = "telegram_contact")
-    private String telegramContact;
+    @Column(name = "telegram_url")
+    private String telegramUrl;
 
     // Currency Exchange Rate (Frontend calculates)
     @Column(name = "usd_to_khr_rate")
@@ -77,21 +68,6 @@ public class Business extends BaseUUIDEntity {
     // Tax & Service Settings
     @Column(name = "tax_rate")
     private Double taxRate = 0.0; // VAT rate in Cambodia
-
-    @Column(name = "service_charge_rate")
-    private Double serviceChargeRate = 0.0;
-
-    @Column(name = "accepts_online_payment")
-    private Boolean acceptsOnlinePayment = false;
-
-    @Column(name = "accepts_cash_payment")
-    private Boolean acceptsCashPayment = true;
-
-    @Column(name = "accepts_bank_transfer")
-    private Boolean acceptsBankTransfer = false;
-
-    @Column(name = "accepts_mobile_payment")
-    private Boolean acceptsMobilePayment = false; // ABA, Wing, etc.
 
     // Subscription Related
     @Enumerated(EnumType.STRING)
