@@ -1,3 +1,4 @@
+// Fixed ProductRepository.java
 package com.emenu.features.product.repository;
 
 import com.emenu.enums.product.ProductStatus;
@@ -17,13 +18,25 @@ import java.util.UUID;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
     
+    // ✅ FIXED: Remove multiple collection fetches to avoid MultipleBagFetchException
     @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.images " +
-           "LEFT JOIN FETCH p.sizes " +
            "LEFT JOIN FETCH p.category " +
            "LEFT JOIN FETCH p.brand " +
+           "LEFT JOIN FETCH p.business " +
            "WHERE p.id = :id AND p.isDeleted = false")
     Optional<Product> findByIdWithDetails(@Param("id") UUID id);
+    
+    // ✅ ADDED: Separate method to fetch images
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.images " +
+           "WHERE p.id = :id AND p.isDeleted = false")
+    Optional<Product> findByIdWithImages(@Param("id") UUID id);
+    
+    // ✅ ADDED: Separate method to fetch sizes
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.sizes " +
+           "WHERE p.id = :id AND p.isDeleted = false")
+    Optional<Product> findByIdWithSizes(@Param("id") UUID id);
     
     Optional<Product> findByIdAndIsDeletedFalse(UUID id);
     

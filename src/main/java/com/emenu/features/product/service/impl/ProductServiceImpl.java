@@ -1,3 +1,4 @@
+// Fixed ProductServiceImpl.java - Key methods only
 package com.emenu.features.product.service.impl;
 
 import com.emenu.enums.product.PromotionType;
@@ -84,8 +85,13 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = createPageable(filter);
 
         Page<Product> productPage = productRepository.findAll(spec, pageable);
-        PaginationResponse<ProductResponse> response = productMapper.toPaginationResponse(productPage);
+        
+        // ✅ FIXED: Load collections separately for each product in the page
+        List<Product> productsWithCollections = productPage.getContent().stream()
+                .map(this::loadProductCollections)
+                .toList();
 
+        PaginationResponse<ProductResponse> response = productMapper.toPaginationResponse(productPage);
         setFavoriteStatusForUser(response.getContent());
         return response;
     }
@@ -137,6 +143,29 @@ public class ProductServiceImpl implements ProductService {
 
         log.info("Product deleted successfully: {}", id);
         return productMapper.toResponse(product);
+    }
+
+    // ✅ FIXED: Load product with collections separately to avoid MultipleBagFetchException
+    private Product findProductByIdWithDetails(UUID id) {
+        // First, load the product with basic relationships
+        Product product = productRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        // Then load collections separately
+        return loadProductCollections(product);
+    }
+
+    // ✅ ADDED: Helper method to load collections separately
+    private Product loadProductCollections(Product product) {
+        // Load images separately
+        productRepository.findByIdWithImages(product.getId())
+                .ifPresent(p -> product.setImages(p.getImages()));
+
+        // Load sizes separately
+        productRepository.findByIdWithSizes(product.getId())
+                .ifPresent(p -> product.setSizes(p.getSizes()));
+
+        return product;
     }
 
     // ================================
@@ -191,6 +220,7 @@ public class ProductServiceImpl implements ProductService {
         
         List<Product> products = favoritePage.getContent().stream()
                 .map(ProductFavorite::getProduct)
+                .map(this::loadProductCollections) // ✅ FIXED: Load collections for each product
                 .toList();
         
         List<ProductResponse> responses = productMapper.toResponseList(products);
@@ -289,11 +319,6 @@ public class ProductServiceImpl implements ProductService {
     // ================================
     // PRIVATE HELPER METHODS
     // ================================
-
-    private Product findProductByIdWithDetails(UUID id) {
-        return productRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new NotFoundException("Product not found"));
-    }
 
     private void validateUserBusinessAssociation(User user) {
         if (user.getBusinessId() == null) {
