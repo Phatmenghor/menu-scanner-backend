@@ -76,6 +76,54 @@ cambodia:
   language: "km"
   country: "KH"
 
+# 🔔 ADD THIS SECTION: Telegram Configuration
+telegram:
+  bot:
+    token: "8464259107:AAHdIC3EZb_3uID4vnhteY6PYtmO9WGDBjU"
+    enabled: true
+    chat-id: "1898032377"
+    mock: false  # 🧪 ENABLE MOCK MODE
+    webhook-url: ""
+    polling: true
+    timeout: 30
+    retry-attempts: 3
+
+  notifications:
+    enabled: true
+    product-created: true
+
+  templates:
+    product-created: |
+      🆕 *New Product Created!*
+      
+      📱 *Product:* {productName}
+      🏪 *Business:* {businessName}
+      💰 *Price:* ${price}
+      📂 *Category:* {categoryName}
+      👤 *Created by:* {createdBy}
+      📅 *Date:* {createdAt}
+      
+      🔗 View: {productUrl}
+
+    user-registered: |
+      👤 *New User Registered!*
+      
+      📧 *Email:* {email}
+      👤 *Name:* {fullName}
+      🏷️ *Type:* {userType}
+      📅 *Date:* {registeredAt}
+
+    business-registered: |
+      🏪 *New Business Registered!*
+      
+      🏢 *Business:* {businessName}
+      👤 *Owner:* {ownerName}
+      📧 *Email:* {businessEmail}
+      📞 *Phone:* {phoneNumber}
+      🌐 *Subdomain:* {subdomain}
+      📅 *Date:* {registeredAt}
+
+
 # Application Configuration
 app:
   name: "Cambodia E-Menu Platform"
@@ -125,6 +173,7 @@ logging:
     com.emenu: INFO
     com.emenu.config.DataInitializationService: DEBUG # Enable detailed logging for initialization
     com.emenu.security: INFO
+    com.emenu.features.telegram: DEBUG # ADD THIS: Debug Telegram operations
     org.springframework.security: WARN
     org.springframework.web: WARN
     org.hibernate.SQL: OFF
@@ -169,4 +218,5 @@ logging:
     com.emenu: INFO
     com.emenu.config.DataInitializationService: DEBUG # Debug initialization
     com.emenu.security.jwt: DEBUG # Debug JWT operations
+    com.emenu.features.telegram: DEBUG # ADD THIS: Debug Telegram in dev profile
     org.hibernate.SQL: OFF
