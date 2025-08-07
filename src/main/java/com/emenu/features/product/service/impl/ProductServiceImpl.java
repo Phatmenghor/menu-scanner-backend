@@ -116,22 +116,44 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public ProductResponse updateProduct(UUID id, ProductUpdateRequest request) {
-        Product product = findProductByIdWithDetails(id);
-        productMapper.updateEntity(request, product);
+        log.info("Updating product: {}", id);
+
+        Product product = productRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
 
         if (request.getSizes() != null) {
+            // Force initialization of sizes collection
+            int existingSizesCount = product.getSizes() != null ? product.getSizes().size() : 0;
+            log.debug("Product {} has {} existing sizes", id, existingSizesCount);
+
+            // Delete existing sizes
             productSizeRepository.deleteByProductIdAndIsDeletedFalse(id);
+            productSizeRepository.flush(); // Ensure deletion is completed
+
+            // Create new sizes
             createProductSizes(id, request.getSizes());
         }
 
         if (request.getImages() != null) {
+            // Force initialization of images collection
+            int existingImagesCount = product.getImages() != null ? product.getImages().size() : 0;
+            log.debug("Product {} has {} existing images", id, existingImagesCount);
+
+            // Delete existing images
             productImageRepository.deleteByProductIdAndIsDeletedFalse(id);
+            productImageRepository.flush(); // Ensure deletion is completed
+
+            // Create new images
             createProductImages(id, request.getImages());
         }
 
+        productMapper.updateEntity(request, product);
         Product updatedProduct = productRepository.save(product);
+
         log.info("Product updated successfully: {}", id);
+
         return getProductById(updatedProduct.getId());
     }
 
