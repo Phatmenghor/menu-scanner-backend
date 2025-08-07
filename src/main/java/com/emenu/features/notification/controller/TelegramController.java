@@ -1,4 +1,3 @@
-
 package com.emenu.features.notification.controller;
 
 import com.emenu.features.notification.service.TelegramService;
@@ -34,17 +33,24 @@ public class TelegramController {
     }
 
     /**
-     * Send test message
+     * Send test message with request body
      */
     @PostMapping("/test-message")
-    public ResponseEntity<ApiResponse<String>> sendTestMessage(@RequestParam String message) {
-        log.info("Sending test message to Telegram: {}", message);
+    public ResponseEntity<ApiResponse<String>> sendTestMessage(@RequestBody TestMessageRequest request) {
+        log.info("Sending test message to Telegram: {}", request.getMessage());
         
-        CompletableFuture<Boolean> result = telegramService.sendMessage(
-                "🧪 *Test Message*\n\n" + message + 
-                "\n\n📅 *Sent at:* " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")),
-                "Test Message"
-        );
+        String fullMessage = String.format("""
+                🧪 *Test Message*
+                
+                %s
+                
+                📅 *Sent at:* %s
+                🤖 *From:* Cambodia E-Menu Platform
+                """, 
+                request.getMessage(),
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+        
+        CompletableFuture<Boolean> result = telegramService.sendMessage(fullMessage, "Test Message");
         
         try {
             boolean sent = result.get();
@@ -57,6 +63,16 @@ public class TelegramController {
     }
 
     /**
+     * Send test message with query parameter (backward compatibility)
+     */
+    @PostMapping("/test-message-param")
+    public ResponseEntity<ApiResponse<String>> sendTestMessageParam(@RequestParam String message) {
+        TestMessageRequest request = new TestMessageRequest();
+        request.setMessage(message);
+        return sendTestMessage(request);
+    }
+
+    /**
      * Send test product notification
      */
     @PostMapping("/test-product-notification")
@@ -64,10 +80,10 @@ public class TelegramController {
         log.info("Sending test product notification");
         
         CompletableFuture<Boolean> result = telegramService.sendProductCreatedNotification(
-                "Test Product - Delicious Burger",
-                "Test Restaurant - Phat's Kitchen",
+                "Test Product - Delicious Amok Fish 🐟",
+                "Test Restaurant - Phat's Kitchen 🍽️",
                 "15.50",
-                "Main Course",
+                "Traditional Khmer Cuisine",
                 "PHAT_MENGHOR",
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
         );
@@ -90,8 +106,8 @@ public class TelegramController {
         log.info("Sending test user notification");
         
         CompletableFuture<Boolean> result = telegramService.sendUserRegisteredNotification(
-                "test@example.com",
-                "Test User - John Doe",
+                "test@cambodia-emenu.com",
+                "Test User - Sophea Chan",
                 "BUSINESS_USER",
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
         );
@@ -114,9 +130,9 @@ public class TelegramController {
         log.info("Sending test business notification");
         
         CompletableFuture<Boolean> result = telegramService.sendBusinessRegisteredNotification(
-                "Test Restaurant - Angkor Kitchen",
+                "Test Restaurant - Angkor Traditional Kitchen 🏛️",
                 "PHAT_MENGHOR",
-                "business@example.com",
+                "business@cambodia-emenu.com",
                 "+855 70 411 260",
                 "angkor-kitchen",
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
@@ -129,6 +145,63 @@ public class TelegramController {
         } catch (Exception e) {
             log.error("Error sending test business notification: {}", e.getMessage());
             return ResponseEntity.ok(ApiResponse.error("Failed to send test notification: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Send test message with emoji and formatting
+     */
+    @PostMapping("/test-formatted-message")
+    public ResponseEntity<ApiResponse<String>> sendFormattedTestMessage() {
+        log.info("Sending formatted test message");
+        
+        String formattedMessage = """
+                🇰🇭 *Cambodia E-Menu Platform Test* 🇰🇭
+                
+                ✨ *Features Testing:*
+                • ✅ Telegram Integration
+                • ✅ Markdown Formatting
+                • ✅ Emoji Support
+                • ✅ Multi-line Messages
+                
+                📊 *Platform Stats:*
+                • 🏪 Restaurants: `1,250+`
+                • 🍽️ Products: `15,000+`
+                • 👥 Users: `5,500+`
+                
+                🔗 *Links:*
+                [Documentation](https://docs.cambodia-emenu.com)
+                [Support](mailto:support@cambodia-emenu.com)
+                
+                ---
+                🕐 *Time:* %s
+                🤖 *System:* Automated Test Message
+                """.formatted(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+        
+        CompletableFuture<Boolean> result = telegramService.sendMessage(formattedMessage, "Formatted Test");
+        
+        try {
+            boolean sent = result.get();
+            String message = sent ? "Formatted test message sent successfully" : "Failed to send formatted test message";
+            return ResponseEntity.ok(ApiResponse.success(message, message));
+        } catch (Exception e) {
+            log.error("Error sending formatted test message: {}", e.getMessage());
+            return ResponseEntity.ok(ApiResponse.error("Failed to send formatted test message: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Request DTO for test messages
+     */
+    public static class TestMessageRequest {
+        private String message;
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
         }
     }
 }

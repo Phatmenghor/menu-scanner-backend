@@ -82,7 +82,10 @@ telegram:
     token: "8464259107:AAHdIC3EZb_3uID4vnhteY6PYtmO9WGDBjU"
     enabled: true
     chat-id: "1898032377"
-    mock: false  # 🧪 ENABLE MOCK MODE
+#    chat-id: "1476286688"
+#    chat-id: "7394716389"
+#    chat-id: "940970508"
+    mock: false  # Set to true for development/testing
     webhook-url: ""
     polling: true
     timeout: 30
@@ -91,37 +94,40 @@ telegram:
   notifications:
     enabled: true
     product-created: true
+    user-registered: true
+    business-registered: true
 
   templates:
+    # ✅ FIXED: Use HTML format instead of Markdown for better reliability
     product-created: |
-      🆕 *New Product Created!*
+      🆕 <b>New Product Created!</b>
       
-      📱 *Product:* {productName}
-      🏪 *Business:* {businessName}
-      💰 *Price:* ${price}
-      📂 *Category:* {categoryName}
-      👤 *Created by:* {createdBy}
-      📅 *Date:* {createdAt}
+      📱 <b>Product:</b> {productName}
+      🏪 <b>Business:</b> {businessName}
+      💰 <b>Price:</b> ${price}
+      📂 <b>Category:</b> {categoryName}
+      👤 <b>Created by:</b> {createdBy}
+      📅 <b>Date:</b> {createdAt}
       
       🔗 View: {productUrl}
 
     user-registered: |
-      👤 *New User Registered!*
+      👤 <b>New User Registered!</b>
       
-      📧 *Email:* {email}
-      👤 *Name:* {fullName}
-      🏷️ *Type:* {userType}
-      📅 *Date:* {registeredAt}
+      📧 <b>Email:</b> {email}
+      👤 <b>Name:</b> {fullName}
+      🏷️ <b>Type:</b> {userType}
+      📅 <b>Date:</b> {registeredAt}
 
     business-registered: |
-      🏪 *New Business Registered!*
+      🏪 <b>New Business Registered!</b>
       
-      🏢 *Business:* {businessName}
-      👤 *Owner:* {ownerName}
-      📧 *Email:* {businessEmail}
-      📞 *Phone:* {phoneNumber}
-      🌐 *Subdomain:* {subdomain}
-      📅 *Date:* {registeredAt}
+      🏢 <b>Business:</b> {businessName}
+      👤 <b>Owner:</b> {ownerName}
+      📧 <b>Email:</b> {businessEmail}
+      📞 <b>Phone:</b> {phoneNumber}
+      🌐 <b>Subdomain:</b> {subdomain}
+      📅 <b>Date:</b> {registeredAt}
 
 
 # Application Configuration
