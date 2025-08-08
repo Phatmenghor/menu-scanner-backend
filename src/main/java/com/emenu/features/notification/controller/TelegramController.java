@@ -2,10 +2,11 @@ package com.emenu.features.notification.controller;
 
 import com.emenu.features.notification.service.TelegramService;
 import com.emenu.shared.dto.ApiResponse;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -50,7 +51,12 @@ public class TelegramController {
                 request.getMessage(),
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
         
-        CompletableFuture<Boolean> result = telegramService.sendMessage(fullMessage, "Test Message");
+        // ✅ FIXED: Use the correct method signature with chatId from config
+        CompletableFuture<Boolean> result = telegramService.sendDirectMessageToUser(
+                "1898032377", // Use the configured chat ID
+                fullMessage, 
+                "Test Message"
+        );
         
         try {
             boolean sent = result.get();
@@ -178,7 +184,12 @@ public class TelegramController {
                 🤖 *System:* Automated Test Message
                 """.formatted(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
         
-        CompletableFuture<Boolean> result = telegramService.sendMessage(formattedMessage, "Formatted Test");
+        // ✅ FIXED: Use the correct method signature
+        CompletableFuture<Boolean> result = telegramService.sendDirectMessageToUser(
+                "1898032377", // Use the configured chat ID
+                formattedMessage, 
+                "Formatted Test"
+        );
         
         try {
             boolean sent = result.get();
@@ -191,17 +202,129 @@ public class TelegramController {
     }
 
     /**
+     * Send broadcast message to all platform users
+     */
+    @PostMapping("/broadcast-test")
+    public ResponseEntity<ApiResponse<String>> sendBroadcastTest(@RequestBody TestMessageRequest request) {
+        log.info("Sending broadcast test message");
+        
+        String broadcastMessage = String.format("""
+                📢 <b>Broadcast Test Message</b>
+                
+                %s
+                
+                📅 <b>Sent at:</b> %s
+                🤖 <b>From:</b> Cambodia E-Menu Platform
+                👥 <b>Audience:</b> All Platform Users
+                """, 
+                request.getMessage(),
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+        
+        // Use the direct message method to admin for testing
+        CompletableFuture<Boolean> result = telegramService.sendDirectMessageToUser(
+                "1898032377", // Admin chat ID
+                broadcastMessage, 
+                "Broadcast Test"
+        );
+        
+        try {
+            boolean sent = result.get();
+            String message = sent ? "Broadcast test message sent successfully" : "Failed to send broadcast test message";
+            return ResponseEntity.ok(ApiResponse.success(message, message));
+        } catch (Exception e) {
+            log.error("Error sending broadcast test message: {}", e.getMessage());
+            return ResponseEntity.ok(ApiResponse.error("Failed to send broadcast test message: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Send direct message to specific chat ID
+     */
+    @PostMapping("/send-direct")
+    public ResponseEntity<ApiResponse<String>> sendDirectMessage(
+            @RequestParam String chatId,
+            @RequestBody TestMessageRequest request) {
+        log.info("Sending direct message to chat ID: {}", chatId);
+        
+        String directMessage = String.format("""
+                💬 <b>Direct Message</b>
+                
+                %s
+                
+                📅 <b>Sent at:</b> %s
+                🤖 <b>From:</b> Cambodia E-Menu Platform API
+                """, 
+                request.getMessage(),
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+        
+        CompletableFuture<Boolean> result = telegramService.sendDirectMessageToUser(
+                chatId, 
+                directMessage, 
+                "Direct Message"
+        );
+        
+        try {
+            boolean sent = result.get();
+            String message = sent ? "Direct message sent successfully" : "Failed to send direct message";
+            return ResponseEntity.ok(ApiResponse.success(message, message));
+        } catch (Exception e) {
+            log.error("Error sending direct message: {}", e.getMessage());
+            return ResponseEntity.ok(ApiResponse.error("Failed to send direct message: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Test all notification types
+     */
+    @PostMapping("/test-all-notifications")
+    public ResponseEntity<ApiResponse<String>> testAllNotifications() {
+        log.info("Testing all notification types");
+        
+        try {
+            // Test user registration notification
+            telegramService.sendUserRegisteredNotification(
+                    "test_user_" + System.currentTimeMillis(),
+                    "Test User - Complete Testing",
+                    "CUSTOMER",
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+            );
+            
+            // Test business registration notification
+            telegramService.sendBusinessRegisteredNotification(
+                    "Test Restaurant - Complete Testing",
+                    "TEST_OWNER",
+                    "test@cambodia-emenu.com",
+                    "070 411 260",
+                    "test-restaurant-" + System.currentTimeMillis(),
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+            );
+            
+            // Test product creation notification
+            telegramService.sendProductCreatedNotification(
+                    "Test Product - Complete Testing",
+                    "Test Restaurant",
+                    "25.00",
+                    "Test Category",
+                    "TEST_USER",
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+            );
+            
+            return ResponseEntity.ok(ApiResponse.success(
+                    "All notification tests initiated successfully", 
+                    "Check your Telegram for notifications"));
+        } catch (Exception e) {
+            log.error("Error testing all notifications: {}", e.getMessage(), e);
+            return ResponseEntity.ok(ApiResponse.error("Failed to test notifications: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Request DTO for test messages
      */
+    @Setter
+    @Getter
     public static class TestMessageRequest {
         private String message;
 
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
     }
 }
