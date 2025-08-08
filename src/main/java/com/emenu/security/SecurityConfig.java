@@ -45,20 +45,21 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                        // ===== PUBLIC ENDPOINTS =====
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/images/**").permitAll()
 
-                        // Documentation endpoints - ✅ ENHANCED: More Swagger patterns
+                        // ===== TELEGRAM BOT ENDPOINTS =====
+                        .requestMatchers("/api/v1/telegram/bot/webhook").permitAll() // Telegram webhook
+                        .requestMatchers("/api/v1/telegram/bot/callback").permitAll() // Telegram callbacks
+
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-config", "/api-docs/**").permitAll()
 
-                        // Actuator endpoints
+                        // ===== ACTUATOR ENDPOINTS =====
                         .requestMatchers("/actuator/health/**").permitAll()
-                        .requestMatchers("/actuator/**").hasRole("PLATFORM_OWNER")
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
@@ -72,12 +73,17 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // ✅ ENHANCED: Better CORS configuration for Swagger
+        // Enhanced CORS configuration for Telegram and mobile apps
         configuration.setAllowedOriginPatterns(Arrays.asList(allowedOrigins));
 
-        // ✅ Add server-specific origins for Swagger UI
+        // Add Telegram-specific origins (for web apps)
+        configuration.addAllowedOriginPattern("https://web.telegram.org");
+        configuration.addAllowedOriginPattern("https://telegram.org");
+        
+        // Add server-specific origins
         configuration.addAllowedOriginPattern("http://152.42.219.13:*");
         configuration.addAllowedOriginPattern("http://localhost:*");
+        configuration.addAllowedOriginPattern("https://localhost:*");
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

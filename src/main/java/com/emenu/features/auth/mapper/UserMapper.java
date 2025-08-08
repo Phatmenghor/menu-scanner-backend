@@ -25,23 +25,42 @@ public abstract class UserMapper {
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "telegramUserId", ignore = true)
+    @Mapping(target = "telegramUsername", ignore = true)
+    @Mapping(target = "telegramFirstName", ignore = true)
+    @Mapping(target = "telegramLastName", ignore = true)
+    @Mapping(target = "telegramLinkedAt", ignore = true)
+    @Mapping(target = "telegramNotificationsEnabled", constant = "true")
+    @Mapping(target = "lastTelegramActivity", ignore = true)
+    @Mapping(target = "socialProvider", constant = "LOCAL")
     public abstract User toEntity(UserCreateRequest request);
 
-    // ✅ UPDATED: Include userIdentifier in response mapping
-    @Mapping(source = "roles", target = "roles", qualifiedByName = "rolesToRoleEnums")
     @Mapping(source = "business.name", target = "businessName")
+    @Mapping(source = "roles", target = "roles", qualifiedByName = "rolesToRoleEnums")
+    @Mapping(target = "fullName", expression = "java(user.getFullName())")
+    @Mapping(target = "displayName", expression = "java(user.getDisplayName())")
+    @Mapping(target = "hasTelegramLinked", expression = "java(user.hasTelegramLinked())")
+    @Mapping(target = "canReceiveTelegramNotifications", expression = "java(user.canReceiveTelegramNotifications())")
+    @Mapping(target = "telegramDisplayName", expression = "java(user.getTelegramDisplayName())")
     public abstract UserResponse toResponse(User user);
 
     public abstract List<UserResponse> toResponseList(List<User> users);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "userIdentifier", ignore = true) // Don't allow updating userIdentifier
-    @Mapping(target = "email", ignore = true) // Don't allow updating email via general update
+    @Mapping(target = "userIdentifier", ignore = true)
+    @Mapping(target = "email", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "userType", ignore = true)
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "business", ignore = true)
+    @Mapping(target = "socialProvider", ignore = true)
+    @Mapping(target = "telegramUserId", ignore = true)
+    @Mapping(target = "telegramUsername", ignore = true)
+    @Mapping(target = "telegramFirstName", ignore = true)
+    @Mapping(target = "telegramLastName", ignore = true)
+    @Mapping(target = "telegramLinkedAt", ignore = true)
+    @Mapping(target = "lastTelegramActivity", ignore = true)
     public abstract void updateEntity(UserUpdateRequest request, @MappingTarget User user);
 
     /**
@@ -59,6 +78,13 @@ public abstract class UserMapper {
     @Mapping(target = "accountStatus", ignore = true)
     @Mapping(target = "position", ignore = true)
     @Mapping(target = "notes", ignore = true)
+    @Mapping(target = "socialProvider", ignore = true)
+    @Mapping(target = "telegramUserId", ignore = true)
+    @Mapping(target = "telegramUsername", ignore = true)
+    @Mapping(target = "telegramFirstName", ignore = true)
+    @Mapping(target = "telegramLastName", ignore = true)
+    @Mapping(target = "telegramLinkedAt", ignore = true)
+    @Mapping(target = "lastTelegramActivity", ignore = true)
     public abstract void updateCurrentUserProfile(UserUpdateRequest request, @MappingTarget User user);
 
     @Named("rolesToRoleEnums")
@@ -74,9 +100,9 @@ public abstract class UserMapper {
     @AfterMapping
     protected void setFullName(@MappingTarget UserResponse response, User user) {
         response.setFullName(user.getFullName());
+        response.setDisplayName(user.getDisplayName());
     }
 
-    // ✅ UNIVERSAL PAGINATION MAPPER USAGE
     public PaginationResponse<UserResponse> toPaginationResponse(Page<User> userPage) {
         return paginationMapper.toPaginationResponse(userPage, this::toResponseList);
     }

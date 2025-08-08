@@ -14,7 +14,6 @@ public class LoginResponse {
     private UUID userId;
     
     private String userIdentifier;
-    
     private String email;
     private String fullName;
     private String profileImageUrl;
@@ -23,4 +22,9 @@ public class LoginResponse {
     private UUID businessId;
     private String businessName;
     private String welcomeMessage;
+    
+    // ✅ NEW: Telegram Integration Fields
+    private Boolean hasTelegramLinked;
+    private String telegramDisplayName;
+    private List<String> availableFeatures;
 }

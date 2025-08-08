@@ -1,4 +1,4 @@
-# application.yml - Cambodia E-Menu Platform Configuration
+# application.yml - Cambodia E-Menu Platform Configuration with Telegram Integration
 spring:
   application:
     name: cambodia-emenu-platform
@@ -21,7 +21,7 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: update # Keep update for both base and dev
+      ddl-auto: update
     show-sql: false
     open-in-view: false
     properties:
@@ -47,7 +47,7 @@ server:
 # JWT Configuration
 jwt:
   secret: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
-  expiration: 99999999999999999 # 24 hours
+  expiration: 99999999999999999 # Extended for development
 
 # API Documentation
 springdoc:
@@ -63,7 +63,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,telegram
       base-path: /actuator
   endpoint:
     health:
@@ -76,29 +76,94 @@ cambodia:
   language: "km"
   country: "KH"
 
-# 🔔 ADD THIS SECTION: Telegram Configuration
+# ===== TELEGRAM CONFIGURATION =====
 telegram:
   bot:
     token: "8464259107:AAHdIC3EZb_3uID4vnhteY6PYtmO9WGDBjU"
     enabled: true
-    chat-id: "1898032377"
-#    chat-id: "1476286688"
-#    chat-id: "7394716389"
-#    chat-id: "940970508"
-    mock: false  # Set to true for development/testing
-    webhook-url: ""
-    polling: true
+    chat-id: "1898032377" # Primary admin chat ID
+    name: "Cambodia E-Menu Bot"
+    username: "cambodia_emenu_bot"
+    description: "Digital menu platform for Cambodia restaurants"
+    webhook-url: "https://your-domain.com/api/v1/telegram/bot"
+    polling: false # Use webhook instead of polling
     timeout: 30
     retry-attempts: 3
+    base-url: "https://api.telegram.org/bot"
 
   notifications:
     enabled: true
     product-created: true
     user-registered: true
     business-registered: true
+    order-placed: true
+    payment-received: true
+    subscription-expiring: true
+    system-alerts: true
+
+    recipients:
+      notify-platform-users: true
+      notify-business-owners: false
+      notify-customers: true
+      notify-admins-only: false
+
+  webhook:
+    enabled: true
+    url: "https://your-domain.com/api/v1/telegram/bot"
+    secret-token: "your-webhook-secret-token"
+    max-connections: 40
+    allowed-updates: ["message", "callback_query", "inline_query"]
+    drop-pending-updates: true
+
+  features:
+    bot-commands: true
+    inline-keyboards: true
+    file-uploads: false
+    group-chat: false
+    channel-posts: false
+    inline-queries: true
+    callback-queries: true
+
+    # Authentication features
+    login-widget: true
+    registration: true
+    account-linking: true
+
+    # Business features
+    business-management: true
+    order-notifications: true
+    menu-updates: true
+
+    # Admin features
+    admin-commands: true
+    system-monitoring: true
+    user-management: true
 
   templates:
-    # ✅ FIXED: Use HTML format instead of Markdown for better reliability
+    # User registration notification
+    user-registered: |
+      👤 <b>New User Registered!</b>
+      
+      🆔 <b>User ID:</b> {userIdentifier}
+      👤 <b>Name:</b> {fullName}
+      🏷️ <b>Type:</b> {userType}
+      📧 <b>Email:</b> {email}
+      📱 <b>Provider:</b> {socialProvider}
+      🔗 <b>Telegram:</b> {hasTelegram}
+      📅 <b>Date:</b> {registeredAt}
+
+    # Business registration notification
+    business-registered: |
+      🏪 <b>New Business Registered!</b>
+      
+      🏢 <b>Business:</b> {businessName}
+      👤 <b>Owner:</b> {ownerName} ({ownerUserIdentifier})
+      📧 <b>Email:</b> {businessEmail}
+      📞 <b>Phone:</b> {phoneNumber}
+      🌐 <b>Subdomain:</b> {subdomain}
+      📅 <b>Date:</b> {registeredAt}
+
+    # Product creation notification
     product-created: |
       🆕 <b>New Product Created!</b>
       
@@ -108,44 +173,67 @@ telegram:
       📂 <b>Category:</b> {categoryName}
       👤 <b>Created by:</b> {createdBy}
       📅 <b>Date:</b> {createdAt}
-      
-      🔗 View: {productUrl}
 
-    user-registered: |
-      👤 <b>New User Registered!</b>
+    # Welcome message for new Telegram users
+    welcome-message: |
+      🇰🇭 <b>Welcome to Cambodia E-Menu Platform!</b> 🇰🇭
       
-      📧 <b>Email:</b> {email}
-      👤 <b>Name:</b> {fullName}
-      🏷️ <b>Type:</b> {userType}
-      📅 <b>Date:</b> {registeredAt}
-
-    business-registered: |
-      🏪 <b>New Business Registered!</b>
+      👋 Hello {userName}!
       
-      🏢 <b>Business:</b> {businessName}
-      👤 <b>Owner:</b> {ownerName}
-      📧 <b>Email:</b> {businessEmail}
-      📞 <b>Phone:</b> {phoneNumber}
-      🌐 <b>Subdomain:</b> {subdomain}
-      📅 <b>Date:</b> {registeredAt}
+      🎉 <b>What is Cambodia E-Menu Platform?</b>
+      • 🏪 Digital menu platform for restaurants
+      • 📱 Easy online ordering system
+      • 💰 Affordable SaaS solution for Cambodia
+      
+      ✨ <b>What you can do:</b>
+      • 📋 Browse restaurant menus
+      • 🛒 Place orders online
+      • 🔔 Get notifications
+      • 🏢 Manage your business (if owner)
+      
+      🚀 <b>Get started:</b>
+      /register - Create your account
+      /login - Access existing account
+      /help - See all commands
 
+    # Help message
+    help-message: |
+      🆘 <b>Cambodia E-Menu Platform Help</b>
+      
+      🚀 <b>Getting Started:</b>
+      /start - Welcome & introduction
+      /register - Create new account
+      /login - Access existing account
+      
+      👤 <b>Account Management:</b>
+      /profile - View your profile
+      /notifications - Manage notifications
+      
+      🏪 <b>Business Users:</b>
+      /businesses - Business information
+      
+      ⚙️ <b>Other Commands:</b>
+      /help - Show this help message
+      /cancel - Cancel current operation
+      
+      💬 <b>Contact Support:</b>
+      Email: support@cambodia-emenu.com
 
 # Application Configuration
 app:
   name: "Cambodia E-Menu Platform"
   version: "1.0.0"
-  description: "Restaurant Management Platform for Cambodia"
+  description: "Restaurant Management Platform for Cambodia with Telegram Integration"
 
   # Data Initialization
   init:
     create-admin: true
-    # ✅ UPDATED: Now used as userIdentifier for platform owner
     admin-email: "phatmenghor19@gmail.com"
     admin-password: "88889999"
 
-  # CORS Configuration
+  # CORS Configuration - Enhanced for Telegram
   cors:
-    allowed-origins: "http://localhost:3000,http://localhost:4200,http://localhost:5173,http://152.42.219.13:8080,https://152.42.219.13:8080,http://152.42.219.13,https://152.42.219.13"
+    allowed-origins: "http://localhost:3000,http://localhost:4200,http://localhost:5173,http://152.42.219.13:8080,https://152.42.219.13:8080,http://152.42.219.13,https://152.42.219.13,https://web.telegram.org,https://telegram.org"
     allowed-methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
     allowed-headers: "*"
     allow-credentials: true
@@ -157,6 +245,20 @@ app:
       schedule: "0 0 2 * * ?" # Daily at 2 AM
       retention-weeks: 1
 
+    # Dual authentication support
+    dual-login:
+      enabled: true
+      allow-telegram-login: true
+      allow-traditional-login: true
+      require-password-for-local: true
+
+    # Session management
+    session:
+      telegram-session-timeout: 30 # days
+      cleanup-inactive-sessions: true
+      cleanup-schedule: "0 0 3 * * SUN" # Weekly cleanup
+
+  # Subdomain Configuration
   subdomain:
     base-domain: "menu.com"
     auto-create-enabled: true
@@ -173,20 +275,35 @@ app:
       required: false
       token-expiry-hours: 24
 
+  # Notification Configuration
+  notifications:
+    enabled: true
+    multi-channel: true
+    default-channel: "telegram"
+    fallback-channel: "email"
+
+    # Auto-notifications for events
+    auto-notify:
+      user-registration: true
+      business-registration: true
+      product-creation: true
+      order-placement: true
+      payment-received: true
+      subscription-expiring: true
+
 # Logging Configuration
 logging:
   level:
     com.emenu: INFO
-    com.emenu.config.DataInitializationService: DEBUG # Enable detailed logging for initialization
+    com.emenu.config.DataInitializationService: DEBUG
     com.emenu.security: INFO
-    com.emenu.features.telegram: DEBUG # ADD THIS: Debug Telegram operations
+    com.emenu.features.telegram: DEBUG # Enhanced Telegram logging
+    com.emenu.features.notification: DEBUG # Enhanced notification logging
+    com.emenu.features.auth.service.impl.AuthServiceImpl: DEBUG # Auth service logging
     org.springframework.security: WARN
     org.springframework.web: WARN
     org.hibernate.SQL: OFF
     org.hibernate.type: OFF
-    org.hibernate.engine: OFF
-    org.hibernate.stat: OFF
-    org.springframework.orm.jpa: WARN
     root: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
@@ -216,13 +333,70 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update # CHANGED: Use update instead of create-drop
+      ddl-auto: update
     show-sql: false
+
+# Development-specific Telegram settings
+telegram:
+  bot:
+    polling: true # Use polling in development
+    webhook-url: "" # Disable webhook in development
+
+  webhook:
+    enabled: false # Disable webhook in development
+
+  features:
+    # Enable all features in development
+    file-uploads: true
+    group-chat: true
+    admin-commands: true
+    system-monitoring: true
+
+logging:
+  level:
+    com.emenu: DEBUG
+    com.emenu.features.telegram: DEBUG
+    com.emenu.features.notification: DEBUG
+    com.emenu.security.jwt: DEBUG
+    org.hibernate.SQL: OFF
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # Don't auto-update schema in production
+    show-sql: false
+
+# Production-specific Telegram settings
+telegram:
+  bot:
+    polling: false # Always use webhook in production
+    timeout: 60
+    retry-attempts: 5
+
+  webhook:
+    enabled: true
+    max-connections: 100
+
+  notifications:
+    # More conservative notifications in production
+    system-alerts: true
+
+  features:
+    # Disable some features in production for security
+    file-uploads: false
+    group-chat: false
 
 logging:
   level:
     com.emenu: INFO
-    com.emenu.config.DataInitializationService: DEBUG # Debug initialization
-    com.emenu.security.jwt: DEBUG # Debug JWT operations
-    com.emenu.features.telegram: DEBUG # ADD THIS: Debug Telegram in dev profile
-    org.hibernate.SQL: OFF
+    com.emenu.features.telegram: INFO
+    com.emenu.features.notification: INFO
+    root: WARN
+  file:
+    name: /var/log/cambodia-emenu-platform/app.log

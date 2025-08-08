@@ -23,28 +23,154 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String userIdentifier) throws UsernameNotFoundException {
-        log.debug("Attempting to load user with userIdentifier: {}", userIdentifier);
+        log.debug("🔍 Loading user with userIdentifier: {}", userIdentifier);
         
-        // ✅ UPDATED: Search by userIdentifier
+        // Search by userIdentifier (supports both traditional and Telegram users)
         User user = userRepository.findByUserIdentifierAndIsDeletedFalse(userIdentifier)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with userIdentifier: " + userIdentifier));
+                .orElseThrow(() -> {
+                    log.warn("❌ User not found with userIdentifier: {}", userIdentifier);
+                    return new UsernameNotFoundException("User not found with userIdentifier: " + userIdentifier);
+                });
 
-        log.debug("User found: {} with userIdentifier: {}", user.getFullName(), user.getUserIdentifier());
+        log.debug("✅ User found: {} ({}), Type: {}, Social Provider: {}, Telegram: {}", 
+                user.getDisplayName(), 
+                user.getUserIdentifier(),
+                user.getUserType(),
+                user.getSocialProvider(),
+                user.hasTelegramLinked() ? "Linked" : "Not Linked");
+
+        // Create UserDetails with enhanced information
+        return createUserDetails(user);
+    }
+
+    /**
+     * Load user by Telegram User ID (for Telegram-specific operations)
+     */
+    public UserDetails loadUserByTelegramUserId(Long telegramUserId) throws UsernameNotFoundException {
+        log.debug("🔍 Loading user with Telegram ID: {}", telegramUserId);
+        
+        User user = userRepository.findByTelegramUserIdAndIsDeletedFalse(telegramUserId)
+                .orElseThrow(() -> {
+                    log.warn("❌ User not found with Telegram ID: {}", telegramUserId);
+                    return new UsernameNotFoundException("User not found with Telegram ID: " + telegramUserId);
+                });
+
+        log.debug("✅ Telegram user found: {} ({})", user.getDisplayName(), user.getUserIdentifier());
+        return createUserDetails(user);
+    }
+
+    private UserDetails createUserDetails(User user) {
+        // Enhanced account status checks
+        boolean accountNonExpired = true;
+        boolean accountNonLocked = !user.getAccountStatus().name().equals("LOCKED");
+        boolean credentialsNonExpired = true;
+        boolean enabled = user.getAccountStatus().name().equals("ACTIVE");
+
+        // Log detailed status for debugging
+        log.debug("📊 User account status - Enabled: {}, NonLocked: {}, Status: {}", 
+                enabled, accountNonLocked, user.getAccountStatus());
+
+        if (user.hasTelegramLinked()) {
+            log.debug("📱 Telegram linked - Username: {}, Notifications: {}", 
+                    user.getTelegramUsername(), 
+                    user.canReceiveTelegramNotifications());
+        }
 
         return new org.springframework.security.core.userdetails.User(
                 user.getUserIdentifier(), // Use userIdentifier as the principal name
-                user.getPassword(),
-                user.getAccountStatus().name().equals("ACTIVE"),
-                true,
-                true,
-                !user.getAccountStatus().name().equals("LOCKED"),
+                user.getPassword() != null ? user.getPassword() : "", // Handle Telegram-only users
+                enabled,
+                accountNonExpired,
+                credentialsNonExpired,
+                accountNonLocked,
                 mapRolesToAuthorities(user)
         );
     }
 
     private Collection<GrantedAuthority> mapRolesToAuthorities(User user) {
-        return user.getRoles().stream()
+        Collection<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName().name()))
                 .collect(Collectors.toList());
+
+        log.debug("🔐 User authorities: {}", authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+
+        return authorities;
+    }
+
+    /**
+     * Check if user can authenticate with password (for traditional login)
+     */
+    public boolean canAuthenticateWithPassword(String userIdentifier) {
+        try {
+            User user = userRepository.findByUserIdentifierAndIsDeletedFalse(userIdentifier)
+                    .orElse(null);
+            
+            if (user == null) {
+                return false;
+            }
+
+            // User can authenticate with password if:
+            // 1. They have a password set, OR
+            // 2. They are a LOCAL provider (traditional account)
+            boolean canAuth = user.getPassword() != null || user.getSocialProvider().requiresPassword();
+            
+            log.debug("🔐 Password auth check for {}: {} (hasPassword: {}, provider: {})", 
+                    userIdentifier, canAuth, user.getPassword() != null, user.getSocialProvider());
+            
+            return canAuth;
+        } catch (Exception e) {
+            log.error("❌ Error checking password auth for {}: {}", userIdentifier, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Check if user can authenticate with Telegram (for Telegram login)
+     */
+    public boolean canAuthenticateWithTelegram(Long telegramUserId) {
+        try {
+            User user = userRepository.findByTelegramUserIdAndIsDeletedFalse(telegramUserId)
+                    .orElse(null);
+            
+            if (user == null) {
+                return false;
+            }
+
+            boolean canAuth = user.hasTelegramLinked() && user.isActive();
+            
+            log.debug("📱 Telegram auth check for {}: {} (linked: {}, active: {})", 
+                    telegramUserId, canAuth, user.hasTelegramLinked(), user.isActive());
+            
+            return canAuth;
+        } catch (Exception e) {
+            log.error("❌ Error checking Telegram auth for {}: {}", telegramUserId, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get user authentication summary for debugging
+     */
+    public String getUserAuthSummary(String userIdentifier) {
+        try {
+            User user = userRepository.findByUserIdentifierAndIsDeletedFalse(userIdentifier)
+                    .orElse(null);
+            
+            if (user == null) {
+                return "User not found";
+            }
+
+            return String.format("User: %s, Type: %s, Status: %s, Provider: %s, HasPassword: %s, TelegramLinked: %s",
+                    user.getDisplayName(),
+                    user.getUserType(),
+                    user.getAccountStatus(),
+                    user.getSocialProvider(),
+                    user.getPassword() != null,
+                    user.hasTelegramLinked());
+        } catch (Exception e) {
+            return "Error getting user summary: " + e.getMessage();
+        }
     }
 }
