@@ -6,6 +6,7 @@ public class ErrorCodes {
     public static final String USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS";
     public static final String USER_DELETED = "USER_DELETED";
     public static final String USER_INACTIVE = "USER_INACTIVE";
+    public static final String USER_IDENTIFIER_TAKEN = "USER_IDENTIFIER_TAKEN";
     
     // Authentication errors
     public static final String INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
@@ -14,6 +15,14 @@ public class ErrorCodes {
     public static final String EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED";
     public static final String TOKEN_EXPIRED = "TOKEN_EXPIRED";
     public static final String TOKEN_INVALID = "TOKEN_INVALID";
+    
+    // Telegram specific errors
+    public static final String TELEGRAM_USER_NOT_FOUND = "TELEGRAM_USER_NOT_FOUND";
+    public static final String TELEGRAM_USER_ALREADY_LINKED = "TELEGRAM_USER_ALREADY_LINKED";
+    public static final String TELEGRAM_INTEGRATION_FAILED = "TELEGRAM_INTEGRATION_FAILED";
+    public static final String TELEGRAM_AUTH_FAILED = "TELEGRAM_AUTH_FAILED";
+    public static final String TELEGRAM_NOTIFICATION_FAILED = "TELEGRAM_NOTIFICATION_FAILED";
+    public static final String INVALID_TELEGRAM_DATA = "INVALID_TELEGRAM_DATA";
     
     // Authorization errors
     public static final String INSUFFICIENT_PERMISSIONS = "INSUFFICIENT_PERMISSIONS";
