@@ -86,7 +86,6 @@ public class TelegramBotController {
      * Test bot connection
      */
     @GetMapping("/test-connection")
-    @PreAuthorize("hasRole('PLATFORM_OWNER') or hasRole('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Boolean>> testBotConnection() {
         log.info("🧪 Testing Telegram bot connection");
         boolean isConnected = telegramService.testConnection();
@@ -99,7 +98,6 @@ public class TelegramBotController {
      * Send test message to all platform users
      */
     @PostMapping("/test-broadcast")
-    @PreAuthorize("hasRole('PLATFORM_OWNER')")
     public ResponseEntity<ApiResponse<NotificationSendResult>> testBroadcast(
             @RequestBody Map<String, String> request) {
         log.info("📢 Testing broadcast message");
@@ -131,7 +129,6 @@ public class TelegramBotController {
      * Send test notification for new user registration
      */
     @PostMapping("/test-user-notification")
-    @PreAuthorize("hasRole('PLATFORM_OWNER') or hasRole('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<String>> testUserNotification() {
         log.info("👤 Testing user registration notification");
         
@@ -156,7 +153,6 @@ public class TelegramBotController {
      * Send test notification for new business registration
      */
     @PostMapping("/test-business-notification")
-    @PreAuthorize("hasRole('PLATFORM_OWNER') or hasRole('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<String>> testBusinessNotification() {
         log.info("🏪 Testing business registration notification");
         
@@ -185,7 +181,6 @@ public class TelegramBotController {
      * Get bot statistics
      */
     @GetMapping("/stats")
-    @PreAuthorize("hasRole('PLATFORM_OWNER') or hasRole('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getBotStats() {
         log.info("📊 Getting bot statistics");
         
@@ -202,7 +197,6 @@ public class TelegramBotController {
      * Get active Telegram sessions
      */
     @GetMapping("/sessions")
-    @PreAuthorize("hasRole('PLATFORM_OWNER') or hasRole('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<List<TelegramUserSession>>> getActiveSessions() {
         log.info("📋 Getting active Telegram sessions");
         
@@ -223,7 +217,6 @@ public class TelegramBotController {
      * Cleanup inactive sessions
      */
     @PostMapping("/cleanup-sessions")
-    @PreAuthorize("hasRole('PLATFORM_OWNER')")
     public ResponseEntity<ApiResponse<String>> cleanupInactiveSessions() {
         log.info("🧹 Cleaning up inactive Telegram sessions");
         
@@ -245,7 +238,6 @@ public class TelegramBotController {
      * Send direct message to a specific Telegram user
      */
     @PostMapping("/send-message")
-    @PreAuthorize("hasRole('PLATFORM_OWNER') or hasRole('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<String>> sendDirectMessage(@RequestBody Map<String, String> request) {
         String chatId = request.get("chatId");
         String message = request.get("message");
