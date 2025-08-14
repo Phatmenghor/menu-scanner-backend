@@ -21,6 +21,7 @@ import com.emenu.features.product.specification.ProductSpecification;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +49,7 @@ public class ProductServiceImpl implements ProductService {
     private final FavoriteResponseMapper favoriteMapper;
     private final PromotionResponseMapper promotionMapper;
     private final SecurityUtils securityUtils;
+    private final EntityManager entityManager;
 
     // ================================
     // CRUD OPERATIONS
@@ -68,6 +71,9 @@ public class ProductServiceImpl implements ProductService {
         if (request.getSizes() != null && !request.getSizes().isEmpty()) {
             ProductSizeMapper.SizeCreationResult sizeResult = 
                     productSizeMapper.processSizeCreation(request.getSizes(), savedProduct.getId());
+            
+            // Set parent reference for each size
+            sizeResult.sizes.forEach(size -> size.setProduct(savedProduct));
             productSizeRepository.saveAll(sizeResult.sizes);
         }
 
@@ -75,6 +81,9 @@ public class ProductServiceImpl implements ProductService {
         if (request.getImages() != null && !request.getImages().isEmpty()) {
             ProductImageMapper.ImageCreationResult imageResult = 
                     productImageMapper.processImageCreation(request.getImages(), savedProduct.getId());
+            
+            // Set parent reference for each image
+            imageResult.images.forEach(image -> image.setProduct(savedProduct));
             productImageRepository.saveAll(imageResult.images);
         }
 
@@ -141,44 +150,20 @@ public class ProductServiceImpl implements ProductService {
         User currentUser = securityUtils.getCurrentUser();
         validateBusinessOwnership(product, currentUser);
 
-        // Update sizes with enhanced mapper
-        if (request.getSizes() != null) {
-            List<ProductSize> existingSizes = loadProductSizes(product.getId());
-            ProductSizeMapper.SizeUpdateResult sizeResult = 
-                    productSizeMapper.processSizeUpdate(request.getSizes(), existingSizes, product.getId());
-            
-            // Delete removed sizes
-            if (!sizeResult.sizesToDelete.isEmpty()) {
-                sizeResult.sizesToDelete.forEach(sizeId -> 
-                        productSizeRepository.findById(sizeId).ifPresent(productSizeRepository::delete));
-            }
-            
-            // Save updated/new sizes
-            productSizeRepository.saveAll(sizeResult.sizes);
-            productSizeRepository.flush();
-        }
+        // Load product with all collections to ensure they're initialized
+        product = loadProductCollections(product);
 
-        // Update images with enhanced mapper
-        if (request.getImages() != null) {
-            List<ProductImage> existingImages = loadProductImages(product.getId());
-            ProductImageMapper.ImageUpdateResult imageResult = 
-                    productImageMapper.processImageUpdate(request.getImages(), existingImages, product.getId());
-            
-            // Delete removed images
-            if (!imageResult.imagesToDelete.isEmpty()) {
-                imageResult.imagesToDelete.forEach(imageId -> 
-                        productImageRepository.findById(imageId).ifPresent(productImageRepository::delete));
-            }
-            
-            // Save updated/new images
-            productImageRepository.saveAll(imageResult.images);
-            productImageRepository.flush();
-        }
+        // ===== FIXED: Handle sizes with proper collection management =====
+        updateProductSizes(product, request.getSizes());
+
+        // ===== FIXED: Handle images with proper collection management =====
+        updateProductImages(product, request.getImages());
 
         // Update product basic fields
         productMapper.updateEntity(request, product);
-        Product updatedProduct = productRepository.save(product);
-        productRepository.flush();
+        
+        // Save and flush to ensure all changes are persisted
+        Product updatedProduct = productRepository.saveAndFlush(product);
 
         log.info("Product updated successfully: {}", id);
         return getProductById(updatedProduct.getId());
@@ -198,6 +183,88 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ================================
+    // COLLECTION UPDATE METHODS - FIXED
+    // ================================
+
+    /**
+     * FIXED: Properly update product sizes collection
+     * When sizes is null -> delete all existing sizes
+     * When sizes is empty list -> delete all existing sizes  
+     * When sizes has items -> update/create as needed
+     */
+    private void updateProductSizes(Product product, List<com.emenu.features.product.dto.request.ProductSizeRequest> sizeRequests) {
+        // Initialize collection if null
+        if (product.getSizes() == null) {
+            product.setSizes(new ArrayList<>());
+        }
+
+        // Case 1: null or empty list = delete all sizes
+        if (sizeRequests == null || sizeRequests.isEmpty()) {
+            log.debug("Clearing all sizes for product {}", product.getId());
+            product.getSizes().clear();
+            return;
+        }
+
+        // Case 2: Update sizes with proper collection management
+        List<ProductSize> existingSizes = new ArrayList<>(product.getSizes());
+        
+        // Process the update using mapper
+        ProductSizeMapper.SizeUpdateResult sizeResult = 
+                productSizeMapper.processSizeUpdate(sizeRequests, existingSizes, product.getId());
+        
+        // Set parent reference for all new/updated sizes
+        sizeResult.sizes.forEach(size -> {
+            size.setProduct(product);
+            size.setProductId(product.getId());
+        });
+        
+        // CRITICAL: Clear and repopulate to avoid orphan removal issues
+        product.getSizes().clear();
+        product.getSizes().addAll(sizeResult.sizes);
+        
+        log.debug("Updated {} sizes for product {}", sizeResult.sizes.size(), product.getId());
+    }
+
+    /**
+     * FIXED: Properly update product images collection
+     * When images is null -> delete all existing images
+     * When images is empty list -> delete all existing images
+     * When images has items -> update/create as needed
+     */
+    private void updateProductImages(Product product, List<com.emenu.features.product.dto.request.ProductImageRequest> imageRequests) {
+        // Initialize collection if null
+        if (product.getImages() == null) {
+            product.setImages(new ArrayList<>());
+        }
+
+        // Case 1: null or empty list = delete all images
+        if (imageRequests == null || imageRequests.isEmpty()) {
+            log.debug("Clearing all images for product {}", product.getId());
+            product.getImages().clear();
+            return;
+        }
+
+        // Case 2: Update images with proper collection management
+        List<ProductImage> existingImages = new ArrayList<>(product.getImages());
+        
+        // Process the update using mapper
+        ProductImageMapper.ImageUpdateResult imageResult = 
+                productImageMapper.processImageUpdate(imageRequests, existingImages, product.getId());
+        
+        // Set parent reference for all new/updated images
+        imageResult.images.forEach(image -> {
+            image.setProduct(product);
+            image.setProductId(product.getId());
+        });
+        
+        // CRITICAL: Clear and repopulate to avoid orphan removal issues
+        product.getImages().clear();
+        product.getImages().addAll(imageResult.images);
+        
+        log.debug("Updated {} images for product {}", imageResult.images.size(), product.getId());
+    }
+
+    // ================================
     // PROMOTION MANAGEMENT
     // ================================
 
@@ -212,12 +279,9 @@ public class ProductServiceImpl implements ProductService {
         boolean productHadPromotion = product.isPromotionActive();
         
         // Reset size promotions using enhanced mapper
-        List<ProductSize> sizes = loadProductSizes(productId);
+        List<ProductSize> sizes = new ArrayList<>(product.getSizes());
         long sizesWithPromotions = productSizeMapper.countActivePromotions(sizes);
         productSizeMapper.removeAllPromotions(sizes);
-        if (!sizes.isEmpty()) {
-            productSizeRepository.saveAll(sizes);
-        }
         
         // Reset product-level promotion
         product.removePromotion();
@@ -362,49 +426,82 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ================================
-    // HELPER METHODS
+    // HELPER METHODS - FIXED
     // ================================
 
+    /**
+     * FIXED: Load product with proper collection initialization
+     */
     private Product findProductByIdWithDetails(UUID id) {
         Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
         return loadProductCollections(product);
     }
 
+    /**
+     * FIXED: Properly load and initialize all collections
+     */
     private Product loadProductCollections(Product product) {
-        // Load images with sorting
+        // Initialize collections if null to prevent NullPointerException
+        if (product.getImages() == null) {
+            product.setImages(new ArrayList<>());
+        }
+        if (product.getSizes() == null) {
+            product.setSizes(new ArrayList<>());
+        }
+
+        // Load images with sorting - force initialization
         List<ProductImage> images = loadProductImages(product.getId());
-        product.setImages(productImageMapper.getSortedImages(images));
+        images.forEach(image -> image.setProduct(product)); // Set parent reference
+        product.getImages().clear();
+        product.getImages().addAll(productImageMapper.getSortedImages(images));
         
-        // Load sizes with sorting
+        // Load sizes with sorting - force initialization  
         List<ProductSize> sizes = loadProductSizes(product.getId());
-        product.setSizes(productSizeMapper.getSortedSizes(sizes));
+        sizes.forEach(size -> size.setProduct(product)); // Set parent reference
+        product.getSizes().clear();
+        product.getSizes().addAll(productSizeMapper.getSortedSizes(sizes));
         
         return product;
     }
 
+    /**
+     * Load product images from repository
+     */
     private List<ProductImage> loadProductImages(UUID productId) {
         return productImageRepository.findByProductIdOrderByMainAndSort(productId);
     }
 
+    /**
+     * Load product sizes from repository
+     */
     private List<ProductSize> loadProductSizes(UUID productId) {
         return productRepository.findByIdWithSizes(productId)
                 .map(Product::getSizes)
-                .orElse(List.of());
+                .orElse(new ArrayList<>());
     }
 
+    /**
+     * Validate user has business association
+     */
     private void validateUserBusinessAssociation(User user) {
         if (user.getBusinessId() == null) {
             throw new ValidationException("User is not associated with any business");
         }
     }
 
+    /**
+     * Validate user owns the product's business
+     */
     private void validateBusinessOwnership(Product product, User user) {
         if (!product.getBusinessId().equals(user.getBusinessId())) {
             throw new ValidationException("You can only modify products from your own business");
         }
     }
 
+    /**
+     * Create pageable for filtering
+     */
     private Pageable createPageable(ProductFilterRequest filter) {
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         return PaginationUtils.createPageable(
@@ -412,6 +509,9 @@ public class ProductServiceImpl implements ProductService {
         );
     }
 
+    /**
+     * Check if product is favorited by current user
+     */
     private boolean isProductFavorited(UUID productId) {
         try {
             User currentUser = securityUtils.getCurrentUser();
@@ -419,6 +519,82 @@ public class ProductServiceImpl implements ProductService {
                     currentUser.getId(), productId);
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    // ================================
+    // ADDITIONAL SAFETY METHODS
+    // ================================
+
+    /**
+     * Alternative update method using merge strategy (if needed)
+     */
+    @Transactional
+    public ProductResponse updateProductWithMerge(UUID id, ProductUpdateRequest request) {
+        log.info("Updating product with merge strategy: {}", id);
+
+        Product product = findProductByIdWithDetails(id);
+        User currentUser = securityUtils.getCurrentUser();
+        validateBusinessOwnership(product, currentUser);
+
+        // Detach from current session to avoid tracking issues
+        entityManager.detach(product);
+
+        // Update basic fields
+        productMapper.updateEntity(request, product);
+
+        // Handle sizes
+        if (request.getSizes() != null) {
+            List<ProductSize> newSizes = request.getSizes().isEmpty() ? 
+                    new ArrayList<>() : 
+                    productSizeMapper.createSizeEntities(request.getSizes(), product.getId());
+            newSizes.forEach(size -> size.setProduct(product));
+            product.setSizes(newSizes);
+        }
+
+        // Handle images
+        if (request.getImages() != null) {
+            if (request.getImages().isEmpty()) {
+                product.setImages(new ArrayList<>());
+            } else {
+                ProductImageMapper.ImageCreationResult imageResult = 
+                        productImageMapper.processImageCreation(request.getImages(), product.getId());
+                imageResult.images.forEach(image -> image.setProduct(product));
+                product.setImages(imageResult.images);
+            }
+        }
+
+        // Merge back to session
+        Product mergedProduct = entityManager.merge(product);
+        entityManager.flush();
+
+        log.info("Product updated successfully with merge strategy: {}", id);
+        return productMapper.toResponse(mergedProduct);
+    }
+
+    /**
+     * Cleanup orphaned records (if needed)
+     */
+    @Transactional
+    public void cleanupOrphanedRecords() {
+        // Clean up orphaned images
+        List<ProductImage> orphanedImages = productImageRepository.findAll().stream()
+                .filter(image -> image.getProduct() == null)
+                .toList();
+        
+        if (!orphanedImages.isEmpty()) {
+            productImageRepository.deleteAll(orphanedImages);
+            log.info("Cleaned up {} orphaned images", orphanedImages.size());
+        }
+
+        // Clean up orphaned sizes
+        List<ProductSize> orphanedSizes = productSizeRepository.findAll().stream()
+                .filter(size -> size.getProduct() == null)
+                .toList();
+        
+        if (!orphanedSizes.isEmpty()) {
+            productSizeRepository.deleteAll(orphanedSizes);
+            log.info("Cleaned up {} orphaned sizes", orphanedSizes.size());
         }
     }
 }

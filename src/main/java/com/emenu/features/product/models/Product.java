@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -82,13 +83,147 @@ public class Product extends BaseUUIDEntity {
     @Column(name = "favorite_count")
     private Long favoriteCount = 0L;
 
+    // FIXED: Collections with proper orphan removal handling
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private List<ProductImage> images;
+    private List<ProductImage> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private List<ProductSize> sizes;
+    private List<ProductSize> sizes = new ArrayList<>();
 
-    // Business Methods
+    // ================================
+    // COLLECTION MANAGEMENT METHODS - FIXED
+    // ================================
+
+    /**
+     * FIXED: Properly set images collection with parent reference management
+     */
+    public void setImages(List<ProductImage> images) {
+        if (this.images == null) {
+            this.images = new ArrayList<>();
+        }
+        
+        // Clear existing collection
+        this.images.clear();
+        
+        // Add new images with proper parent reference
+        if (images != null) {
+            images.forEach(image -> {
+                image.setProduct(this);
+                image.setProductId(this.getId());
+                this.images.add(image);
+            });
+        }
+    }
+
+    /**
+     * FIXED: Properly set sizes collection with parent reference management
+     */
+    public void setSizes(List<ProductSize> sizes) {
+        if (this.sizes == null) {
+            this.sizes = new ArrayList<>();
+        }
+        
+        // Clear existing collection
+        this.sizes.clear();
+        
+        // Add new sizes with proper parent reference
+        if (sizes != null) {
+            sizes.forEach(size -> {
+                size.setProduct(this);
+                size.setProductId(this.getId());
+                this.sizes.add(size);
+            });
+        }
+    }
+
+    /**
+     * FIXED: Add single image with proper parent reference
+     */
+    public void addImage(ProductImage image) {
+        if (this.images == null) {
+            this.images = new ArrayList<>();
+        }
+        
+        // Set parent reference
+        image.setProduct(this);
+        image.setProductId(this.getId());
+        
+        // Add to collection
+        this.images.add(image);
+    }
+
+    /**
+     * FIXED: Remove single image with proper cleanup
+     */
+    public void removeImage(ProductImage image) {
+        if (this.images != null && this.images.contains(image)) {
+            this.images.remove(image);
+            // Clear parent reference
+            image.setProduct(null);
+            image.setProductId(null);
+        }
+    }
+
+    /**
+     * FIXED: Add single size with proper parent reference
+     */
+    public void addSize(ProductSize size) {
+        if (this.sizes == null) {
+            this.sizes = new ArrayList<>();
+        }
+        
+        // Set parent reference
+        size.setProduct(this);
+        size.setProductId(this.getId());
+        
+        // Add to collection
+        this.sizes.add(size);
+    }
+
+    /**
+     * FIXED: Remove single size with proper cleanup
+     */
+    public void removeSize(ProductSize size) {
+        if (this.sizes != null && this.sizes.contains(size)) {
+            this.sizes.remove(size);
+            // Clear parent reference
+            size.setProduct(null);
+            size.setProductId(null);
+        }
+    }
+
+    /**
+     * Clear all images
+     */
+    public void clearImages() {
+        if (this.images != null) {
+            // Clear parent references
+            this.images.forEach(image -> {
+                image.setProduct(null);
+                image.setProductId(null);
+            });
+            this.images.clear();
+        }
+    }
+
+    /**
+     * Clear all sizes
+     */
+    public void clearSizes() {
+        if (this.sizes != null) {
+            // Clear parent references
+            this.sizes.forEach(size -> {
+                size.setProduct(null);
+                size.setProductId(null);
+            });
+            this.sizes.clear();
+        }
+    }
+
+    // ================================
+    // BUSINESS METHODS
+    // ================================
+
     public void activate() {
         this.status = ProductStatus.ACTIVE;
     }
@@ -121,7 +256,10 @@ public class Product extends BaseUUIDEntity {
         this.favoriteCount = Math.max(0L, (this.favoriteCount == null ? 0L : this.favoriteCount) - 1);
     }
 
-    // Product price logic
+    // ================================
+    // PRICING LOGIC
+    // ================================
+
     public boolean hasSizes() {
         return sizes != null && !sizes.isEmpty();
     }
@@ -228,5 +366,29 @@ public class Product extends BaseUUIDEntity {
 
     public boolean hasMultipleSizes() {
         return sizes != null && sizes.size() > 1;
+    }
+
+    // ================================
+    // COLLECTION GETTERS - FIXED
+    // ================================
+
+    /**
+     * FIXED: Ensure collections are never null
+     */
+    public List<ProductImage> getImages() {
+        if (this.images == null) {
+            this.images = new ArrayList<>();
+        }
+        return this.images;
+    }
+
+    /**
+     * FIXED: Ensure collections are never null
+     */
+    public List<ProductSize> getSizes() {
+        if (this.sizes == null) {
+            this.sizes = new ArrayList<>();
+        }
+        return this.sizes;
     }
 }
