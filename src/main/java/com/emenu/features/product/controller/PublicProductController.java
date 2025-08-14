@@ -30,8 +30,6 @@ public class PublicProductController {
     @PostMapping("/my-business/all")
     public ResponseEntity<ApiResponse<PaginationResponse<ProductResponse>>> getMyBusinessProducts(@Valid @RequestBody ProductFilterRequest filter) {
         log.info("Getting products for current user's business");
-        User currentUser = securityUtils.getCurrentUser();
-        filter.setBusinessId(currentUser.getBusinessId());
         PaginationResponse<ProductResponse> products = productService.getAllProducts(filter);
         return ResponseEntity.ok(ApiResponse.success("Business products retrieved successfully", products));
     }

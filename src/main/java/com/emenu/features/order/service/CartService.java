@@ -1,22 +1,40 @@
 package com.emenu.features.order.service;
 
-import com.emenu.features.order.dto.filter.CartFilterRequest;
 import com.emenu.features.order.dto.request.CartItemRequest;
 import com.emenu.features.order.dto.response.CartResponse;
 import com.emenu.features.order.dto.update.CartUpdateRequest;
-import com.emenu.shared.dto.PaginationResponse;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface CartService {
     
-    // Cart item operations
-    CartResponse addToCart(CartItemRequest request);
-    CartResponse updateCartItem(CartUpdateRequest request);
-    CartResponse removeFromCart(UUID cartItemId);
-
-    // My carts with filtering and pagination
-    PaginationResponse<CartResponse> getMyCarts(CartFilterRequest filter);
-    Long getMyCartItemsCount(CartFilterRequest filter);
+    /**
+     * GET - Get cart by user ID and business ID
+     */
+    CartResponse getCart(UUID userId, UUID businessId);
+    
+    /**
+     * POST - Add item to cart
+     */
+    CartResponse addToCart(UUID userId, UUID businessId, CartItemRequest request);
+    
+    /**
+     * PUT - Update cart item quantity
+     */
+    CartResponse updateCartItem(UUID userId, UUID businessId, CartUpdateRequest request);
+    
+    /**
+     * DELETE - Remove specific item from cart
+     */
+    CartResponse removeFromCart(UUID userId, UUID businessId, UUID cartItemId);
+    
+    /**
+     * DELETE - Clear entire cart
+     */
+    CartResponse clearCart(UUID userId, UUID businessId);
+    
+    /**
+     * GET - Get cart items count
+     */
+    Long getCartItemsCount(UUID userId, UUID businessId);
 }

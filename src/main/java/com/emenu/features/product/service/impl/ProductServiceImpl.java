@@ -97,6 +97,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public PaginationResponse<ProductResponse> getAllProducts(ProductFilterRequest filter) {
         User currentUser = securityUtils.getCurrentUser();
+
         if (currentUser.isBusinessUser() && filter.getBusinessId() == null) {
             filter.setBusinessId(currentUser.getBusinessId());
         }
