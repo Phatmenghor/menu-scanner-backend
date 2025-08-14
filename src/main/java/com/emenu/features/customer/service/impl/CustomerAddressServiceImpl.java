@@ -3,6 +3,7 @@ package com.emenu.features.customer.service.impl;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
+import com.emenu.features.customer.dto.filter.CustomerAddressFilterRequest;
 import com.emenu.features.customer.dto.request.CustomerAddressCreateRequest;
 import com.emenu.features.customer.dto.response.CustomerAddressResponse;
 import com.emenu.features.customer.dto.update.CustomerAddressUpdateRequest;
@@ -10,9 +11,15 @@ import com.emenu.features.customer.mapper.CustomerAddressMapper;
 import com.emenu.features.customer.models.CustomerAddress;
 import com.emenu.features.customer.repository.CustomerAddressRepository;
 import com.emenu.features.customer.service.CustomerAddressService;
+import com.emenu.features.customer.specification.CustomerAddressSpecification;
 import com.emenu.security.SecurityUtils;
+import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,11 +57,33 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CustomerAddressResponse> getMyAddresses() {
+    public PaginationResponse<CustomerAddressResponse> getAllAddresses(CustomerAddressFilterRequest filter) {
+        
+        Specification<CustomerAddress> spec = CustomerAddressSpecification.buildSpecification(filter);
+        
+        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
+        Pageable pageable = PaginationUtils.createPageable(
+                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+        );
+
+        Page<CustomerAddress> addressPage = addressRepository.findAll(spec, pageable);
+        return addressMapper.toPaginationResponse(addressPage);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CustomerAddressResponse> getMyAddressesList() {
         User currentUser = securityUtils.getCurrentUser();
         List<CustomerAddress> addresses = addressRepository
                 .findByUserIdAndIsDeletedFalseOrderByIsDefaultDescCreatedAtDesc(currentUser.getId());
         return addressMapper.toResponseList(addresses);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CustomerAddressResponse> getMyAddresses() {
+        // Deprecated method - use getMyAddressesList() instead
+        return getMyAddressesList();
     }
 
     @Override

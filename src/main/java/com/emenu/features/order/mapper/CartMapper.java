@@ -5,12 +5,19 @@ import com.emenu.features.order.dto.response.CartItemResponse;
 import com.emenu.features.order.dto.response.CartResponse;
 import com.emenu.features.order.models.Cart;
 import com.emenu.features.order.models.CartItem;
+import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class CartMapper {
+
+    @Autowired
+    protected PaginationMapper paginationMapper;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "cartId", ignore = true)
@@ -46,6 +53,7 @@ public abstract class CartMapper {
     }
 
     public abstract List<CartItemResponse> toItemResponseList(List<CartItem> cartItems);
+    public abstract List<CartResponse> toResponseList(List<Cart> carts);
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(target = "totalItems", expression = "java(cart.getTotalItems())")
@@ -60,5 +68,9 @@ public abstract class CartMapper {
         if (cart.getItems() != null) {
             response.setItems(toItemResponseList(cart.getItems()));
         }
+    }
+
+    public PaginationResponse<CartResponse> toPaginationResponse(Page<Cart> cartPage) {
+        return paginationMapper.toPaginationResponse(cartPage, this::toResponseList);
     }
 }

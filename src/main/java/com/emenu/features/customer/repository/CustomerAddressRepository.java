@@ -2,6 +2,7 @@ package com.emenu.features.customer.repository;
 
 import com.emenu.features.customer.models.CustomerAddress;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface CustomerAddressRepository extends JpaRepository<CustomerAddress, UUID> {
+public interface CustomerAddressRepository extends JpaRepository<CustomerAddress, UUID>, JpaSpecificationExecutor<CustomerAddress> {
     
     List<CustomerAddress> findByUserIdAndIsDeletedFalseOrderByIsDefaultDescCreatedAtDesc(UUID userId);
     
@@ -23,4 +24,9 @@ public interface CustomerAddressRepository extends JpaRepository<CustomerAddress
     void clearDefaultForUser(@Param("userId") UUID userId);
     
     Optional<CustomerAddress> findByIdAndIsDeletedFalse(UUID id);
+    
+    @Query("SELECT ca FROM CustomerAddress ca " +
+           "LEFT JOIN FETCH ca.user " +
+           "WHERE ca.id = :id AND ca.isDeleted = false")
+    Optional<CustomerAddress> findByIdWithUser(@Param("id") UUID id);
 }

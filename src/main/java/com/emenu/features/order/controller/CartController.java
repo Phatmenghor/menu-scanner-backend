@@ -1,16 +1,21 @@
 package com.emenu.features.order.controller;
 
+import com.emenu.features.auth.models.User;
+import com.emenu.features.order.dto.filter.CartFilterRequest;
 import com.emenu.features.order.dto.request.CartItemRequest;
 import com.emenu.features.order.dto.response.CartResponse;
 import com.emenu.features.order.dto.update.CartUpdateRequest;
 import com.emenu.features.order.service.CartService;
+import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
+import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -20,13 +25,8 @@ import java.util.UUID;
 public class CartController {
 
     private final CartService cartService;
+    private final SecurityUtils securityUtils;
 
-    /**
-     * Add/Update item in cart
-     * - If item exists: sets exact quantity (quantity = 0 removes item)
-     * - If item doesn't exist: creates new item (only if quantity > 0)
-     * Perfect for product detail pages where you set exact quantities
-     */
     @PostMapping("/add")
     public ResponseEntity<ApiResponse<CartResponse>> addOrUpdateCartItem(@Valid @RequestBody CartItemRequest request) {
         log.info("Adding/Updating item in cart - Product: {}, Quantity: {}", request.getProductId(), request.getQuantity());
@@ -41,7 +41,6 @@ public class CartController {
 
     /**
      * Update cart item quantity by cart item ID
-     * Legacy method - use addOrUpdateCartItem for new implementations
      */
     @PutMapping("/update")
     public ResponseEntity<ApiResponse<CartResponse>> updateCartItem(@Valid @RequestBody CartUpdateRequest request) {
@@ -52,7 +51,6 @@ public class CartController {
 
     /**
      * Remove item from cart by cart item ID
-     * Legacy method - use addOrUpdateCartItem with quantity=0 for new implementations
      */
     @DeleteMapping("/item/{cartItemId}")
     public ResponseEntity<ApiResponse<CartResponse>> removeFromCart(@PathVariable UUID cartItemId) {
@@ -62,22 +60,46 @@ public class CartController {
     }
 
     /**
-     * Get current user's cart for specific business
+     * Get all carts with filtering and pagination (Admin/Business view)
      */
-    @GetMapping("/business/{businessId}")
-    public ResponseEntity<ApiResponse<CartResponse>> getCart(@PathVariable UUID businessId) {
-        log.info("Getting cart for business: {}", businessId);
-        CartResponse cart = cartService.getCart(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Cart retrieved successfully", cart));
+    @PostMapping("/all")
+    public ResponseEntity<ApiResponse<PaginationResponse<CartResponse>>> getAllCarts(@Valid @RequestBody CartFilterRequest filter) {
+        log.info("Getting all carts with filters");
+        PaginationResponse<CartResponse> carts = cartService.getAllCarts(filter);
+        return ResponseEntity.ok(ApiResponse.success("Carts retrieved successfully", carts));
     }
 
     /**
-     * Clear entire cart for business
+     * Get my carts with filtering and pagination
+     * - Customer: Get all my carts across businesses
+     * - Business: Get carts for my business
      */
-    @DeleteMapping("/business/{businessId}")
-    public ResponseEntity<ApiResponse<CartResponse>> clearCart(@PathVariable UUID businessId) {
-        log.info("Clearing cart for business: {}", businessId);
-        CartResponse cart = cartService.clearCart(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Cart cleared successfully", cart));
+    @PostMapping("/my-carts/all")
+    public ResponseEntity<ApiResponse<PaginationResponse<CartResponse>>> getMyCarts(@Valid @RequestBody CartFilterRequest filter) {
+        log.info("Getting my carts for current user");
+        User currentUser = securityUtils.getCurrentUser();
+
+        if (currentUser.isBusinessUser()) {
+            // Business user: filter by their business
+            filter.setBusinessId(currentUser.getBusinessId());
+        } else {
+            // Customer: filter by their user ID
+            filter.setUserId(currentUser.getId());
+        }
+
+        PaginationResponse<CartResponse> carts = cartService.getMyCarts(filter);
+        return ResponseEntity.ok(ApiResponse.success("My carts retrieved successfully", carts));
     }
+
+    @PostMapping("/my-carts/count")
+    public ResponseEntity<ApiResponse<Long>> getMyCartItemsCount(@Valid @RequestBody CartFilterRequest filter) {
+        log.info("Getting cart items count for current user");
+        User currentUser = securityUtils.getCurrentUser();
+
+        filter.setUserId(currentUser.getId());
+
+        Long itemsCount = cartService.getMyCartItemsCount(filter);
+        return ResponseEntity.ok(ApiResponse.success("Cart items count retrieved successfully", itemsCount));
+    }
+
 }
