@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -59,34 +58,11 @@ public class CartController {
         return ResponseEntity.ok(ApiResponse.success("Item removed from cart successfully", cart));
     }
 
-    /**
-     * Get all carts with filtering and pagination (Admin/Business view)
-     */
-    @PostMapping("/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<CartResponse>>> getAllCarts(@Valid @RequestBody CartFilterRequest filter) {
-        log.info("Getting all carts with filters");
-        PaginationResponse<CartResponse> carts = cartService.getAllCarts(filter);
-        return ResponseEntity.ok(ApiResponse.success("Carts retrieved successfully", carts));
-    }
-
-    /**
-     * Get my carts with filtering and pagination
-     * - Customer: Get all my carts across businesses
-     * - Business: Get carts for my business
-     */
     @PostMapping("/my-carts/all")
     public ResponseEntity<ApiResponse<PaginationResponse<CartResponse>>> getMyCarts(@Valid @RequestBody CartFilterRequest filter) {
         log.info("Getting my carts for current user");
         User currentUser = securityUtils.getCurrentUser();
-
-        if (currentUser.isBusinessUser()) {
-            // Business user: filter by their business
-            filter.setBusinessId(currentUser.getBusinessId());
-        } else {
-            // Customer: filter by their user ID
-            filter.setUserId(currentUser.getId());
-        }
-
+        filter.setUserId(currentUser.getId());
         PaginationResponse<CartResponse> carts = cartService.getMyCarts(filter);
         return ResponseEntity.ok(ApiResponse.success("My carts retrieved successfully", carts));
     }

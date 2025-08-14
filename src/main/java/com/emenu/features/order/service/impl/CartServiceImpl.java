@@ -29,6 +29,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,14 +53,15 @@ public class CartServiceImpl implements CartService {
                 request.getProductId(), request.getProductSizeId(), request.getQuantity());
 
         User currentUser = securityUtils.getCurrentUser();
+        UUID userId = currentUser.getId();
 
         // Validate product and get business ID
         UUID businessId = validateProductAndGetBusinessId(request.getProductId(), request.getProductSizeId());
 
-        // Get or create cart for user and business
-        Cart cart = getOrCreateCart(currentUser.getId(), businessId);
+        // Get or create cart for specific user and business
+        Cart cart = getOrCreateUserBusinessCart(userId, businessId);
 
-        // Check if item already exists in cart
+        // Check if item already exists in cart for this user, business, and product
         Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndProductIdAndSizeId(
                 cart.getId(), request.getProductId(), request.getProductSizeId());
 
@@ -66,14 +69,16 @@ public class CartServiceImpl implements CartService {
             CartItem item = existingItem.get();
 
             if (request.getQuantity() == 0) {
-                // Remove item when quantity is 0
+                // HARD DELETE - Remove item completely from database
                 cartItemRepository.delete(item);
-                log.info("Removed cart item: {}", item.getId());
+                log.info("Hard deleted cart item: {} for user: {} and business: {}", 
+                        item.getId(), userId, businessId);
             } else {
-                // Set exact quantity (not add to existing)
+                // Update quantity
                 item.setQuantity(request.getQuantity());
                 cartItemRepository.save(item);
-                log.info("Updated cart item quantity to: {}", item.getQuantity());
+                log.info("Updated cart item quantity to: {} for user: {} and business: {}", 
+                        item.getQuantity(), userId, businessId);
             }
         } else {
             // Only create new item if quantity > 0
@@ -85,13 +90,15 @@ public class CartServiceImpl implements CartService {
                         request.getQuantity()
                 );
                 cartItemRepository.save(newItem);
-                log.info("Added new item to cart with quantity: {}", newItem.getQuantity());
+                log.info("Added new item to cart with quantity: {} for user: {} and business: {}", 
+                        newItem.getQuantity(), userId, businessId);
             } else {
                 log.info("Skipping cart item creation - quantity is 0 and item doesn't exist");
             }
         }
 
-        return getCartResponse(currentUser.getId(), businessId);
+        // Return cart scoped to current user and business
+        return getCartResponseByUserAndBusiness(userId, businessId);
     }
 
     @Override
@@ -99,27 +106,36 @@ public class CartServiceImpl implements CartService {
         log.info("Updating cart item: {} to quantity: {}", request.getCartItemId(), request.getQuantity());
 
         User currentUser = securityUtils.getCurrentUser();
+        UUID userId = currentUser.getId();
 
         CartItem cartItem = cartItemRepository.findByIdAndIsDeletedFalse(request.getCartItemId())
                 .orElseThrow(() -> new NotFoundException("Cart item not found"));
+
+        // Security check: Ensure cart item belongs to current user
+        Cart itemCart = cartItem.getCart();
+        if (!itemCart.getUserId().equals(userId)) {
+            throw new ValidationException("Cart item does not belong to current user");
+        }
+
+        UUID businessId = itemCart.getBusinessId();
 
         // Validate product is still available
         validateProductAvailability(cartItem.getProductId(), cartItem.getProductSizeId());
 
         if (request.getQuantity() == 0) {
-            // HARD DELETE - Remove item from cart completely
+            // HARD DELETE - Remove item from database completely
             cartItemRepository.delete(cartItem);
-            log.info("Hard deleted cart item: {}", request.getCartItemId());
+            log.info("Hard deleted cart item: {} for user: {} and business: {}", 
+                    request.getCartItemId(), userId, businessId);
         } else {
             // Update quantity
             cartItem.setQuantity(request.getQuantity());
             cartItemRepository.save(cartItem);
-            log.info("Updated cart item quantity to: {}", request.getQuantity());
+            log.info("Updated cart item quantity to: {} for user: {} and business: {}", 
+                    request.getQuantity(), userId, businessId);
         }
 
-        // Get business ID from cart item
-        UUID businessId = cartItem.getCart().getBusinessId();
-        return getCartResponse(currentUser.getId(), businessId);
+        return getCartResponseByUserAndBusiness(userId, businessId);
     }
 
     @Override
@@ -127,45 +143,40 @@ public class CartServiceImpl implements CartService {
         log.info("Removing item from cart: {}", cartItemId);
 
         User currentUser = securityUtils.getCurrentUser();
+        UUID userId = currentUser.getId();
 
         CartItem cartItem = cartItemRepository.findByIdAndIsDeletedFalse(cartItemId)
                 .orElseThrow(() -> new NotFoundException("Cart item not found"));
 
-        UUID businessId = cartItem.getCart().getBusinessId();
+        // Security check: Ensure cart item belongs to current user
+        Cart itemCart = cartItem.getCart();
+        if (!itemCart.getUserId().equals(userId)) {
+            throw new ValidationException("Cart item does not belong to current user");
+        }
 
-        // HARD DELETE - Remove item from cart completely
+        UUID businessId = itemCart.getBusinessId();
+
+        // HARD DELETE - Remove item from database completely
         cartItemRepository.delete(cartItem);
+        log.info("Hard deleted cart item: {} for user: {} and business: {}", 
+                cartItemId, userId, businessId);
 
-        log.info("Hard deleted cart item: {}", cartItemId);
-        return getCartResponse(currentUser.getId(), businessId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public PaginationResponse<CartResponse> getAllCarts(CartFilterRequest filter) {
-
-        Specification<Cart> spec = CartSpecification.buildSpecification(filter);
-
-        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
-        Pageable pageable = PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
-        );
-
-        Page<Cart> cartPage = cartRepository.findAll(spec, pageable);
-
-        // Filter out unavailable items from each cart
-        cartPage.getContent().forEach(cart -> {
-            if (cart.getItems() != null) {
-                cart.getItems().removeIf(item -> !item.isAvailable());
-            }
-        });
-
-        return cartMapper.toPaginationResponse(cartPage);
+        return getCartResponseByUserAndBusiness(userId, businessId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<CartResponse> getMyCarts(CartFilterRequest filter) {
+        User currentUser = securityUtils.getCurrentUser();
+        UUID userId = currentUser.getId();
+
+        // Force filter to current user
+        filter.setUserId(userId);
+
+        // If business user, also filter by their business
+        if (currentUser.isBusinessUser()) {
+            filter.setBusinessId(currentUser.getBusinessId());
+        }
 
         Specification<Cart> spec = CartSpecification.buildSpecification(filter);
 
@@ -177,11 +188,7 @@ public class CartServiceImpl implements CartService {
         Page<Cart> cartPage = cartRepository.findAll(spec, pageable);
 
         // Filter out unavailable items from each cart
-        cartPage.getContent().forEach(cart -> {
-            if (cart.getItems() != null) {
-                cart.getItems().removeIf(item -> !item.isAvailable());
-            }
-        });
+        cartPage.getContent().forEach(this::filterUnavailableItems);
 
         return cartMapper.toPaginationResponse(cartPage);
     }
@@ -189,18 +196,19 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional(readOnly = true)
     public Long getMyCartItemsCount(CartFilterRequest filter) {
-        log.info("Getting cart items count with filter: userId={}, businessId={}", filter.getUserId(), filter.getBusinessId());
-
-        Long count = 0L;
+        User currentUser = securityUtils.getCurrentUser();
+        UUID userId = currentUser.getId();
+        
+        log.info("Getting cart items count for user: {} and business: {}", userId, filter.getBusinessId());
 
         try {
-
-            count = cartRepository.countItemsByUserIdAndBusinessId(filter.getUserId(), filter.getBusinessId());
-            log.info("Cart items count: {}", count);
+            // Always filter by current user ID
+            Long count = cartRepository.countItemsByUserIdAndBusinessId(userId, filter.getBusinessId());
+            log.info("Cart items count: {} for user: {} and business: {}", count, userId, filter.getBusinessId());
             return count != null ? count : 0L;
-
         } catch (Exception e) {
-            log.error("Error counting cart items: {}", e.getMessage(), e);
+            log.error("Error counting cart items for user: {} and business: {}: {}", 
+                    userId, filter.getBusinessId(), e.getMessage(), e);
             return 0L;
         }
     }
@@ -250,30 +258,33 @@ public class CartServiceImpl implements CartService {
         if (!product.isActive()) {
             throw new ValidationException("Product is no longer available");
         }
-        // Note: OUT_OF_STOCK products can still be added to cart for future purchase
     }
 
-    private Cart getOrCreateCart(UUID userId, UUID businessId) {
+    private Cart getOrCreateUserBusinessCart(UUID userId, UUID businessId) {
         Optional<Cart> existingCart = cartRepository.findByUserIdAndBusinessIdAndIsDeletedFalse(userId, businessId);
 
         if (existingCart.isPresent()) {
             return existingCart.get();
         }
 
-        // Create new cart
+        // Create new cart for user and business
         Cart newCart = new Cart();
         newCart.setUserId(userId);
         newCart.setBusinessId(businessId);
-        return cartRepository.save(newCart);
+        Cart savedCart = cartRepository.save(newCart);
+        
+        log.info("Created new cart for user: {} and business: {}", userId, businessId);
+        return savedCart;
     }
 
-    private CartResponse getCartResponse(UUID userId, UUID businessId) {
+    private CartResponse getCartResponseByUserAndBusiness(UUID userId, UUID businessId) {
         Optional<Cart> cartOpt = cartRepository.findByUserIdAndBusinessIdWithItems(userId, businessId);
 
         if (cartOpt.isPresent()) {
             Cart cart = cartOpt.get();
 
-            cart.getItems().removeIf(item -> !item.isAvailable());
+            // Filter out unavailable items when returning response
+            filterUnavailableItems(cart);
 
             return cartMapper.toResponse(cart);
         }
@@ -285,5 +296,199 @@ public class CartServiceImpl implements CartService {
         emptyCart.setTotalItems(0);
         emptyCart.setUnavailableItems(0);
         return emptyCart;
+    }
+
+    /**
+     * Filter out unavailable items from cart for response
+     * This only filters the in-memory cart items, doesn't delete from database
+     */
+    private void filterUnavailableItems(Cart cart) {
+        if (cart.getItems() == null || cart.getItems().isEmpty()) {
+            return;
+        }
+
+        // Create new list with only available items for response
+        List<CartItem> availableItems = new ArrayList<>();
+        
+        for (CartItem item : cart.getItems()) {
+            if (isCartItemAvailable(item)) {
+                availableItems.add(item);
+            }
+        }
+        
+        // Set the filtered items back to cart
+        cart.setItems(availableItems);
+    }
+
+    /**
+     * Check if cart item is available (product is active and not deleted)
+     */
+    private boolean isCartItemAvailable(CartItem cartItem) {
+        try {
+            // Check product availability
+            Product product = cartItem.getProduct();
+            if (product == null) {
+                // Load product if not loaded
+                Optional<Product> productOpt = productRepository.findByIdAndIsDeletedFalse(cartItem.getProductId());
+                if (productOpt.isEmpty()) {
+                    return false;
+                }
+                product = productOpt.get();
+            }
+            
+            // Check if product is deleted or inactive
+            if (product.getIsDeleted() || !product.isActive()) {
+                return false;
+            }
+
+            // If cart item has product size, check size availability too
+            if (cartItem.getProductSizeId() != null) {
+                ProductSize productSize = cartItem.getProductSize();
+                if (productSize == null) {
+                    // Load product size if not loaded
+                    Optional<ProductSize> sizeOpt = productSizeRepository.findById(cartItem.getProductSizeId());
+                    if (sizeOpt.isEmpty()) {
+                        return false;
+                    }
+                    productSize = sizeOpt.get();
+                }
+                
+                // Check if product size is deleted
+                return !productSize.getIsDeleted();
+            }
+
+            return true;
+        } catch (Exception e) {
+            log.error("Error checking cart item availability for item {}: {}", cartItem.getId(), e.getMessage());
+            return false; // If there's an error, consider item unavailable
+        }
+    }
+
+    /**
+     * Get cart by user and business - with security validation
+     */
+    public CartResponse getCartByUserAndBusiness(UUID userId, UUID businessId) {
+        User currentUser = securityUtils.getCurrentUser();
+        
+        // Security check: Ensure user can only access their own cart
+        if (!currentUser.getId().equals(userId)) {
+            throw new ValidationException("Cannot access cart of another user");
+        }
+
+        log.info("Getting cart for user: {} and business: {}", userId, businessId);
+        return getCartResponseByUserAndBusiness(userId, businessId);
+    }
+
+    /**
+     * Clear cart for user and business (hard delete all items)
+     */
+    public CartResponse clearCart(UUID userId, UUID businessId) {
+        User currentUser = securityUtils.getCurrentUser();
+        
+        // Security check: Ensure user can only clear their own cart
+        if (!currentUser.getId().equals(userId)) {
+            throw new ValidationException("Cannot clear cart of another user");
+        }
+
+        log.info("Clearing cart for user: {} and business: {}", userId, businessId);
+
+        Optional<Cart> cartOpt = cartRepository.findByUserIdAndBusinessIdWithItems(userId, businessId);
+        if (cartOpt.isPresent()) {
+            Cart cart = cartOpt.get();
+            if (cart.getItems() != null && !cart.getItems().isEmpty()) {
+                // HARD DELETE - Remove all items from database
+                cartItemRepository.deleteAll(cart.getItems());
+                log.info("Hard deleted {} cart items for user: {} and business: {}", 
+                        cart.getItems().size(), userId, businessId);
+            }
+        }
+
+        return getCartResponseByUserAndBusiness(userId, businessId);
+    }
+
+    /**
+     * Get all carts for a specific business (business owner view)
+     */
+    @Transactional(readOnly = true)
+    public PaginationResponse<CartResponse> getBusinessCarts(UUID businessId, CartFilterRequest filter) {
+        User currentUser = securityUtils.getCurrentUser();
+        
+        // Security check: Business user can only access their own business carts
+        if (currentUser.isBusinessUser() && !currentUser.getBusinessId().equals(businessId)) {
+            throw new ValidationException("Cannot access carts of another business");
+        }
+
+        log.info("Getting carts for business: {}", businessId);
+
+        filter.setBusinessId(businessId);
+        
+        Specification<Cart> spec = CartSpecification.buildSpecification(filter);
+
+        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
+        Pageable pageable = PaginationUtils.createPageable(
+                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+        );
+
+        Page<Cart> cartPage = cartRepository.findAll(spec, pageable);
+
+        // Filter out unavailable items from each cart
+        cartPage.getContent().forEach(cart -> {
+            filterUnavailableItems(cart);
+        });
+
+        return cartMapper.toPaginationResponse(cartPage);
+    }
+
+    /**
+     * Get cart statistics for user
+     */
+    @Transactional(readOnly = true)
+    public CartStats getCartStats(UUID userId) {
+        User currentUser = securityUtils.getCurrentUser();
+        
+        // Security check: User can only get their own stats
+        if (!currentUser.getId().equals(userId)) {
+            throw new ValidationException("Cannot access cart stats of another user");
+        }
+
+        try {
+            // Count active cart items across all businesses for this user
+            long totalItems = cartRepository.findAll().stream()
+                    .filter(cart -> cart.getUserId().equals(userId) && !cart.getIsDeleted())
+                    .mapToLong(cart -> cart.getItems() != null ? cart.getItems().size() : 0)
+                    .sum();
+
+            // Count unique businesses in user's carts
+            long uniqueBusinesses = cartRepository.findAll().stream()
+                    .filter(cart -> cart.getUserId().equals(userId) && !cart.getIsDeleted())
+                    .filter(cart -> cart.getItems() != null && !cart.getItems().isEmpty())
+                    .map(Cart::getBusinessId)
+                    .distinct()
+                    .count();
+
+            return new CartStats(totalItems, uniqueBusinesses);
+        } catch (Exception e) {
+            log.error("Error getting cart stats for user {}: {}", userId, e.getMessage(), e);
+            return new CartStats(0, 0);
+        }
+    }
+
+    /**
+     * Statistics holder class
+     */
+    public static class CartStats {
+        public final long totalItems;
+        public final long uniqueBusinesses;
+
+        public CartStats(long totalItems, long uniqueBusinesses) {
+            this.totalItems = totalItems;
+            this.uniqueBusinesses = uniqueBusinesses;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("CartStats{totalItems=%d, uniqueBusinesses=%d}", 
+                    totalItems, uniqueBusinesses);
+        }
     }
 }

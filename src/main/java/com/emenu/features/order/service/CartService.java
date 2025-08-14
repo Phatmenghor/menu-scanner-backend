@@ -16,9 +16,6 @@ public interface CartService {
     CartResponse updateCartItem(CartUpdateRequest request);
     CartResponse removeFromCart(UUID cartItemId);
 
-    // Multiple carts operations with pagination
-    PaginationResponse<CartResponse> getAllCarts(CartFilterRequest filter);
-
     // My carts with filtering and pagination
     PaginationResponse<CartResponse> getMyCarts(CartFilterRequest filter);
     Long getMyCartItemsCount(CartFilterRequest filter);
