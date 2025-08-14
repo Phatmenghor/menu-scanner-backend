@@ -26,16 +26,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE p.id = :id AND p.isDeleted = false")
     Optional<Product> findByIdWithDetails(@Param("id") UUID id);
     
-    @Query("SELECT p FROM Product p " +
-           "WHERE p.id = :id AND p.isDeleted = false")
-    Optional<Product> findByIdBasic(@Param("id") UUID id);
-    
     Optional<Product> findByIdAndIsDeletedFalse(UUID id);
-    
-    @Query("SELECT DISTINCT p FROM Product p " +
-           "LEFT JOIN FETCH p.images " +
-           "WHERE p.id = :id AND p.isDeleted = false")
-    Optional<Product> findByIdWithImages(@Param("id") UUID id);
     
     @Query("SELECT DISTINCT p FROM Product p " +
            "LEFT JOIN FETCH p.sizes " +
@@ -75,4 +66,5 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     
     @Query("SELECT COUNT(p) FROM Product p WHERE p.brandId = :brandId AND p.isDeleted = false")
     long countByBrandId(@Param("brandId") UUID brandId);
+
 }

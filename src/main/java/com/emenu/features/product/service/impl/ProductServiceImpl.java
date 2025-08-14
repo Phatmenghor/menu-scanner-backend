@@ -1,13 +1,10 @@
 package com.emenu.features.product.service.impl;
 
-import com.emenu.enums.product.PromotionType;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.product.dto.filter.ProductFilterRequest;
 import com.emenu.features.product.dto.request.ProductCreateRequest;
-import com.emenu.features.product.dto.request.ProductImageRequest;
-import com.emenu.features.product.dto.request.ProductSizeRequest;
 import com.emenu.features.product.dto.response.*;
 import com.emenu.features.product.dto.update.ProductUpdateRequest;
 import com.emenu.features.product.mapper.*;
@@ -33,7 +30,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +48,10 @@ public class ProductServiceImpl implements ProductService {
     private final PromotionResponseMapper promotionMapper;
     private final SecurityUtils securityUtils;
 
+    // ================================
+    // CRUD OPERATIONS
+    // ================================
+
     @Override
     public ProductResponse createProduct(ProductCreateRequest request) {
         log.info("Creating product: {}", request.getName());
@@ -59,14 +59,28 @@ public class ProductServiceImpl implements ProductService {
         User currentUser = securityUtils.getCurrentUser();
         validateUserBusinessAssociation(currentUser);
 
+        // Create product entity
         Product product = productMapper.toEntity(request);
         product.setBusinessId(currentUser.getBusinessId());
-
         Product savedProduct = productRepository.save(product);
-        createProductSizes(savedProduct.getId(), request.getSizes());
-        createProductImages(savedProduct.getId(), request.getImages());
 
-        log.info("Product created successfully: {} for business: {}", savedProduct.getName(), currentUser.getBusinessId());
+        // Handle sizes with enhanced mapper
+        if (request.getSizes() != null && !request.getSizes().isEmpty()) {
+            ProductSizeMapper.SizeCreationResult sizeResult = 
+                    productSizeMapper.processSizeCreation(request.getSizes(), savedProduct.getId());
+            productSizeRepository.saveAll(sizeResult.sizes);
+        }
+
+        // Handle images with enhanced mapper
+        if (request.getImages() != null && !request.getImages().isEmpty()) {
+            ProductImageMapper.ImageCreationResult imageResult = 
+                    productImageMapper.processImageCreation(request.getImages(), savedProduct.getId());
+            productImageRepository.saveAll(imageResult.images);
+        }
+
+        log.info("Product created successfully: {} for business: {}", 
+                savedProduct.getName(), currentUser.getBusinessId());
+        
         return getProductById(savedProduct.getId());
     }
 
@@ -80,15 +94,24 @@ public class ProductServiceImpl implements ProductService {
 
         Specification<Product> spec = ProductSpecification.buildSpecification(filter);
         Pageable pageable = createPageable(filter);
-
         Page<Product> productPage = productRepository.findAll(spec, pageable);
+        
+        // Load collections and convert to response
         List<Product> productsWithCollections = productPage.getContent().stream()
                 .map(this::loadProductCollections)
                 .toList();
 
-        PaginationResponse<ProductResponse> response = productMapper.toPaginationResponse(productPage);
-        setFavoriteStatusForUser(response.getContent());
-        return response;
+        // Use enhanced mapper to convert to response with sorting
+        List<ProductResponse> responses = productsWithCollections.stream()
+                .map(productMapper::toResponse)
+                .toList();
+
+        // Enrich with user-specific data
+        responses = productMapper.enrichWithUserData(responses, this::isProductFavorited);
+
+        PaginationResponse<ProductResponse> paginationResponse = productMapper.toPaginationResponse(productPage);
+        paginationResponse.setContent(responses);
+        return paginationResponse;
     }
 
     @Override
@@ -96,8 +119,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getProductById(UUID id) {
         Product product = findProductByIdWithDetails(id);
         ProductResponse response = productMapper.toResponse(product);
-        setFavoriteStatusForUser(List.of(response));
-        return response;
+        return productMapper.enrichWithUserData(response, this::isProductFavorited);
     }
 
     @Override
@@ -106,37 +128,56 @@ public class ProductServiceImpl implements ProductService {
         Product product = findProductByIdWithDetails(id);
         productRepository.incrementViewCount(id);
         ProductResponse response = productMapper.toResponse(product);
-        setFavoriteStatusForUser(List.of(response));
-        return response;
+        return productMapper.enrichWithUserData(response, this::isProductFavorited);
     }
 
     @Override
-    @Transactional
     public ProductResponse updateProduct(UUID id, ProductUpdateRequest request) {
         log.info("Updating product: {}", id);
 
         Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
-        // Update sizes with proper CRUD logic
+        User currentUser = securityUtils.getCurrentUser();
+        validateBusinessOwnership(product, currentUser);
+
+        // Update sizes with enhanced mapper
         if (request.getSizes() != null) {
-            updateProductSizes(product, request.getSizes());
-            // Flush to ensure size changes are persisted
+            List<ProductSize> existingSizes = loadProductSizes(product.getId());
+            ProductSizeMapper.SizeUpdateResult sizeResult = 
+                    productSizeMapper.processSizeUpdate(request.getSizes(), existingSizes, product.getId());
+            
+            // Delete removed sizes
+            if (!sizeResult.sizesToDelete.isEmpty()) {
+                sizeResult.sizesToDelete.forEach(sizeId -> 
+                        productSizeRepository.findById(sizeId).ifPresent(productSizeRepository::delete));
+            }
+            
+            // Save updated/new sizes
+            productSizeRepository.saveAll(sizeResult.sizes);
             productSizeRepository.flush();
         }
 
-        // Update images with smart MAIN logic
+        // Update images with enhanced mapper
         if (request.getImages() != null) {
-            updateProductImages(product, request.getImages());
-            // Flush to ensure image changes are persisted
+            List<ProductImage> existingImages = loadProductImages(product.getId());
+            ProductImageMapper.ImageUpdateResult imageResult = 
+                    productImageMapper.processImageUpdate(request.getImages(), existingImages, product.getId());
+            
+            // Delete removed images
+            if (!imageResult.imagesToDelete.isEmpty()) {
+                imageResult.imagesToDelete.forEach(imageId -> 
+                        productImageRepository.findById(imageId).ifPresent(productImageRepository::delete));
+            }
+            
+            // Save updated/new images
+            productImageRepository.saveAll(imageResult.images);
             productImageRepository.flush();
         }
 
         // Update product basic fields
         productMapper.updateEntity(request, product);
         Product updatedProduct = productRepository.save(product);
-        
-        // Flush all changes before returning
         productRepository.flush();
 
         log.info("Product updated successfully: {}", id);
@@ -146,6 +187,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponse deleteProduct(UUID id) {
         Product product = findProductByIdWithDetails(id);
+        User currentUser = securityUtils.getCurrentUser();
+        validateBusinessOwnership(product, currentUser);
+        
         product.softDelete();
         product = productRepository.save(product);
 
@@ -166,8 +210,16 @@ public class ProductServiceImpl implements ProductService {
         validateBusinessOwnership(product, currentUser);
         
         boolean productHadPromotion = product.isPromotionActive();
-        int sizesWithPromotions = resetProductSizes(product);
         
+        // Reset size promotions using enhanced mapper
+        List<ProductSize> sizes = loadProductSizes(productId);
+        long sizesWithPromotions = productSizeMapper.countActivePromotions(sizes);
+        productSizeMapper.removeAllPromotions(sizes);
+        if (!sizes.isEmpty()) {
+            productSizeRepository.saveAll(sizes);
+        }
+        
+        // Reset product-level promotion
         product.removePromotion();
         productRepository.save(product);
         
@@ -175,7 +227,7 @@ public class ProductServiceImpl implements ProductService {
                 productId, productHadPromotion, sizesWithPromotions);
         
         return promotionMapper.createProductResetResponse(
-                product, currentUser.getBusinessId(), productHadPromotion, sizesWithPromotions);
+                product, currentUser.getBusinessId(), productHadPromotion, (int) sizesWithPromotions);
     }
 
     @Override
@@ -186,13 +238,15 @@ public class ProductServiceImpl implements ProductService {
         validateUserBusinessAssociation(currentUser);
         validateBusinessOwnership(product, currentUser);
         
-        ProductSize productSize = findSizeInProduct(product, sizeId);
+        ProductSize productSize = productSizeRepository.findByIdAndIsDeletedFalse(sizeId)
+                .orElseThrow(() -> new NotFoundException("Size not found"));
         
-        boolean hadPromotion = productSize.isPromotionActive();
+        boolean hadPromotion = productSizeMapper.isPromotionActive(productSize);
         String originalPromotionType = productSize.getPromotionType() != null ? 
                 productSize.getPromotionType().name() : null;
         
-        productSize.removePromotion();
+        // Remove promotion using mapper utility
+        productSizeMapper.removeAllPromotions(List.of(productSize));
         productSizeRepository.save(productSize);
         
         log.info("Reset promotion for size {} ({}) of product {} for business {}", 
@@ -273,8 +327,10 @@ public class ProductServiceImpl implements ProductService {
                 .map(this::loadProductCollections)
                 .toList();
         
-        List<ProductResponse> responses = productMapper.toResponseList(products);
-        responses.forEach(response -> response.setIsFavorited(true));
+        List<ProductResponse> responses = products.stream()
+                .map(productMapper::toResponse)
+                .peek(response -> response.setIsFavorited(true))
+                .toList();
 
         return PaginationResponse.<ProductResponse>builder()
                 .content(responses)
@@ -306,295 +362,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ================================
-    // SIZES CRUD OPERATIONS
-    // ================================
-
-    private void updateProductSizes(Product product, List<ProductSizeRequest> sizeRequests) {
-        log.debug("Updating sizes for product {}: {} sizes provided", product.getId(), sizeRequests.size());
-
-        if (sizeRequests.isEmpty()) {
-            log.debug("Empty sizes list provided, deleting all existing sizes");
-            productSizeRepository.deleteByProductIdAndIsDeletedFalse(product.getId());
-            productSizeRepository.flush(); // Ensure deletion is completed
-            return;
-        }
-
-        // Get current sizes fresh from database to avoid entity state issues
-        List<ProductSize> currentSizes = product.getSizes() != null ? 
-                new ArrayList<>(product.getSizes()) : new ArrayList<>();
-        
-        Set<UUID> requestedIds = sizeRequests.stream()
-                .map(ProductSizeRequest::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        // Delete sizes not in request
-        List<UUID> sizesToDeleteIds = currentSizes.stream()
-                .map(ProductSize::getId)
-                .filter(id -> !requestedIds.contains(id))
-                .toList();
-
-        if (!sizesToDeleteIds.isEmpty()) {
-            log.debug("Deleting {} sizes not in request", sizesToDeleteIds.size());
-            // Delete by IDs to avoid entity state issues
-            sizesToDeleteIds.forEach(id -> {
-                productSizeRepository.findById(id).ifPresent(productSizeRepository::delete);
-            });
-            productSizeRepository.flush(); // Ensure deletions are completed
-        }
-
-        // Process each size request
-        for (ProductSizeRequest sizeRequest : sizeRequests) {
-            if (sizeRequest.getId() != null) {
-                // Find existing size fresh from database
-                Optional<ProductSize> existingSizeOpt = productSizeRepository.findById(sizeRequest.getId());
-
-                if (existingSizeOpt.isPresent()) {
-                    updateExistingSize(existingSizeOpt.get(), sizeRequest);
-                } else {
-                    createNewSize(product.getId(), sizeRequest);
-                }
-            } else {
-                createNewSize(product.getId(), sizeRequest);
-            }
-        }
-    }
-
-    private void updateExistingSize(ProductSize existingSize, ProductSizeRequest request) {
-        existingSize.setName(request.getName());
-        existingSize.setPrice(request.getPrice());
-        
-        if (request.getPromotionType() != null) {
-            try {
-                existingSize.setPromotionType(PromotionType.valueOf(request.getPromotionType().toUpperCase()));
-                existingSize.setPromotionValue(request.getPromotionValue());
-                existingSize.setPromotionFromDate(request.getPromotionFromDate());
-                existingSize.setPromotionToDate(request.getPromotionToDate());
-            } catch (IllegalArgumentException e) {
-                throw new ValidationException("Invalid promotion type: " + request.getPromotionType());
-            }
-        } else {
-            existingSize.removePromotion();
-        }
-        
-        productSizeRepository.save(existingSize);
-    }
-
-    private void createNewSize(UUID productId, ProductSizeRequest request) {
-        ProductSize productSize = productSizeMapper.toEntity(request);
-        productSize.setProductId(productId);
-
-        if (request.getPromotionType() != null) {
-            try {
-                productSize.setPromotionType(PromotionType.valueOf(request.getPromotionType().toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                throw new ValidationException("Invalid promotion type: " + request.getPromotionType());
-            }
-        }
-
-        productSizeRepository.save(productSize);
-    }
-
-    private void createProductSizes(UUID productId, List<ProductSizeRequest> sizeRequests) {
-        if (sizeRequests == null || sizeRequests.isEmpty()) {
-            return;
-        }
-
-        for (ProductSizeRequest sizeRequest : sizeRequests) {
-            createNewSize(productId, sizeRequest);
-        }
-    }
-
-    // ================================
-    // IMAGES CRUD OPERATIONS WITH SMART MAIN LOGIC
-    // ================================
-
-    private void updateProductImages(Product product, List<ProductImageRequest> imageRequests) {
-        log.debug("Updating images for product {}: {} images provided", product.getId(), imageRequests.size());
-
-        if (imageRequests.isEmpty()) {
-            productImageRepository.deleteByProductIdAndIsDeletedFalse(product.getId());
-            productImageRepository.flush(); // Ensure deletion is completed
-            return;
-        }
-
-        boolean isSingleImage = imageRequests.size() == 1;
-        
-        // Get current images fresh from database to avoid entity state issues
-        List<ProductImage> currentImages = productImageRepository.findByProductIdOrderByMainAndSort(product.getId());
-        
-        Set<UUID> requestedIds = imageRequests.stream()
-                .map(ProductImageRequest::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        // Delete images not in request
-        List<UUID> imagesToDeleteIds = currentImages.stream()
-                .map(ProductImage::getId)
-                .filter(id -> !requestedIds.contains(id))
-                .toList();
-
-        if (!imagesToDeleteIds.isEmpty()) {
-            log.debug("Deleting {} images not in request", imagesToDeleteIds.size());
-            // Delete by IDs to avoid entity state issues
-            imagesToDeleteIds.forEach(id -> {
-                productImageRepository.findById(id).ifPresent(productImageRepository::delete);
-            });
-            productImageRepository.flush(); // Ensure deletions are completed
-        }
-
-        boolean hasMainSet = false;
-
-        // Process each image request
-        for (ProductImageRequest imageRequest : imageRequests) {
-            if (imageRequest.getId() != null) {
-                // Find existing image fresh from database
-                Optional<ProductImage> existingImageOpt = productImageRepository.findById(imageRequest.getId());
-                
-                if (existingImageOpt.isPresent()) {
-                    hasMainSet = updateExistingImageSmart(existingImageOpt.get(), imageRequest, hasMainSet, isSingleImage) || hasMainSet;
-                } else {
-                    hasMainSet = createNewImageSmart(product.getId(), imageRequest, hasMainSet, isSingleImage) || hasMainSet;
-                }
-            } else {
-                hasMainSet = createNewImageSmart(product.getId(), imageRequest, hasMainSet, isSingleImage) || hasMainSet;
-            }
-        }
-
-        if (!isSingleImage && !hasMainSet) {
-            ensureMainImageExists(product.getId());
-        }
-    }
-
-    private boolean updateExistingImageSmart(ProductImage existingImage, ProductImageRequest request, 
-                                           boolean hasMainAlreadySet, boolean isSingleImage) {
-        existingImage.setImageUrl(request.getImageUrl());
-        
-        if (isSingleImage) {
-            existingImage.setAsMain();
-            productImageRepository.save(existingImage);
-            return true;
-        } else {
-            if ("MAIN".equalsIgnoreCase(request.getImageType())) {
-                if (!hasMainAlreadySet) {
-                    existingImage.setAsMain();
-                    productImageRepository.save(existingImage);
-                    return true;
-                } else {
-                    existingImage.setAsGallery();
-                }
-            } else {
-                existingImage.setAsGallery();
-            }
-            
-            productImageRepository.save(existingImage);
-            return false;
-        }
-    }
-
-    private boolean createNewImageSmart(UUID productId, ProductImageRequest request, 
-                                      boolean hasMainAlreadySet, boolean isSingleImage) {
-        ProductImage productImage = productImageMapper.toEntity(request);
-        productImage.setProductId(productId);
-
-        if (isSingleImage) {
-            productImage.setAsMain();
-            productImageRepository.save(productImage);
-            return true;
-        } else {
-            if ("MAIN".equalsIgnoreCase(request.getImageType())) {
-                if (!hasMainAlreadySet) {
-                    productImage.setAsMain();
-                    productImageRepository.save(productImage);
-                    return true;
-                } else {
-                    productImage.setAsGallery();
-                }
-            } else {
-                productImage.setAsGallery();
-            }
-            
-            productImageRepository.save(productImage);
-            return false;
-        }
-    }
-
-    private void createProductImages(UUID productId, List<ProductImageRequest> imageRequests) {
-        if (imageRequests == null || imageRequests.isEmpty()) {
-            return;
-        }
-
-        boolean isSingleImage = imageRequests.size() == 1;
-        boolean hasMainImageSet = false;
-
-        for (ProductImageRequest imageRequest : imageRequests) {
-            ProductImage productImage = productImageMapper.toEntity(imageRequest);
-            productImage.setProductId(productId);
-
-            if (isSingleImage) {
-                productImage.setAsMain();
-                hasMainImageSet = true;
-            } else {
-                if ("MAIN".equalsIgnoreCase(imageRequest.getImageType())) {
-                    if (!hasMainImageSet) {
-                        productImage.setAsMain();
-                        hasMainImageSet = true;
-                    } else {
-                        productImage.setAsGallery();
-                    }
-                } else {
-                    productImage.setAsGallery();
-                }
-            }
-
-            productImageRepository.save(productImage);
-        }
-
-        if (!isSingleImage && !hasMainImageSet) {
-            setFirstImageAsMain(productId);
-        }
-    }
-
-    private void ensureMainImageExists(UUID productId) {
-        List<ProductImage> images = productImageRepository.findByProductIdOrderByMainAndSort(productId);
-        
-        if (images.isEmpty()) {
-            return;
-        }
-
-        List<ProductImage> mainImages = images.stream()
-                .filter(ProductImage::isMain)
-                .toList();
-
-        if (mainImages.isEmpty()) {
-            setFirstImageAsMain(productId);
-        } else if (mainImages.size() > 1) {
-            fixMultipleMainImages(mainImages);
-        }
-    }
-
-    private void setFirstImageAsMain(UUID productId) {
-        List<ProductImage> images = productImageRepository.findByProductIdOrderByMainAndSort(productId);
-        if (!images.isEmpty()) {
-            ProductImage firstImage = images.get(0);
-            firstImage.setAsMain();
-            productImageRepository.save(firstImage);
-        }
-    }
-
-    private void fixMultipleMainImages(List<ProductImage> mainImages) {
-        if (mainImages.size() <= 1) {
-            return;
-        }
-
-        for (int i = 1; i < mainImages.size(); i++) {
-            ProductImage image = mainImages.get(i);
-            image.setAsGallery();
-            productImageRepository.save(image);
-        }
-    }
-
-    // ================================
     // HELPER METHODS
     // ================================
 
@@ -605,11 +372,25 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Product loadProductCollections(Product product) {
-        productRepository.findByIdWithImages(product.getId())
-                .ifPresent(p -> product.setImages(p.getImages()));
-        productRepository.findByIdWithSizes(product.getId())
-                .ifPresent(p -> product.setSizes(p.getSizes()));
+        // Load images with sorting
+        List<ProductImage> images = loadProductImages(product.getId());
+        product.setImages(productImageMapper.getSortedImages(images));
+        
+        // Load sizes with sorting
+        List<ProductSize> sizes = loadProductSizes(product.getId());
+        product.setSizes(productSizeMapper.getSortedSizes(sizes));
+        
         return product;
+    }
+
+    private List<ProductImage> loadProductImages(UUID productId) {
+        return productImageRepository.findByProductIdOrderByMainAndSort(productId);
+    }
+
+    private List<ProductSize> loadProductSizes(UUID productId) {
+        return productRepository.findByIdWithSizes(productId)
+                .map(Product::getSizes)
+                .orElse(List.of());
     }
 
     private void validateUserBusinessAssociation(User user) {
@@ -624,33 +405,6 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
-    private ProductSize findSizeInProduct(Product product, UUID sizeId) {
-        return product.getSizes().stream()
-                .filter(size -> size.getId().equals(sizeId))
-                .findFirst()
-                .orElseThrow(() -> new ValidationException("Size not found in this product"));
-    }
-
-    private int resetProductSizes(Product product) {
-        if (product.getSizes() == null || product.getSizes().isEmpty()) {
-            return 0;
-        }
-
-        int sizesWithPromotions = 0;
-        for (ProductSize size : product.getSizes()) {
-            if (size.isPromotionActive()) {
-                sizesWithPromotions++;
-                size.removePromotion();
-            }
-        }
-        
-        if (sizesWithPromotions > 0) {
-            productSizeRepository.saveAll(product.getSizes());
-        }
-        
-        return sizesWithPromotions;
-    }
-
     private Pageable createPageable(ProductFilterRequest filter) {
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         return PaginationUtils.createPageable(
@@ -658,16 +412,13 @@ public class ProductServiceImpl implements ProductService {
         );
     }
 
-    private void setFavoriteStatusForUser(List<ProductResponse> products) {
+    private boolean isProductFavorited(UUID productId) {
         try {
             User currentUser = securityUtils.getCurrentUser();
-            for (ProductResponse product : products) {
-                boolean isFavorited = productFavoriteRepository.existsByUserIdAndProductId(
-                        currentUser.getId(), product.getId());
-                product.setIsFavorited(isFavorited);
-            }
+            return productFavoriteRepository.existsByUserIdAndProductId(
+                    currentUser.getId(), productId);
         } catch (Exception e) {
-            products.forEach(product -> product.setIsFavorited(false));
+            return false;
         }
     }
 }

@@ -17,5 +17,4 @@ public class DeliveryOptionFilterRequest extends BaseFilterRequest {
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
     private Boolean isDefault;
-    private Boolean isActive;
 }

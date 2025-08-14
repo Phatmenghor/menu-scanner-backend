@@ -15,8 +15,6 @@ import java.util.UUID;
 public interface ProductSizeRepository extends JpaRepository<ProductSize, UUID> {
     
     Optional<ProductSize> findByIdAndIsDeletedFalse(UUID id);
-    
-    void deleteByProductIdAndIsDeletedFalse(UUID productId);
 
     @Modifying
     @Query("UPDATE ProductSize ps SET ps.promotionType = NULL, ps.promotionValue = NULL, " +

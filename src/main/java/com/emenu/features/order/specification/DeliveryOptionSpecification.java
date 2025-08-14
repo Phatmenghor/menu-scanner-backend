@@ -31,11 +31,6 @@ public class DeliveryOptionSpecification {
                 predicates.add(root.get("status").in(filter.getStatuses()));
             }
 
-            // Active shortcut filter
-            if (filter.getIsActive() != null && filter.getIsActive()) {
-                predicates.add(criteriaBuilder.equal(root.get("status"), Status.ACTIVE));
-            }
-
             // Price range filter
             if (filter.getMinPrice() != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(
