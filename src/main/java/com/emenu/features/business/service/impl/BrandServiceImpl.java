@@ -64,12 +64,6 @@ public class BrandServiceImpl implements BrandService {
     @Transactional(readOnly = true)
     public PaginationResponse<BrandResponse> getAllBrands(BrandFilterRequest filter) {
         
-        // Security: Business users can only see brands from their business
-        User currentUser = securityUtils.getCurrentUser();
-        if (currentUser.isBusinessUser() && filter.getBusinessId() == null) {
-            filter.setBusinessId(currentUser.getBusinessId());
-        }
-        
         Specification<Brand> spec = BrandSpecification.buildSpecification(filter);
         
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;

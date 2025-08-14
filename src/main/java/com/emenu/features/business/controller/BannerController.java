@@ -54,20 +54,10 @@ public class BannerController {
     @PostMapping("/my-business/all")
     public ResponseEntity<ApiResponse<PaginationResponse<BannerResponse>>> getMyBusinessAllBanners(@Valid @RequestBody BannerFilterRequest filter) {
         log.info("Getting my banners for current user's business");
-        UUID getCurrentUserId = securityUtils.getCurrentUserId();
-        filter.setBusinessId(getCurrentUserId);
+        User currentUser = securityUtils.getCurrentUser();
+        filter.setBusinessId(currentUser.getBusinessId());
         PaginationResponse<BannerResponse> banners = bannerService.getAllBanners(filter);
         return ResponseEntity.ok(ApiResponse.success("Banners retrieved successfully", banners));
-    }
-
-    /**
-     * Get my business banners
-     */
-    @PostMapping("/my-business")
-    public ResponseEntity<ApiResponse<PaginationResponse<BannerResponse>>> getMyBusinessBanners(@Valid @RequestBody BannerFilterRequest filter) {
-        log.info("Getting banners for current user's business");
-        PaginationResponse<BannerResponse> banners = bannerService.getAllBanners(filter);
-        return ResponseEntity.ok(ApiResponse.success("Business banners retrieved successfully", banners));
     }
 
     /**

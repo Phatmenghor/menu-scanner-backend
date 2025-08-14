@@ -4,6 +4,7 @@ import com.emenu.enums.common.Status;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
+import com.emenu.features.business.models.Banner;
 import com.emenu.features.order.dto.filter.DeliveryOptionFilterRequest;
 import com.emenu.features.order.dto.request.DeliveryOptionCreateRequest;
 import com.emenu.features.order.dto.response.DeliveryOptionResponse;
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,12 +67,6 @@ public class DeliveryOptionServiceImpl implements DeliveryOptionService {
     @Transactional(readOnly = true)
     public PaginationResponse<DeliveryOptionResponse> getAllDeliveryOptions(DeliveryOptionFilterRequest filter) {
 
-        // Security: Business users can only see delivery options from their business
-        User currentUser = securityUtils.getCurrentUser();
-        if (currentUser.isBusinessUser() && filter.getBusinessId() == null) {
-            filter.setBusinessId(currentUser.getBusinessId());
-        }
-
         Specification<DeliveryOption> spec = DeliveryOptionSpecification.buildSpecification(filter);
 
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
@@ -80,6 +76,20 @@ public class DeliveryOptionServiceImpl implements DeliveryOptionService {
 
         Page<DeliveryOption> deliveryOptionPage = deliveryOptionRepository.findAll(spec, pageable);
         return deliveryOptionMapper.toPaginationResponse(deliveryOptionPage);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DeliveryOptionResponse> getAllItemDeliveryOptions(DeliveryOptionFilterRequest filter) {
+
+        Specification<DeliveryOption> spec = DeliveryOptionSpecification.buildSpecification(filter);
+
+        List<DeliveryOption> deliveryOptions = deliveryOptionRepository.findAll(
+                spec,
+                PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection())
+        );
+
+        return deliveryOptionMapper.toResponseList(deliveryOptions);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.emenu.features.business.controller;
 
+import com.emenu.features.auth.models.User;
 import com.emenu.features.business.dto.filter.BrandFilterRequest;
 import com.emenu.features.business.dto.request.BrandCreateRequest;
 import com.emenu.features.business.dto.response.BrandResponse;
@@ -53,8 +54,8 @@ public class BrandController {
     @PostMapping("/my-business/all")
     public ResponseEntity<ApiResponse<PaginationResponse<BrandResponse>>> getMyBusinessBrands(@Valid @RequestBody BrandFilterRequest filter) {
         log.info("Getting brands for current user's business");
-        UUID userId = securityUtils.getCurrentUserId();
-        filter.setBusinessId(userId);
+        User currentUser = securityUtils.getCurrentUser();
+        filter.setBusinessId(currentUser.getBusinessId());
         PaginationResponse<BrandResponse> brands = brandService.getAllBrands(filter);
         return ResponseEntity.ok(ApiResponse.success("Business brands retrieved successfully", brands));
     }

@@ -1,9 +1,9 @@
 package com.emenu.features.business.controller;
 
 import com.emenu.features.auth.models.User;
-import com.emenu.features.business.dto.filter.BannerFilterRequest;
-import com.emenu.features.business.dto.response.BannerResponse;
-import com.emenu.features.business.service.BannerService;
+import com.emenu.features.business.dto.filter.BrandFilterRequest;
+import com.emenu.features.business.dto.response.BrandResponse;
+import com.emenu.features.business.service.BrandService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
@@ -16,26 +16,25 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/public/banners")
+@RequestMapping("/api/v1/public/brands")
 @RequiredArgsConstructor
 @Slf4j
-public class PublicBannerController {
-    private final BannerService bannerService;
+public class PublicBrandController {
+    private final BrandService brandService;
     private final SecurityUtils securityUtils;
 
     /**
-     * Get all banners with filtering
+     * Get my business brands
      */
     @PostMapping("/my-business/all")
-    public ResponseEntity<ApiResponse<List<BannerResponse>>> getMyBusinessAllBanners(@Valid @RequestBody BannerFilterRequest filter) {
-        log.info("Getting my banners for current user's business");
+    public ResponseEntity<ApiResponse<PaginationResponse<BrandResponse>>> getMyBusinessBrands(@Valid @RequestBody BrandFilterRequest filter) {
+        log.info("Getting brands for current user's business");
         User currentUser = securityUtils.getCurrentUser();
         filter.setBusinessId(currentUser.getBusinessId());
-        List<BannerResponse> banners = bannerService.getAllItemBanners(filter);
-        return ResponseEntity.ok(ApiResponse.success("Banners retrieved successfully", banners));
+        PaginationResponse<BrandResponse> brands = brandService.getAllBrands(filter);
+        return ResponseEntity.ok(ApiResponse.success("Business brands retrieved successfully", brands));
     }
 }
