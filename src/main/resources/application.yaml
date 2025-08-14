@@ -291,27 +291,6 @@ app:
       payment-received: true
       subscription-expiring: true
 
-# Logging Configuration
-logging:
-  level:
-    com.emenu: INFO
-    com.emenu.config.DataInitializationService: DEBUG
-    com.emenu.security: INFO
-    com.emenu.features.telegram: DEBUG # Enhanced Telegram logging
-    com.emenu.features.notification: DEBUG # Enhanced notification logging
-    com.emenu.features.auth.service.impl.AuthServiceImpl: DEBUG # Auth service logging
-    org.springframework.security: WARN
-    org.springframework.web: WARN
-    org.hibernate.SQL: OFF
-    org.hibernate.type: OFF
-    root: WARN
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/cambodia-emenu-platform.log
-    max-size: 100MB
-    max-history: 30
-
 ---
 # Development Profile
 spring:
@@ -354,11 +333,12 @@ telegram:
 
 logging:
   level:
-    com.emenu: DEBUG
-    com.emenu.features.telegram: DEBUG
-    com.emenu.features.notification: DEBUG
-    com.emenu.security.jwt: DEBUG
-    org.hibernate.SQL: OFF
+    root: INFO
+    com.internal: INFO
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    org.hibernate: WARN
+    org.hibernate.SQL: DEBUG
 
 ---
 # Production Profile
