@@ -38,10 +38,8 @@ public class BannerSpecification {
                 
                 Predicate businessNamePredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(businessJoin.get("name")), searchPattern);
-                Predicate linkUrlPredicate = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("linkUrl")), searchPattern);
 
-                predicates.add(criteriaBuilder.or(businessNamePredicate, linkUrlPredicate));
+                predicates.add(criteriaBuilder.or(businessNamePredicate));
                 
                 query.distinct(true);
             }

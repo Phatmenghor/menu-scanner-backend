@@ -75,16 +75,6 @@ public class ProductController {
     }
 
     /**
-     * Get product by ID (public view - increments view count)
-     */
-    @GetMapping("/{id}/public")
-    public ResponseEntity<ApiResponse<ProductResponse>> getProductByIdPublic(@PathVariable UUID id) {
-        log.info("Getting product by ID (public): {}", id);
-        ProductResponse product = productService.getProductByIdPublic(id);
-        return ResponseEntity.ok(ApiResponse.success("Product retrieved successfully", product));
-    }
-
-    /**
      * Update product
      */
     @PutMapping("/{id}")

@@ -8,7 +8,7 @@ import org.springframework.data.domain.Sort;
 
 @Slf4j
 public class PaginationUtils {
-    
+
     private static final int MAX_PAGE_SIZE = 1000;
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int DEFAULT_PAGE_NUMBER = 0;
@@ -25,18 +25,33 @@ public class PaginationUtils {
         }
     }
 
+    /**
+     * Create pageable with pagination.
+     */
     public static Pageable createPageable(Integer pageNo, Integer pageSize, String sortBy, String sortDirection) {
         pageNo = (pageNo == null) ? DEFAULT_PAGE_NUMBER : pageNo;
         pageSize = (pageSize == null) ? DEFAULT_PAGE_SIZE : pageSize;
         sortBy = (sortBy == null || sortBy.isEmpty()) ? "createdAt" : sortBy;
-        
+
         validatePagination(pageNo, pageSize);
-        
+
         Sort.Direction direction = Sort.Direction.DESC;
         if (sortDirection != null && sortDirection.equalsIgnoreCase("ASC")) {
             direction = Sort.Direction.ASC;
         }
-        
+
         return PageRequest.of(pageNo, pageSize, Sort.by(direction, sortBy));
+    }
+
+    /**
+     * Create Sort only (no pagination).
+     */
+    public static Sort createSort(String sortBy, String sortDirection) {
+        sortBy = (sortBy == null || sortBy.isEmpty()) ? "createdAt" : sortBy;
+        Sort.Direction direction = Sort.Direction.DESC;
+        if (sortDirection != null && sortDirection.equalsIgnoreCase("ASC")) {
+            direction = Sort.Direction.ASC;
+        }
+        return Sort.by(direction, sortBy);
     }
 }

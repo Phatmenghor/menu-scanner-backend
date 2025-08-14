@@ -23,6 +23,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -68,6 +69,19 @@ public class BannerServiceImpl implements BannerService {
         Page<Banner> bannerPage = bannerRepository.findAll(spec, pageable);
         return bannerMapper.toPaginationResponse(bannerPage);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BannerResponse> getAllItemBanners(BannerFilterRequest filter) {
+        Specification<Banner> spec = BannerSpecification.buildSpecification(filter);
+
+        List<Banner> banners = bannerRepository.findAll(
+                spec,
+                PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection())
+        );
+        return bannerMapper.toResponseList(banners);
+    }
+
 
     @Override
     @Transactional(readOnly = true)

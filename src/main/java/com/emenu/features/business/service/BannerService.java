@@ -14,6 +14,7 @@ public interface BannerService {
     // CRUD Operations
     BannerResponse createBanner(BannerCreateRequest request);
     PaginationResponse<BannerResponse> getAllBanners(BannerFilterRequest filter);
+    List<BannerResponse> getAllItemBanners(BannerFilterRequest filter);
     BannerResponse getBannerById(UUID id);
     BannerResponse updateBanner(UUID id, BannerUpdateRequest request);
     BannerResponse deleteBanner(UUID id);
