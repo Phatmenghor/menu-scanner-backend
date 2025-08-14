@@ -153,20 +153,26 @@ public class ProductServiceImpl implements ProductService {
         // Load product with all collections to ensure they're initialized
         product = loadProductCollections(product);
 
-        // ===== FIXED: Handle sizes with proper collection management =====
-        updateProductSizes(product, request.getSizes());
+        try {
+            // ===== FIXED: Handle sizes with proper collection management =====
+            updateProductSizes(product, request.getSizes());
 
-        // ===== FIXED: Handle images with proper collection management =====
-        updateProductImages(product, request.getImages());
+            // ===== FIXED: Handle images with proper collection management =====
+            updateProductImages(product, request.getImages());
 
-        // Update product basic fields
-        productMapper.updateEntity(request, product);
-        
-        // Save and flush to ensure all changes are persisted
-        Product updatedProduct = productRepository.saveAndFlush(product);
+            // Update product basic fields
+            productMapper.updateEntity(request, product);
+            
+            // Save and flush to ensure all changes are persisted
+            Product updatedProduct = productRepository.saveAndFlush(product);
 
-        log.info("Product updated successfully: {}", id);
-        return getProductById(updatedProduct.getId());
+            log.info("Product updated successfully: {}", id);
+            return getProductById(updatedProduct.getId());
+            
+        } catch (Exception e) {
+            log.error("Error updating product {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Failed to update product: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -183,14 +189,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ================================
-    // COLLECTION UPDATE METHODS - FIXED
+    // COLLECTION UPDATE METHODS - COMPLETELY FIXED
     // ================================
 
     /**
-     * FIXED: Properly update product sizes collection
-     * When sizes is null -> delete all existing sizes
-     * When sizes is empty list -> delete all existing sizes  
-     * When sizes has items -> update/create as needed
+     * COMPLETELY FIXED: Properly update product sizes collection
+     * Uses setSizes() method to avoid orphan removal issues
      */
     private void updateProductSizes(Product product, List<com.emenu.features.product.dto.request.ProductSizeRequest> sizeRequests) {
         // Initialize collection if null
@@ -201,35 +205,26 @@ public class ProductServiceImpl implements ProductService {
         // Case 1: null or empty list = delete all sizes
         if (sizeRequests == null || sizeRequests.isEmpty()) {
             log.debug("Clearing all sizes for product {}", product.getId());
-            product.getSizes().clear();
+            product.setSizes(new ArrayList<>());
             return;
         }
 
         // Case 2: Update sizes with proper collection management
         List<ProductSize> existingSizes = new ArrayList<>(product.getSizes());
-        
+
         // Process the update using mapper
-        ProductSizeMapper.SizeUpdateResult sizeResult = 
+        ProductSizeMapper.SizeUpdateResult sizeResult =
                 productSizeMapper.processSizeUpdate(sizeRequests, existingSizes, product.getId());
-        
-        // Set parent reference for all new/updated sizes
-        sizeResult.sizes.forEach(size -> {
-            size.setProduct(product);
-            size.setProductId(product.getId());
-        });
-        
-        // CRITICAL: Clear and repopulate to avoid orphan removal issues
-        product.getSizes().clear();
-        product.getSizes().addAll(sizeResult.sizes);
-        
+
+        // FIXED: Use setSizes method instead of clear/addAll to avoid orphan removal issues
+        product.setSizes(sizeResult.sizes);
+
         log.debug("Updated {} sizes for product {}", sizeResult.sizes.size(), product.getId());
     }
 
     /**
-     * FIXED: Properly update product images collection
-     * When images is null -> delete all existing images
-     * When images is empty list -> delete all existing images
-     * When images has items -> update/create as needed
+     * COMPLETELY FIXED: Properly update product images collection
+     * Uses setImages() method to avoid orphan removal issues
      */
     private void updateProductImages(Product product, List<com.emenu.features.product.dto.request.ProductImageRequest> imageRequests) {
         // Initialize collection if null
@@ -240,7 +235,8 @@ public class ProductServiceImpl implements ProductService {
         // Case 1: null or empty list = delete all images
         if (imageRequests == null || imageRequests.isEmpty()) {
             log.debug("Clearing all images for product {}", product.getId());
-            product.getImages().clear();
+            // FIXED: Use setImages method instead of clear()
+            product.setImages(new ArrayList<>());
             return;
         }
 
@@ -251,15 +247,8 @@ public class ProductServiceImpl implements ProductService {
         ProductImageMapper.ImageUpdateResult imageResult = 
                 productImageMapper.processImageUpdate(imageRequests, existingImages, product.getId());
         
-        // Set parent reference for all new/updated images
-        imageResult.images.forEach(image -> {
-            image.setProduct(product);
-            image.setProductId(product.getId());
-        });
-        
-        // CRITICAL: Clear and repopulate to avoid orphan removal issues
-        product.getImages().clear();
-        product.getImages().addAll(imageResult.images);
+        // FIXED: Use setImages method instead of clear/addAll to avoid orphan removal issues
+        product.setImages(imageResult.images);
         
         log.debug("Updated {} images for product {}", imageResult.images.size(), product.getId());
     }
@@ -426,7 +415,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ================================
-    // HELPER METHODS - FIXED
+    // HELPER METHODS - COMPLETELY FIXED
     // ================================
 
     /**
@@ -439,7 +428,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /**
-     * FIXED: Properly load and initialize all collections
+     * COMPLETELY FIXED: Properly load and initialize all collections
+     * Uses setSizes() and setImages() methods to avoid orphan removal issues
      */
     private Product loadProductCollections(Product product) {
         // Initialize collections if null to prevent NullPointerException
@@ -453,14 +443,14 @@ public class ProductServiceImpl implements ProductService {
         // Load images with sorting - force initialization
         List<ProductImage> images = loadProductImages(product.getId());
         images.forEach(image -> image.setProduct(product)); // Set parent reference
-        product.getImages().clear();
-        product.getImages().addAll(productImageMapper.getSortedImages(images));
+        // FIXED: Use setImages instead of clear/addAll
+        product.setImages(productImageMapper.getSortedImages(images));
         
         // Load sizes with sorting - force initialization  
         List<ProductSize> sizes = loadProductSizes(product.getId());
         sizes.forEach(size -> size.setProduct(product)); // Set parent reference
-        product.getSizes().clear();
-        product.getSizes().addAll(productSizeMapper.getSortedSizes(sizes));
+        // FIXED: Use setSizes instead of clear/addAll
+        product.setSizes(productSizeMapper.getSortedSizes(sizes));
         
         return product;
     }

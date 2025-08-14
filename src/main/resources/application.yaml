@@ -331,15 +331,6 @@ telegram:
     admin-commands: true
     system-monitoring: true
 
-logging:
-  level:
-    root: INFO
-    com.internal: INFO
-    org.springframework.security: WARN
-    org.springframework.web: WARN
-    org.hibernate: WARN
-    org.hibernate.SQL: DEBUG
-
 ---
 # Production Profile
 spring:
@@ -372,11 +363,14 @@ telegram:
     file-uploads: false
     group-chat: false
 
+# FIXED: Hide SQL queries in development
 logging:
   level:
+    root: INFO
     com.emenu: INFO
-    com.emenu.features.telegram: INFO
-    com.emenu.features.notification: INFO
-    root: WARN
-  file:
-    name: /var/log/cambodia-emenu-platform/app.log
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    org.hibernate: WARN
+    org.hibernate.SQL: WARN            # CHANGED: From DEBUG to WARN
+    org.hibernate.type: WARN           # ADDED: Hide parameter binding
+    org.hibernate.orm.jdbc.bind: WARN  # ADDED: Hide JDBC binding logs
