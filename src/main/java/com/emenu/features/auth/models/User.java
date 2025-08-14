@@ -16,11 +16,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users", indexes = {
-        @Index(name = "idx_user_identifier", columnList = "userIdentifier"),
-        @Index(name = "idx_telegram_user_id", columnList = "telegramUserId"),
-        @Index(name = "idx_email", columnList = "email"),
-        @Index(name = "idx_account_status", columnList = "accountStatus"),
-        @Index(name = "idx_business_id", columnList = "businessId")
+        @Index(name = "idx_users_user_identifier", columnList = "userIdentifier"),
+        @Index(name = "idx_users_telegram_user_id", columnList = "telegramUserId"), // ✅ RENAMED
+        @Index(name = "idx_users_email", columnList = "email"),
+        @Index(name = "idx_users_account_status", columnList = "accountStatus"),
+        @Index(name = "idx_users_business_id", columnList = "businessId")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)

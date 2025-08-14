@@ -15,9 +15,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "telegram_user_sessions", indexes = {
-    @Index(name = "idx_telegram_user_id", columnList = "telegramUserId"),
-    @Index(name = "idx_user_id", columnList = "userId"),
-    @Index(name = "idx_last_activity", columnList = "lastActivity")
+        @Index(name = "idx_telegram_sessions_telegram_user_id", columnList = "telegramUserId"),
+        @Index(name = "idx_telegram_sessions_user_id", columnList = "userId"),
+        @Index(name = "idx_telegram_sessions_chat_id", columnList = "chatId"),
+        @Index(name = "idx_telegram_sessions_last_activity", columnList = "lastActivity")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
