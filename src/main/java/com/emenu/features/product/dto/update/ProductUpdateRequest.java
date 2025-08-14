@@ -17,24 +17,24 @@ public class ProductUpdateRequest {
     private String name;
     private String description;
     private UUID categoryId;
-    private UUID brandId;
+    private UUID brandId; // Optional - can be null
     private ProductStatus status;
     
     // Price for products without sizes
     @DecimalMin(value = "0.0", message = "Price must be non-negative")
     private BigDecimal price;
     
-    // Promotion fields for products without sizes
+    // Promotion fields for products without sizes (all optional)
     private String promotionType; // PERCENTAGE or FIXED_AMOUNT
     private BigDecimal promotionValue;
     private LocalDateTime promotionFromDate;
     private LocalDateTime promotionToDate;
     
-    // Images - will replace all existing images
+    // Images - will use smart CRUD logic with MAIN image handling
     @Valid
     private List<ProductImageRequest> images;
     
-    // Sizes - will replace all existing sizes
+    // Sizes - will use CRUD logic based on IDs
     @Valid
     private List<ProductSizeRequest> sizes;
 }

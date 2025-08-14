@@ -7,9 +7,11 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 public class ProductSizeRequest {
+    private UUID id; // For updates: if provided, update existing; if null, create new
     
     @NotBlank(message = "Size name is required")
     private String name; // Small, Medium, Large, etc.
@@ -18,7 +20,7 @@ public class ProductSizeRequest {
     @DecimalMin(value = "0.0", message = "Price must be non-negative")
     private BigDecimal price;
     
-    // Promotion fields
+    // Promotion fields (all optional)
     private String promotionType; // PERCENTAGE or FIXED_AMOUNT
     private BigDecimal promotionValue;
     private LocalDateTime promotionFromDate;

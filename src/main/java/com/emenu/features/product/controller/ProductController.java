@@ -27,6 +27,10 @@ public class ProductController {
     private final ProductService productService;
     private final SecurityUtils securityUtils;
 
+    // ================================
+    // BASIC CRUD OPERATIONS
+    // ================================
+
     /**
      * Create new product (uses current user's business from token)
      */
@@ -102,34 +106,39 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success("Product deleted successfully", product));
     }
 
+    // ================================
+    // PROMOTION MANAGEMENT ENDPOINTS
+    // ================================
+
     /**
-     * Reset promotion for product or specific size
-     * - Without sizeId: resets entire product (all sizes)
-     * - With sizeId: resets only that specific size
+     * Clear all promotions for a specific product (product-level + all sizes)
      */
-    @PostMapping("/{productId}/promotion/reset")
-    public ResponseEntity<ApiResponse<?>> resetPromotion(
-            @PathVariable UUID productId,
-            @RequestParam(required = false) UUID sizeId) {
-        
-        if (sizeId != null) {
-            log.info("Resetting promotion for product {} size: {}", productId, sizeId);
-            SizePromotionResetResponse result = productService.resetSizePromotion(productId, sizeId);
-            return ResponseEntity.ok(ApiResponse.success("Size promotion reset successfully", result));
-        } else {
-            log.info("Resetting all promotions for product: {}", productId);
-            ProductPromotionResetResponse result = productService.resetProductPromotion(productId);
-            return ResponseEntity.ok(ApiResponse.success("Product promotion reset successfully", result));
-        }
+    @PostMapping("/{productId}/promotions/clear-all")
+    public ResponseEntity<ApiResponse<ProductPromotionResetResponse>> clearAllProductPromotions(@PathVariable UUID productId) {
+        log.info("Clearing all promotions for product: {}", productId);
+        ProductPromotionResetResponse result = productService.resetProductPromotion(productId);
+        return ResponseEntity.ok(ApiResponse.success("All product promotions cleared successfully", result));
     }
 
     /**
-     * Reset all promotions for current user's business
+     * Clear promotion for a specific size
      */
-    @PostMapping("/my-business/promotion/reset-all")
-    public ResponseEntity<ApiResponse<BusinessPromotionResetResponse>> resetAllBusinessPromotions() {
-        log.info("Resetting all promotions for current user's business");
+    @PostMapping("/{productId}/sizes/{sizeId}/promotion/clear")
+    public ResponseEntity<ApiResponse<SizePromotionResetResponse>> clearSizePromotion(
+            @PathVariable UUID productId,
+            @PathVariable UUID sizeId) {
+        log.info("Clearing promotion for size {} in product {}", sizeId, productId);
+        SizePromotionResetResponse result = productService.resetSizePromotion(productId, sizeId);
+        return ResponseEntity.ok(ApiResponse.success("Size promotion cleared successfully", result));
+    }
+
+    /**
+     * Clear ALL promotions for current user's business
+     */
+    @PostMapping("/my-business/promotions/clear-all")
+    public ResponseEntity<ApiResponse<BusinessPromotionResetResponse>> clearAllBusinessPromotions() {
+        log.info("Clearing all promotions for current user's business");
         BusinessPromotionResetResponse result = productService.resetAllBusinessPromotions();
-        return ResponseEntity.ok(ApiResponse.success("All business promotions reset successfully", result));
+        return ResponseEntity.ok(ApiResponse.success("All business promotions cleared successfully", result));
     }
 }

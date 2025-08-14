@@ -4,7 +4,6 @@ import com.emenu.enums.product.ProductStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -24,24 +23,23 @@ public class ProductCreateRequest {
     @NotNull(message = "Category is required")
     private UUID categoryId;
     
-    private UUID brandId; // Optional
+    private UUID brandId; // Optional - can be null
     
     // Price for products without sizes
     @DecimalMin(value = "0.0", message = "Price must be non-negative")
     private BigDecimal price;
     
-    // Promotion fields for products without sizes
+    // Promotion fields for products without sizes (all optional)
     private String promotionType; // PERCENTAGE or FIXED_AMOUNT
     private BigDecimal promotionValue;
     private LocalDateTime promotionFromDate;
     private LocalDateTime promotionToDate;
     
-    // Images
-    @NotEmpty(message = "At least one image is required")
+    // Images - optional but recommended
     @Valid
     private List<ProductImageRequest> images;
     
-    // Sizes and Pricing (optional - if provided, product-level price is ignored)
+    // Sizes - optional, if provided, product-level price is ignored
     @Valid
     private List<ProductSizeRequest> sizes;
     
