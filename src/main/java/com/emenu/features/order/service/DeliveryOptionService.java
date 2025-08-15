@@ -1,5 +1,6 @@
 package com.emenu.features.order.service;
 
+import com.emenu.features.order.dto.filter.DeliveryOptionAllFilterRequest;
 import com.emenu.features.order.dto.filter.DeliveryOptionFilterRequest;
 import com.emenu.features.order.dto.request.DeliveryOptionCreateRequest;
 import com.emenu.features.order.dto.response.DeliveryOptionResponse;
@@ -14,7 +15,7 @@ public interface DeliveryOptionService {
     // CRUD Operations
     DeliveryOptionResponse createDeliveryOption(DeliveryOptionCreateRequest request);
     PaginationResponse<DeliveryOptionResponse> getAllDeliveryOptions(DeliveryOptionFilterRequest filter);
-    List<DeliveryOptionResponse> getAllItemDeliveryOptions(DeliveryOptionFilterRequest filter);
+    List<DeliveryOptionResponse> getAllItemDeliveryOptions(DeliveryOptionAllFilterRequest filter);
     DeliveryOptionResponse getDeliveryOptionById(UUID id);
     DeliveryOptionResponse updateDeliveryOption(UUID id, DeliveryOptionUpdateRequest request);
     DeliveryOptionResponse deleteDeliveryOption(UUID id);

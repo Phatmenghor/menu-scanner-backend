@@ -1,5 +1,6 @@
 package com.emenu.features.order.controller;
 
+import com.emenu.features.order.dto.filter.DeliveryOptionAllFilterRequest;
 import com.emenu.features.order.dto.filter.DeliveryOptionFilterRequest;
 import com.emenu.features.order.dto.response.DeliveryOptionResponse;
 import com.emenu.features.order.service.DeliveryOptionService;
@@ -25,18 +26,27 @@ import java.util.UUID;
 public class PublicDeliveryOptionController {
 
     private final DeliveryOptionService deliveryOptionService;
-    private final SecurityUtils securityUtils;
 
     /**
      * Get my business delivery options with filtering
      */
-    @PostMapping("/my-business/all")
-    public ResponseEntity<ApiResponse<List<DeliveryOptionResponse>>> getMyBusinessDeliveryOptions(
+    @PostMapping("/all")
+    public ResponseEntity<ApiResponse<PaginationResponse<DeliveryOptionResponse>>> getDeliveryOptions(
             @Valid @RequestBody DeliveryOptionFilterRequest filter) {
         log.info("Getting delivery options for current user's business");
 
-        UUID businessId = securityUtils.getCurrentUser().getBusinessId();
-        filter.setBusinessId(businessId);
+        PaginationResponse<DeliveryOptionResponse> deliveryOptions = deliveryOptionService.getAllDeliveryOptions(filter);
+
+        return ResponseEntity.ok(ApiResponse.success("Business all delivery options retrieved successfully", deliveryOptions));
+    }
+
+    /**
+     * Get my business delivery options with filtering
+     */
+    @PostMapping("/all-data")
+    public ResponseEntity<ApiResponse<List<DeliveryOptionResponse>>> getAllDeliveryOptions(
+            @Valid @RequestBody DeliveryOptionAllFilterRequest filter) {
+        log.info("Getting all delivery options for current user's business");
 
         List<DeliveryOptionResponse> deliveryOptions = deliveryOptionService.getAllItemDeliveryOptions(filter);
 

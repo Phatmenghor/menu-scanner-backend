@@ -5,6 +5,7 @@ import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.business.models.Banner;
+import com.emenu.features.order.dto.filter.DeliveryOptionAllFilterRequest;
 import com.emenu.features.order.dto.filter.DeliveryOptionFilterRequest;
 import com.emenu.features.order.dto.request.DeliveryOptionCreateRequest;
 import com.emenu.features.order.dto.response.DeliveryOptionResponse;
@@ -80,7 +81,7 @@ public class DeliveryOptionServiceImpl implements DeliveryOptionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeliveryOptionResponse> getAllItemDeliveryOptions(DeliveryOptionFilterRequest filter) {
+    public List<DeliveryOptionResponse> getAllItemDeliveryOptions(DeliveryOptionAllFilterRequest filter) {
 
         Specification<DeliveryOption> spec = DeliveryOptionSpecification.buildSpecification(filter);
 

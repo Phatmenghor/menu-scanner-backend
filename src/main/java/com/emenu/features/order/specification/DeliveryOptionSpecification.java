@@ -2,6 +2,7 @@ package com.emenu.features.order.specification;
 
 import com.emenu.enums.common.Status;
 import com.emenu.features.order.dto.filter.DeliveryOptionFilterRequest;
+import com.emenu.features.order.dto.filter.base.DeliveryOptionFilterBase;
 import com.emenu.features.order.models.DeliveryOption;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -14,7 +15,7 @@ import java.util.List;
 
 public class DeliveryOptionSpecification {
 
-    public static Specification<DeliveryOption> buildSpecification(DeliveryOptionFilterRequest filter) {
+    public static Specification<DeliveryOption> buildSpecification(DeliveryOptionFilterBase filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
