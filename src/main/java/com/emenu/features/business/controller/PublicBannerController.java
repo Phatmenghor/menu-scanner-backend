@@ -1,12 +1,10 @@
 package com.emenu.features.business.controller;
 
-import com.emenu.features.auth.models.User;
-import com.emenu.features.business.dto.filter.BannerFilterRequest;
+import com.emenu.features.business.dto.filter.BannerAllFilterRequest;
 import com.emenu.features.business.dto.response.BannerResponse;
 import com.emenu.features.business.service.BannerService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
-import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/public/banners")
@@ -30,11 +27,9 @@ public class PublicBannerController {
     /**
      * Get all banners with filtering
      */
-    @PostMapping("/my-business/all")
-    public ResponseEntity<ApiResponse<List<BannerResponse>>> getMyBusinessAllBanners(@Valid @RequestBody BannerFilterRequest filter) {
+    @PostMapping("/all")
+    public ResponseEntity<ApiResponse<List<BannerResponse>>> getMyBusinessAllBanners(@Valid @RequestBody BannerAllFilterRequest filter) {
         log.info("Getting my banners for current user's business");
-        User currentUser = securityUtils.getCurrentUser();
-        filter.setBusinessId(currentUser.getBusinessId());
         List<BannerResponse> banners = bannerService.getAllItemBanners(filter);
         return ResponseEntity.ok(ApiResponse.success("Banners retrieved successfully", banners));
     }

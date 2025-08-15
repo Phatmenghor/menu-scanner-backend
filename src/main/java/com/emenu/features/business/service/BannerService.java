@@ -1,6 +1,7 @@
 package com.emenu.features.business.service;
 
 import com.emenu.features.business.dto.filter.BannerFilterRequest;
+import com.emenu.features.business.dto.filter.BannerAllFilterRequest;
 import com.emenu.features.business.dto.request.BannerCreateRequest;
 import com.emenu.features.business.dto.response.BannerResponse;
 import com.emenu.features.business.dto.update.BannerUpdateRequest;
@@ -14,7 +15,7 @@ public interface BannerService {
     // CRUD Operations
     BannerResponse createBanner(BannerCreateRequest request);
     PaginationResponse<BannerResponse> getAllBanners(BannerFilterRequest filter);
-    List<BannerResponse> getAllItemBanners(BannerFilterRequest filter);
+    List<BannerResponse> getAllItemBanners(BannerAllFilterRequest filter);
     BannerResponse getBannerById(UUID id);
     BannerResponse updateBanner(UUID id, BannerUpdateRequest request);
     BannerResponse deleteBanner(UUID id);

@@ -1,6 +1,6 @@
 package com.emenu.features.business.specification;
 
-import com.emenu.features.business.dto.filter.BannerFilterRequest;
+import com.emenu.features.business.dto.filter.base.BannerFilterBase;
 import com.emenu.features.business.models.Banner;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -13,7 +13,7 @@ import java.util.List;
 
 public class BannerSpecification {
 
-    public static Specification<Banner> buildSpecification(BannerFilterRequest filter) {
+    public static Specification<Banner> buildSpecification(BannerFilterBase filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 

@@ -54,8 +54,8 @@ public class CategoryController {
     @PostMapping("/my-business/all")
     public ResponseEntity<ApiResponse<PaginationResponse<CategoryResponse>>> getMyBusinessAllCategories(@Valid @RequestBody CategoryFilterRequest filter) {
         log.info("Getting my categories for current user's business");
-        User currentUser = securityUtils.getCurrentUser();
-        filter.setBusinessId(currentUser.getBusinessId());
+        UUID businessId = securityUtils.getCurrentUserBusinessId();
+        filter.setBusinessId(businessId);
         PaginationResponse<CategoryResponse> categories = categoryService.getAllCategories(filter);
         return ResponseEntity.ok(ApiResponse.success("Categories retrieved successfully", categories));
     }

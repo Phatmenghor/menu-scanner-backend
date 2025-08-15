@@ -4,6 +4,7 @@ import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.business.dto.filter.BannerFilterRequest;
+import com.emenu.features.business.dto.filter.BannerAllFilterRequest;
 import com.emenu.features.business.dto.request.BannerCreateRequest;
 import com.emenu.features.business.dto.response.BannerResponse;
 import com.emenu.features.business.dto.update.BannerUpdateRequest;
@@ -72,7 +73,7 @@ public class BannerServiceImpl implements BannerService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<BannerResponse> getAllItemBanners(BannerFilterRequest filter) {
+    public List<BannerResponse> getAllItemBanners(BannerAllFilterRequest filter) {
         Specification<Banner> spec = BannerSpecification.buildSpecification(filter);
 
         List<Banner> banners = bannerRepository.findAll(

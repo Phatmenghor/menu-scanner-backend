@@ -4,7 +4,7 @@ import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.business.dto.filter.BrandFilterRequest;
-import com.emenu.features.business.dto.filter.BrandPublicFilterRequest;
+import com.emenu.features.business.dto.filter.BrandAllFilterRequest;
 import com.emenu.features.business.dto.request.BrandCreateRequest;
 import com.emenu.features.business.dto.response.BrandResponse;
 import com.emenu.features.business.dto.update.BrandUpdateRequest;
@@ -57,7 +57,7 @@ public class BrandServiceImpl implements BrandService {
 
         Brand savedBrand = brandRepository.save(brand);
 
-        log.info("Brand created successfully: {} for business: {}", 
+        log.info("Brand created successfully: {} for business: {}",
                 savedBrand.getName(), currentUser.getBusinessId());
         return brandMapper.toResponse(savedBrand);
     }
@@ -65,9 +65,9 @@ public class BrandServiceImpl implements BrandService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<BrandResponse> getAllBrands(BrandFilterRequest filter) {
-        
+
         Specification<Brand> spec = BrandSpecification.buildSpecification(filter);
-        
+
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
                 pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
@@ -79,11 +79,11 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<BrandResponse> getAllListBrands(BrandPublicFilterRequest filter) {
+    public List<BrandResponse> getAllListBrands(BrandAllFilterRequest filter) {
 
         Specification<Brand> spec = BrandSpecification.buildSpecification(filter);
 
-        List<Brand> brandList = brandRepository.findAll(spec,PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection()));
+        List<Brand> brandList = brandRepository.findAll(spec, PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection()));
         return brandMapper.toResponseList(brandList);
     }
 

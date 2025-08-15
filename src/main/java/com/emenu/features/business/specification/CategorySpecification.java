@@ -1,6 +1,7 @@
 package com.emenu.features.business.specification;
 
 import com.emenu.features.business.dto.filter.CategoryFilterRequest;
+import com.emenu.features.business.dto.filter.base.CategoryFilterBase;
 import com.emenu.features.business.models.Category;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -13,7 +14,7 @@ import java.util.List;
 
 public class CategorySpecification {
 
-    public static Specification<Category> buildSpecification(CategoryFilterRequest filter) {
+    public static Specification<Category> buildSpecification(CategoryFilterBase filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 

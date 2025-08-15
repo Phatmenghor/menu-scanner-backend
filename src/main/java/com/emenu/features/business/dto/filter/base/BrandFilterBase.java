@@ -1,4 +1,4 @@
-package com.emenu.features.business.dto.filter;
+package com.emenu.features.business.dto.filter.base;
 
 import com.emenu.enums.common.Status;
 
@@ -11,3 +11,4 @@ public interface BrandFilterBase {
     String getSortBy();
     String getSortDirection();
 }
+
