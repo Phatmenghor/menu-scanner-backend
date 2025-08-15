@@ -1,5 +1,6 @@
 package com.emenu.features.business.specification;
 
+import com.emenu.features.business.dto.filter.BrandFilterBase;
 import com.emenu.features.business.dto.filter.BrandFilterRequest;
 import com.emenu.features.business.models.Brand;
 import jakarta.persistence.criteria.Join;
@@ -13,7 +14,7 @@ import java.util.List;
 
 public class BrandSpecification {
 
-    public static Specification<Brand> buildSpecification(BrandFilterRequest filter) {
+    public static Specification<Brand> buildSpecification(BrandFilterBase filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 

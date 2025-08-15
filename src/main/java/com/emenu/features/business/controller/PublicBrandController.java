@@ -2,6 +2,7 @@ package com.emenu.features.business.controller;
 
 import com.emenu.features.auth.models.User;
 import com.emenu.features.business.dto.filter.BrandFilterRequest;
+import com.emenu.features.business.dto.filter.BrandPublicFilterRequest;
 import com.emenu.features.business.dto.response.BrandResponse;
 import com.emenu.features.business.service.BrandService;
 import com.emenu.security.SecurityUtils;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,9 +34,17 @@ public class PublicBrandController {
     @PostMapping("/my-business/all")
     public ResponseEntity<ApiResponse<PaginationResponse<BrandResponse>>> getMyBusinessBrands(@Valid @RequestBody BrandFilterRequest filter) {
         log.info("Getting brands for current user's business");
-        User currentUser = securityUtils.getCurrentUser();
-        filter.setBusinessId(currentUser.getBusinessId());
         PaginationResponse<BrandResponse> brands = brandService.getAllBrands(filter);
         return ResponseEntity.ok(ApiResponse.success("Business brands retrieved successfully", brands));
+    }
+
+    /**
+     * Get my business brands
+     */
+    @PostMapping("/all")
+    public ResponseEntity<ApiResponse<List<BrandResponse>>> getAllBrands(@Valid @RequestBody BrandPublicFilterRequest filter) {
+        log.info("Getting all brands for current user's business");
+        List<BrandResponse> brands = brandService.getAllListBrands(filter);
+        return ResponseEntity.ok(ApiResponse.success("Business all brands retrieved successfully", brands));
     }
 }

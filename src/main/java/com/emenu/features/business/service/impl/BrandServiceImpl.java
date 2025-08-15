@@ -4,6 +4,7 @@ import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.business.dto.filter.BrandFilterRequest;
+import com.emenu.features.business.dto.filter.BrandPublicFilterRequest;
 import com.emenu.features.business.dto.request.BrandCreateRequest;
 import com.emenu.features.business.dto.response.BrandResponse;
 import com.emenu.features.business.dto.update.BrandUpdateRequest;
@@ -23,6 +24,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -73,6 +75,16 @@ public class BrandServiceImpl implements BrandService {
 
         Page<Brand> brandPage = brandRepository.findAll(spec, pageable);
         return brandMapper.toPaginationResponse(brandPage);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BrandResponse> getAllListBrands(BrandPublicFilterRequest filter) {
+
+        Specification<Brand> spec = BrandSpecification.buildSpecification(filter);
+
+        List<Brand> brandList = brandRepository.findAll(spec,PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection()));
+        return brandMapper.toResponseList(brandList);
     }
 
     @Override

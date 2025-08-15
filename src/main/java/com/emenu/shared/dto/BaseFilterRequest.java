@@ -1,5 +1,6 @@
 package com.emenu.shared.dto;
 
+import com.emenu.features.business.dto.filter.BrandFilterBase;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
@@ -18,3 +19,4 @@ public abstract class BaseFilterRequest {
     private String sortBy = "createdAt";
     private String sortDirection = "DESC";
 }
+
