@@ -2,6 +2,7 @@ package com.emenu.security;
 
 import com.emenu.enums.user.AccountStatus;
 import com.emenu.exception.custom.AccountInactiveException;
+import com.emenu.exception.custom.AccountLockedException;
 import com.emenu.exception.custom.AccountSuspendedException;
 import com.emenu.exception.custom.UserNotFoundException;
 import com.emenu.features.auth.models.User;
@@ -12,7 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import javax.security.auth.login.AccountLockedException;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -22,6 +23,7 @@ public class SecurityUtils {
     @Autowired
     private UserRepository userRepository;
 
+    // ===== EXISTING METHOD (THROWS EXCEPTIONS) =====
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -31,24 +33,20 @@ public class SecurityUtils {
 
         String userIdentifier = authentication.getName();
 
-        // Find user by userIdentifier (supports both traditional and Telegram users)
         User user = userRepository.findByUserIdentifierAndIsDeletedFalse(userIdentifier)
                 .orElseThrow(() -> {
-                    log.error("❌ User not found with userIdentifier: {}", userIdentifier);
+                    log.error("User not found with userIdentifier: {}", userIdentifier);
                     return new UserNotFoundException("User not found with userIdentifier: " + userIdentifier);
                 });
 
-        // Log user access for audit trail
-        log.debug("🔐 Current user access: {} ({}), Type: {}, Telegram: {}",
+        log.debug("Current user access: {} ({}), Type: {}, Telegram: {}",
                 user.getDisplayName(),
                 user.getUserIdentifier(),
                 user.getUserType(),
                 user.hasTelegramLinked() ? "Linked" : "Not Linked");
 
-        // Double-check account status for security
         validateAccountStatus(user);
 
-        // Update Telegram activity if user has Telegram linked
         if (user.hasTelegramLinked()) {
             user.updateTelegramActivity();
             userRepository.save(user);
@@ -57,15 +55,100 @@ public class SecurityUtils {
         return user;
     }
 
+    // ===== NEW METHOD FOR OPTIONAL AUTHENTICATION =====
+    /**
+     * Get current user if authenticated, otherwise return empty Optional.
+     * This method does NOT throw exceptions for unauthenticated users.
+     * Perfect for public endpoints that can work with or without authentication.
+     */
+    public Optional<User> getCurrentUserOptional() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null || 
+                !authentication.isAuthenticated() || 
+                "anonymousUser".equals(authentication.getPrincipal())) {
+                log.debug("No authenticated user - public access");
+                return Optional.empty();
+            }
+
+            String userIdentifier = authentication.getName();
+            Optional<User> userOpt = userRepository.findByUserIdentifierAndIsDeletedFalse(userIdentifier);
+            
+            if (userOpt.isEmpty()) {
+                log.warn("Authenticated user not found in database: {}", userIdentifier);
+                return Optional.empty();
+            }
+
+            User user = userOpt.get();
+
+            try {
+                validateAccountStatus(user);
+            } catch (Exception e) {
+                log.warn("User account validation failed: {} - {}", userIdentifier, e.getMessage());
+                return Optional.empty();
+            }
+
+            log.debug("Authenticated user access: {} ({})", user.getDisplayName(), user.getUserIdentifier());
+
+            if (user.hasTelegramLinked()) {
+                user.updateTelegramActivity();
+                userRepository.save(user);
+            }
+
+            return Optional.of(user);
+
+        } catch (Exception e) {
+            log.debug("Error getting current user (public access mode): {}", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    // ===== HELPER METHODS FOR OPTIONAL AUTHENTICATION =====
+
+    public boolean isAuthenticated() {
+        return getCurrentUserOptional().isPresent();
+    }
+
+    public Optional<UUID> getCurrentUserIdOptional() {
+        return getCurrentUserOptional().map(User::getId);
+    }
+
+    public Optional<String> getCurrentUserIdentifierOptional() {
+        return getCurrentUserOptional().map(User::getUserIdentifier);
+    }
+
+    public Optional<UUID> getCurrentUserBusinessIdOptional() {
+        return getCurrentUserOptional().map(User::getBusinessId);
+    }
+
+    public boolean hasBusinessAccess(UUID businessId) {
+        return getCurrentUserBusinessIdOptional()
+                .map(userBusinessId -> userBusinessId.equals(businessId))
+                .orElse(false);
+    }
+
+    public String getAuthenticationContext() {
+        Optional<User> userOpt = getCurrentUserOptional();
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            return String.format("Authenticated: %s (%s)", user.getDisplayName(), user.getUserIdentifier());
+        } else {
+            return "Public/Unauthenticated Access";
+        }
+    }
+
+    // ===== ACCOUNT STATUS VALIDATION =====
+
     public void validateAccountStatus(User user) {
         switch (user.getAccountStatus()) {
             case INACTIVE -> {
-                log.warn("🚫 Access attempt by inactive user: {} ({})",
+                log.warn("Access attempt by inactive user: {} ({})",
                         user.getDisplayName(), user.getUserIdentifier());
                 throw new AccountInactiveException("Account is inactive. Please contact support.");
             }
             case LOCKED -> {
-                log.warn("🔒 Access attempt by locked user: {} ({})",
+                log.warn("Access attempt by locked user: {} ({})",
                         user.getDisplayName(), user.getUserIdentifier());
                 try {
                     throw new AccountLockedException("Account is locked due to security reasons. Please contact support.");
@@ -74,23 +157,22 @@ public class SecurityUtils {
                 }
             }
             case SUSPENDED -> {
-                log.warn("⏸️ Access attempt by suspended user: {} ({})",
+                log.warn("Access attempt by suspended user: {} ({})",
                         user.getDisplayName(), user.getUserIdentifier());
                 throw new AccountSuspendedException("Account is suspended. Please contact support for reactivation.");
             }
             case ACTIVE -> {
-                // All good, continue
-                log.debug("✅ Account status valid for user: {}", user.getUserIdentifier());
+                log.debug("Account status valid for user: {}", user.getUserIdentifier());
             }
             default -> {
-                log.error("❓ Unknown account status for user: {} - Status: {}",
+                log.error("Unknown account status for user: {} - Status: {}",
                         user.getUserIdentifier(), user.getAccountStatus());
                 throw new AccountInactiveException("Account status is unknown. Please contact support.");
             }
         }
     }
 
-    // ===== USER IDENTIFICATION METHODS =====
+    // ===== USER IDENTIFICATION METHODS (REQUIRE AUTHENTICATION) =====
 
     public UUID getCurrentUserId() {
         return getCurrentUser().getId();
@@ -102,7 +184,7 @@ public class SecurityUtils {
 
     public String getCurrentUserEmail() {
         User user = getCurrentUser();
-        return user.getEmail(); // Can be null for Telegram-only users
+        return user.getEmail();
     }
 
     public String getCurrentUserDisplayName() {
@@ -157,17 +239,6 @@ public class SecurityUtils {
     }
 
     // ===== BUSINESS ACCESS METHODS =====
-
-    public boolean hasBusinessAccess(UUID businessId) {
-        try {
-            User currentUser = getCurrentUser();
-            return currentUser.getBusinessId() != null &&
-                    currentUser.getBusinessId().equals(businessId);
-        } catch (Exception e) {
-            log.debug("Error checking business access: {}", e.getMessage());
-            return false;
-        }
-    }
 
     public UUID getCurrentUserBusinessId() {
         try {
@@ -283,13 +354,13 @@ public class SecurityUtils {
     public void logSecurityEvent(String event, String details) {
         try {
             User user = getCurrentUser();
-            log.info("🔐 Security Event - User: {} ({}), Event: {}, Details: {}",
+            log.info("Security Event - User: {} ({}), Event: {}, Details: {}",
                     user.getDisplayName(),
                     user.getUserIdentifier(),
                     event,
                     details);
         } catch (Exception e) {
-            log.info("🔐 Security Event - Anonymous User, Event: {}, Details: {}", event, details);
+            log.info("Security Event - Anonymous User, Event: {}, Details: {}", event, details);
         }
     }
 
@@ -297,7 +368,7 @@ public class SecurityUtils {
         try {
             User user = getCurrentUser();
             if (user.hasTelegramLinked()) {
-                log.info("📱 Telegram Activity - User: {} ({}), Activity: {}",
+                log.info("Telegram Activity - User: {} ({}), Activity: {}",
                         user.getDisplayName(),
                         user.getUserIdentifier(),
                         activity);

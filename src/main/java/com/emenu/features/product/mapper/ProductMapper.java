@@ -1,22 +1,32 @@
 package com.emenu.features.product.mapper;
 
 import com.emenu.enums.product.PromotionType;
+import com.emenu.features.auth.models.User;
+import com.emenu.features.product.dto.filter.ProductFilterRequest;
 import com.emenu.features.product.dto.request.ProductCreateRequest;
 import com.emenu.features.product.dto.response.ProductImageResponse;
 import com.emenu.features.product.dto.response.ProductResponse;
 import com.emenu.features.product.dto.response.ProductSizeResponse;
 import com.emenu.features.product.dto.update.ProductUpdateRequest;
 import com.emenu.features.product.models.Product;
+import com.emenu.features.product.models.ProductFavorite;
 import com.emenu.features.product.models.ProductImage;
 import com.emenu.features.product.models.ProductSize;
+import com.emenu.features.product.repository.ProductFavoriteRepository;
+import com.emenu.features.product.repository.ProductRepository;
+import com.emenu.features.product.specification.ProductSpecification;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
+import com.emenu.shared.pagination.PaginationUtils;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -26,18 +36,22 @@ public abstract class ProductMapper {
 
     @Autowired
     protected PaginationMapper paginationMapper;
+    @Autowired
+    protected ProductRepository productRepository;
+    @Autowired
+    protected ProductFavoriteRepository productFavoriteRepository;
 
     // ================================
     // ENTITY CREATION MAPPING
     // ================================
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true) // Will be set from current user
+    @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "brand", ignore = true)
-    @Mapping(target = "images", ignore = true) // Will be handled separately
-    @Mapping(target = "sizes", ignore = true) // Will be handled separately
+    @Mapping(target = "images", ignore = true)
+    @Mapping(target = "sizes", ignore = true)
     @Mapping(target = "viewCount", constant = "0L")
     @Mapping(target = "favoriteCount", constant = "0L")
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "mapStringToPromotionType")
@@ -63,7 +77,7 @@ public abstract class ProductMapper {
     @Mapping(target = "hasPromotionActive", expression = "java(hasActivePromotion(product))")
     @Mapping(target = "hasSizes", expression = "java(hasSizes(product))")
     @Mapping(target = "publicUrl", expression = "java(generatePublicUrl(product))")
-    @Mapping(target = "isFavorited", constant = "false") // Will be overridden in service
+    @Mapping(target = "isFavorited", constant = "false")
     @Mapping(target = "images", expression = "java(sortImages(product.getImages()))")
     @Mapping(target = "sizes", expression = "java(sortSizes(product.getSizes()))")
     public abstract ProductResponse toResponse(Product product);
@@ -88,99 +102,151 @@ public abstract class ProductMapper {
     public abstract void updateEntity(ProductUpdateRequest request, @MappingTarget Product product);
 
     // ================================
-    // BUSINESS LOGIC METHODS
+    // COMBINED SPECIFICATION AND PAGINATION METHOD
     // ================================
 
     /**
-     * Extract main image URL with fallback logic
+     * Get products with specification, pagination, and user enrichment in one method
+     * This combines filtering, pagination, and user-specific data enrichment
      */
+    public PaginationResponse<ProductResponse> getProductsWithFilter(
+            ProductFilterRequest filter, 
+            Optional<User> currentUser,
+            Function<Product, Product> productLoader) {
+
+        // Apply business filter for authenticated business users
+        if (currentUser.isPresent() && currentUser.get().isBusinessUser() && filter.getBusinessId() == null) {
+            filter.setBusinessId(currentUser.get().getBusinessId());
+        }
+
+        // Build specification and pageable
+        Specification<Product> spec = ProductSpecification.buildSpecification(filter);
+        Pageable pageable = createPageable(filter);
+        
+        // Execute query
+        Page<Product> productPage = productRepository.findAll(spec, pageable);
+        
+        // Load collections and convert to responses
+        List<ProductResponse> responses = productPage.getContent().stream()
+                .map(productLoader) // Load collections
+                .map(this::toResponse) // Convert to response
+                .toList();
+
+        // Enrich with user-specific data if authenticated
+        if (currentUser.isPresent()) {
+            UUID userId = currentUser.get().getId();
+            responses = enrichWithFavoriteStatus(responses, userId);
+        } else {
+            responses.forEach(response -> response.setIsFavorited(false));
+        }
+
+        // Create pagination response
+        return paginationMapper.toPaginationResponse(productPage, responses);
+    }
+
+    /**
+     * Get user favorites with pagination in one method
+     */
+    public PaginationResponse<ProductResponse> getUserFavoritesWithPagination(
+            ProductFilterRequest filter,
+            UUID userId,
+            Function<Product, Product> productLoader) {
+
+        Specification<ProductFavorite> favoriteSpec = (root, query, criteriaBuilder) -> {
+            query.distinct(true);
+            return criteriaBuilder.and(
+                criteriaBuilder.equal(root.get("userId"), userId),
+                criteriaBuilder.equal(root.get("isDeleted"), false)
+            );
+        };
+
+        Pageable pageable = createPageable(filter);
+        Page<ProductFavorite> favoritePage = productFavoriteRepository.findAll(favoriteSpec, pageable);
+        
+        List<ProductResponse> responses = favoritePage.getContent().stream()
+                .map(ProductFavorite::getProduct)
+                .map(productLoader) // Load collections
+                .map(this::toResponse) // Convert to response
+                .peek(response -> response.setIsFavorited(true)) // All are favorites
+                .toList();
+
+        return PaginationResponse.<ProductResponse>builder()
+                .content(responses)
+                .pageNo(favoritePage.getNumber() + 1)
+                .pageSize(favoritePage.getSize())
+                .totalElements(favoritePage.getTotalElements())
+                .totalPages(favoritePage.getTotalPages())
+                .first(favoritePage.isFirst())
+                .last(favoritePage.isLast())
+                .hasNext(favoritePage.hasNext())
+                .hasPrevious(favoritePage.hasPrevious())
+                .build();
+    }
+
+    // ================================
+    // BUSINESS LOGIC METHODS
+    // ================================
+
     protected String extractMainImageUrl(Product product) {
         if (product.getImages() == null || product.getImages().isEmpty()) {
             return null;
         }
 
-        // First try to find MAIN image
         return product.getImages().stream()
                 .filter(img -> img.getImageType().name().equals("MAIN"))
                 .findFirst()
                 .map(ProductImage::getImageUrl)
-                .orElse(product.getImages().get(0).getImageUrl()); // Fallback to first image
+                .orElse(product.getImages().get(0).getImageUrl());
     }
 
-    /**
-     * Calculate display price considering sizes and promotions
-     */
     protected BigDecimal calculateDisplayPrice(Product product) {
         if (hasSizes(product)) {
-            // Get the lowest price from sizes (with active promotions considered)
             return product.getSizes().stream()
                     .map(this::calculateSizeFinalPrice)
                     .min(BigDecimal::compareTo)
                     .orElse(BigDecimal.ZERO);
         } else {
-            // Use product-level price with promotion
             return calculateProductFinalPrice(product);
         }
     }
 
-    /**
-     * Check if product has active promotions
-     */
     protected Boolean hasActivePromotion(Product product) {
         if (hasSizes(product)) {
-            // Check if any size has active promotion
             return product.getSizes().stream()
                     .anyMatch(this::isSizePromotionActive);
         } else {
-            // Check product-level promotion
             return isProductPromotionActive(product);
         }
     }
 
-    /**
-     * Check if product has sizes
-     */
     protected Boolean hasSizes(Product product) {
         return product.getSizes() != null && !product.getSizes().isEmpty();
     }
 
-    /**
-     * Generate public URL for product
-     */
     protected String generatePublicUrl(Product product) {
         return "/products/" + product.getId();
     }
 
-    /**
-     * Sort images: MAIN first, then GALLERY by creation date
-     */
-    protected List<com.emenu.features.product.dto.response.ProductImageResponse> sortImages(
-            List<com.emenu.features.product.models.ProductImage> images) {
+    protected List<ProductImageResponse> sortImages(List<ProductImage> images) {
         if (images == null || images.isEmpty()) {
             return List.of();
         }
 
         return images.stream()
                 .sorted((img1, img2) -> {
-                    // MAIN images first
                     if (img1.getImageType().name().equals("MAIN") && !img2.getImageType().name().equals("MAIN")) {
                         return -1;
                     }
                     if (!img1.getImageType().name().equals("MAIN") && img2.getImageType().name().equals("MAIN")) {
                         return 1;
                     }
-                    // Then sort by creation date (newest first)
                     return img2.getCreatedAt().compareTo(img1.getCreatedAt());
                 })
                 .map(this::mapImageToResponse)
                 .toList();
     }
 
-    /**
-     * Sort sizes by price (lowest to highest)
-     */
-    protected List<com.emenu.features.product.dto.response.ProductSizeResponse> sortSizes(
-            List<com.emenu.features.product.models.ProductSize> sizes) {
+    protected List<ProductSizeResponse> sortSizes(List<ProductSize> sizes) {
         if (sizes == null || sizes.isEmpty()) {
             return List.of();
         }
@@ -189,7 +255,7 @@ public abstract class ProductMapper {
                 .sorted((size1, size2) -> {
                     BigDecimal price1 = calculateSizeFinalPrice(size1);
                     BigDecimal price2 = calculateSizeFinalPrice(size2);
-                    return price1.compareTo(price2); // Ascending order (lowest first)
+                    return price1.compareTo(price2);
                 })
                 .map(this::mapSizeToResponse)
                 .toList();
@@ -199,10 +265,7 @@ public abstract class ProductMapper {
     // HELPER CALCULATION METHODS
     // ================================
 
-    /**
-     * Calculate final price for a product size with promotion
-     */
-    private BigDecimal calculateSizeFinalPrice(com.emenu.features.product.models.ProductSize size) {
+    private BigDecimal calculateSizeFinalPrice(ProductSize size) {
         if (!isSizePromotionActive(size)) {
             return size.getPrice();
         }
@@ -228,9 +291,6 @@ public abstract class ProductMapper {
         };
     }
 
-    /**
-     * Calculate final price for product with promotion
-     */
     private BigDecimal calculateProductFinalPrice(Product product) {
         if (!isProductPromotionActive(product)) {
             return product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
@@ -257,10 +317,7 @@ public abstract class ProductMapper {
         };
     }
 
-    /**
-     * Check if size promotion is active
-     */
-    private boolean isSizePromotionActive(com.emenu.features.product.models.ProductSize size) {
+    private boolean isSizePromotionActive(ProductSize size) {
         if (size.getPromotionValue() == null || size.getPromotionType() == null) {
             return false;
         }
@@ -278,9 +335,6 @@ public abstract class ProductMapper {
         return true;
     }
 
-    /**
-     * Check if product promotion is active
-     */
     private boolean isProductPromotionActive(Product product) {
         if (product.getPromotionValue() == null || product.getPromotionType() == null) {
             return false;
@@ -303,11 +357,7 @@ public abstract class ProductMapper {
     // MAPPING HELPER METHODS
     // ================================
 
-    /**
-     * Map ProductImage entity to response
-     */
-    private ProductImageResponse mapImageToResponse(
-            ProductImage image) {
+    private ProductImageResponse mapImageToResponse(ProductImage image) {
         ProductImageResponse response = new ProductImageResponse();
         response.setId(image.getId());
         response.setImageUrl(image.getImageUrl());
@@ -315,9 +365,6 @@ public abstract class ProductMapper {
         return response;
     }
 
-    /**
-     * Map ProductSize entity to response with calculated fields
-     */
     private ProductSizeResponse mapSizeToResponse(ProductSize size) {
         ProductSizeResponse response = new ProductSizeResponse();
         response.setId(size.getId());
@@ -333,18 +380,50 @@ public abstract class ProductMapper {
     }
 
     // ================================
-    // PAGINATION MAPPING
+    // USER-SPECIFIC DATA ENRICHMENT
     // ================================
 
     /**
-     * Convert Page to PaginationResponse with enhanced sorting
+     * Enrich responses with favorite status for authenticated user
      */
-    public PaginationResponse<ProductResponse> toPaginationResponse(Page<Product> productPage) {
-        List<ProductResponse> responses = productPage.getContent().stream()
-                .map(this::toResponse)
+    public List<ProductResponse> enrichWithFavoriteStatus(List<ProductResponse> responses, UUID userId) {
+        if (responses.isEmpty()) {
+            return responses;
+        }
+
+        List<UUID> productIds = responses.stream()
+                .map(ProductResponse::getId)
                 .toList();
 
-        return paginationMapper.toPaginationResponse(productPage, responses);
+        List<UUID> favoriteProductIds = productFavoriteRepository.findAll().stream()
+                .filter(fav -> fav.getUserId().equals(userId) && productIds.contains(fav.getProductId()))
+                .map(ProductFavorite::getProductId)
+                .toList();
+
+        responses.forEach(response -> 
+                response.setIsFavorited(favoriteProductIds.contains(response.getId())));
+
+        return responses;
+    }
+
+    /**
+     * Enrich single response with favorite status
+     */
+    public ProductResponse enrichWithFavoriteStatus(ProductResponse response, UUID userId) {
+        boolean isFavorited = productFavoriteRepository.existsByUserIdAndProductId(userId, response.getId());
+        response.setIsFavorited(isFavorited);
+        return response;
+    }
+
+    // ================================
+    // UTILITY METHODS
+    // ================================
+
+    private Pageable createPageable(ProductFilterRequest filter) {
+        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
+        return PaginationUtils.createPageable(
+                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+        );
     }
 
     // ================================
@@ -364,37 +443,5 @@ public abstract class ProductMapper {
     @Named("mapPromotionTypeToString")
     protected String mapPromotionTypeToString(PromotionType promotionType) {
         return promotionType != null ? promotionType.name() : null;
-    }
-
-    // ================================
-    // UTILITY METHODS FOR SERVICE
-    // ================================
-
-    /**
-     * Enrich product responses with user-specific data
-     */
-    public List<ProductResponse> enrichWithUserData(List<ProductResponse> responses, Function<UUID, Boolean> favoriteChecker) {
-        return responses.stream()
-                .peek(response -> {
-                    try {
-                        response.setIsFavorited(favoriteChecker.apply(response.getId()));
-                    } catch (Exception e) {
-                        response.setIsFavorited(false);
-                    }
-                })
-                .toList();
-    }
-
-    /**
-     * Enrich single product response with user-specific data
-     */
-    public ProductResponse enrichWithUserData(ProductResponse response,
-                                              Function<UUID, Boolean> favoriteChecker) {
-        try {
-            response.setIsFavorited(favoriteChecker.apply(response.getId()));
-        } catch (Exception e) {
-            response.setIsFavorited(false);
-        }
-        return response;
     }
 }

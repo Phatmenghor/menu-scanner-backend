@@ -1,6 +1,5 @@
 package com.emenu.features.product.controller;
 
-import com.emenu.features.auth.models.User;
 import com.emenu.features.product.dto.filter.ProductFilterRequest;
 import com.emenu.features.product.dto.response.ProductResponse;
 import com.emenu.features.product.service.ProductService;
@@ -27,7 +26,7 @@ public class PublicProductController {
     /**
      * Get my business products
      */
-    @PostMapping("/my-business/all")
+    @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<ProductResponse>>> getMyBusinessProducts(@Valid @RequestBody ProductFilterRequest filter) {
         log.info("Getting products for current user's business");
         PaginationResponse<ProductResponse> products = productService.getAllProducts(filter);

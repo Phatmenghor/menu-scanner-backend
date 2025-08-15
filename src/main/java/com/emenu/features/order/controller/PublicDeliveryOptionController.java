@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/delivery-options")
+@RequestMapping("/api/v1/public/delivery-options")
 @RequiredArgsConstructor
 @Slf4j
 public class PublicDeliveryOptionController {
