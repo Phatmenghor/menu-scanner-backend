@@ -28,8 +28,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
-        show_sql: false
-        use_sql_comments: false
+        jdbc:
+          batch_size: 50
 
   # Cache Configuration
   cache:
@@ -41,8 +41,6 @@ spring:
 server:
   port: 8080
   url: "http://152.42.219.13:8080"
-  servlet:
-    context-path: /
 
 # JWT Configuration
 jwt:
@@ -368,9 +366,7 @@ logging:
   level:
     root: INFO
     com.emenu: INFO
-    org.springframework.security: WARN
-    org.springframework.web: WARN
+    org.springframework: WARN
     org.hibernate: WARN
-    org.hibernate.SQL: WARN            # CHANGED: From DEBUG to WARN
-    org.hibernate.type: WARN           # ADDED: Hide parameter binding
-    org.hibernate.orm.jdbc.bind: WARN  # ADDED: Hide JDBC binding logs
+    org.hibernate.SQL: WARN
+    org.hibernate.type: WARN
