@@ -36,15 +36,271 @@ public class ProductServiceImpl implements ProductService {
     private final ProductSizeRepository productSizeRepository;
     private final ProductImageRepository productImageRepository;
     private final ProductFavoriteRepository productFavoriteRepository;
+    
+    // Original mappers for CRUD operations
     private final ProductMapper productMapper;
     private final ProductSizeMapper productSizeMapper;
     private final ProductImageMapper productImageMapper;
     private final FavoriteResponseMapper favoriteMapper;
     private final PromotionResponseMapper promotionMapper;
+    
+    // Fast listing mapper
+    private final ProductListingMapper productListingMapper;
+    
     private final SecurityUtils securityUtils;
 
     // ================================
-    // CRUD OPERATIONS
+    // FAST LISTING OPERATIONS - ACTUALLY USING NATIVE QUERIES
+    // ================================
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaginationResponse<ProductResponse> getAllProducts(ProductFilterRequest filter) {
+        long startTime = System.currentTimeMillis();
+        
+        log.info("Getting products with FAST NATIVE QUERY - Page: {}, Size: {}", 
+                filter.getPageNo(), filter.getPageSize());
+
+        try {
+            Optional<User> currentUser = securityUtils.getCurrentUserOptional();
+            
+            // Apply business filter for authenticated business users
+            if (currentUser.isPresent() && currentUser.get().isBusinessUser() && filter.getBusinessId() == null) {
+                filter.setBusinessId(currentUser.get().getBusinessId());
+            }
+
+            // Calculate pagination
+            int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
+            int pageSize = filter.getPageSize() != null ? filter.getPageSize() : 10;
+            int offset = pageNo * pageSize;
+
+            // Convert enum to string for native query
+            String statusStr = filter.getStatus() != null ? filter.getStatus().name() : null;
+
+            // EXECUTE FAST NATIVE QUERIES
+            List<Object[]> rows = productRepository.findProductsForListing(
+                    filter.getBusinessId(),
+                    filter.getCategoryId(),
+                    filter.getBrandId(),
+                    statusStr,
+                    filter.getSearch(),
+                    pageSize,
+                    offset
+            );
+
+            long totalElements = productRepository.countProductsForListing(
+                    filter.getBusinessId(),
+                    filter.getCategoryId(),
+                    filter.getBrandId(),
+                    statusStr,
+                    filter.getSearch()
+            );
+
+            // Convert native query results to lightweight DTOs
+            PaginationResponse<ProductListingResponse> fastResult = productListingMapper.createFastPaginationResponse(
+                    rows, 
+                    totalElements, 
+                    pageNo, 
+                    pageSize,
+                    currentUser.map(User::getId).orElse(null)
+            );
+            
+            // Convert ProductListingResponse to ProductResponse for API compatibility
+            List<ProductResponse> productResponses = fastResult.getContent().stream()
+                    .map(this::convertListingToProductResponse)
+                    .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("FAST NATIVE QUERY completed in {}ms - {} products returned", 
+                    duration, productResponses.size());
+            
+            // Return with ProductResponse structure for API compatibility
+            return PaginationResponse.<ProductResponse>builder()
+                    .content(productResponses)
+                    .pageNo(fastResult.getPageNo())
+                    .pageSize(fastResult.getPageSize())
+                    .totalElements(fastResult.getTotalElements())
+                    .totalPages(fastResult.getTotalPages())
+                    .first(fastResult.isFirst())
+                    .last(fastResult.isLast())
+                    .hasNext(fastResult.isHasNext())
+                    .hasPrevious(fastResult.isHasPrevious())
+                    .build();
+            
+        } catch (Exception e) {
+            log.error("Error in FAST NATIVE QUERY: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve products with fast query", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaginationResponse<ProductResponse> getUserFavorites(ProductFilterRequest filter) {
+        long startTime = System.currentTimeMillis();
+        
+        UUID userId = securityUtils.getCurrentUserId();
+        log.info("Getting user favorites with FAST NATIVE QUERY - User: {}, Page: {}, Size: {}", 
+                userId, filter.getPageNo(), filter.getPageSize());
+
+        try {
+            // Calculate pagination
+            int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
+            int pageSize = filter.getPageSize() != null ? filter.getPageSize() : 10;
+            int offset = pageNo * pageSize;
+
+            // EXECUTE FAST NATIVE QUERIES FOR FAVORITES
+            List<Object[]> rows = productRepository.findUserFavoriteProducts(userId, pageSize, offset);
+            long totalElements = productRepository.countUserFavorites(userId);
+
+            // Convert native query results to lightweight DTOs
+            PaginationResponse<ProductListingResponse> fastResult = productListingMapper.createFastPaginationResponse(
+                    rows, 
+                    totalElements, 
+                    pageNo, 
+                    pageSize,
+                    userId // All are favorites
+            );
+            
+            // Convert to ProductResponse for API compatibility
+            List<ProductResponse> productResponses = fastResult.getContent().stream()
+                    .map(listing -> {
+                        ProductResponse response = convertListingToProductResponse(listing);
+                        response.setIsFavorited(true); // All are favorites
+                        return response;
+                    })
+                    .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("FAST FAVORITES QUERY completed in {}ms - {} products returned", 
+                    duration, productResponses.size());
+            
+            return PaginationResponse.<ProductResponse>builder()
+                    .content(productResponses)
+                    .pageNo(fastResult.getPageNo())
+                    .pageSize(fastResult.getPageSize())
+                    .totalElements(fastResult.getTotalElements())
+                    .totalPages(fastResult.getTotalPages())
+                    .first(fastResult.isFirst())
+                    .last(fastResult.isLast())
+                    .hasNext(fastResult.isHasNext())
+                    .hasPrevious(fastResult.isHasPrevious())
+                    .build();
+            
+        } catch (Exception e) {
+            log.error("Error in FAST FAVORITES QUERY: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve favorites with fast query", e);
+        }
+    }
+
+    /**
+     * Convert ProductListingResponse to ProductResponse for API compatibility
+     * This maintains the same API structure while using fast queries internally
+     */
+    private ProductResponse convertListingToProductResponse(ProductListingResponse listing) {
+        ProductResponse response = new ProductResponse();
+        
+        // Copy all fields from listing to response
+        response.setId(listing.getId());
+        response.setBusinessId(listing.getBusinessId());
+        response.setBusinessName(listing.getBusinessName());
+        response.setCategoryId(listing.getCategoryId());
+        response.setCategoryName(listing.getCategoryName());
+        response.setBrandId(listing.getBrandId());
+        response.setBrandName(listing.getBrandName());
+        response.setName(listing.getName());
+        response.setDescription(listing.getDescription());
+        response.setStatus(listing.getStatus());
+        response.setPrice(listing.getPrice());
+        response.setPromotionType(listing.getPromotionType());
+        response.setPromotionValue(listing.getPromotionValue());
+        response.setDisplayPrice(listing.getDisplayPrice());
+        response.setHasPromotionActive(listing.getHasActivePromotion());
+        response.setHasSizes(listing.getHasSizes());
+        response.setMainImageUrl(listing.getMainImageUrl());
+        response.setFavoriteCount(listing.getFavoriteCount());
+        response.setViewCount(listing.getViewCount());
+        response.setIsFavorited(listing.getIsFavorited());
+        response.setPublicUrl(listing.getPublicUrl());
+        response.setCreatedAt(listing.getCreatedAt());
+        response.setUpdatedAt(listing.getUpdatedAt());
+        
+        // Set empty collections for listings (as requested)
+        response.setImages(List.of());
+        response.setSizes(List.of());
+        
+        // Set fields that are not needed for listings
+        response.setPromotionFromDate(null);
+        response.setPromotionToDate(null);
+        
+        return response;
+    }
+
+    // ================================
+    // SINGLE PRODUCT OPERATIONS - FULL DETAILS
+    // ================================
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductResponse getProductById(UUID id) {
+        long startTime = System.currentTimeMillis();
+        
+        log.info("Getting FULL product details by ID: {}", id);
+
+        try {
+            Product product = findProductByIdWithDetails(id);
+            ProductResponse response = productMapper.toResponse(product);
+            
+            Optional<User> currentUser = securityUtils.getCurrentUserOptional();
+            if (currentUser.isPresent()) {
+                response = productMapper.enrichWithFavoriteStatus(response, currentUser.get().getId());
+            } else {
+                response.setIsFavorited(false);
+            }
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("FULL product details retrieved in {}ms", duration);
+            
+            return response;
+            
+        } catch (Exception e) {
+            log.error("Error getting FULL product by ID {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductResponse getProductByIdPublic(UUID id) {
+        long startTime = System.currentTimeMillis();
+        
+        log.info("Getting FULL product details (public) by ID: {}", id);
+
+        try {
+            Product product = findProductByIdWithDetails(id);
+            productRepository.incrementViewCount(id);
+            
+            ProductResponse response = productMapper.toResponse(product);
+            
+            Optional<User> currentUser = securityUtils.getCurrentUserOptional();
+            if (currentUser.isPresent()) {
+                response = productMapper.enrichWithFavoriteStatus(response, currentUser.get().getId());
+            } else {
+                response.setIsFavorited(false);
+            }
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("FULL public product details retrieved in {}ms", duration);
+            
+            return response;
+            
+        } catch (Exception e) {
+            log.error("Error getting FULL public product by ID {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    // ================================
+    // CRUD OPERATIONS (UNCHANGED)
     // ================================
 
     @Override
@@ -65,58 +321,6 @@ public class ProductServiceImpl implements ProductService {
                 savedProduct.getName(), currentUser.getBusinessId());
         
         return getProductById(savedProduct.getId());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public PaginationResponse<ProductResponse> getAllProducts(ProductFilterRequest filter) {
-        log.info("Getting all products - Auth context: {}", securityUtils.getAuthenticationContext());
-
-        Optional<User> currentUser = securityUtils.getCurrentUserOptional();
-        
-        return productMapper.getProductsWithFilter(
-            filter, 
-            currentUser, 
-            this::loadProductCollections
-        );
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ProductResponse getProductById(UUID id) {
-        log.info("Getting product by ID: {} - Auth context: {}", id, securityUtils.getAuthenticationContext());
-
-        Product product = findProductByIdWithDetails(id);
-        ProductResponse response = productMapper.toResponse(product);
-        
-        Optional<User> currentUser = securityUtils.getCurrentUserOptional();
-        if (currentUser.isPresent()) {
-            response = productMapper.enrichWithFavoriteStatus(response, currentUser.get().getId());
-        } else {
-            response.setIsFavorited(false);
-        }
-        
-        return response;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ProductResponse getProductByIdPublic(UUID id) {
-        log.info("Getting product by ID (public): {} - Auth context: {}", id, securityUtils.getAuthenticationContext());
-
-        Product product = findProductByIdWithDetails(id);
-        productRepository.incrementViewCount(id);
-        
-        ProductResponse response = productMapper.toResponse(product);
-        
-        Optional<User> currentUser = securityUtils.getCurrentUserOptional();
-        if (currentUser.isPresent()) {
-            response = productMapper.enrichWithFavoriteStatus(response, currentUser.get().getId());
-        } else {
-            response.setIsFavorited(false);
-        }
-        
-        return response;
     }
 
     @Override
@@ -160,7 +364,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ================================
-    // FAVORITES MANAGEMENT
+    // FAVORITES MANAGEMENT (UNCHANGED)
     // ================================
 
     @Override
@@ -194,18 +398,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public PaginationResponse<ProductResponse> getUserFavorites(ProductFilterRequest filter) {
-        UUID userId = securityUtils.getCurrentUserId();
-        
-        return productMapper.getUserFavoritesWithPagination(
-            filter, 
-            userId, 
-            this::loadProductCollections
-        );
-    }
-
-    @Override
     public FavoriteRemoveAllResponse removeAllFavorites() {
         UUID userId = securityUtils.getCurrentUserId();
         
@@ -222,7 +414,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ================================
-    // PROMOTION MANAGEMENT
+    // PROMOTION MANAGEMENT (UNCHANGED)
     // ================================
 
     @Override
@@ -291,7 +483,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ================================
-    // HELPER METHODS
+    // HELPER METHODS (UNCHANGED)
     // ================================
 
     private Product findProductByIdWithDetails(UUID id) {

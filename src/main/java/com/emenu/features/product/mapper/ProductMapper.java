@@ -1,5 +1,6 @@
 package com.emenu.features.product.mapper;
 
+import com.emenu.enums.product.ProductStatus;
 import com.emenu.enums.product.PromotionType;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.product.dto.filter.ProductFilterRequest;
@@ -14,24 +15,24 @@ import com.emenu.features.product.models.ProductImage;
 import com.emenu.features.product.models.ProductSize;
 import com.emenu.features.product.repository.ProductFavoriteRepository;
 import com.emenu.features.product.repository.ProductRepository;
-import com.emenu.features.product.specification.ProductSpecification;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
-import com.emenu.shared.pagination.PaginationUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE,
         uses = {ProductSizeMapper.class, ProductImageMapper.class})
+@Slf4j
 public abstract class ProductMapper {
 
     @Autowired
@@ -65,7 +66,190 @@ public abstract class ProductMapper {
     public abstract Product toEntity(ProductCreateRequest request);
 
     // ================================
-    // RESPONSE MAPPING WITH BUSINESS LOGIC
+    // FAST LISTING METHODS - NATIVE QUERY SUPPORT
+    // ================================
+
+    /**
+     * Fast pagination method using native queries for listings
+     */
+    public PaginationResponse<ProductResponse> getProductsWithNativeQuery(
+            ProductFilterRequest filter, 
+            Optional<User> currentUser) {
+        
+        long startTime = System.currentTimeMillis();
+        
+        try {
+            // Apply business filter for authenticated business users
+            if (currentUser.isPresent() && currentUser.get().isBusinessUser() && filter.getBusinessId() == null) {
+                filter.setBusinessId(currentUser.get().getBusinessId());
+            }
+
+            // Calculate pagination
+            int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
+            int pageSize = filter.getPageSize() != null ? filter.getPageSize() : 10;
+            int offset = pageNo * pageSize;
+
+            // Convert enum to string for native query
+            String statusStr = filter.getStatus() != null ? filter.getStatus().name() : null;
+
+            // Execute optimized native queries
+            List<Object[]> rows = productRepository.findProductsForListing(
+                    filter.getBusinessId(),
+                    filter.getCategoryId(),
+                    filter.getBrandId(),
+                    statusStr,
+                    filter.getSearch(),
+                    pageSize,
+                    offset
+            );
+
+            long totalElements = productRepository.countProductsForListing(
+                    filter.getBusinessId(),
+                    filter.getCategoryId(),
+                    filter.getBrandId(),
+                    statusStr,
+                    filter.getSearch()
+            );
+
+            // Convert native query results to DTOs
+            List<ProductResponse> content = mapNativeQueryToResponses(rows);
+            
+            // Enrich with favorite status if user is authenticated
+            if (currentUser.isPresent()) {
+                content = enrichWithFavoriteStatus(content, currentUser.get().getId());
+            } else {
+                content.forEach(response -> response.setIsFavorited(false));
+            }
+
+            int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("Fast listing query completed in {}ms - {} products", duration, content.size());
+
+            return PaginationResponse.<ProductResponse>builder()
+                    .content(content)
+                    .pageNo(pageNo + 1) // Convert to 1-based
+                    .pageSize(pageSize)
+                    .totalElements(totalElements)
+                    .totalPages(totalPages)
+                    .first(pageNo == 0)
+                    .last(pageNo >= totalPages - 1)
+                    .hasNext(pageNo < totalPages - 1)
+                    .hasPrevious(pageNo > 0)
+                    .build();
+                    
+        } catch (Exception e) {
+            log.error("Error in fast listing query: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve products", e);
+        }
+    }
+
+    /**
+     * Fast user favorites with native queries
+     */
+    public PaginationResponse<ProductResponse> getUserFavoritesWithNativeQuery(
+            ProductFilterRequest filter,
+            UUID userId) {
+
+        long startTime = System.currentTimeMillis();
+        
+        try {
+            // Calculate pagination
+            int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
+            int pageSize = filter.getPageSize() != null ? filter.getPageSize() : 10;
+            int offset = pageNo * pageSize;
+
+            // Execute native queries
+            List<Object[]> rows = productRepository.findUserFavoriteProducts(userId, pageSize, offset);
+            long totalElements = productRepository.countUserFavorites(userId);
+
+            // Convert native query results to DTOs
+            List<ProductResponse> content = mapNativeQueryToResponses(rows);
+            content.forEach(response -> response.setIsFavorited(true)); // All are favorites
+
+            int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("Fast favorites query completed in {}ms - {} products", duration, content.size());
+
+            return PaginationResponse.<ProductResponse>builder()
+                    .content(content)
+                    .pageNo(pageNo + 1)
+                    .pageSize(pageSize)
+                    .totalElements(totalElements)
+                    .totalPages(totalPages)
+                    .first(pageNo == 0)
+                    .last(pageNo >= totalPages - 1)
+                    .hasNext(pageNo < totalPages - 1)
+                    .hasPrevious(pageNo > 0)
+                    .build();
+                    
+        } catch (Exception e) {
+            log.error("Error in fast favorites query: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve favorites", e);
+        }
+    }
+
+    /**
+     * Convert native query result Object[] to ProductResponse
+     * Array indices match the SELECT clause in repository queries
+     */
+    public ProductResponse mapNativeQueryToResponse(Object[] row) {
+        try {
+            ProductResponse response = new ProductResponse();
+            
+            // Basic fields (indices 0-13)
+            response.setId((UUID) row[0]);
+            response.setBusinessId((UUID) row[1]);
+            response.setCategoryId((UUID) row[2]);
+            response.setBrandId((UUID) row[3]);
+            response.setName((String) row[4]);
+            response.setDescription((String) row[5]);
+            response.setStatus(ProductStatus.valueOf((String) row[6]));
+            response.setPrice((BigDecimal) row[7]);
+            response.setPromotionType((String) row[8]);
+            response.setPromotionValue((BigDecimal) row[9]);
+            response.setViewCount(getLongValue(row[10]));
+            response.setFavoriteCount(getLongValue(row[11]));
+            response.setCreatedAt(convertToLocalDateTime(row[12]));
+            response.setUpdatedAt(convertToLocalDateTime(row[13]));
+            
+            // Related entity names (indices 14-16)
+            response.setBusinessName((String) row[14]);
+            response.setCategoryName((String) row[15]);
+            response.setBrandName((String) row[16]);
+            
+            // Calculated fields (indices 17-20)
+            response.setMainImageUrl((String) row[17]);
+            response.setHasSizes((Boolean) row[18]);
+            response.setDisplayPrice((BigDecimal) row[19]);
+            response.setHasPromotionActive((Boolean) row[20]);
+            
+            // Set derived fields
+            response.setPublicUrl("/products/" + response.getId());
+            response.setImages(List.of()); // Empty for listings
+            response.setSizes(List.of()); // Empty for listings
+            response.setIsFavorited(false); // Set separately
+            
+            return response;
+            
+        } catch (Exception e) {
+            log.error("Error mapping native query result: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to map query result", e);
+        }
+    }
+
+    /**
+     * Convert list of native query results to ProductResponse list
+     */
+    public List<ProductResponse> mapNativeQueryToResponses(List<Object[]> rows) {
+        return rows.stream()
+                .map(this::mapNativeQueryToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ================================
+    // RESPONSE MAPPING WITH BUSINESS LOGIC (FOR SINGLE PRODUCT VIEW)
     // ================================
 
     @Mapping(source = "business.name", target = "businessName")
@@ -100,88 +284,6 @@ public abstract class ProductMapper {
     @Mapping(target = "favoriteCount", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "mapStringToPromotionType")
     public abstract void updateEntity(ProductUpdateRequest request, @MappingTarget Product product);
-
-    // ================================
-    // COMBINED SPECIFICATION AND PAGINATION METHOD
-    // ================================
-
-    /**
-     * Get products with specification, pagination, and user enrichment in one method
-     * This combines filtering, pagination, and user-specific data enrichment
-     */
-    public PaginationResponse<ProductResponse> getProductsWithFilter(
-            ProductFilterRequest filter, 
-            Optional<User> currentUser,
-            Function<Product, Product> productLoader) {
-
-        // Apply business filter for authenticated business users
-        if (currentUser.isPresent() && currentUser.get().isBusinessUser() && filter.getBusinessId() == null) {
-            filter.setBusinessId(currentUser.get().getBusinessId());
-        }
-
-        // Build specification and pageable
-        Specification<Product> spec = ProductSpecification.buildSpecification(filter);
-        Pageable pageable = createPageable(filter);
-        
-        // Execute query
-        Page<Product> productPage = productRepository.findAll(spec, pageable);
-        
-        // Load collections and convert to responses
-        List<ProductResponse> responses = productPage.getContent().stream()
-                .map(productLoader) // Load collections
-                .map(this::toResponse) // Convert to response
-                .toList();
-
-        // Enrich with user-specific data if authenticated
-        if (currentUser.isPresent()) {
-            UUID userId = currentUser.get().getId();
-            responses = enrichWithFavoriteStatus(responses, userId);
-        } else {
-            responses.forEach(response -> response.setIsFavorited(false));
-        }
-
-        // Create pagination response
-        return paginationMapper.toPaginationResponse(productPage, responses);
-    }
-
-    /**
-     * Get user favorites with pagination in one method
-     */
-    public PaginationResponse<ProductResponse> getUserFavoritesWithPagination(
-            ProductFilterRequest filter,
-            UUID userId,
-            Function<Product, Product> productLoader) {
-
-        Specification<ProductFavorite> favoriteSpec = (root, query, criteriaBuilder) -> {
-            query.distinct(true);
-            return criteriaBuilder.and(
-                criteriaBuilder.equal(root.get("userId"), userId),
-                criteriaBuilder.equal(root.get("isDeleted"), false)
-            );
-        };
-
-        Pageable pageable = createPageable(filter);
-        Page<ProductFavorite> favoritePage = productFavoriteRepository.findAll(favoriteSpec, pageable);
-        
-        List<ProductResponse> responses = favoritePage.getContent().stream()
-                .map(ProductFavorite::getProduct)
-                .map(productLoader) // Load collections
-                .map(this::toResponse) // Convert to response
-                .peek(response -> response.setIsFavorited(true)) // All are favorites
-                .toList();
-
-        return PaginationResponse.<ProductResponse>builder()
-                .content(responses)
-                .pageNo(favoritePage.getNumber() + 1)
-                .pageSize(favoritePage.getSize())
-                .totalElements(favoritePage.getTotalElements())
-                .totalPages(favoritePage.getTotalPages())
-                .first(favoritePage.isFirst())
-                .last(favoritePage.isLast())
-                .hasNext(favoritePage.hasNext())
-                .hasPrevious(favoritePage.hasPrevious())
-                .build();
-    }
 
     // ================================
     // BUSINESS LOGIC METHODS
@@ -243,7 +345,7 @@ public abstract class ProductMapper {
                     return img2.getCreatedAt().compareTo(img1.getCreatedAt());
                 })
                 .map(this::mapImageToResponse)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     protected List<ProductSizeResponse> sortSizes(List<ProductSize> sizes) {
@@ -258,7 +360,51 @@ public abstract class ProductMapper {
                     return price1.compareTo(price2);
                 })
                 .map(this::mapSizeToResponse)
-                .toList();
+                .collect(Collectors.toList());
+    }
+
+    // ================================
+    // USER-SPECIFIC DATA ENRICHMENT
+    // ================================
+
+    /**
+     * Enrich responses with favorite status for authenticated user
+     */
+    public List<ProductResponse> enrichWithFavoriteStatus(List<ProductResponse> responses, UUID userId) {
+        if (responses.isEmpty()) {
+            return responses;
+        }
+
+        try {
+            List<UUID> productIds = responses.stream()
+                    .map(ProductResponse::getId)
+                    .collect(Collectors.toList());
+
+            Set<UUID> favoriteProductIds = productFavoriteRepository.findAll().stream()
+                    .filter(fav -> fav.getUserId().equals(userId) && 
+                                 productIds.contains(fav.getProductId()) && 
+                                 !fav.getIsDeleted())
+                    .map(ProductFavorite::getProductId)
+                    .collect(Collectors.toSet());
+
+            responses.forEach(response -> 
+                    response.setIsFavorited(favoriteProductIds.contains(response.getId())));
+
+            return responses;
+        } catch (Exception e) {
+            log.warn("Error enriching with favorite status: {}", e.getMessage());
+            responses.forEach(response -> response.setIsFavorited(false));
+            return responses;
+        }
+    }
+
+    /**
+     * Enrich single response with favorite status
+     */
+    public ProductResponse enrichWithFavoriteStatus(ProductResponse response, UUID userId) {
+        boolean isFavorited = productFavoriteRepository.existsByUserIdAndProductId(userId, response.getId());
+        response.setIsFavorited(isFavorited);
+        return response;
     }
 
     // ================================
@@ -380,50 +526,34 @@ public abstract class ProductMapper {
     }
 
     // ================================
-    // USER-SPECIFIC DATA ENRICHMENT
-    // ================================
-
-    /**
-     * Enrich responses with favorite status for authenticated user
-     */
-    public List<ProductResponse> enrichWithFavoriteStatus(List<ProductResponse> responses, UUID userId) {
-        if (responses.isEmpty()) {
-            return responses;
-        }
-
-        List<UUID> productIds = responses.stream()
-                .map(ProductResponse::getId)
-                .toList();
-
-        List<UUID> favoriteProductIds = productFavoriteRepository.findAll().stream()
-                .filter(fav -> fav.getUserId().equals(userId) && productIds.contains(fav.getProductId()))
-                .map(ProductFavorite::getProductId)
-                .toList();
-
-        responses.forEach(response -> 
-                response.setIsFavorited(favoriteProductIds.contains(response.getId())));
-
-        return responses;
-    }
-
-    /**
-     * Enrich single response with favorite status
-     */
-    public ProductResponse enrichWithFavoriteStatus(ProductResponse response, UUID userId) {
-        boolean isFavorited = productFavoriteRepository.existsByUserIdAndProductId(userId, response.getId());
-        response.setIsFavorited(isFavorited);
-        return response;
-    }
-
-    // ================================
     // UTILITY METHODS
     // ================================
 
-    private Pageable createPageable(ProductFilterRequest filter) {
-        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
-        return PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
-        );
+    private LocalDateTime convertToLocalDateTime(Object timestamp) {
+        if (timestamp == null) {
+            return null;
+        }
+        
+        if (timestamp instanceof Timestamp) {
+            return ((Timestamp) timestamp).toLocalDateTime();
+        } else if (timestamp instanceof LocalDateTime) {
+            return (LocalDateTime) timestamp;
+        } else if (timestamp instanceof java.sql.Date) {
+            return ((java.sql.Date) timestamp).toLocalDate().atStartOfDay();
+        } else {
+            log.warn("Unexpected timestamp type: {}", timestamp.getClass());
+            return null;
+        }
+    }
+
+    private Long getLongValue(Object value) {
+        if (value == null) {
+            return 0L;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        return 0L;
     }
 
     // ================================
