@@ -6,6 +6,7 @@ import com.emenu.features.product.dto.response.FavoriteRemoveAllDto;
 import com.emenu.features.product.dto.response.FavoriteToggleDto;
 import com.emenu.features.product.dto.response.ProductDetailDto;
 import com.emenu.features.product.dto.response.ProductListDto;
+import com.emenu.features.product.service.ProductFavoriteService;
 import com.emenu.features.product.service.ProductService;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
@@ -25,45 +26,25 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductFavoriteService favoriteService;
 
     // ================================
-    // 🚀 FAST LISTING ENDPOINTS
+    // Product CRUD Operations
     // ================================
 
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> searchProducts(
             @Valid @RequestBody ProductFilterDto filter) {
         
-        log.info("Searching products - Page: {}, Size: {}, Search: '{}', Business: {}", 
-                filter.getPageNo(), filter.getPageSize(), filter.getSearch(), filter.getBusinessId());
+        log.info("Searching products - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
         
         PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
         
         return ResponseEntity.ok(ApiResponse.success(
-            String.format("Found %d products (Page %d of %d)", 
-                products.getTotalElements(), products.getPageNo(), products.getTotalPages()),
+            String.format("Found %d products", products.getTotalElements()),
             products
         ));
     }
-
-    @PostMapping("/my-business")
-    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getMyBusinessProducts(
-            @Valid @RequestBody ProductFilterDto filter) {
-        
-        log.info("Getting my business products - Page: {}, Size: {}", 
-                filter.getPageNo(), filter.getPageSize());
-        
-        PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
-        
-        return ResponseEntity.ok(ApiResponse.success(
-            String.format("Retrieved %d business products", products.getTotalElements()),
-            products
-        ));
-    }
-
-    // ================================
-    // 🚀 SINGLE PRODUCT ENDPOINTS
-    // ================================
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductDetailDto>> getProductById(@PathVariable UUID id) {
@@ -82,10 +63,6 @@ public class ProductController {
         
         return ResponseEntity.ok(ApiResponse.success("Product retrieved successfully", product));
     }
-
-    // ================================
-    // 🚀 CRUD OPERATIONS
-    // ================================
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProductDetailDto>> createProduct(
@@ -121,14 +98,14 @@ public class ProductController {
     }
 
     // ================================
-    // 🚀 FAVORITES ENDPOINTS
+    // Favorite Operations
     // ================================
 
     @PostMapping("/{id}/favorite/toggle")
     public ResponseEntity<ApiResponse<FavoriteToggleDto>> toggleFavorite(@PathVariable UUID id) {
         log.info("Toggling favorite for product: {}", id);
         
-        FavoriteToggleDto result = productService.toggleFavorite(id);
+        FavoriteToggleDto result = favoriteService.toggleFavorite(id);
         
         return ResponseEntity.ok(ApiResponse.success(result.getMessage(), result));
     }
@@ -137,10 +114,9 @@ public class ProductController {
     public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getUserFavorites(
             @Valid @RequestBody ProductFilterDto filter) {
         
-        log.info("Getting user favorites - Page: {}, Size: {}", 
-                filter.getPageNo(), filter.getPageSize());
+        log.info("Getting user favorites - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
         
-        PaginationResponse<ProductListDto> favorites = productService.getUserFavorites(filter);
+        PaginationResponse<ProductListDto> favorites = favoriteService.getUserFavorites(filter);
         
         return ResponseEntity.ok(ApiResponse.success(
             String.format("Retrieved %d favorite products", favorites.getTotalElements()),
@@ -152,8 +128,27 @@ public class ProductController {
     public ResponseEntity<ApiResponse<FavoriteRemoveAllDto>> removeAllFavorites() {
         log.info("Removing all favorites for current user");
         
-        FavoriteRemoveAllDto result = productService.removeAllFavorites();
+        FavoriteRemoveAllDto result = favoriteService.removeAllFavorites();
         
         return ResponseEntity.ok(ApiResponse.success(result.getMessage(), result));
+    }
+
+    // ================================
+    // Business-specific endpoints
+    // ================================
+
+    @PostMapping("/my-business")
+    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getMyBusinessProducts(
+            @Valid @RequestBody ProductFilterDto filter) {
+        
+        log.info("Getting my business products - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
+        
+        // Service will automatically filter by current user's business
+        PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            String.format("Retrieved %d business products", products.getTotalElements()),
+            products
+        ));
     }
 }

@@ -4,7 +4,7 @@ import com.emenu.features.product.dto.filter.ProductFilterDto;
 import com.emenu.features.product.dto.response.FavoriteRemoveAllDto;
 import com.emenu.features.product.dto.response.FavoriteToggleDto;
 import com.emenu.features.product.dto.response.ProductListDto;
-import com.emenu.features.product.service.ProductService;
+import com.emenu.features.product.service.ProductFavoriteService;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
@@ -20,42 +20,49 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class ProductFavoriteController {
-    private final ProductService productService;
+    
+    private final ProductFavoriteService favoriteService;
 
-    /**
-     * Set specific favorite status (true to add, false to remove)
-     */
+    @PostMapping("/{id}/toggle")
+    public ResponseEntity<ApiResponse<FavoriteToggleDto>> toggleFavorite(@PathVariable UUID id) {
+        log.info("Toggling favorite for product: {}", id);
+        
+        FavoriteToggleDto result = favoriteService.toggleFavorite(id);
+        
+        return ResponseEntity.ok(ApiResponse.success(result.getMessage(), result));
+    }
+
     @PostMapping("/{id}/favorite")
     public ResponseEntity<ApiResponse<FavoriteToggleDto>> setFavoriteStatus(
             @PathVariable UUID id,
             @RequestParam boolean favorite) {
+        
         log.info("Setting favorite status to {} for product: {}", favorite, id);
         
-        // Use toggle method since we only have toggle available
-        FavoriteToggleDto result = productService.toggleFavorite(id);
+        // For now, we use toggle - in future could implement specific set operation
+        FavoriteToggleDto result = favoriteService.toggleFavorite(id);
         
         String action = favorite ? "added to" : "removed from";
         return ResponseEntity.ok(ApiResponse.success("Product " + action + " favorites successfully", result));
     }
 
-    /**
-     * Get user's favorite products with proper pagination
-     */
     @PostMapping("/favorites")
     public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getUserFavorites(
             @Valid @RequestBody ProductFilterDto filter) {
-        log.info("Getting user's favorite products - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
-        PaginationResponse<ProductListDto> favorites = productService.getUserFavorites(filter);
+        
+        log.info("Getting user's favorite products");
+        
+        PaginationResponse<ProductListDto> favorites = favoriteService.getUserFavorites(filter);
+        
         return ResponseEntity.ok(ApiResponse.success("Favorite products retrieved successfully", favorites));
     }
 
-    /**
-     * Remove all favorite products for current user
-     */
     @DeleteMapping("/favorites/all")
     public ResponseEntity<ApiResponse<FavoriteRemoveAllDto>> removeAllFavorites() {
         log.info("Removing all favorites for current user");
-        FavoriteRemoveAllDto result = productService.removeAllFavorites();
+        
+        FavoriteRemoveAllDto result = favoriteService.removeAllFavorites();
+        
         return ResponseEntity.ok(ApiResponse.success("All favorites removed successfully", result));
     }
 }

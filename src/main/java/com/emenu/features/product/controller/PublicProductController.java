@@ -26,8 +26,7 @@ public class PublicProductController {
     public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> searchPublicProducts(
             @Valid @RequestBody ProductFilterDto filter) {
         
-        log.info("Public search - Page: {}, Size: {}, Search: '{}', Business: {}", 
-                filter.getPageNo(), filter.getPageSize(), filter.getSearch(), filter.getBusinessId());
+        log.info("Public search - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
         
         PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
         
@@ -51,8 +50,7 @@ public class PublicProductController {
             @PathVariable UUID businessId,
             @Valid @RequestBody ProductFilterDto filter) {
         
-        log.info("Getting public business products - Business: {}, Page: {}, Size: {}", 
-                businessId, filter.getPageNo(), filter.getPageSize());
+        log.info("Getting public business products - Business: {}", businessId);
         
         // Set business ID for filtering
         filter.setBusinessId(businessId);
@@ -70,8 +68,7 @@ public class PublicProductController {
             @PathVariable UUID categoryId,
             @Valid @RequestBody ProductFilterDto filter) {
         
-        log.info("Getting public category products - Category: {}, Page: {}, Size: {}", 
-                categoryId, filter.getPageNo(), filter.getPageSize());
+        log.info("Getting public category products - Category: {}", categoryId);
         
         // Set category ID for filtering
         filter.setCategoryId(categoryId);
