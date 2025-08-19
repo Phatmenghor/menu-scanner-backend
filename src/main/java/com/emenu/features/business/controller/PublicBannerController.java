@@ -22,7 +22,6 @@ import java.util.List;
 @Slf4j
 public class PublicBannerController {
     private final BannerService bannerService;
-    private final SecurityUtils securityUtils;
 
     /**
      * Get all banners with filtering
