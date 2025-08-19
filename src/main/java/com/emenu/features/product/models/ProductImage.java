@@ -11,7 +11,12 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "product_images")
+@Table(name = "product_images", indexes = {
+    // 🔥 CRITICAL INDEXES for image queries
+    @Index(name = "idx_product_images_product_type_deleted", columnList = "product_id, image_type, is_deleted"),
+    @Index(name = "idx_product_images_product_created_deleted", columnList = "product_id, created_at, is_deleted"),
+    @Index(name = "idx_product_images_type_deleted", columnList = "image_type, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -25,40 +30,23 @@ public class ProductImage extends BaseUUIDEntity {
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private Product product;
 
-    @Column(name = "image_url", nullable = false)
+    @Column(name = "image_url", nullable = false, length = 500)
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "image_type", nullable = false)
+    @Column(name = "image_type", nullable = false, length = 20)
     private ImageType imageType = ImageType.GALLERY;
 
-    // ================================
-    // FIXED: Proper parent-child relationship management
-    // ================================
-
-    /**
-     * FIXED: Set product with proper relationship management
-     */
-    public void setProduct(Product product) {
-        this.product = product;
-        if (product != null) {
-            this.productId = product.getId();
-        } else {
-            this.productId = null;
-        }
-    }
-
-    /**
-     * FIXED: Set product ID with relationship sync
-     */
-    public void setProductId(UUID productId) {
+    public ProductImage(UUID productId, String imageUrl, ImageType imageType) {
         this.productId = productId;
-        // Note: Don't set product here to avoid circular reference in collection management
+        this.imageUrl = imageUrl;
+        this.imageType = imageType;
     }
 
-    // ================================
-    // BUSINESS METHODS
-    // ================================
+    public ProductImage(String imageUrl, ImageType imageType) {
+        this.imageUrl = imageUrl;
+        this.imageType = imageType;
+    }
 
     public void setAsMain() {
         this.imageType = ImageType.MAIN;
@@ -76,40 +64,16 @@ public class ProductImage extends BaseUUIDEntity {
         return ImageType.GALLERY.equals(imageType);
     }
 
-    // ================================
-    // CONSTRUCTORS
-    // ================================
+    public void setProduct(Product product) {
+        this.product = product;
+        if (product != null) {
+            this.productId = product.getId();
+        } else {
+            this.productId = null;
+        }
+    }
 
-    public ProductImage(UUID productId, String imageUrl, ImageType imageType) {
+    public void setProductId(UUID productId) {
         this.productId = productId;
-        this.imageUrl = imageUrl;
-        this.imageType = imageType;
-    }
-
-    public ProductImage(String imageUrl, ImageType imageType) {
-        this.imageUrl = imageUrl;
-        this.imageType = imageType;
-    }
-
-    // ================================
-    // VALIDATION HELPERS
-    // ================================
-
-    public boolean hasValidUrl() {
-        return imageUrl != null && !imageUrl.trim().isEmpty();
-    }
-
-    public boolean belongsToProduct(UUID productId) {
-        return this.productId != null && this.productId.equals(productId);
-    }
-
-    @Override
-    public String toString() {
-        return "ProductImage{" +
-                "id=" + getId() +
-                ", productId=" + productId +
-                ", imageUrl='" + imageUrl + '\'' +
-                ", imageType=" + imageType +
-                '}';
     }
 }

@@ -1,7 +1,8 @@
 package com.emenu.features.product.repository;
 
-import com.emenu.enums.product.ProductStatus;
 import com.emenu.features.product.models.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -18,202 +19,11 @@ import java.util.UUID;
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
     
     // ================================
-    // FAST LISTING QUERIES - OPTIMIZED FOR PERFORMANCE
+    // OPTIMIZED BASIC QUERIES - Using indexes
     // ================================
     
     /**
-     * Fast native query for product listings with calculated pricing
-     * Includes product-level and size-level promotion calculations
-     */
-    @Query(value = """
-        SELECT DISTINCT p.id, p.business_id, p.category_id, p.brand_id, p.name, p.description, 
-               p.status, p.price, p.promotion_type, p.promotion_value, 
-               p.view_count, p.favorite_count, p.created_at, p.updated_at,
-               b.name as business_name, c.name as category_name, br.name as brand_name,
-               (SELECT pi.image_url FROM product_images pi 
-                WHERE pi.product_id = p.id AND pi.image_type = 'MAIN' 
-                AND pi.is_deleted = false LIMIT 1) as main_image_url,
-               (SELECT COUNT(*) > 0 FROM product_sizes ps 
-                WHERE ps.product_id = p.id AND ps.is_deleted = false) as has_sizes,
-               (SELECT CASE 
-                    WHEN COUNT(*) = 0 THEN 
-                        CASE 
-                            WHEN p.promotion_type IS NOT NULL 
-                            AND (p.promotion_from_date IS NULL OR p.promotion_from_date <= NOW())
-                            AND (p.promotion_to_date IS NULL OR p.promotion_to_date >= NOW())
-                            THEN 
-                                CASE 
-                                    WHEN p.promotion_type = 'PERCENTAGE' 
-                                    THEN p.price - (p.price * p.promotion_value / 100)
-                                    WHEN p.promotion_type = 'FIXED_AMOUNT' 
-                                    THEN GREATEST(0, p.price - p.promotion_value)
-                                    ELSE p.price
-                                END
-                            ELSE p.price
-                        END
-                    ELSE MIN(CASE 
-                        WHEN ps.promotion_type IS NOT NULL 
-                        AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date <= NOW())
-                        AND (ps.promotion_to_date IS NULL OR ps.promotion_to_date >= NOW())
-                        THEN 
-                            CASE 
-                                WHEN ps.promotion_type = 'PERCENTAGE' 
-                                THEN ps.price - (ps.price * ps.promotion_value / 100)
-                                WHEN ps.promotion_type = 'FIXED_AMOUNT' 
-                                THEN GREATEST(0, ps.price - ps.promotion_value)
-                                ELSE ps.price
-                            END
-                        ELSE ps.price
-                    END)
-                END
-                FROM product_sizes ps 
-                WHERE ps.product_id = p.id AND ps.is_deleted = false) as display_price,
-               (SELECT CASE 
-                    WHEN COUNT(*) = 0 THEN 
-                        CASE 
-                            WHEN p.promotion_type IS NOT NULL 
-                            AND (p.promotion_from_date IS NULL OR p.promotion_from_date <= NOW())
-                            AND (p.promotion_to_date IS NULL OR p.promotion_to_date >= NOW())
-                            THEN TRUE ELSE FALSE
-                        END
-                    ELSE COUNT(*) > 0
-                END
-                FROM product_sizes ps 
-                WHERE ps.product_id = p.id AND ps.is_deleted = false
-                AND ps.promotion_type IS NOT NULL 
-                AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date <= NOW())
-                AND (ps.promotion_to_date IS NULL OR ps.promotion_to_date >= NOW())) as has_active_promotion
-        FROM products p
-        LEFT JOIN businesses b ON p.business_id = b.id
-        LEFT JOIN categories c ON p.category_id = c.id
-        LEFT JOIN brands br ON p.brand_id = br.id
-        WHERE p.is_deleted = false
-        AND (:businessId IS NULL OR p.business_id = :businessId)
-        AND (:categoryId IS NULL OR p.category_id = :categoryId)
-        AND (:brandId IS NULL OR p.brand_id = :brandId)
-        AND (:status IS NULL OR p.status = CAST(:status AS VARCHAR))
-        AND (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')))
-        ORDER BY p.created_at DESC
-        LIMIT :limit OFFSET :offset
-        """, nativeQuery = true)
-    List<Object[]> findProductsForListing(
-            @Param("businessId") UUID businessId,
-            @Param("categoryId") UUID categoryId,
-            @Param("brandId") UUID brandId,
-            @Param("status") String status,
-            @Param("search") String search,
-            @Param("limit") int limit,
-            @Param("offset") int offset
-    );
-    
-    /**
-     * Count query for pagination
-     */
-    @Query(value = """
-        SELECT COUNT(DISTINCT p.id)
-        FROM products p
-        WHERE p.is_deleted = false
-        AND (:businessId IS NULL OR p.business_id = :businessId)
-        AND (:categoryId IS NULL OR p.category_id = :categoryId)
-        AND (:brandId IS NULL OR p.brand_id = :brandId)
-        AND (:status IS NULL OR p.status = CAST(:status AS VARCHAR))
-        AND (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')))
-        """, nativeQuery = true)
-    long countProductsForListing(
-            @Param("businessId") UUID businessId,
-            @Param("categoryId") UUID categoryId,
-            @Param("brandId") UUID brandId,
-            @Param("status") String status,
-            @Param("search") String search
-    );
-    
-    /**
-     * Fast user favorites query
-     */
-    @Query(value = """
-        SELECT p.id, p.business_id, p.category_id, p.brand_id, p.name, p.description, 
-               p.status, p.price, p.promotion_type, p.promotion_value, 
-               p.view_count, p.favorite_count, p.created_at, p.updated_at,
-               b.name as business_name, c.name as category_name, br.name as brand_name,
-               (SELECT pi.image_url FROM product_images pi 
-                WHERE pi.product_id = p.id AND pi.image_type = 'MAIN' 
-                AND pi.is_deleted = false LIMIT 1) as main_image_url,
-               (SELECT COUNT(*) > 0 FROM product_sizes ps 
-                WHERE ps.product_id = p.id AND ps.is_deleted = false) as has_sizes,
-               (SELECT CASE 
-                    WHEN COUNT(*) = 0 THEN 
-                        CASE 
-                            WHEN p.promotion_type IS NOT NULL 
-                            AND (p.promotion_from_date IS NULL OR p.promotion_from_date <= NOW())
-                            AND (p.promotion_to_date IS NULL OR p.promotion_to_date >= NOW())
-                            THEN 
-                                CASE 
-                                    WHEN p.promotion_type = 'PERCENTAGE' 
-                                    THEN p.price - (p.price * p.promotion_value / 100)
-                                    WHEN p.promotion_type = 'FIXED_AMOUNT' 
-                                    THEN GREATEST(0, p.price - p.promotion_value)
-                                    ELSE p.price
-                                END
-                            ELSE p.price
-                        END
-                    ELSE MIN(CASE 
-                        WHEN ps.promotion_type IS NOT NULL 
-                        AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date <= NOW())
-                        AND (ps.promotion_to_date IS NULL OR ps.promotion_to_date >= NOW())
-                        THEN 
-                            CASE 
-                                WHEN ps.promotion_type = 'PERCENTAGE' 
-                                THEN ps.price - (ps.price * ps.promotion_value / 100)
-                                WHEN ps.promotion_type = 'FIXED_AMOUNT' 
-                                THEN GREATEST(0, ps.price - ps.promotion_value)
-                                ELSE ps.price
-                            END
-                        ELSE ps.price
-                    END)
-                END
-                FROM product_sizes ps 
-                WHERE ps.product_id = p.id AND ps.is_deleted = false) as display_price,
-               (SELECT CASE 
-                    WHEN COUNT(*) = 0 THEN 
-                        CASE 
-                            WHEN p.promotion_type IS NOT NULL 
-                            AND (p.promotion_from_date IS NULL OR p.promotion_from_date <= NOW())
-                            AND (p.promotion_to_date IS NULL OR p.promotion_to_date >= NOW())
-                            THEN TRUE ELSE FALSE
-                        END
-                    ELSE COUNT(*) > 0
-                END
-                FROM product_sizes ps 
-                WHERE ps.product_id = p.id AND ps.is_deleted = false
-                AND ps.promotion_type IS NOT NULL 
-                AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date <= NOW())
-                AND (ps.promotion_to_date IS NULL OR ps.promotion_to_date >= NOW())) as has_active_promotion
-        FROM products p
-        INNER JOIN product_favorites pf ON p.id = pf.product_id
-        LEFT JOIN businesses b ON p.business_id = b.id
-        LEFT JOIN categories c ON p.category_id = c.id
-        LEFT JOIN brands br ON p.brand_id = br.id
-        WHERE p.is_deleted = false AND pf.is_deleted = false
-        AND pf.user_id = :userId
-        ORDER BY pf.created_at DESC
-        LIMIT :limit OFFSET :offset
-        """, nativeQuery = true)
-    List<Object[]> findUserFavoriteProducts(
-            @Param("userId") UUID userId,
-            @Param("limit") int limit,
-            @Param("offset") int offset
-    );
-    
-    @Query("SELECT COUNT(pf) FROM ProductFavorite pf " +
-           "WHERE pf.userId = :userId AND pf.isDeleted = false")
-    long countUserFavorites(@Param("userId") UUID userId);
-    
-    // ================================
-    // DETAILED QUERIES FOR SINGLE PRODUCT VIEW
-    // ================================
-    
-    /**
-     * Full product details with all collections - for single product view
+     * 🚀 FAST: Single product with collections - Uses primary key
      */
     @Query("SELECT p FROM Product p " +
            "LEFT JOIN FETCH p.category " +
@@ -222,58 +32,238 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "LEFT JOIN FETCH p.images i " +
            "LEFT JOIN FETCH p.sizes s " +
            "WHERE p.id = :id AND p.isDeleted = false")
-    Optional<Product> findByIdWithAllDetails(@Param("id") UUID id);
-    
-    // Basic fetch with main relationships only
+    Optional<Product> findByIdWithDetails(@Param("id") UUID id);
+
+    /**
+     * 🚀 FAST: Basic product info only - Uses primary key
+     */
+    Optional<Product> findByIdAndIsDeletedFalse(UUID id);
+
+    /**
+     * 🚀 FAST: Business products count - Uses idx_products_business_status_deleted
+     */
+    @Query("SELECT COUNT(p) FROM Product p " +
+           "WHERE p.businessId = :businessId AND p.isDeleted = false")
+    long countByBusinessId(@Param("businessId") UUID businessId);
+
+    /**
+     * 🚀 FAST: Category products count - Uses idx_products_category_created_deleted
+     */
+    @Query("SELECT COUNT(p) FROM Product p " +
+           "WHERE p.categoryId = :categoryId AND p.isDeleted = false")
+    long countByCategoryId(@Param("categoryId") UUID categoryId);
+
+    /**
+     * 🚀 FAST: Brand products count - Uses idx_products_brand_created_deleted
+     */
+    @Query("SELECT COUNT(p) FROM Product p " +
+           "WHERE p.brandId = :brandId AND p.isDeleted = false")
+    long countByBrandId(@Param("brandId") UUID brandId);
+
+    // ================================
+    // BUSINESS-SPECIFIC QUERIES - Using business indexes
+    // ================================
+
+    /**
+     * 🚀 FAST: Business products with basic info - Uses idx_products_business_created_deleted
+     */
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.category " +
+           "LEFT JOIN FETCH p.brand " +
+           "WHERE p.businessId = :businessId AND p.isDeleted = false " +
+           "ORDER BY p.createdAt DESC")
+    Page<Product> findByBusinessIdOrderByCreatedAtDesc(@Param("businessId") UUID businessId, Pageable pageable);
+
+    /**
+     * 🚀 FAST: Active products for business - Uses idx_products_business_status_deleted
+     */
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.category " +
+           "LEFT JOIN FETCH p.brand " +
+           "WHERE p.businessId = :businessId AND p.status = 'ACTIVE' AND p.isDeleted = false " +
+           "ORDER BY p.createdAt DESC")
+    Page<Product> findActiveProductsByBusinessId(@Param("businessId") UUID businessId, Pageable pageable);
+
+    /**
+     * 🚀 FAST: Business products by category - Uses idx_products_business_category_deleted
+     */
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.category " +
+           "LEFT JOIN FETCH p.brand " +
+           "WHERE p.businessId = :businessId AND p.categoryId = :categoryId AND p.isDeleted = false " +
+           "ORDER BY p.createdAt DESC")
+    Page<Product> findByBusinessIdAndCategoryId(@Param("businessId") UUID businessId, 
+                                                @Param("categoryId") UUID categoryId, 
+                                                Pageable pageable);
+
+    // ================================
+    // SEARCH QUERIES - Using name index and joins
+    // ================================
+
+    /**
+     * 🚀 FAST: Search by name - Uses idx_products_name_deleted
+     */
     @Query("SELECT p FROM Product p " +
            "LEFT JOIN FETCH p.category " +
            "LEFT JOIN FETCH p.brand " +
            "LEFT JOIN FETCH p.business " +
-           "WHERE p.id = :id AND p.isDeleted = false")
-    Optional<Product> findByIdWithDetails(@Param("id") UUID id);
-    
-    Optional<Product> findByIdAndIsDeletedFalse(UUID id);
-    
+           "WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%')) AND p.isDeleted = false " +
+           "ORDER BY p.createdAt DESC")
+    Page<Product> searchByName(@Param("name") String name, Pageable pageable);
+
+    /**
+     * 🚀 FAST: Full text search - Uses multiple indexes efficiently
+     */
     @Query("SELECT DISTINCT p FROM Product p " +
-           "LEFT JOIN FETCH p.sizes " +
-           "WHERE p.id = :id AND p.isDeleted = false")
-    Optional<Product> findByIdWithSizes(@Param("id") UUID id);
-    
+           "LEFT JOIN FETCH p.category c " +
+           "LEFT JOIN FETCH p.brand b " +
+           "LEFT JOIN FETCH p.business bus " +
+           "WHERE (LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "   OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "   OR LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "   OR LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "   OR LOWER(bus.name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND p.isDeleted = false " +
+           "ORDER BY p.createdAt DESC")
+    Page<Product> fullTextSearch(@Param("search") String search, Pageable pageable);
+
     // ================================
     // STATISTICS AND UPDATES
     // ================================
-    
-    // Increment view count
+
+    /**
+     * 🚀 ATOMIC: Increment view count - Uses primary key
+     */
     @Modifying
     @Query("UPDATE Product p SET p.viewCount = COALESCE(p.viewCount, 0) + 1 WHERE p.id = :productId")
     void incrementViewCount(@Param("productId") UUID productId);
-    
-    // Update favorite count
+
+    /**
+     * 🚀 ATOMIC: Increment favorite count - Uses primary key
+     */
     @Modifying
     @Query("UPDATE Product p SET p.favoriteCount = COALESCE(p.favoriteCount, 0) + 1 WHERE p.id = :productId")
     void incrementFavoriteCount(@Param("productId") UUID productId);
-    
+
+    /**
+     * 🚀 ATOMIC: Decrement favorite count - Uses primary key
+     */
     @Modifying
     @Query("UPDATE Product p SET p.favoriteCount = GREATEST(0, COALESCE(p.favoriteCount, 0) - 1) WHERE p.id = :productId")
     void decrementFavoriteCount(@Param("productId") UUID productId);
 
-    // Promotion management
+    // ================================
+    // PROMOTION MANAGEMENT
+    // ================================
+
+    /**
+     * 🚀 BATCH: Clear expired promotions - Uses idx_products_promotion_dates
+     */
     @Modifying
     @Query("UPDATE Product p SET p.promotionType = NULL, p.promotionValue = NULL, " +
-            "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
-            "WHERE p.promotionToDate < :now AND p.promotionToDate IS NOT NULL")
+           "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
+           "WHERE p.promotionToDate < :now AND p.promotionToDate IS NOT NULL AND p.isDeleted = false")
     int clearExpiredPromotions(@Param("now") LocalDateTime now);
-    
+
+    /**
+     * 🚀 BATCH: Clear all promotions for business - Uses idx_products_business_status_deleted
+     */
     @Modifying
     @Query("UPDATE Product p SET p.promotionType = NULL, p.promotionValue = NULL, " +
-            "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
-            "WHERE p.businessId = :businessId AND p.isDeleted = false")
+           "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
+           "WHERE p.businessId = :businessId AND p.isDeleted = false")
     int clearAllPromotionsForBusiness(@Param("businessId") UUID businessId);
-    
-    // Statistics
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.categoryId = :categoryId AND p.isDeleted = false")
-    long countByCategoryId(@Param("categoryId") UUID categoryId);
-    
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.brandId = :brandId AND p.isDeleted = false")
-    long countByBrandId(@Param("brandId") UUID brandId);
+
+    /**
+     * 🚀 FAST: Count promoted products - Uses promotion indexes
+     */
+    @Query("SELECT COUNT(p) FROM Product p " +
+           "WHERE p.promotionType IS NOT NULL AND p.promotionValue IS NOT NULL " +
+           "AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= :now) " +
+           "AND (p.promotionToDate IS NULL OR p.promotionToDate >= :now) " +
+           "AND p.isDeleted = false")
+    long countActivePromotions(@Param("now") LocalDateTime now);
+
+    // ================================
+    // FAVORITES INTEGRATION
+    // ================================
+
+    /**
+     * 🚀 FAST: User favorites with product details - Uses favorite indexes
+     */
+    @Query("SELECT p FROM Product p " +
+           "INNER JOIN ProductFavorite pf ON p.id = pf.productId " +
+           "LEFT JOIN FETCH p.category " +
+           "LEFT JOIN FETCH p.brand " +
+           "LEFT JOIN FETCH p.business " +
+           "WHERE pf.userId = :userId AND p.isDeleted = false AND pf.isDeleted = false " +
+           "ORDER BY pf.createdAt DESC")
+    Page<Product> findUserFavorites(@Param("userId") UUID userId, Pageable pageable);
+
+    /**
+     * 🚀 FAST: Count user favorites - Uses idx_product_favorites_user_deleted
+     */
+    @Query("SELECT COUNT(pf) FROM ProductFavorite pf " +
+           "WHERE pf.userId = :userId AND pf.isDeleted = false")
+    long countUserFavorites(@Param("userId") UUID userId);
+
+    // ================================
+    // BATCH OPERATIONS
+    // ================================
+
+    /**
+     * 🚀 BATCH: Find products by IDs - Uses primary key index
+     */
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.category " +
+           "LEFT JOIN FETCH p.brand " +
+           "LEFT JOIN FETCH p.business " +
+           "WHERE p.id IN :productIds AND p.isDeleted = false")
+    List<Product> findByIdIn(@Param("productIds") List<UUID> productIds);
+
+    /**
+     * 🚀 BATCH: Update multiple product statuses - Uses primary key index
+     */
+    @Modifying
+    @Query("UPDATE Product p SET p.status = :status " +
+           "WHERE p.id IN :productIds AND p.isDeleted = false")
+    int updateStatusForProducts(@Param("productIds") List<UUID> productIds, 
+                               @Param("status") com.emenu.enums.product.ProductStatus status);
+
+    // ================================
+    // ADMIN QUERIES
+    // ================================
+
+    /**
+     * 🚀 FAST: Recent products across platform - Uses idx_products_status_created_deleted
+     */
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.category " +
+           "LEFT JOIN FETCH p.brand " +
+           "LEFT JOIN FETCH p.business " +
+           "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
+           "ORDER BY p.createdAt DESC")
+    Page<Product> findRecentActiveProducts(Pageable pageable);
+
+    /**
+     * 🚀 FAST: Top viewed products - Uses view_count (consider adding index)
+     */
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.category " +
+           "LEFT JOIN FETCH p.brand " +
+           "LEFT JOIN FETCH p.business " +
+           "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
+           "ORDER BY p.viewCount DESC, p.createdAt DESC")
+    Page<Product> findTopViewedProducts(Pageable pageable);
+
+    /**
+     * 🚀 FAST: Top favorited products - Uses favorite_count (consider adding index)
+     */
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.category " +
+           "LEFT JOIN FETCH p.brand " +
+           "LEFT JOIN FETCH p.business " +
+           "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
+           "ORDER BY p.favoriteCount DESC, p.createdAt DESC")
+    Page<Product> findTopFavoritedProducts(Pageable pageable);
 }

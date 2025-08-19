@@ -14,7 +14,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "product_sizes")
+@Table(name = "product_sizes", indexes = {
+    // 🔥 CRITICAL INDEXES for size queries
+    @Index(name = "idx_product_sizes_product_price_deleted", columnList = "product_id, price, is_deleted"),
+    @Index(name = "idx_product_sizes_product_created_deleted", columnList = "product_id, created_at, is_deleted"),
+    @Index(name = "idx_product_sizes_product_promotion_deleted", columnList = "product_id, promotion_type, is_deleted"),
+    @Index(name = "idx_product_sizes_promotion_dates_deleted", columnList = "promotion_from_date, promotion_to_date, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -28,15 +34,14 @@ public class ProductSize extends BaseUUIDEntity {
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private Product product;
 
-    @Column(name = "name", nullable = false)
-    private String name; // Small, Medium, Large, etc.
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
 
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    // Promotion fields
     @Enumerated(EnumType.STRING)
-    @Column(name = "promotion_type")
+    @Column(name = "promotion_type", length = 20)
     private PromotionType promotionType;
 
     @Column(name = "promotion_value", precision = 10, scale = 2)
@@ -48,33 +53,16 @@ public class ProductSize extends BaseUUIDEntity {
     @Column(name = "promotion_to_date")
     private LocalDateTime promotionToDate;
 
-    // ================================
-    // FIXED: Proper parent-child relationship management
-    // ================================
-
-    /**
-     * FIXED: Set product with proper relationship management
-     */
-    public void setProduct(Product product) {
-        this.product = product;
-        if (product != null) {
-            this.productId = product.getId();
-        } else {
-            this.productId = null;
-        }
-    }
-
-    /**
-     * FIXED: Set product ID with relationship sync
-     */
-    public void setProductId(UUID productId) {
+    public ProductSize(UUID productId, String name, BigDecimal price) {
         this.productId = productId;
-        // Note: Don't set product here to avoid circular reference in collection management
+        this.name = name;
+        this.price = price;
     }
 
-    // ================================
-    // BUSINESS METHODS
-    // ================================
+    public ProductSize(String name, BigDecimal price) {
+        this.name = name;
+        this.price = price;
+    }
 
     public BigDecimal getFinalPrice() {
         if (!isPromotionActive()) {
@@ -83,7 +71,8 @@ public class ProductSize extends BaseUUIDEntity {
 
         switch (promotionType) {
             case PERCENTAGE -> {
-                BigDecimal discount = price.multiply(promotionValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                BigDecimal discount = price.multiply(promotionValue)
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                 return price.subtract(discount);
             }
             case FIXED_AMOUNT -> {
@@ -128,71 +117,16 @@ public class ProductSize extends BaseUUIDEntity {
         this.promotionToDate = null;
     }
 
-    public BigDecimal getDiscountAmount() {
-        if (!isPromotionActive()) {
-            return BigDecimal.ZERO;
+    public void setProduct(Product product) {
+        this.product = product;
+        if (product != null) {
+            this.productId = product.getId();
+        } else {
+            this.productId = null;
         }
-        return price.subtract(getFinalPrice());
     }
 
-    public BigDecimal getDiscountPercentage() {
-        if (!isPromotionActive() || price.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO;
-        }
-        
-        BigDecimal discount = getDiscountAmount();
-        return discount.divide(price, 4, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100));
-    }
-
-    // ================================
-    // CONSTRUCTORS
-    // ================================
-
-    public ProductSize(UUID productId, String name, BigDecimal price) {
+    public void setProductId(UUID productId) {
         this.productId = productId;
-        this.name = name;
-        this.price = price;
-    }
-
-    public ProductSize(String name, BigDecimal price) {
-        this.name = name;
-        this.price = price;
-    }
-
-    // ================================
-    // VALIDATION HELPERS
-    // ================================
-
-    public boolean hasValidPrice() {
-        return price != null && price.compareTo(BigDecimal.ZERO) >= 0;
-    }
-
-    public boolean hasValidName() {
-        return name != null && !name.trim().isEmpty();
-    }
-
-    public boolean belongsToProduct(UUID productId) {
-        return this.productId != null && this.productId.equals(productId);
-    }
-
-    public boolean isPromotionExpired() {
-        return promotionToDate != null && LocalDateTime.now().isAfter(promotionToDate);
-    }
-
-    public boolean isPromotionNotStarted() {
-        return promotionFromDate != null && LocalDateTime.now().isBefore(promotionFromDate);
-    }
-
-    @Override
-    public String toString() {
-        return "ProductSize{" +
-                "id=" + getId() +
-                ", productId=" + productId +
-                ", name='" + name + '\'' +
-                ", price=" + price +
-                ", finalPrice=" + getFinalPrice() +
-                ", hasPromotion=" + isPromotionActive() +
-                '}';
     }
 }

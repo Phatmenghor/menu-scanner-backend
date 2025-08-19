@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,7 +21,23 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+    // 🔥 CRITICAL PERFORMANCE INDEXES for 999,999 products
+    @Index(name = "idx_products_business_status_deleted", columnList = "business_id, status, is_deleted"),
+    @Index(name = "idx_products_business_category_deleted", columnList = "business_id, category_id, is_deleted"),
+    @Index(name = "idx_products_business_brand_deleted", columnList = "business_id, brand_id, is_deleted"),
+    @Index(name = "idx_products_business_created_deleted", columnList = "business_id, created_at, is_deleted"),
+    @Index(name = "idx_products_status_created_deleted", columnList = "status, created_at, is_deleted"),
+    @Index(name = "idx_products_category_created_deleted", columnList = "category_id, created_at, is_deleted"),
+    @Index(name = "idx_products_brand_created_deleted", columnList = "brand_id, created_at, is_deleted"),
+    @Index(name = "idx_products_name_deleted", columnList = "name, is_deleted"),
+    @Index(name = "idx_products_price_deleted", columnList = "price, is_deleted"),
+    @Index(name = "idx_products_promotion_dates", columnList = "promotion_from_date, promotion_to_date, is_deleted"),
+    
+    // Composite indexes for complex filters
+    @Index(name = "idx_products_business_status_category_deleted", columnList = "business_id, status, category_id, is_deleted"),
+    @Index(name = "idx_products_business_price_status_deleted", columnList = "business_id, price, status, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -48,23 +65,21 @@ public class Product extends BaseUUIDEntity {
     @JoinColumn(name = "brand_id", insertable = false, updatable = false)
     private Brand brand;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", nullable = false, length = 255)
     private String name;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, length = 20)
     private ProductStatus status = ProductStatus.ACTIVE;
 
-    // Price fields for products without sizes
     @Column(name = "price", precision = 10, scale = 2)
     private BigDecimal price;
 
-    // Promotion fields for products without sizes
     @Enumerated(EnumType.STRING)
-    @Column(name = "promotion_type")
+    @Column(name = "promotion_type", length = 20)
     private PromotionType promotionType;
 
     @Column(name = "promotion_value", precision = 10, scale = 2)
@@ -76,188 +91,25 @@ public class Product extends BaseUUIDEntity {
     @Column(name = "promotion_to_date")
     private LocalDateTime promotionToDate;
 
-    // Statistics
-    @Column(name = "view_count")
+    @Column(name = "view_count", nullable = false)
     private Long viewCount = 0L;
 
-    @Column(name = "favorite_count")
+    @Column(name = "favorite_count", nullable = false)
     private Long favoriteCount = 0L;
 
-    // FIXED: Collections with proper orphan removal handling
+    // 🚀 OPTIMIZED COLLECTIONS with batch loading
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @BatchSize(size = 25)
+    @OrderBy("imageType ASC, createdAt DESC")
     private List<ProductImage> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @BatchSize(size = 25)
+    @OrderBy("price ASC")
     private List<ProductSize> sizes = new ArrayList<>();
 
     // ================================
-    // COLLECTION MANAGEMENT METHODS - FIXED
-    // ================================
-
-    /**
-     * FIXED: Properly set images collection with parent reference management
-     */
-    public void setImages(List<ProductImage> images) {
-        if (this.images == null) {
-            this.images = new ArrayList<>();
-        }
-        
-        // Clear existing collection
-        this.images.clear();
-        
-        // Add new images with proper parent reference
-        if (images != null) {
-            images.forEach(image -> {
-                image.setProduct(this);
-                image.setProductId(this.getId());
-                this.images.add(image);
-            });
-        }
-    }
-
-    /**
-     * FIXED: Properly set sizes collection with parent reference management
-     */
-    public void setSizes(List<ProductSize> sizes) {
-        if (this.sizes == null) {
-            this.sizes = new ArrayList<>();
-        }
-        
-        // Clear existing collection
-        this.sizes.clear();
-        
-        // Add new sizes with proper parent reference
-        if (sizes != null) {
-            sizes.forEach(size -> {
-                size.setProduct(this);
-                size.setProductId(this.getId());
-                this.sizes.add(size);
-            });
-        }
-    }
-
-    /**
-     * FIXED: Add single image with proper parent reference
-     */
-    public void addImage(ProductImage image) {
-        if (this.images == null) {
-            this.images = new ArrayList<>();
-        }
-        
-        // Set parent reference
-        image.setProduct(this);
-        image.setProductId(this.getId());
-        
-        // Add to collection
-        this.images.add(image);
-    }
-
-    /**
-     * FIXED: Remove single image with proper cleanup
-     */
-    public void removeImage(ProductImage image) {
-        if (this.images != null && this.images.contains(image)) {
-            this.images.remove(image);
-            // Clear parent reference
-            image.setProduct(null);
-            image.setProductId(null);
-        }
-    }
-
-    /**
-     * FIXED: Add single size with proper parent reference
-     */
-    public void addSize(ProductSize size) {
-        if (this.sizes == null) {
-            this.sizes = new ArrayList<>();
-        }
-        
-        // Set parent reference
-        size.setProduct(this);
-        size.setProductId(this.getId());
-        
-        // Add to collection
-        this.sizes.add(size);
-    }
-
-    /**
-     * FIXED: Remove single size with proper cleanup
-     */
-    public void removeSize(ProductSize size) {
-        if (this.sizes != null && this.sizes.contains(size)) {
-            this.sizes.remove(size);
-            // Clear parent reference
-            size.setProduct(null);
-            size.setProductId(null);
-        }
-    }
-
-    /**
-     * Clear all images
-     */
-    public void clearImages() {
-        if (this.images != null) {
-            // Clear parent references
-            this.images.forEach(image -> {
-                image.setProduct(null);
-                image.setProductId(null);
-            });
-            this.images.clear();
-        }
-    }
-
-    /**
-     * Clear all sizes
-     */
-    public void clearSizes() {
-        if (this.sizes != null) {
-            // Clear parent references
-            this.sizes.forEach(size -> {
-                size.setProduct(null);
-                size.setProductId(null);
-            });
-            this.sizes.clear();
-        }
-    }
-
-    // ================================
     // BUSINESS METHODS
-    // ================================
-
-    public void activate() {
-        this.status = ProductStatus.ACTIVE;
-    }
-
-    public void deactivate() {
-        this.status = ProductStatus.INACTIVE;
-    }
-
-    public void markOutOfStock() {
-        this.status = ProductStatus.OUT_OF_STOCK;
-    }
-
-    public boolean isActive() {
-        return ProductStatus.ACTIVE.equals(status);
-    }
-
-    public boolean isAvailable() {
-        return ProductStatus.ACTIVE.equals(status) || ProductStatus.OUT_OF_STOCK.equals(status);
-    }
-
-    public void incrementViewCount() {
-        this.viewCount = (this.viewCount == null ? 0L : this.viewCount) + 1;
-    }
-
-    public void incrementFavoriteCount() {
-        this.favoriteCount = (this.favoriteCount == null ? 0L : this.favoriteCount) + 1;
-    }
-
-    public void decrementFavoriteCount() {
-        this.favoriteCount = Math.max(0L, (this.favoriteCount == null ? 0L : this.favoriteCount) - 1);
-    }
-
-    // ================================
-    // PRICING LOGIC
     // ================================
 
     public boolean hasSizes() {
@@ -266,27 +118,15 @@ public class Product extends BaseUUIDEntity {
 
     public BigDecimal getDisplayPrice() {
         if (hasSizes()) {
-            // Get the lowest price from sizes (with active promotions considered)
             return sizes.stream()
                     .map(ProductSize::getFinalPrice)
                     .min(BigDecimal::compareTo)
                     .orElse(BigDecimal.ZERO);
-        } else {
-            // Use product-level price with promotion
-            return getFinalPrice();
         }
+        return getFinalPrice();
     }
 
-    public BigDecimal getStartingPrice() {
-        return getDisplayPrice();
-    }
-
-    // Product-level promotion methods (for products without sizes)
     public BigDecimal getFinalPrice() {
-        if (hasSizes()) {
-            return getDisplayPrice(); // Delegate to sizes
-        }
-
         if (!isPromotionActive()) {
             return this.price != null ? this.price : BigDecimal.ZERO;
         }
@@ -295,7 +135,8 @@ public class Product extends BaseUUIDEntity {
 
         switch (promotionType) {
             case PERCENTAGE -> {
-                BigDecimal discount = basePrice.multiply(promotionValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                BigDecimal discount = basePrice.multiply(promotionValue)
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                 return basePrice.subtract(discount);
             }
             case FIXED_AMOUNT -> {
@@ -309,12 +150,6 @@ public class Product extends BaseUUIDEntity {
     }
 
     public boolean isPromotionActive() {
-        if (hasSizes()) {
-            // Check if any size has active promotion
-            return sizes.stream().anyMatch(ProductSize::isPromotionActive);
-        }
-
-        // Check product-level promotion
         if (promotionValue == null || promotionType == null) {
             return false;
         }
@@ -332,20 +167,6 @@ public class Product extends BaseUUIDEntity {
         return true;
     }
 
-    public void setPromotion(PromotionType type, BigDecimal value, LocalDateTime fromDate, LocalDateTime toDate) {
-        this.promotionType = type;
-        this.promotionValue = value;
-        this.promotionFromDate = fromDate;
-        this.promotionToDate = toDate;
-    }
-
-    public void removePromotion() {
-        this.promotionType = null;
-        this.promotionValue = null;
-        this.promotionFromDate = null;
-        this.promotionToDate = null;
-    }
-
     public String getMainImageUrl() {
         if (images == null || images.isEmpty()) {
             return null;
@@ -357,24 +178,18 @@ public class Product extends BaseUUIDEntity {
                 .orElse(images.get(0).getImageUrl());
     }
 
-    public boolean hasPromotion() {
-        if (hasSizes()) {
-            return sizes.stream().anyMatch(ProductSize::isPromotionActive);
-        }
-        return isPromotionActive();
+    public void incrementViewCount() {
+        this.viewCount = (this.viewCount == null ? 0L : this.viewCount) + 1;
     }
 
-    public boolean hasMultipleSizes() {
-        return sizes != null && sizes.size() > 1;
+    public void incrementFavoriteCount() {
+        this.favoriteCount = (this.favoriteCount == null ? 0L : this.favoriteCount) + 1;
     }
 
-    // ================================
-    // COLLECTION GETTERS - FIXED
-    // ================================
+    public void decrementFavoriteCount() {
+        this.favoriteCount = Math.max(0L, (this.favoriteCount == null ? 0L : this.favoriteCount) - 1);
+    }
 
-    /**
-     * FIXED: Ensure collections are never null
-     */
     public List<ProductImage> getImages() {
         if (this.images == null) {
             this.images = new ArrayList<>();
@@ -382,13 +197,18 @@ public class Product extends BaseUUIDEntity {
         return this.images;
     }
 
-    /**
-     * FIXED: Ensure collections are never null
-     */
     public List<ProductSize> getSizes() {
         if (this.sizes == null) {
             this.sizes = new ArrayList<>();
         }
         return this.sizes;
+    }
+
+    public boolean isActive() {
+        return ProductStatus.ACTIVE.equals(status);
+    }
+
+    public boolean isAvailable() {
+        return ProductStatus.ACTIVE.equals(status) || ProductStatus.OUT_OF_STOCK.equals(status);
     }
 }

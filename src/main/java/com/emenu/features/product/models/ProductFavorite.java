@@ -12,7 +12,14 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "product_favorites", 
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"}))
+       uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"}),
+       indexes = {
+           // 🔥 CRITICAL INDEXES for favorites
+           @Index(name = "idx_product_favorites_user_deleted", columnList = "user_id, is_deleted"),
+           @Index(name = "idx_product_favorites_product_deleted", columnList = "product_id, is_deleted"),
+           @Index(name = "idx_product_favorites_user_created_deleted", columnList = "user_id, created_at, is_deleted"),
+           @Index(name = "idx_product_favorites_user_product_deleted", columnList = "user_id, product_id, is_deleted")
+       })
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

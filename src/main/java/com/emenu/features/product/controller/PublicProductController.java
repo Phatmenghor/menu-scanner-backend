@@ -1,9 +1,9 @@
 package com.emenu.features.product.controller;
 
-import com.emenu.features.product.dto.filter.ProductFilterRequest;
-import com.emenu.features.product.dto.response.ProductResponse;
+import com.emenu.features.product.dto.filter.ProductFilterDto;
+import com.emenu.features.product.dto.response.ProductDetailDto;
+import com.emenu.features.product.dto.response.ProductListDto;
 import com.emenu.features.product.service.ProductService;
-import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
@@ -15,31 +15,72 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/public/product")
+@RequestMapping("/api/v1/public/products")
 @RequiredArgsConstructor
 @Slf4j
 public class PublicProductController {
 
     private final ProductService productService;
-    private final SecurityUtils securityUtils;
 
-    /**
-     * Get my business products
-     */
-    @PostMapping("/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<ProductResponse>>> getMyBusinessProducts(@Valid @RequestBody ProductFilterRequest filter) {
-        log.info("Getting products for current user's business");
-        PaginationResponse<ProductResponse> products = productService.getAllProducts(filter);
-        return ResponseEntity.ok(ApiResponse.success("Business products retrieved successfully", products));
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> searchPublicProducts(
+            @Valid @RequestBody ProductFilterDto filter) {
+        
+        log.info("Public search - Page: {}, Size: {}, Search: '{}', Business: {}", 
+                filter.getPageNo(), filter.getPageSize(), filter.getSearch(), filter.getBusinessId());
+        
+        PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            String.format("Found %d products", products.getTotalElements()),
+            products
+        ));
     }
 
-    /**
-     * Get product by ID (public view - increments view count)
-     */
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductResponse>> getProductByIdPublic(@PathVariable UUID id) {
-        log.info("Getting product by ID (public): {}", id);
-        ProductResponse product = productService.getProductByIdPublic(id);
+    public ResponseEntity<ApiResponse<ProductDetailDto>> getPublicProductById(@PathVariable UUID id) {
+        log.info("Getting public product by ID: {}", id);
+        
+        ProductDetailDto product = productService.getProductByIdPublic(id);
+        
         return ResponseEntity.ok(ApiResponse.success("Product retrieved successfully", product));
+    }
+
+    @PostMapping("/business/{businessId}")
+    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getBusinessProducts(
+            @PathVariable UUID businessId,
+            @Valid @RequestBody ProductFilterDto filter) {
+        
+        log.info("Getting public business products - Business: {}, Page: {}, Size: {}", 
+                businessId, filter.getPageNo(), filter.getPageSize());
+        
+        // Set business ID for filtering
+        filter.setBusinessId(businessId);
+        
+        PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            String.format("Found %d products for business", products.getTotalElements()),
+            products
+        ));
+    }
+
+    @PostMapping("/category/{categoryId}")
+    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getCategoryProducts(
+            @PathVariable UUID categoryId,
+            @Valid @RequestBody ProductFilterDto filter) {
+        
+        log.info("Getting public category products - Category: {}, Page: {}, Size: {}", 
+                categoryId, filter.getPageNo(), filter.getPageSize());
+        
+        // Set category ID for filtering
+        filter.setCategoryId(categoryId);
+        
+        PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            String.format("Found %d products in category", products.getTotalElements()),
+            products
+        ));
     }
 }

@@ -1,12 +1,12 @@
 package com.emenu.features.product.controller;
 
-import com.emenu.features.auth.models.User;
-import com.emenu.features.product.dto.filter.ProductFilterRequest;
-import com.emenu.features.product.dto.request.ProductCreateRequest;
-import com.emenu.features.product.dto.response.*;
-import com.emenu.features.product.dto.update.ProductUpdateRequest;
+import com.emenu.features.product.dto.filter.ProductFilterDto;
+import com.emenu.features.product.dto.request.ProductCreateDto;
+import com.emenu.features.product.dto.response.FavoriteRemoveAllDto;
+import com.emenu.features.product.dto.response.FavoriteToggleDto;
+import com.emenu.features.product.dto.response.ProductDetailDto;
+import com.emenu.features.product.dto.response.ProductListDto;
 import com.emenu.features.product.service.ProductService;
-import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
@@ -25,110 +25,135 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductService productService;
-    private final SecurityUtils securityUtils;
 
     // ================================
-    // BASIC CRUD OPERATIONS
+    // 🚀 FAST LISTING ENDPOINTS
     // ================================
 
-    /**
-     * Create new product (uses current user's business from token)
-     */
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> searchProducts(
+            @Valid @RequestBody ProductFilterDto filter) {
+        
+        log.info("Searching products - Page: {}, Size: {}, Search: '{}', Business: {}", 
+                filter.getPageNo(), filter.getPageSize(), filter.getSearch(), filter.getBusinessId());
+        
+        PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            String.format("Found %d products (Page %d of %d)", 
+                products.getTotalElements(), products.getPageNo(), products.getTotalPages()),
+            products
+        ));
+    }
+
+    @PostMapping("/my-business")
+    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getMyBusinessProducts(
+            @Valid @RequestBody ProductFilterDto filter) {
+        
+        log.info("Getting my business products - Page: {}, Size: {}", 
+                filter.getPageNo(), filter.getPageSize());
+        
+        PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            String.format("Retrieved %d business products", products.getTotalElements()),
+            products
+        ));
+    }
+
+    // ================================
+    // 🚀 SINGLE PRODUCT ENDPOINTS
+    // ================================
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ProductDetailDto>> getProductById(@PathVariable UUID id) {
+        log.info("Getting product by ID: {}", id);
+        
+        ProductDetailDto product = productService.getProductById(id);
+        
+        return ResponseEntity.ok(ApiResponse.success("Product retrieved successfully", product));
+    }
+
+    @GetMapping("/{id}/public")
+    public ResponseEntity<ApiResponse<ProductDetailDto>> getProductByIdPublic(@PathVariable UUID id) {
+        log.info("Getting product by ID (public): {}", id);
+        
+        ProductDetailDto product = productService.getProductByIdPublic(id);
+        
+        return ResponseEntity.ok(ApiResponse.success("Product retrieved successfully", product));
+    }
+
+    // ================================
+    // 🚀 CRUD OPERATIONS
+    // ================================
+
     @PostMapping
-    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@Valid @RequestBody ProductCreateRequest request) {
+    public ResponseEntity<ApiResponse<ProductDetailDto>> createProduct(
+            @Valid @RequestBody ProductCreateDto request) {
+        
         log.info("Creating product: {}", request.getName());
-        ProductResponse product = productService.createProduct(request);
+        
+        ProductDetailDto product = productService.createProduct(request);
+        
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Product created successfully", product));
     }
 
-    /**
-     * Get all products with filtering (full details)
-     */
-    @PostMapping("/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<ProductResponse>>> getAllProducts(@Valid @RequestBody ProductFilterRequest filter) {
-        log.info("Getting all products for current user's business");
-        PaginationResponse<ProductResponse> products = productService.getAllProducts(filter);
-        return ResponseEntity.ok(ApiResponse.success("Products retrieved successfully", products));
-    }
-
-    /**
-     * Get my business products
-     */
-    @PostMapping("/my-business/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<ProductResponse>>> getMyBusinessProducts(@Valid @RequestBody ProductFilterRequest filter) {
-        log.info("Getting products for current user's business");
-        User currentUser = securityUtils.getCurrentUser();
-        filter.setBusinessId(currentUser.getBusinessId());
-        PaginationResponse<ProductResponse> products = productService.getAllProducts(filter);
-        return ResponseEntity.ok(ApiResponse.success("Business products retrieved successfully", products));
-    }
-
-    /**
-     * Get product by ID (admin view)
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductResponse>> getProductById(@PathVariable UUID id) {
-        log.info("Getting product by ID: {}", id);
-        ProductResponse product = productService.getProductById(id);
-        return ResponseEntity.ok(ApiResponse.success("Product retrieved successfully", product));
-    }
-
-    /**
-     * Update product
-     */
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
+    public ResponseEntity<ApiResponse<ProductDetailDto>> updateProduct(
             @PathVariable UUID id,
-            @Valid @RequestBody ProductUpdateRequest request) {
+            @Valid @RequestBody ProductCreateDto request) {
+        
         log.info("Updating product: {}", id);
-        ProductResponse product = productService.updateProduct(id, request);
+        
+        ProductDetailDto product = productService.updateProduct(id, request);
+        
         return ResponseEntity.ok(ApiResponse.success("Product updated successfully", product));
     }
 
-    /**
-     * Delete product
-     */
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductResponse>> deleteProduct(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<ProductDetailDto>> deleteProduct(@PathVariable UUID id) {
         log.info("Deleting product: {}", id);
-        ProductResponse product = productService.deleteProduct(id);
+        
+        ProductDetailDto product = productService.deleteProduct(id);
+        
         return ResponseEntity.ok(ApiResponse.success("Product deleted successfully", product));
     }
 
     // ================================
-    // PROMOTION MANAGEMENT ENDPOINTS
+    // 🚀 FAVORITES ENDPOINTS
     // ================================
 
-    /**
-     * Clear all promotions for a specific product (product-level + all sizes)
-     */
-    @PostMapping("/{productId}/promotions/clear-all")
-    public ResponseEntity<ApiResponse<ProductPromotionResetResponse>> clearAllProductPromotions(@PathVariable UUID productId) {
-        log.info("Clearing all promotions for product: {}", productId);
-        ProductPromotionResetResponse result = productService.resetProductPromotion(productId);
-        return ResponseEntity.ok(ApiResponse.success("All product promotions cleared successfully", result));
+    @PostMapping("/{id}/favorite/toggle")
+    public ResponseEntity<ApiResponse<FavoriteToggleDto>> toggleFavorite(@PathVariable UUID id) {
+        log.info("Toggling favorite for product: {}", id);
+        
+        FavoriteToggleDto result = productService.toggleFavorite(id);
+        
+        return ResponseEntity.ok(ApiResponse.success(result.getMessage(), result));
     }
 
-    /**
-     * Clear promotion for a specific size
-     */
-    @PostMapping("/{productId}/sizes/{sizeId}/promotion/clear")
-    public ResponseEntity<ApiResponse<SizePromotionResetResponse>> clearSizePromotion(
-            @PathVariable UUID productId,
-            @PathVariable UUID sizeId) {
-        log.info("Clearing promotion for size {} in product {}", sizeId, productId);
-        SizePromotionResetResponse result = productService.resetSizePromotion(productId, sizeId);
-        return ResponseEntity.ok(ApiResponse.success("Size promotion cleared successfully", result));
+    @PostMapping("/favorites")
+    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getUserFavorites(
+            @Valid @RequestBody ProductFilterDto filter) {
+        
+        log.info("Getting user favorites - Page: {}, Size: {}", 
+                filter.getPageNo(), filter.getPageSize());
+        
+        PaginationResponse<ProductListDto> favorites = productService.getUserFavorites(filter);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            String.format("Retrieved %d favorite products", favorites.getTotalElements()),
+            favorites
+        ));
     }
 
-    /**
-     * Clear ALL promotions for current user's business
-     */
-    @PostMapping("/my-business/promotions/clear-all")
-    public ResponseEntity<ApiResponse<BusinessPromotionResetResponse>> clearAllBusinessPromotions() {
-        log.info("Clearing all promotions for current user's business");
-        BusinessPromotionResetResponse result = productService.resetAllBusinessPromotions();
-        return ResponseEntity.ok(ApiResponse.success("All business promotions cleared successfully", result));
+    @DeleteMapping("/favorites/all")
+    public ResponseEntity<ApiResponse<FavoriteRemoveAllDto>> removeAllFavorites() {
+        log.info("Removing all favorites for current user");
+        
+        FavoriteRemoveAllDto result = productService.removeAllFavorites();
+        
+        return ResponseEntity.ok(ApiResponse.success(result.getMessage(), result));
     }
 }
