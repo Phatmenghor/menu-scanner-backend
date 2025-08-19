@@ -63,7 +63,6 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<ProductListDto> getAllProducts(ProductFilterDto filter) {
-        long startTime = System.currentTimeMillis();
         log.info("🚀 High-performance product search - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
 
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
@@ -115,23 +114,12 @@ public class ProductServiceImpl implements ProductService {
             batchLoadSizes(productPage.getContent());
         }
 
-        long queryTime = System.currentTimeMillis() - startTime;
-        log.debug("📊 Query execution time: {}ms", queryTime);
-
         PaginationResponse<ProductListDto> response = paginationMapper.toPaginationResponse(
                 productPage,
                 productMapper::toListDtos
         );
 
-        // ✅ OPTIMIZED: Batch load favorites
-        if (currentUser.isPresent()) {
-            batchEnrichFavorites(response.getContent(), currentUser.get().getId());
-        }
-
-        long totalTime = System.currentTimeMillis() - startTime;
-        log.info("✅ Retrieved {} products in {}ms (query: {}ms)",
-                response.getContent().size(), totalTime, queryTime);
-
+        currentUser.ifPresent(user -> batchEnrichFavorites(response.getContent(), user.getId()));
         return response;
     }
 
@@ -183,8 +171,6 @@ public class ProductServiceImpl implements ProductService {
     private void batchLoadSizes(List<Product> products) {
         if (products.isEmpty()) return;
 
-        long startTime = System.currentTimeMillis();
-
         List<UUID> productIds = products.stream()
                 .map(Product::getId)
                 .toList();
@@ -198,9 +184,6 @@ public class ProductServiceImpl implements ProductService {
             product.getSizes().clear();
             product.getSizes().addAll(sizes);
         });
-
-        long loadTime = System.currentTimeMillis() - startTime;
-        log.debug("📏 Batch loaded sizes for {} products in {}ms", products.size(), loadTime);
     }
 
     /**
@@ -208,8 +191,6 @@ public class ProductServiceImpl implements ProductService {
      */
     private void batchEnrichFavorites(List<ProductListDto> products, UUID userId) {
         if (products.isEmpty()) return;
-
-        long startTime = System.currentTimeMillis();
 
         List<UUID> productIds = products.stream()
                 .map(ProductListDto::getId)
@@ -219,15 +200,11 @@ public class ProductServiceImpl implements ProductService {
 
         products.forEach(product ->
                 product.setIsFavorited(favoriteProductIds.contains(product.getId())));
-
-        long favoriteTime = System.currentTimeMillis() - startTime;
-        log.debug("❤️ Batch enriched favorites for {} products in {}ms", products.size(), favoriteTime);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductDetailDto getProductById(UUID id) {
-        long startTime = System.currentTimeMillis();
         log.info("🔍 Getting product details: {}", id);
 
         // ✅ OPTIMIZED: Single query with all details including sizes
@@ -246,16 +223,12 @@ public class ProductServiceImpl implements ProductService {
             dto.setIsFavorited(isFavorited);
         }
 
-        long totalTime = System.currentTimeMillis() - startTime;
-        log.info("✅ Product details loaded in {}ms", totalTime);
-
         return dto;
     }
 
     @Override
     @Transactional
     public ProductDetailDto getProductByIdPublic(UUID id) {
-        long startTime = System.currentTimeMillis();
         log.info("🌐 Getting public product: {}", id);
 
         Product product = productRepository.findByIdWithAllDetails(id)
@@ -271,9 +244,6 @@ public class ProductServiceImpl implements ProductService {
             boolean isFavorited = favoriteQueryHelper.isFavorited(currentUser.get().getId(), product.getId());
             dto.setIsFavorited(isFavorited);
         }
-
-        long totalTime = System.currentTimeMillis() - startTime;
-        log.info("✅ Public product loaded in {}ms", totalTime);
 
         return dto;
     }
@@ -350,7 +320,7 @@ public class ProductServiceImpl implements ProductService {
 
         if (!images.isEmpty()) {
             productImageRepository.saveAll(images);
-            log.debug("📸 Created {} images for product {}", images.size(), product.getId());
+            log.debug("Created {} images for product {}", images.size(), product.getId());
         }
     }
 
