@@ -1,4 +1,3 @@
-
 package com.emenu.features.product.specification;
 
 import com.emenu.features.product.dto.filter.ProductFilterDto;

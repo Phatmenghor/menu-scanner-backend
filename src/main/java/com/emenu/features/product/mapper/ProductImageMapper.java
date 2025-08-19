@@ -1,5 +1,6 @@
 package com.emenu.features.product.mapper;
 
+import com.emenu.enums.product.ImageType;
 import com.emenu.features.product.dto.request.ProductImageCreateDto;
 import com.emenu.features.product.dto.response.ProductImageDto;
 import com.emenu.features.product.models.ProductImage;
@@ -24,19 +25,19 @@ public interface ProductImageMapper {
     List<ProductImageDto> toDtos(List<ProductImage> entities);
 
     @Named("stringToImageType")
-    default com.emenu.enums.product.ImageType stringToImageType(String imageType) {
+    default ImageType stringToImageType(String imageType) {
         if (imageType == null || imageType.trim().isEmpty()) {
-            return com.emenu.enums.product.ImageType.GALLERY;
+            return ImageType.GALLERY;
         }
         try {
-            return com.emenu.enums.product.ImageType.valueOf(imageType.toUpperCase());
+            return ImageType.valueOf(imageType.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return com.emenu.enums.product.ImageType.GALLERY;
+            return ImageType.GALLERY;
         }
     }
 
     @Named("imageTypeToString")
-    default String imageTypeToString(com.emenu.enums.product.ImageType imageType) {
+    default String imageTypeToString(ImageType imageType) {
         return imageType != null ? imageType.name() : "GALLERY";
     }
 }

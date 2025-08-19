@@ -31,7 +31,7 @@ public abstract class ProductMapper {
     @Mapping(target = "favoriteCount", constant = "0L")
     @Mapping(target = "images", ignore = true) // Handle in service
     @Mapping(target = "sizes", ignore = true) // Handle in service
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "productStringToPromotionType")
     public abstract Product toEntity(ProductCreateDto dto);
 
     // ================================
@@ -60,7 +60,7 @@ public abstract class ProductMapper {
     @Mapping(target = "displayPrice", expression = "java(product.getDisplayPrice())")
     @Mapping(target = "hasPromotion", expression = "java(product.isPromotionActive())")
     @Mapping(target = "hasSizes", expression = "java(product.hasSizes())")
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "productPromotionTypeToString")
     @Mapping(target = "isFavorited", constant = "false") // Set separately in service
     public abstract ProductDetailDto toDetailDto(Product product);
 
@@ -101,11 +101,11 @@ public abstract class ProductMapper {
     }
 
     // ================================
-    // HELPER METHODS
+    // HELPER METHODS - RENAMED TO AVOID CONFLICTS
     // ================================
 
-    @Named("stringToPromotionType")
-    protected com.emenu.enums.product.PromotionType stringToPromotionType(String promotionType) {
+    @Named("productStringToPromotionType")
+    protected com.emenu.enums.product.PromotionType productStringToPromotionType(String promotionType) {
         if (promotionType == null || promotionType.trim().isEmpty()) {
             return null;
         }
@@ -116,8 +116,8 @@ public abstract class ProductMapper {
         }
     }
 
-    @Named("promotionTypeToString")
-    protected String promotionTypeToString(com.emenu.enums.product.PromotionType promotionType) {
+    @Named("productPromotionTypeToString")
+    protected String productPromotionTypeToString(com.emenu.enums.product.PromotionType promotionType) {
         return promotionType != null ? promotionType.name() : null;
     }
 }

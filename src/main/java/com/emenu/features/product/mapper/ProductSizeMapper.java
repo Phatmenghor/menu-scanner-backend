@@ -15,18 +15,18 @@ public interface ProductSizeMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "productId", ignore = true)
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizeStringToPromotionType")
     ProductSize toEntity(ProductSizeCreateDto dto);
 
     @Mapping(target = "finalPrice", expression = "java(entity.getFinalPrice())")
     @Mapping(target = "hasPromotion", expression = "java(entity.isPromotionActive())")
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizePromotionTypeToString")
     ProductSizeDto toDto(ProductSize entity);
 
     List<ProductSizeDto> toDtos(List<ProductSize> entities);
 
-    @Named("stringToPromotionType")
-    default com.emenu.enums.product.PromotionType stringToPromotionType(String promotionType) {
+    @Named("sizeStringToPromotionType")
+    default com.emenu.enums.product.PromotionType sizeStringToPromotionType(String promotionType) {
         if (promotionType == null || promotionType.trim().isEmpty()) {
             return null;
         }
@@ -37,8 +37,8 @@ public interface ProductSizeMapper {
         }
     }
 
-    @Named("promotionTypeToString")
-    default String promotionTypeToString(com.emenu.enums.product.PromotionType promotionType) {
+    @Named("sizePromotionTypeToString")
+    default String sizePromotionTypeToString(com.emenu.enums.product.PromotionType promotionType) {
         return promotionType != null ? promotionType.name() : null;
     }
 }

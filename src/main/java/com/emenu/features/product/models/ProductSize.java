@@ -15,7 +15,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "product_sizes", indexes = {
-    // 🔥 CRITICAL INDEXES for size queries
     @Index(name = "idx_product_sizes_product_price_deleted", columnList = "product_id, price, is_deleted"),
     @Index(name = "idx_product_sizes_product_created_deleted", columnList = "product_id, created_at, is_deleted"),
     @Index(name = "idx_product_sizes_product_promotion_deleted", columnList = "product_id, promotion_type, is_deleted"),

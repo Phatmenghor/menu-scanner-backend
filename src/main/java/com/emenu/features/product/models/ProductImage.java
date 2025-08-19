@@ -12,7 +12,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "product_images", indexes = {
-    // 🔥 CRITICAL INDEXES for image queries
     @Index(name = "idx_product_images_product_type_deleted", columnList = "product_id, image_type, is_deleted"),
     @Index(name = "idx_product_images_product_created_deleted", columnList = "product_id, created_at, is_deleted"),
     @Index(name = "idx_product_images_type_deleted", columnList = "image_type, is_deleted")

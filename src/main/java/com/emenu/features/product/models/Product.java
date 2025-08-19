@@ -22,7 +22,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "products", indexes = {
-    // 🔥 CRITICAL PERFORMANCE INDEXES for 999,999 products
     @Index(name = "idx_products_business_status_deleted", columnList = "business_id, status, is_deleted"),
     @Index(name = "idx_products_business_category_deleted", columnList = "business_id, category_id, is_deleted"),
     @Index(name = "idx_products_business_brand_deleted", columnList = "business_id, brand_id, is_deleted"),
@@ -32,11 +31,7 @@ import java.util.UUID;
     @Index(name = "idx_products_brand_created_deleted", columnList = "brand_id, created_at, is_deleted"),
     @Index(name = "idx_products_name_deleted", columnList = "name, is_deleted"),
     @Index(name = "idx_products_price_deleted", columnList = "price, is_deleted"),
-    @Index(name = "idx_products_promotion_dates", columnList = "promotion_from_date, promotion_to_date, is_deleted"),
-    
-    // Composite indexes for complex filters
-    @Index(name = "idx_products_business_status_category_deleted", columnList = "business_id, status, category_id, is_deleted"),
-    @Index(name = "idx_products_business_price_status_deleted", columnList = "business_id, price, status, is_deleted")
+    @Index(name = "idx_products_promotion_dates", columnList = "promotion_from_date, promotion_to_date, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -97,7 +92,6 @@ public class Product extends BaseUUIDEntity {
     @Column(name = "favorite_count", nullable = false)
     private Long favoriteCount = 0L;
 
-    // 🚀 OPTIMIZED COLLECTIONS with batch loading
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @BatchSize(size = 25)
     @OrderBy("imageType ASC, createdAt DESC")

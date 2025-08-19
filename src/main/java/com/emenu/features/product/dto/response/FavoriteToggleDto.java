@@ -1,4 +1,3 @@
-
 package com.emenu.features.product.dto.response;
 
 import lombok.Data;

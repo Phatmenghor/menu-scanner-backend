@@ -1,4 +1,3 @@
-
 package com.emenu.features.product.dto.request;
 
 import jakarta.validation.constraints.DecimalMin;

@@ -18,5 +18,4 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, UUID
            "CASE WHEN pi.imageType = 'MAIN' THEN 0 ELSE 1 END, " +
            "pi.createdAt DESC")
     List<ProductImage> findByProductIdOrderByMainAndSort(@Param("productId") UUID productId);
-
 }
