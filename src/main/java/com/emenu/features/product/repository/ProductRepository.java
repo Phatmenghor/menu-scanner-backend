@@ -11,7 +11,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,23 +18,17 @@ import java.util.UUID;
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
     
     // ================================
-    // OPTIMIZED BASIC QUERIES - Using indexes
+    // FIXED: Separate queries to avoid MultipleBagFetchException
     // ================================
     
     @Query("SELECT p FROM Product p " +
            "LEFT JOIN FETCH p.category " +
            "LEFT JOIN FETCH p.brand " +
            "LEFT JOIN FETCH p.business " +
-           "LEFT JOIN FETCH p.images i " +
-           "LEFT JOIN FETCH p.sizes s " +
            "WHERE p.id = :id AND p.isDeleted = false")
     Optional<Product> findByIdWithDetails(@Param("id") UUID id);
 
     Optional<Product> findByIdAndIsDeletedFalse(UUID id);
-
-    @Query("SELECT COUNT(p) FROM Product p " +
-           "WHERE p.businessId = :businessId AND p.isDeleted = false")
-    long countByBusinessId(@Param("businessId") UUID businessId);
 
     @Query("SELECT COUNT(p) FROM Product p " +
            "WHERE p.categoryId = :categoryId AND p.isDeleted = false")
@@ -44,7 +37,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     @Query("SELECT COUNT(p) FROM Product p " +
            "WHERE p.brandId = :brandId AND p.isDeleted = false")
     long countByBrandId(@Param("brandId") UUID brandId);
-
 
     // ================================
     // STATISTICS AND UPDATES
@@ -71,12 +63,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
            "WHERE p.promotionToDate < :now AND p.promotionToDate IS NOT NULL AND p.isDeleted = false")
     int clearExpiredPromotions(@Param("now") LocalDateTime now);
-
-    @Modifying
-    @Query("UPDATE Product p SET p.promotionType = NULL, p.promotionValue = NULL, " +
-           "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
-           "WHERE p.businessId = :businessId AND p.isDeleted = false")
-    int clearAllPromotionsForBusiness(@Param("businessId") UUID businessId);
+    
     // ================================
     // FAVORITES INTEGRATION
     // ================================
@@ -89,49 +76,4 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE pf.userId = :userId AND p.isDeleted = false AND pf.isDeleted = false " +
            "ORDER BY pf.createdAt DESC")
     Page<Product> findUserFavorites(@Param("userId") UUID userId, Pageable pageable);
-
-    // ================================
-    // BATCH OPERATIONS
-    // ================================
-
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "LEFT JOIN FETCH p.business " +
-           "WHERE p.id IN :productIds AND p.isDeleted = false")
-    List<Product> findByIdIn(@Param("productIds") List<UUID> productIds);
-
-    @Modifying
-    @Query("UPDATE Product p SET p.status = :status " +
-           "WHERE p.id IN :productIds AND p.isDeleted = false")
-    int updateStatusForProducts(@Param("productIds") List<UUID> productIds, 
-                               @Param("status") com.emenu.enums.product.ProductStatus status);
-
-    // ================================
-    // ADMIN QUERIES
-    // ================================
-
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "LEFT JOIN FETCH p.business " +
-           "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
-           "ORDER BY p.createdAt DESC")
-    Page<Product> findRecentActiveProducts(Pageable pageable);
-
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "LEFT JOIN FETCH p.business " +
-           "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
-           "ORDER BY p.viewCount DESC, p.createdAt DESC")
-    Page<Product> findTopViewedProducts(Pageable pageable);
-
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "LEFT JOIN FETCH p.business " +
-           "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
-           "ORDER BY p.favoriteCount DESC, p.createdAt DESC")
-    Page<Product> findTopFavoritedProducts(Pageable pageable);
 }

@@ -11,9 +11,23 @@ import java.util.UUID;
 public class ProductListDto {
     private UUID id;
     private String name;
-    private String description;
     private ProductStatus status;
+    
+    // Original fields from product table (always from database)
     private BigDecimal price;
+    private String promotionType;
+    private BigDecimal promotionValue;
+    private LocalDateTime promotionFromDate;
+    private LocalDateTime promotionToDate;
+    
+    // NEW: Display fields (conditional logic based on sizes)
+    private BigDecimal displayOriginPrice;
+    private String displayPromotionType;
+    private BigDecimal displayPromotionValue;
+    private LocalDateTime displayPromotionFromDate;
+    private LocalDateTime displayPromotionToDate;
+    
+    // Calculated fields
     private BigDecimal displayPrice;
     private Boolean hasPromotion;
     private Boolean hasSizes;
@@ -34,4 +48,4 @@ public class ProductListDto {
     // Brand info
     private UUID brandId;
     private String brandName;
-}
+} 

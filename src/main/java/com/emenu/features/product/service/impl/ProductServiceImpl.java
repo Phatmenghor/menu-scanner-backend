@@ -1,11 +1,12 @@
 package com.emenu.features.product.service.impl;
 
-import com.emenu.enums.product.ProductStatus;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.product.dto.filter.ProductFilterDto;
 import com.emenu.features.product.dto.request.ProductCreateDto;
+import com.emenu.features.product.dto.request.ProductImageCreateDto;
+import com.emenu.features.product.dto.request.ProductSizeCreateDto;
 import com.emenu.features.product.dto.response.ProductDetailDto;
 import com.emenu.features.product.dto.response.ProductListDto;
 import com.emenu.features.product.dto.update.ProductImageUpdateDto;
@@ -36,7 +37,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -103,8 +103,12 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailDto getProductById(UUID id) {
         log.info("Getting product by ID: {}", id);
 
+        // ✅ FIXED: Load product with basic details (no collections to avoid MultipleBagFetchException)
         Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
+
+        // ✅ FIXED: Manually load collections separately
+        loadProductCollections(product);
 
         // Validate access for business users
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
@@ -128,12 +132,16 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailDto getProductByIdPublic(UUID id) {
         log.info("Getting product by ID (public): {}", id);
 
+        // ✅ FIXED: Load product with basic details (no collections to avoid MultipleBagFetchException)
         Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
 
         if (!product.isActive()) {
             throw new NotFoundException("Product is not available");
         }
+
+        // ✅ FIXED: Manually load collections separately
+        loadProductCollections(product);
 
         // Increment view count
         productRepository.incrementViewCount(id);
@@ -214,6 +222,21 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toDetailDto(deletedProduct);
     }
 
+    // ================================
+    // ✅ NEW: Helper method to load collections separately
+    // ================================
+    
+    private void loadProductCollections(Product product) {
+        // Load images
+        List<ProductImage> images = productImageRepository.findByProductIdOrderByMainAndSort(product.getId());
+        product.getImages().clear();
+        product.getImages().addAll(images);
+
+        // Load sizes using proper repository method
+        List<ProductSize> sizes = productSizeRepository.findByProductIdAndIsDeletedFalse(product.getId());
+        product.getSizes().clear();
+        product.getSizes().addAll(sizes);
+    }
 
     // ================================
     // HELPER METHODS
@@ -235,7 +258,7 @@ public class ProductServiceImpl implements ProductService {
                 product.setIsFavorited(favoriteProductIds.contains(product.getId())));
     }
 
-    private void handleProductImages(Product product, List<com.emenu.features.product.dto.request.ProductImageCreateDto> imageDtos) {
+    private void handleProductImages(Product product, List<ProductImageCreateDto> imageDtos) {
         if (imageDtos == null || imageDtos.isEmpty()) return;
 
         List<ProductImage> images = imageDtos.stream()
@@ -252,7 +275,7 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
-    private void handleProductSizes(Product product, List<com.emenu.features.product.dto.request.ProductSizeCreateDto> sizeDtos) {
+    private void handleProductSizes(Product product, List<ProductSizeCreateDto> sizeDtos) {
         if (sizeDtos == null || sizeDtos.isEmpty()) return;
 
         List<ProductSize> sizes = sizeDtos.stream()
