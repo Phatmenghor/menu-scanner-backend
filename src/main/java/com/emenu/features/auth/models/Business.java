@@ -14,23 +14,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "users", indexes = {
-        // ✅ EXISTING: Keep current authentication indexes
-        @Index(name = "idx_users_user_identifier", columnList = "userIdentifier"),
-        @Index(name = "idx_users_telegram_user_id", columnList = "telegramUserId"),
-        @Index(name = "idx_users_email", columnList = "email"),
-        @Index(name = "idx_users_account_status", columnList = "accountStatus"),
-        @Index(name = "idx_users_business_id", columnList = "businessId"),
+@Table(name = "businesses", indexes = { // ✅ FIXED: Changed from "users" to "businesses"
+        // ✅ FIXED: Core BaseUUIDEntity indexes
+        @Index(name = "idx_business_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_business_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_business_deleted_updated", columnList = "is_deleted, updated_at"),
 
-        // ✅ FIXED: BaseUUIDEntity + business relationship indexes
-        @Index(name = "idx_user_deleted_created", columnList = "is_deleted, created_at"),
-        @Index(name = "idx_user_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_user_business_deleted", columnList = "business_id, is_deleted"),
-        @Index(name = "idx_user_status_deleted", columnList = "account_status, is_deleted"),
-        @Index(name = "idx_user_type_deleted", columnList = "user_type, is_deleted"),
-        @Index(name = "idx_user_identifier_deleted", columnList = "user_identifier, is_deleted"),
-        @Index(name = "idx_user_email_deleted", columnList = "email, is_deleted"),
-        @Index(name = "idx_user_telegram_deleted", columnList = "telegram_user_id, is_deleted")
+        // ✅ FIXED: Business-specific indexes
+        @Index(name = "idx_business_status_deleted", columnList = "status, is_deleted"),
+        @Index(name = "idx_business_subscription_active_deleted", columnList = "is_subscription_active, is_deleted"),
+        @Index(name = "idx_business_subscription_end_deleted", columnList = "subscription_end_date, is_deleted"),
+        @Index(name = "idx_business_subscription_dates_active_deleted", columnList = "is_subscription_active, subscription_end_date, is_deleted"),
+        @Index(name = "idx_business_name_deleted", columnList = "name, is_deleted"),
+        @Index(name = "idx_business_email_deleted", columnList = "email, is_deleted"),
+        @Index(name = "idx_business_type_deleted", columnList = "business_type, is_deleted"),
+        @Index(name = "idx_business_phone_deleted", columnList = "phone, is_deleted"),
+        @Index(name = "idx_business_currency_deleted", columnList = "currency, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -107,20 +106,23 @@ public class Business extends BaseUUIDEntity {
     @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Subscription> subscriptions;
 
-    // ✅ ENHANCED: Business Logic Methods with better logging
+    // ================================
+    // BUSINESS METHODS
+    // ================================
+
     public boolean isActive() {
         return BusinessStatus.ACTIVE.equals(status);
     }
 
     public boolean hasActiveSubscription() {
         log.debug("🔍 Checking active subscription for business: {}", this.getId());
-        
-        // ✅ ENHANCED: Check both database fields AND active subscriptions
-        boolean hasActiveByFields = Boolean.TRUE.equals(isSubscriptionActive) && 
-            subscriptionEndDate != null && 
-            subscriptionEndDate.isAfter(LocalDateTime.now());
-            
-        log.debug("📊 Database fields check - isActive: {}, endDate: {}, result: {}", 
+
+        // Check both database fields AND active subscriptions
+        boolean hasActiveByFields = Boolean.TRUE.equals(isSubscriptionActive) &&
+                subscriptionEndDate != null &&
+                subscriptionEndDate.isAfter(LocalDateTime.now());
+
+        log.debug("📊 Database fields check - isActive: {}, endDate: {}, result: {}",
                 isSubscriptionActive, subscriptionEndDate, hasActiveByFields);
 
         if (hasActiveByFields) {
@@ -128,19 +130,19 @@ public class Business extends BaseUUIDEntity {
             return true;
         }
 
-        // ✅ ENHANCED: Also check subscriptions collection if loaded
+        // Also check subscriptions collection if loaded
         if (subscriptions != null && !subscriptions.isEmpty()) {
             boolean hasActiveInCollection = subscriptions.stream()
                     .anyMatch(sub -> {
                         boolean active = sub.getIsActive() && !sub.isExpired();
-                        log.debug("🔍 Subscription {} - active: {}, expired: {}", 
+                        log.debug("🔍 Subscription {} - active: {}, expired: {}",
                                 sub.getId(), sub.getIsActive(), sub.isExpired());
                         return active;
                     });
-            
-            log.debug("📊 Collection check - {} subscriptions, active: {}", 
+
+            log.debug("📊 Collection check - {} subscriptions, active: {}",
                     subscriptions.size(), hasActiveInCollection);
-            
+
             if (hasActiveInCollection) {
                 log.debug("✅ Active subscription found in collection");
                 return true;
@@ -158,16 +160,16 @@ public class Business extends BaseUUIDEntity {
             log.debug("❌ No active subscription, returning 0 days remaining");
             return 0;
         }
-        
+
         LocalDateTime endDate = getEffectiveEndDate();
         if (endDate == null) {
             log.debug("⚠️ No effective end date found, returning 0 days remaining");
             return 0;
         }
-        
+
         long days = java.time.Duration.between(LocalDateTime.now(), endDate).toDays();
         long remaining = Math.max(0, days);
-        
+
         log.debug("📊 Days remaining: {} (end date: {})", remaining, endDate);
         return remaining;
     }
@@ -178,46 +180,46 @@ public class Business extends BaseUUIDEntity {
         }
         long remaining = getDaysRemaining();
         boolean expiringSoon = remaining <= days && remaining > 0;
-        
-        log.debug("🔍 Expiring soon check - remaining: {}, threshold: {}, result: {}", 
+
+        log.debug("🔍 Expiring soon check - remaining: {}, threshold: {}, result: {}",
                 remaining, days, expiringSoon);
-        
+
         return expiringSoon;
     }
 
     public void activateSubscription(LocalDateTime startDate, LocalDateTime endDate) {
-        log.info("🚀 Activating subscription for business: {} from {} to {}", 
+        log.info("🚀 Activating subscription for business: {} from {} to {}",
                 this.getId(), startDate, endDate);
-        
+
         this.subscriptionStartDate = startDate;
         this.subscriptionEndDate = endDate;
         this.isSubscriptionActive = true;
         this.status = BusinessStatus.ACTIVE;
-        
+
         log.info("✅ Subscription activated for business: {}", this.getId());
     }
 
     public void deactivateSubscription() {
         log.info("🛑 Deactivating subscription for business: {}", this.getId());
-        
+
         this.isSubscriptionActive = false;
         this.subscriptionStartDate = null;
         this.subscriptionEndDate = null;
         this.status = BusinessStatus.SUSPENDED;
-        
+
         log.info("✅ Subscription deactivated for business: {}", this.getId());
     }
 
-    // ✅ ENHANCED: Helper method to get effective end date with better logic
+    // Helper method to get effective end date
     private LocalDateTime getEffectiveEndDate() {
         log.debug("🔍 Getting effective end date for business: {}", this.getId());
-        
+
         // First check database field
         if (subscriptionEndDate != null) {
             log.debug("📊 Using database end date: {}", subscriptionEndDate);
             return subscriptionEndDate;
         }
-        
+
         // Then check active subscription
         if (subscriptions != null && !subscriptions.isEmpty()) {
             LocalDateTime latestEndDate = subscriptions.stream()
@@ -232,13 +234,13 @@ public class Business extends BaseUUIDEntity {
                     })
                     .max(LocalDateTime::compareTo)
                     .orElse(null);
-            
+
             if (latestEndDate != null) {
                 log.debug("📊 Using collection end date: {}", latestEndDate);
                 return latestEndDate;
             }
         }
-        
+
         log.debug("❌ No effective end date found");
         return null;
     }

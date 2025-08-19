@@ -15,20 +15,22 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "businesses", indexes = {
+@Table(name = "users", indexes = { // ✅ FIXED: Changed from "businesses" to "users"
         // ✅ FIXED: Core BaseUUIDEntity indexes
-        @Index(name = "idx_business_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_business_deleted_created", columnList = "is_deleted, created_at"),
-        @Index(name = "idx_business_deleted_updated", columnList = "is_deleted, updated_at"),
+        @Index(name = "idx_user_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_user_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_user_deleted_updated", columnList = "is_deleted, updated_at"),
 
-        // ✅ FIXED: Business-specific indexes
-        @Index(name = "idx_business_status_deleted", columnList = "status, is_deleted"),
-        @Index(name = "idx_business_subscription_active", columnList = "is_subscription_active, is_deleted"),
-        @Index(name = "idx_business_subscription_end_deleted", columnList = "subscription_end_date, is_deleted"),
-        @Index(name = "idx_business_subscription_dates_active", columnList = "is_subscription_active, subscription_end_date, is_deleted"),
-        @Index(name = "idx_business_name_deleted", columnList = "name, is_deleted"),
-        @Index(name = "idx_business_email_deleted", columnList = "email, is_deleted"),
-        @Index(name = "idx_business_type_deleted", columnList = "business_type, is_deleted")
+        // ✅ FIXED: User-specific indexes
+        @Index(name = "idx_user_identifier_deleted", columnList = "user_identifier, is_deleted"),
+        @Index(name = "idx_user_email_deleted", columnList = "email, is_deleted"),
+        @Index(name = "idx_user_telegram_user_id_deleted", columnList = "telegram_user_id, is_deleted"),
+        @Index(name = "idx_user_account_status_deleted", columnList = "account_status, is_deleted"),
+        @Index(name = "idx_user_business_id_deleted", columnList = "business_id, is_deleted"),
+        @Index(name = "idx_user_type_deleted", columnList = "user_type, is_deleted"),
+        @Index(name = "idx_user_social_provider_deleted", columnList = "social_provider, is_deleted"),
+        @Index(name = "idx_user_business_status_deleted", columnList = "business_id, account_status, is_deleted"),
+        @Index(name = "idx_user_telegram_notifications_deleted", columnList = "telegram_notifications_enabled, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -89,12 +91,12 @@ public class User extends BaseUUIDEntity {
     @Column(name = "notes")
     private String notes;
 
-    // ✅ NEW: Social Login Integration
+    // ✅ Social Login Integration
     @Enumerated(EnumType.STRING)
     @Column(name = "social_provider", nullable = false)
     private SocialProvider socialProvider = SocialProvider.LOCAL;
 
-    // ✅ NEW: Telegram Integration Fields
+    // ✅ Telegram Integration Fields
     @Column(name = "telegram_user_id", unique = true)
     private Long telegramUserId;
 
@@ -115,6 +117,10 @@ public class User extends BaseUUIDEntity {
 
     @Column(name = "last_telegram_activity")
     private LocalDateTime lastTelegramActivity;
+
+    // ================================
+    // BUSINESS METHODS
+    // ================================
 
     public String getFullName() {
         if (firstName != null && lastName != null) {
