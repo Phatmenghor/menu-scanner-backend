@@ -18,7 +18,24 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", indexes = {
+        // ✅ FIXED: BaseUUIDEntity indexes
+        @Index(name = "idx_order_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_order_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_order_deleted_updated", columnList = "is_deleted, updated_at"),
+
+        // ✅ FIXED: Core order management indexes
+        @Index(name = "idx_order_business_status_deleted", columnList = "business_id, status, is_deleted"),
+        @Index(name = "idx_order_customer_deleted", columnList = "customer_id, is_deleted"),
+        @Index(name = "idx_order_business_created_deleted", columnList = "business_id, created_at, is_deleted"),
+        @Index(name = "idx_order_status_created_deleted", columnList = "status, created_at, is_deleted"),
+        @Index(name = "idx_order_customer_created_deleted", columnList = "customer_id, created_at, is_deleted"),
+        @Index(name = "idx_order_number_deleted", columnList = "order_number, is_deleted"),
+        @Index(name = "idx_order_payment_method_deleted", columnList = "payment_method, is_deleted"),
+        @Index(name = "idx_order_paid_deleted", columnList = "is_paid, is_deleted"),
+        @Index(name = "idx_order_pos_deleted", columnList = "is_pos_order, is_deleted"),
+        @Index(name = "idx_order_guest_deleted", columnList = "is_guest_order, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

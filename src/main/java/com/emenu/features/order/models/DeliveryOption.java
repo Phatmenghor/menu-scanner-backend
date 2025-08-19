@@ -13,7 +13,17 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "delivery_options")
+@Table(name = "delivery_options", indexes = {
+        // ✅ FIXED: BaseUUIDEntity indexes
+        @Index(name = "idx_delivery_option_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_delivery_option_deleted_created", columnList = "is_deleted, created_at"),
+
+        // ✅ FIXED: Business relationship indexes
+        @Index(name = "idx_delivery_option_business_deleted", columnList = "business_id, is_deleted"),
+        @Index(name = "idx_delivery_option_status_deleted", columnList = "status, is_deleted"),
+        @Index(name = "idx_delivery_option_business_status_deleted", columnList = "business_id, status, is_deleted"),
+        @Index(name = "idx_delivery_option_price_deleted", columnList = "price, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

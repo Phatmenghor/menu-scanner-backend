@@ -12,9 +12,15 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "product_images", indexes = {
-    @Index(name = "idx_product_images_product_type_deleted", columnList = "product_id, image_type, is_deleted"),
-    @Index(name = "idx_product_images_product_created_deleted", columnList = "product_id, created_at, is_deleted"),
-    @Index(name = "idx_product_images_type_deleted", columnList = "image_type, is_deleted")
+        // ✅ EXISTING: Keep current good indexes
+        @Index(name = "idx_product_images_product_type_deleted", columnList = "product_id, image_type, is_deleted"),
+        @Index(name = "idx_product_images_product_created_deleted", columnList = "product_id, created_at, is_deleted"),
+        @Index(name = "idx_product_images_type_deleted", columnList = "image_type, is_deleted"),
+
+        // ✅ FIXED: Additional BaseUUIDEntity indexes
+        @Index(name = "idx_product_image_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_product_image_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_product_image_product_deleted", columnList = "product_id, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)

@@ -11,7 +11,12 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Entity
-@Table(name = "roles")
+@Table(name = "roles", indexes = {
+        // ✅ FIXED: Role management indexes
+        @Index(name = "idx_role_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_role_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_role_name_deleted", columnList = "name, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

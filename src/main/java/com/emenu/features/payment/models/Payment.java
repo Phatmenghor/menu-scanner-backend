@@ -17,7 +17,22 @@ import java.math.RoundingMode;
 import java.util.UUID;
 
 @Entity
-@Table(name = "payment_service")
+@Table(name = "payment_service", indexes = {
+        // ✅ FIXED: BaseUUIDEntity indexes
+        @Index(name = "idx_payment_service_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_payment_service_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_payment_service_deleted_updated", columnList = "is_deleted, updated_at"),
+
+        // ✅ FIXED: Payment management indexes with unique names
+        @Index(name = "idx_payment_service_business_deleted", columnList = "business_id, is_deleted"),
+        @Index(name = "idx_payment_service_plan_deleted", columnList = "plan_id, is_deleted"),
+        @Index(name = "idx_payment_service_subscription_deleted", columnList = "subscription_id, is_deleted"),
+        @Index(name = "idx_payment_service_status_deleted", columnList = "status, is_deleted"),
+        @Index(name = "idx_payment_service_method_deleted", columnList = "payment_method, is_deleted"),
+        @Index(name = "idx_payment_service_business_status_deleted", columnList = "business_id, status, is_deleted"),
+        @Index(name = "idx_payment_service_reference_deleted", columnList = "reference_number, is_deleted"),
+        @Index(name = "idx_payment_service_amount_deleted", columnList = "amount, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

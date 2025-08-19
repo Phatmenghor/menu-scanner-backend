@@ -14,9 +14,18 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "subdomains", indexes = {
-    @Index(name = "idx_subdomain_unique", columnList = "subdomain", unique = true),
-    @Index(name = "idx_business_id", columnList = "businessId"),
-    @Index(name = "idx_subdomain_status", columnList = "status")
+        // ✅ EXISTING: Keep current critical indexes
+        @Index(name = "idx_subdomain_unique", columnList = "subdomain", unique = true),
+        @Index(name = "idx_business_id", columnList = "businessId"),
+        @Index(name = "idx_subdomain_status", columnList = "status"),
+
+        // ✅ FIXED: BaseUUIDEntity indexes
+        @Index(name = "idx_subdomain_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_subdomain_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_subdomain_business_deleted", columnList = "business_id, is_deleted"),
+        @Index(name = "idx_subdomain_status_deleted", columnList = "status, is_deleted"),
+        @Index(name = "idx_subdomain_access_count_deleted", columnList = "access_count, is_deleted"),
+        @Index(name = "idx_subdomain_last_accessed_deleted", columnList = "last_accessed, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)

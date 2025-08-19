@@ -22,16 +22,24 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "products", indexes = {
-    @Index(name = "idx_products_business_status_deleted", columnList = "business_id, status, is_deleted"),
-    @Index(name = "idx_products_business_category_deleted", columnList = "business_id, category_id, is_deleted"),
-    @Index(name = "idx_products_business_brand_deleted", columnList = "business_id, brand_id, is_deleted"),
-    @Index(name = "idx_products_business_created_deleted", columnList = "business_id, created_at, is_deleted"),
-    @Index(name = "idx_products_status_created_deleted", columnList = "status, created_at, is_deleted"),
-    @Index(name = "idx_products_category_created_deleted", columnList = "category_id, created_at, is_deleted"),
-    @Index(name = "idx_products_brand_created_deleted", columnList = "brand_id, created_at, is_deleted"),
-    @Index(name = "idx_products_name_deleted", columnList = "name, is_deleted"),
-    @Index(name = "idx_products_price_deleted", columnList = "price, is_deleted"),
-    @Index(name = "idx_products_promotion_dates", columnList = "promotion_from_date, promotion_to_date, is_deleted")
+        // ✅ EXISTING: Keep all current comprehensive indexes (already optimized)
+        @Index(name = "idx_products_business_status_deleted", columnList = "business_id, status, is_deleted"),
+        @Index(name = "idx_products_business_category_deleted", columnList = "business_id, category_id, is_deleted"),
+        @Index(name = "idx_products_business_brand_deleted", columnList = "business_id, brand_id, is_deleted"),
+        @Index(name = "idx_products_business_created_deleted", columnList = "business_id, created_at, is_deleted"),
+        @Index(name = "idx_products_status_created_deleted", columnList = "status, created_at, is_deleted"),
+        @Index(name = "idx_products_category_created_deleted", columnList = "category_id, created_at, is_deleted"),
+        @Index(name = "idx_products_brand_created_deleted", columnList = "brand_id, created_at, is_deleted"),
+        @Index(name = "idx_products_name_deleted", columnList = "name, is_deleted"),
+        @Index(name = "idx_products_price_deleted", columnList = "price, is_deleted"),
+        @Index(name = "idx_products_promotion_dates", columnList = "promotion_from_date, promotion_to_date, is_deleted"),
+
+        // ✅ FIXED: Additional BaseUUIDEntity indexes
+        @Index(name = "idx_product_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_product_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_product_deleted_updated", columnList = "is_deleted, updated_at"),
+        @Index(name = "idx_product_view_count_deleted", columnList = "view_count, is_deleted"),
+        @Index(name = "idx_product_favorite_count_deleted", columnList = "favorite_count, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)

@@ -14,7 +14,24 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "businesses")
+@Table(name = "users", indexes = {
+        // ✅ EXISTING: Keep current authentication indexes
+        @Index(name = "idx_users_user_identifier", columnList = "userIdentifier"),
+        @Index(name = "idx_users_telegram_user_id", columnList = "telegramUserId"),
+        @Index(name = "idx_users_email", columnList = "email"),
+        @Index(name = "idx_users_account_status", columnList = "accountStatus"),
+        @Index(name = "idx_users_business_id", columnList = "businessId"),
+
+        // ✅ FIXED: BaseUUIDEntity + business relationship indexes
+        @Index(name = "idx_user_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_user_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_user_business_deleted", columnList = "business_id, is_deleted"),
+        @Index(name = "idx_user_status_deleted", columnList = "account_status, is_deleted"),
+        @Index(name = "idx_user_type_deleted", columnList = "user_type, is_deleted"),
+        @Index(name = "idx_user_identifier_deleted", columnList = "user_identifier, is_deleted"),
+        @Index(name = "idx_user_email_deleted", columnList = "email, is_deleted"),
+        @Index(name = "idx_user_telegram_deleted", columnList = "telegram_user_id, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

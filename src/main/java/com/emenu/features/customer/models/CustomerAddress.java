@@ -12,7 +12,18 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "customer_addresses")
+@Table(name = "customer_addresses", indexes = {
+        // ✅ FIXED: BaseUUIDEntity indexes
+        @Index(name = "idx_customer_address_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_customer_address_deleted_created", columnList = "is_deleted, created_at"),
+
+        // ✅ FIXED: User relationship indexes
+        @Index(name = "idx_customer_address_user_deleted", columnList = "user_id, is_deleted"),
+        @Index(name = "idx_customer_address_default_deleted", columnList = "is_default, is_deleted"),
+        @Index(name = "idx_customer_address_user_default_deleted", columnList = "user_id, is_default, is_deleted"),
+        @Index(name = "idx_customer_address_province_deleted", columnList = "province, is_deleted"),
+        @Index(name = "idx_customer_address_district_deleted", columnList = "district, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

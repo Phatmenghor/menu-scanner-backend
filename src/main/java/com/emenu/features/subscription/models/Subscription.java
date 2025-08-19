@@ -14,7 +14,23 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "subscriptions")
+@Table(name = "subscriptions", indexes = {
+        // ✅ FIXED: BaseUUIDEntity indexes
+        @Index(name = "idx_subscription_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_subscription_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_subscription_deleted_updated", columnList = "is_deleted, updated_at"),
+
+        // ✅ FIXED: Subscription management indexes - UNIQUE NAMES!
+        @Index(name = "idx_subscription_business_id_deleted", columnList = "business_id, is_deleted"),
+        @Index(name = "idx_subscription_plan_id_deleted", columnList = "plan_id, is_deleted"),
+        @Index(name = "idx_subscription_active_deleted", columnList = "is_active, is_deleted"),
+        @Index(name = "idx_subscription_business_active_deleted", columnList = "business_id, is_active, is_deleted"),
+        @Index(name = "idx_subscription_end_date_deleted", columnList = "end_date, is_deleted"),
+        @Index(name = "idx_subscription_start_date_deleted", columnList = "start_date, is_deleted"),
+        @Index(name = "idx_subscription_dates_active_deleted", columnList = "start_date, end_date, is_active, is_deleted"),
+        @Index(name = "idx_subscription_auto_renew_deleted", columnList = "auto_renew, is_deleted"),
+        @Index(name = "idx_subscription_business_dates_deleted", columnList = "business_id, start_date, end_date, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

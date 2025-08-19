@@ -14,9 +14,15 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "blacklisted_tokens", indexes = {
-    @Index(name = "idx_token_hash", columnList = "tokenHash"),
-    @Index(name = "idx_expires_at", columnList = "expiresAt"),
-    @Index(name = "idx_user_email", columnList = "userEmail")
+        // ✅ EXISTING: Keep critical security indexes
+        @Index(name = "idx_token_hash", columnList = "tokenHash"),
+        @Index(name = "idx_expires_at", columnList = "expiresAt"),
+        @Index(name = "idx_user_email", columnList = "userEmail"),
+
+        // ✅ FIXED: BaseUUIDEntity indexes with unique names
+        @Index(name = "idx_blacklisted_token_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_blacklisted_token_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_blacklisted_token_expires_deleted", columnList = "expires_at, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)

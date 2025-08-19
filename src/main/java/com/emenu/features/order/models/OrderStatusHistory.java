@@ -11,7 +11,17 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "order_status_history")
+@Table(name = "order_status_history", indexes = {
+        // ✅ FIXED: BaseUUIDEntity indexes
+        @Index(name = "idx_order_status_history_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_order_status_history_deleted_created", columnList = "is_deleted, created_at"),
+
+        // ✅ FIXED: Order tracking indexes
+        @Index(name = "idx_order_status_history_order_deleted", columnList = "order_id, is_deleted"),
+        @Index(name = "idx_order_status_history_status_deleted", columnList = "status, is_deleted"),
+        @Index(name = "idx_order_status_history_order_created_deleted", columnList = "order_id, created_at, is_deleted"),
+        @Index(name = "idx_order_status_history_changed_by_deleted", columnList = "changed_by, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

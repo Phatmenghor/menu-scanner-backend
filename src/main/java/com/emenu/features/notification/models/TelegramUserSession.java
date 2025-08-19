@@ -15,10 +15,18 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "telegram_user_sessions", indexes = {
+        // ✅ EXISTING: Keep current good indexes
         @Index(name = "idx_telegram_sessions_telegram_user_id", columnList = "telegramUserId"),
         @Index(name = "idx_telegram_sessions_user_id", columnList = "userId"),
         @Index(name = "idx_telegram_sessions_chat_id", columnList = "chatId"),
-        @Index(name = "idx_telegram_sessions_last_activity", columnList = "lastActivity")
+        @Index(name = "idx_telegram_sessions_last_activity", columnList = "lastActivity"),
+
+        // ✅ FIXED: BaseUUIDEntity indexes
+        @Index(name = "idx_telegram_session_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_telegram_session_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_telegram_session_user_deleted", columnList = "user_id, is_deleted"),
+        @Index(name = "idx_telegram_session_registered_deleted", columnList = "is_registered, is_deleted"),
+        @Index(name = "idx_telegram_session_activity_deleted", columnList = "last_activity, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)

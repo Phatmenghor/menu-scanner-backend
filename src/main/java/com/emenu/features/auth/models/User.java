@@ -15,12 +15,20 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users", indexes = {
-        @Index(name = "idx_users_user_identifier", columnList = "userIdentifier"),
-        @Index(name = "idx_users_telegram_user_id", columnList = "telegramUserId"), // ✅ RENAMED
-        @Index(name = "idx_users_email", columnList = "email"),
-        @Index(name = "idx_users_account_status", columnList = "accountStatus"),
-        @Index(name = "idx_users_business_id", columnList = "businessId")
+@Table(name = "businesses", indexes = {
+        // ✅ FIXED: Core BaseUUIDEntity indexes
+        @Index(name = "idx_business_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_business_deleted_created", columnList = "is_deleted, created_at"),
+        @Index(name = "idx_business_deleted_updated", columnList = "is_deleted, updated_at"),
+
+        // ✅ FIXED: Business-specific indexes
+        @Index(name = "idx_business_status_deleted", columnList = "status, is_deleted"),
+        @Index(name = "idx_business_subscription_active", columnList = "is_subscription_active, is_deleted"),
+        @Index(name = "idx_business_subscription_end_deleted", columnList = "subscription_end_date, is_deleted"),
+        @Index(name = "idx_business_subscription_dates_active", columnList = "is_subscription_active, subscription_end_date, is_deleted"),
+        @Index(name = "idx_business_name_deleted", columnList = "name, is_deleted"),
+        @Index(name = "idx_business_email_deleted", columnList = "email, is_deleted"),
+        @Index(name = "idx_business_type_deleted", columnList = "business_type, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)

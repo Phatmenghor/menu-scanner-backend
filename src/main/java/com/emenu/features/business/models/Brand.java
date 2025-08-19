@@ -14,7 +14,17 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "brands")
+@Table(name = "brands", indexes = {
+        // ✅ FIXED: BaseUUIDEntity indexes
+        @Index(name = "idx_brand_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_brand_deleted_created", columnList = "is_deleted, created_at"),
+
+        // ✅ FIXED: Business relationship indexes
+        @Index(name = "idx_brand_business_deleted", columnList = "business_id, is_deleted"),
+        @Index(name = "idx_brand_status_deleted", columnList = "status, is_deleted"),
+        @Index(name = "idx_brand_business_status_deleted", columnList = "business_id, status, is_deleted"),
+        @Index(name = "idx_brand_name_deleted", columnList = "name, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

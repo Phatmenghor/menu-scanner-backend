@@ -11,14 +11,19 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "product_favorites", 
-       uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"}),
-       indexes = {
-           @Index(name = "idx_product_favorites_user_deleted", columnList = "user_id, is_deleted"),
-           @Index(name = "idx_product_favorites_product_deleted", columnList = "product_id, is_deleted"),
-           @Index(name = "idx_product_favorites_user_created_deleted", columnList = "user_id, created_at, is_deleted"),
-           @Index(name = "idx_product_favorites_user_product_deleted", columnList = "user_id, product_id, is_deleted")
-       })
+@Table(name = "product_favorites",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"}),
+        indexes = {
+                // ✅ EXISTING: Keep current good indexes
+                @Index(name = "idx_product_favorites_user_deleted", columnList = "user_id, is_deleted"),
+                @Index(name = "idx_product_favorites_product_deleted", columnList = "product_id, is_deleted"),
+                @Index(name = "idx_product_favorites_user_created_deleted", columnList = "user_id, created_at, is_deleted"),
+
+                // ✅ FIXED: Additional BaseUUIDEntity indexes
+                @Index(name = "idx_product_favorite_deleted", columnList = "is_deleted"),
+                @Index(name = "idx_product_favorite_deleted_created", columnList = "is_deleted, created_at"),
+                @Index(name = "idx_product_favorite_user_product_deleted", columnList = "user_id, product_id, is_deleted")
+        })
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
