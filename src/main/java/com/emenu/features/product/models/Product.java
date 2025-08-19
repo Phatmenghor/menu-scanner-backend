@@ -43,38 +43,38 @@ public class Product extends BaseUUIDEntity {
     private UUID businessId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "business_id", insertable = false, updatable = false)
+    @JoinColumn(name = "business_id")
     private Business business;
 
     @Column(name = "category_id", nullable = false)
     private UUID categoryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", insertable = false, updatable = false)
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @Column(name = "brand_id")
     private UUID brandId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "brand_id", insertable = false, updatable = false)
+    @JoinColumn(name = "brand_id")
     private Brand brand;
 
-    @Column(name = "name", nullable = false, length = 255)
+    @Column(name = "name")
     private String name;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "status", nullable = false)
     private ProductStatus status = ProductStatus.ACTIVE;
 
     @Column(name = "price", precision = 10, scale = 2)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "promotion_type", length = 20)
+    @Column(name = "promotion_type")
     private PromotionType promotionType;
 
     @Column(name = "promotion_value", precision = 10, scale = 2)

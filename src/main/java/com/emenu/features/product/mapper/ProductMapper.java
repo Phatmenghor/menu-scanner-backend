@@ -1,14 +1,13 @@
 package com.emenu.features.product.mapper;
 
+import com.emenu.enums.product.PromotionType;
 import com.emenu.features.product.dto.request.ProductCreateDto;
 import com.emenu.features.product.dto.response.ProductDetailDto;
 import com.emenu.features.product.dto.response.ProductListDto;
+import com.emenu.features.product.dto.update.ProductUpdateDto;
 import com.emenu.features.product.models.Product;
 import com.emenu.features.product.utils.ProductFavoriteQueryHelper;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -20,10 +19,10 @@ import java.util.UUID;
 public abstract class ProductMapper {
 
     @Autowired
-    protected ProductFavoriteQueryHelper favoriteQueryHelper; // Helper for favorites check
+    protected ProductFavoriteQueryHelper favoriteQueryHelper;
 
     // ================================
-    // ENTITY CREATION
+    // ENTITY CREATION FROM CREATE DTO
     // ================================
 
     @Mapping(target = "id", ignore = true)
@@ -33,7 +32,34 @@ public abstract class ProductMapper {
     @Mapping(target = "images", ignore = true) // Handle in service
     @Mapping(target = "sizes", ignore = true) // Handle in service
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "productStringToPromotionType")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "isDeleted", constant = "false")
+    @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "deletedBy", ignore = true)
     public abstract Product toEntity(ProductCreateDto dto);
+
+    // ================================
+    // ENTITY UPDATE FROM UPDATE DTO
+    // ================================
+
+    @Mapping(target = "id", ignore = true) // Keep existing ID
+    @Mapping(target = "businessId", ignore = true) // Keep existing business
+    @Mapping(target = "viewCount", ignore = true) // Keep existing count
+    @Mapping(target = "favoriteCount", ignore = true) // Keep existing count
+    @Mapping(target = "images", ignore = true) // Handle in service
+    @Mapping(target = "sizes", ignore = true) // Handle in service
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "productStringToPromotionType")
+    @Mapping(target = "createdAt", ignore = true) // Keep original
+    @Mapping(target = "updatedAt", ignore = true) // Auto-updated by JPA
+    @Mapping(target = "createdBy", ignore = true) // Keep original
+    @Mapping(target = "updatedBy", ignore = true) // Auto-updated by JPA auditing
+    @Mapping(target = "isDeleted", ignore = true) // Keep existing
+    @Mapping(target = "deletedAt", ignore = true) // Keep existing
+    @Mapping(target = "deletedBy", ignore = true) // Keep existing
+    public abstract void updateEntityFromDto(ProductUpdateDto dto, @MappingTarget Product entity);
 
     // ================================
     // LIST DTO MAPPING (Optimized for listings)
@@ -70,7 +96,7 @@ public abstract class ProductMapper {
     // ================================
 
     /**
-     * 🚀 OPTIMIZED: Enrich list with favorite status in batch
+     * Enrich list with favorite status in batch
      */
     public List<ProductListDto> enrichWithFavorites(List<ProductListDto> products, UUID userId) {
         if (userId == null || products.isEmpty()) {
@@ -91,7 +117,7 @@ public abstract class ProductMapper {
     }
 
     /**
-     * 🚀 OPTIMIZED: Enrich single product with favorite status
+     * Enrich single product with favorite status
      */
     public ProductDetailDto enrichWithFavorite(ProductDetailDto product, UUID userId) {
         if (userId != null) {
@@ -102,23 +128,41 @@ public abstract class ProductMapper {
     }
 
     // ================================
-    // HELPER METHODS - RENAMED TO AVOID CONFLICTS
+    // PROMOTION HANDLING HELPERS - UNIQUE NAMES
     // ================================
 
     @Named("productStringToPromotionType")
-    protected com.emenu.enums.product.PromotionType productStringToPromotionType(String promotionType) {
+    protected PromotionType productStringToPromotionType(String promotionType) {
         if (promotionType == null || promotionType.trim().isEmpty()) {
             return null;
         }
         try {
-            return com.emenu.enums.product.PromotionType.valueOf(promotionType.toUpperCase());
+            return PromotionType.valueOf(promotionType.toUpperCase());
         } catch (IllegalArgumentException e) {
             return null;
         }
     }
 
     @Named("productPromotionTypeToString")
-    protected String productPromotionTypeToString(com.emenu.enums.product.PromotionType promotionType) {
+    protected String productPromotionTypeToString(PromotionType promotionType) {
         return promotionType != null ? promotionType.name() : null;
+    }
+
+    // ================================
+    // UPDATE HELPERS
+    // ================================
+
+    /**
+     * Custom update method that preserves certain fields
+     */
+    @AfterMapping
+    protected void afterUpdateMapping(ProductUpdateDto dto, @MappingTarget Product entity) {
+        // Handle promotion clearing
+        if (!dto.hasPromotionData()) {
+            entity.setPromotionType(null);
+            entity.setPromotionValue(null);
+            entity.setPromotionFromDate(null);
+            entity.setPromotionToDate(null);
+        }
     }
 }

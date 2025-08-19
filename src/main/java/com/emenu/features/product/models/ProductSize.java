@@ -33,14 +33,14 @@ public class ProductSize extends BaseUUIDEntity {
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private Product product;
 
-    @Column(name = "name", nullable = false, length = 100)
+    @Column(name = "name")
     private String name;
 
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "promotion_type", length = 20)
+    @Column(name = "promotion_type")
     private PromotionType promotionType;
 
     @Column(name = "promotion_value", precision = 10, scale = 2)
@@ -123,9 +123,5 @@ public class ProductSize extends BaseUUIDEntity {
         } else {
             this.productId = null;
         }
-    }
-
-    public void setProductId(UUID productId) {
-        this.productId = productId;
     }
 }

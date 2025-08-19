@@ -17,11 +17,6 @@ public interface ProductFavoriteRepository extends JpaRepository<ProductFavorite
 
     boolean existsByUserIdAndProductIdAndIsDeletedFalse(UUID userId, UUID productId);
 
-    @Query("SELECT pf FROM ProductFavorite pf " +
-            "WHERE pf.userId = :userId AND pf.isDeleted = false " +
-            "ORDER BY pf.createdAt DESC")
-    Page<ProductFavorite> findByUserIdAndIsDeletedFalse(@Param("userId") UUID userId, Pageable pageable);
-
     @Query("SELECT pf.productId FROM ProductFavorite pf " +
             "WHERE pf.userId = :userId AND pf.productId IN :productIds AND pf.isDeleted = false")
     List<UUID> findFavoriteProductIdsByUserIdAndProductIds(@Param("userId") UUID userId,
@@ -34,10 +29,4 @@ public interface ProductFavoriteRepository extends JpaRepository<ProductFavorite
     @Modifying
     @Query("DELETE FROM ProductFavorite pf WHERE pf.userId = :userId")
     int deleteAllByUserId(@Param("userId") UUID userId);
-
-    @Query("SELECT COUNT(pf) FROM ProductFavorite pf WHERE pf.userId = :userId AND pf.isDeleted = false")
-    long countByUserIdAndIsDeletedFalse(@Param("userId") UUID userId);
-
-    @Query("SELECT COUNT(pf) FROM ProductFavorite pf WHERE pf.productId = :productId AND pf.isDeleted = false")
-    long countByProductIdAndIsDeletedFalse(@Param("productId") UUID productId);
 }

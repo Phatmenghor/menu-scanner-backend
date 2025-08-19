@@ -10,18 +10,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ProductFavoriteService {
-    
-    // Favorite Management
     FavoriteToggleDto toggleFavorite(UUID productId);
     PaginationResponse<ProductListDto> getUserFavorites(ProductFilterDto filter);
     FavoriteRemoveAllDto removeAllFavorites();
-    
-    // Favorite Status Check
-    boolean isFavorited(UUID userId, UUID productId);
-    
-    // Batch Operations for Mappers
     List<UUID> getFavoriteProductIds(UUID userId, List<UUID> productIds);
-    
-    // Batch Operations for UI
-    void enrichProductsWithFavorites(List<ProductListDto> products, UUID userId);
 }

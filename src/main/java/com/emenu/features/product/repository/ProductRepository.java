@@ -45,57 +45,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE p.brandId = :brandId AND p.isDeleted = false")
     long countByBrandId(@Param("brandId") UUID brandId);
 
-    // ================================
-    // BUSINESS-SPECIFIC QUERIES - Using business indexes
-    // ================================
-
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "WHERE p.businessId = :businessId AND p.isDeleted = false " +
-           "ORDER BY p.createdAt DESC")
-    Page<Product> findByBusinessIdOrderByCreatedAtDesc(@Param("businessId") UUID businessId, Pageable pageable);
-
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "WHERE p.businessId = :businessId AND p.status = 'ACTIVE' AND p.isDeleted = false " +
-           "ORDER BY p.createdAt DESC")
-    Page<Product> findActiveProductsByBusinessId(@Param("businessId") UUID businessId, Pageable pageable);
-
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "WHERE p.businessId = :businessId AND p.categoryId = :categoryId AND p.isDeleted = false " +
-           "ORDER BY p.createdAt DESC")
-    Page<Product> findByBusinessIdAndCategoryId(@Param("businessId") UUID businessId, 
-                                                @Param("categoryId") UUID categoryId, 
-                                                Pageable pageable);
-
-    // ================================
-    // SEARCH QUERIES - Using name index and joins
-    // ================================
-
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "LEFT JOIN FETCH p.business " +
-           "WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%')) AND p.isDeleted = false " +
-           "ORDER BY p.createdAt DESC")
-    Page<Product> searchByName(@Param("name") String name, Pageable pageable);
-
-    @Query("SELECT DISTINCT p FROM Product p " +
-           "LEFT JOIN FETCH p.category c " +
-           "LEFT JOIN FETCH p.brand b " +
-           "LEFT JOIN FETCH p.business bus " +
-           "WHERE (LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "   OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "   OR LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "   OR LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "   OR LOWER(bus.name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-           "AND p.isDeleted = false " +
-           "ORDER BY p.createdAt DESC")
-    Page<Product> fullTextSearch(@Param("search") String search, Pageable pageable);
 
     // ================================
     // STATISTICS AND UPDATES
@@ -128,14 +77,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "p.promotionFromDate = NULL, p.promotionToDate = NULL " +
            "WHERE p.businessId = :businessId AND p.isDeleted = false")
     int clearAllPromotionsForBusiness(@Param("businessId") UUID businessId);
-
-    @Query("SELECT COUNT(p) FROM Product p " +
-           "WHERE p.promotionType IS NOT NULL AND p.promotionValue IS NOT NULL " +
-           "AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= :now) " +
-           "AND (p.promotionToDate IS NULL OR p.promotionToDate >= :now) " +
-           "AND p.isDeleted = false")
-    long countActivePromotions(@Param("now") LocalDateTime now);
-
     // ================================
     // FAVORITES INTEGRATION
     // ================================
@@ -148,10 +89,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE pf.userId = :userId AND p.isDeleted = false AND pf.isDeleted = false " +
            "ORDER BY pf.createdAt DESC")
     Page<Product> findUserFavorites(@Param("userId") UUID userId, Pageable pageable);
-
-    @Query("SELECT COUNT(pf) FROM ProductFavorite pf " +
-           "WHERE pf.userId = :userId AND pf.isDeleted = false")
-    long countUserFavorites(@Param("userId") UUID userId);
 
     // ================================
     // BATCH OPERATIONS

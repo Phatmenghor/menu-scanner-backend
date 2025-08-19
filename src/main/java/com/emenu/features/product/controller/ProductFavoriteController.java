@@ -23,15 +23,6 @@ public class ProductFavoriteController {
     
     private final ProductFavoriteService favoriteService;
 
-    @PostMapping("/{id}/toggle")
-    public ResponseEntity<ApiResponse<FavoriteToggleDto>> toggleFavorite(@PathVariable UUID id) {
-        log.info("Toggling favorite for product: {}", id);
-        
-        FavoriteToggleDto result = favoriteService.toggleFavorite(id);
-        
-        return ResponseEntity.ok(ApiResponse.success(result.getMessage(), result));
-    }
-
     @PostMapping("/{id}/favorite")
     public ResponseEntity<ApiResponse<FavoriteToggleDto>> setFavoriteStatus(
             @PathVariable UUID id,

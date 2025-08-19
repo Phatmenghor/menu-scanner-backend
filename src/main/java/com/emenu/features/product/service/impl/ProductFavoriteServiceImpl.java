@@ -101,8 +101,8 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
         
         // Map to DTOs and set all as favorited
         PaginationResponse<ProductListDto> response = paginationMapper.toPaginationResponse(
-            favoritePage, 
-            products -> productMapper.toListDtos(products)
+            favoritePage,
+                productMapper::toListDtos
         );
         
         // All products in favorites are favorited by definition
@@ -116,9 +116,6 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
     public FavoriteRemoveAllDto removeAllFavorites() {
         UUID userId = securityUtils.getCurrentUserId();
         log.info("Removing all favorites for user: {}", userId);
-
-        // Get count before deletion for response
-        long favoriteCount = favoriteRepository.countByUserIdAndIsDeletedFalse(userId);
         
         // Remove all favorites for the user
         int removedCount = favoriteRepository.deleteAllByUserId(userId);
@@ -135,33 +132,10 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean isFavorited(UUID userId, UUID productId) {
-        return favoriteRepository.existsByUserIdAndProductIdAndIsDeletedFalse(userId, productId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<UUID> getFavoriteProductIds(UUID userId, List<UUID> productIds) {
         if (userId == null || productIds == null || productIds.isEmpty()) {
             return List.of();
         }
         return favoriteRepository.findFavoriteProductIdsByUserIdAndProductIds(userId, productIds);
-    }
-
-    @Override
-    public void enrichProductsWithFavorites(List<ProductListDto> products, UUID userId) {
-        if (userId == null || products.isEmpty()) {
-            return;
-        }
-
-        List<UUID> productIds = products.stream()
-                .map(ProductListDto::getId)
-                .toList();
-
-        // Batch query for favorites
-        List<UUID> favoriteProductIds = getFavoriteProductIds(userId, productIds);
-        
-        products.forEach(product -> 
-            product.setIsFavorited(favoriteProductIds.contains(product.getId())));
     }
 }

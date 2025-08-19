@@ -1,14 +1,16 @@
 package com.emenu.features.product.service.impl;
 
+import com.emenu.enums.product.ProductStatus;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.product.dto.filter.ProductFilterDto;
 import com.emenu.features.product.dto.request.ProductCreateDto;
-import com.emenu.features.product.dto.request.ProductImageCreateDto;
-import com.emenu.features.product.dto.request.ProductSizeCreateDto;
 import com.emenu.features.product.dto.response.ProductDetailDto;
 import com.emenu.features.product.dto.response.ProductListDto;
+import com.emenu.features.product.dto.update.ProductImageUpdateDto;
+import com.emenu.features.product.dto.update.ProductSizeUpdateDto;
+import com.emenu.features.product.dto.update.ProductUpdateDto;
 import com.emenu.features.product.mapper.ProductImageMapper;
 import com.emenu.features.product.mapper.ProductMapper;
 import com.emenu.features.product.mapper.ProductSizeMapper;
@@ -33,13 +35,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,6 +58,10 @@ public class ProductServiceImpl implements ProductService {
     private final ProductUtils productUtils;
     private final ProductFavoriteQueryHelper favoriteQueryHelper;
 
+    // ================================
+    // CRUD OPERATIONS
+    // ================================
+
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<ProductListDto> getAllProducts(ProductFilterDto filter) {
@@ -71,22 +75,22 @@ public class ProductServiceImpl implements ProductService {
 
         // Create pageable
         Pageable pageable = PaginationUtils.createPageable(
-            filter.getPageNo() != null ? filter.getPageNo() - 1 : null,
-            filter.getPageSize(),
-            filter.getSortBy(),
-            filter.getSortDirection()
+                filter.getPageNo() != null ? filter.getPageNo() - 1 : null,
+                filter.getPageSize(),
+                filter.getSortBy(),
+                filter.getSortDirection()
         );
-        
+
         // Build specification and execute query
         Specification<Product> spec = ProductSpecifications.withFilter(filter);
         Page<Product> productPage = productRepository.findAll(spec, pageable);
-        
+
         // Map to DTOs
         PaginationResponse<ProductListDto> response = paginationMapper.toPaginationResponse(
-            productPage,
+                productPage,
                 productMapper::toListDtos
         );
-        
+
         // Enrich with favorite status if user is authenticated
         currentUser.ifPresent(user -> enrichProductsWithFavorites(response.getContent(), user.getId()));
 
@@ -109,7 +113,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         ProductDetailDto dto = productMapper.toDetailDto(product);
-        
+
         // Enrich with favorite status if user is authenticated
         if (currentUser.isPresent()) {
             boolean isFavorited = favoriteQueryHelper.isFavorited(currentUser.get().getId(), product.getId());
@@ -133,9 +137,9 @@ public class ProductServiceImpl implements ProductService {
 
         // Increment view count
         productRepository.incrementViewCount(id);
-        
+
         ProductDetailDto dto = productMapper.toDetailDto(product);
-        
+
         // Enrich with favorite status if user is authenticated
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
         if (currentUser.isPresent()) {
@@ -158,7 +162,7 @@ public class ProductServiceImpl implements ProductService {
         product.setBusinessId(currentUser.getBusinessId());
         product.setViewCount(0L);
         product.setFavoriteCount(0L);
-        
+
         // Save product first to get ID
         Product savedProduct = productRepository.save(product);
 
@@ -166,15 +170,13 @@ public class ProductServiceImpl implements ProductService {
         handleProductImages(savedProduct, request.getImages());
         handleProductSizes(savedProduct, request.getSizes());
 
-        productUtils.logProductOperation("CREATE", savedProduct.getName(), currentUser.getBusinessId().toString());
-        
         log.info("Product created successfully: {}", savedProduct.getName());
         return getProductById(savedProduct.getId());
     }
 
     @Override
-    public ProductDetailDto updateProduct(UUID id, ProductCreateDto request) {
-        log.info("Updating product: {}", id);
+    public ProductDetailDto updateProduct(UUID id, ProductUpdateDto request) {
+        log.info("Updating product: {} with data: {}", id, request.getName());
 
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
@@ -182,16 +184,15 @@ public class ProductServiceImpl implements ProductService {
         User currentUser = securityUtils.getCurrentUser();
         validateBusinessOwnership(product, currentUser);
 
-        // Update basic product fields
-        updateProductFromDto(product, request);
+        // Update basic product fields using MapStruct
+        productMapper.updateEntityFromDto(request, product);
+
         Product updatedProduct = productRepository.save(product);
-        
-        // Handle collections
+
+        // Handle collections with smart update logic
         updateProductImages(updatedProduct, request.getImages());
         updateProductSizes(updatedProduct, request.getSizes());
 
-        productUtils.logProductOperation("UPDATE", updatedProduct.getName(), currentUser.getBusinessId().toString());
-        
         log.info("Product updated successfully: {}", updatedProduct.getName());
         return getProductById(updatedProduct.getId());
     }
@@ -209,14 +210,13 @@ public class ProductServiceImpl implements ProductService {
         product.softDelete();
         Product deletedProduct = productRepository.save(product);
 
-        productUtils.logProductOperation("DELETE", deletedProduct.getName(), currentUser.getBusinessId().toString());
-        
         log.info("Product deleted successfully: {}", deletedProduct.getName());
         return productMapper.toDetailDto(deletedProduct);
     }
 
+
     // ================================
-    // Helper Methods
+    // HELPER METHODS
     // ================================
 
     private void enrichProductsWithFavorites(List<ProductListDto> products, UUID userId) {
@@ -230,43 +230,29 @@ public class ProductServiceImpl implements ProductService {
 
         // Batch query for favorites using helper
         List<UUID> favoriteProductIds = favoriteQueryHelper.getFavoriteProductIds(userId, productIds);
-        
-        products.forEach(product -> 
-            product.setIsFavorited(favoriteProductIds.contains(product.getId())));
+
+        products.forEach(product ->
+                product.setIsFavorited(favoriteProductIds.contains(product.getId())));
     }
 
-    private void handleProductImages(Product product, List<ProductImageCreateDto> imageDtos) {
+    private void handleProductImages(Product product, List<com.emenu.features.product.dto.request.ProductImageCreateDto> imageDtos) {
         if (imageDtos == null || imageDtos.isEmpty()) return;
 
-        List<ProductImage> images = new ArrayList<>();
-        boolean hasMainImage = false;
-
-        for (int i = 0; i < imageDtos.size(); i++) {
-            ProductImageCreateDto imageDto = imageDtos.get(i);
-            
-            if (!productUtils.isValidImageUrl(imageDto.getImageUrl())) {
-                log.warn("Invalid image URL skipped: {}", imageDto.getImageUrl());
-                continue;
-            }
-
-            ProductImage image = productImageMapper.toEntity(imageDto);
-            image.setProductId(product.getId());
-            
-            // Set first image as main if no main image specified
-            if (i == 0 && "GALLERY".equals(imageDto.getImageType())) {
-                image.setImageType(com.emenu.enums.product.ImageType.MAIN);
-                hasMainImage = true;
-            }
-            
-            images.add(image);
-        }
+        List<ProductImage> images = imageDtos.stream()
+                .filter(imageDto -> productUtils.isValidImageUrl(imageDto.getImageUrl()))
+                .map(imageDto -> {
+                    ProductImage image = productImageMapper.toEntity(imageDto);
+                    image.setProductId(product.getId());
+                    return image;
+                })
+                .toList();
 
         if (!images.isEmpty()) {
             productImageRepository.saveAll(images);
         }
     }
 
-    private void handleProductSizes(Product product, List<ProductSizeCreateDto> sizeDtos) {
+    private void handleProductSizes(Product product, List<com.emenu.features.product.dto.request.ProductSizeCreateDto> sizeDtos) {
         if (sizeDtos == null || sizeDtos.isEmpty()) return;
 
         List<ProductSize> sizes = sizeDtos.stream()
@@ -275,55 +261,89 @@ public class ProductServiceImpl implements ProductService {
                     size.setProductId(product.getId());
                     return size;
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         productSizeRepository.saveAll(sizes);
     }
 
-    private void updateProductImages(Product product, List<ProductImageCreateDto> imageDtos) {
-        // Delete existing images
+    private void updateProductImages(Product product, List<ProductImageUpdateDto> imageDtos) {
+        if (imageDtos == null || imageDtos.isEmpty()) {
+            // If no images provided, keep existing ones
+            return;
+        }
+
+        // Get current images
         List<ProductImage> existingImages = productImageRepository.findByProductIdOrderByMainAndSort(product.getId());
-        if (!existingImages.isEmpty()) {
-            productImageRepository.deleteAll(existingImages);
+
+        // Handle deletions
+        List<UUID> idsToDelete = productImageMapper.getIdsToDelete(imageDtos);
+        if (!idsToDelete.isEmpty()) {
+            existingImages.stream()
+                    .filter(img -> idsToDelete.contains(img.getId()))
+                    .forEach(img -> {
+                        img.softDelete();
+                        productImageRepository.save(img);
+                    });
         }
-        
-        handleProductImages(product, imageDtos);
+
+        // Handle updates
+        List<ProductImageUpdateDto> toUpdate = productImageMapper.getExistingToUpdate(imageDtos);
+        for (ProductImageUpdateDto updateDto : toUpdate) {
+            existingImages.stream()
+                    .filter(img -> img.getId().equals(updateDto.getId()))
+                    .findFirst()
+                    .ifPresent(existingImage -> {
+                        productImageMapper.updateEntityFromDto(updateDto, existingImage);
+                        productImageRepository.save(existingImage);
+                    });
+        }
+
+        // Handle new images
+        List<ProductImage> newImages = productImageMapper.toEntitiesFromUpdate(imageDtos);
+        newImages.forEach(img -> img.setProductId(product.getId()));
+        if (!newImages.isEmpty()) {
+            productImageRepository.saveAll(newImages);
+        }
     }
 
-    private void updateProductSizes(Product product, List<ProductSizeCreateDto> sizeDtos) {
-        // Delete existing sizes
+    private void updateProductSizes(Product product, List<ProductSizeUpdateDto> sizeDtos) {
+        if (sizeDtos == null || sizeDtos.isEmpty()) {
+            // If no sizes provided, keep existing ones
+            return;
+        }
+
+        // Get current sizes
         List<ProductSize> existingSizes = product.getSizes();
-        if (existingSizes != null && !existingSizes.isEmpty()) {
-            productSizeRepository.deleteAll(existingSizes);
-        }
-        
-        handleProductSizes(product, sizeDtos);
-    }
 
-    private void updateProductFromDto(Product product, ProductCreateDto dto) {
-        product.setName(productUtils.sanitizeProductName(dto.getName()));
-        product.setDescription(dto.getDescription());
-        product.setCategoryId(dto.getCategoryId());
-        product.setBrandId(dto.getBrandId());
-        product.setPrice(dto.getPrice());
-        product.setStatus(dto.getStatus());
-        
-        // Update promotion fields
-        if (StringUtils.hasText(dto.getPromotionType()) && dto.getPromotionValue() != null) {
-            product.setPromotionType(com.emenu.enums.product.PromotionType.valueOf(dto.getPromotionType().toUpperCase()));
-            product.setPromotionValue(dto.getPromotionValue());
-            product.setPromotionFromDate(dto.getPromotionFromDate());
-            product.setPromotionToDate(dto.getPromotionToDate());
-        } else {
-            clearProductPromotion(product);
+        // Handle deletions
+        List<UUID> idsToDelete = productSizeMapper.getIdsToDelete(sizeDtos);
+        if (!idsToDelete.isEmpty()) {
+            existingSizes.stream()
+                    .filter(size -> idsToDelete.contains(size.getId()))
+                    .forEach(size -> {
+                        size.softDelete();
+                        productSizeRepository.save(size);
+                    });
         }
-    }
 
-    private void clearProductPromotion(Product product) {
-        product.setPromotionType(null);
-        product.setPromotionValue(null);
-        product.setPromotionFromDate(null);
-        product.setPromotionToDate(null);
+        // Handle updates
+        List<ProductSizeUpdateDto> toUpdate = productSizeMapper.getExistingToUpdate(sizeDtos);
+        for (ProductSizeUpdateDto updateDto : toUpdate) {
+            existingSizes.stream()
+                    .filter(size -> size.getId().equals(updateDto.getId()))
+                    .findFirst()
+                    .ifPresent(existingSize -> {
+                        productSizeMapper.updateEntityFromDto(updateDto, existingSize);
+                        productSizeRepository.save(existingSize);
+                    });
+        }
+
+        // Handle new sizes
+        List<ProductSize> newSizes = productSizeMapper.toEntitiesFromUpdate(sizeDtos);
+        newSizes.forEach(size -> size.setProductId(product.getId()));
+        if (!newSizes.isEmpty()) {
+            productSizeRepository.saveAll(newSizes);
+        }
     }
 
     private void validateUserBusinessAssociation(User user) {
