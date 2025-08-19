@@ -56,9 +56,13 @@ public interface ProductMapper {
     }
     void updateEntityFromDto(ProductUpdateDto dto, @MappingTarget Product entity);
 
-    @Mapping(source = "business.name", target = "businessName")
-    @Mapping(source = "category.name", target = "categoryName")
-    @Mapping(source = "brand.name", target = "brandName")
+    // ✅ FIXED: Enhanced mapping with proper null handling
+    @Mapping(source = "business.name", target = "businessName", 
+             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
+    @Mapping(source = "category.name", target = "categoryName",
+             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
+    @Mapping(source = "brand.name", target = "brandName",
+             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
     @Mapping(source = "price", target = "price")
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
     @Mapping(source = "promotionValue", target = "promotionValue")
@@ -69,6 +73,17 @@ public interface ProductMapper {
     @Mapping(target = "isFavorited", constant = "false")
     @AfterMapping
     default void afterListMapping(@MappingTarget ProductListDto dto, Product product) {
+        // ✅ FIXED: Enhanced null-safe relationship mapping
+        if (product.getBusiness() != null) {
+            dto.setBusinessName(product.getBusiness().getName());
+        }
+        if (product.getCategory() != null) {
+            dto.setCategoryName(product.getCategory().getName());
+        }
+        if (product.getBrand() != null) {
+            dto.setBrandName(product.getBrand().getName());
+        }
+
         // Fix hasSizes calculation
         boolean hasSizes = product.getSizes() != null && !product.getSizes().isEmpty();
         dto.setHasSizes(hasSizes);
@@ -84,9 +99,13 @@ public interface ProductMapper {
 
     List<ProductListDto> toListDtos(List<Product> products);
 
-    @Mapping(source = "business.name", target = "businessName")
-    @Mapping(source = "category.name", target = "categoryName")
-    @Mapping(source = "brand.name", target = "brandName")
+    // ✅ FIXED: Enhanced detail mapping with proper null handling
+    @Mapping(source = "business.name", target = "businessName",
+             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
+    @Mapping(source = "category.name", target = "categoryName",
+             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
+    @Mapping(source = "brand.name", target = "brandName",
+             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
     @Mapping(source = "price", target = "price")
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
     @Mapping(source = "promotionValue", target = "promotionValue")
@@ -96,6 +115,17 @@ public interface ProductMapper {
     @Mapping(target = "isFavorited", constant = "false")
     @AfterMapping
     default void afterDetailMapping(@MappingTarget ProductDetailDto dto, Product product) {
+        // ✅ FIXED: Enhanced null-safe relationship mapping
+        if (product.getBusiness() != null) {
+            dto.setBusinessName(product.getBusiness().getName());
+        }
+        if (product.getCategory() != null) {
+            dto.setCategoryName(product.getCategory().getName());
+        }
+        if (product.getBrand() != null) {
+            dto.setBrandName(product.getBrand().getName());
+        }
+
         // Fix hasSizes calculation
         boolean hasSizes = product.getSizes() != null && !product.getSizes().isEmpty();
         dto.setHasSizes(hasSizes);
@@ -109,74 +139,85 @@ public interface ProductMapper {
     }
     ProductDetailDto toDetailDto(Product product);
 
+    // ✅ FIXED: Enhanced display field logic with null safety
     default void setDisplayFieldsForList(ProductListDto dto, Product product) {
-        if (product.hasSizes() && product.getSizes() != null && !product.getSizes().isEmpty()) {
-            var sizeWithPromotion = product.getSizes().stream()
-                    .filter(size -> size != null && size.isPromotionActive())
-                    .findFirst();
-            
-            if (sizeWithPromotion.isPresent()) {
-                var size = sizeWithPromotion.get();
-                dto.setDisplayOriginPrice(size.getPrice());
-                dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
-                dto.setDisplayPromotionValue(size.getPromotionValue());
-                dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
-                dto.setDisplayPromotionToDate(size.getPromotionToDate());
-                dto.setHasPromotion(true);
-            } else {
-                var smallestPriceSize = product.getSizes().stream()
-                        .filter(size -> size != null && size.getPrice() != null)
-                        .min((s1, s2) -> s1.getPrice().compareTo(s2.getPrice()));
+        try {
+            if (product.hasSizes() && product.getSizes() != null && !product.getSizes().isEmpty()) {
+                var sizeWithPromotion = product.getSizes().stream()
+                        .filter(size -> size != null && size.isPromotionActive())
+                        .findFirst();
                 
-                if (smallestPriceSize.isPresent()) {
-                    var size = smallestPriceSize.get();
+                if (sizeWithPromotion.isPresent()) {
+                    var size = sizeWithPromotion.get();
                     dto.setDisplayOriginPrice(size.getPrice());
                     dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
                     dto.setDisplayPromotionValue(size.getPromotionValue());
                     dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
                     dto.setDisplayPromotionToDate(size.getPromotionToDate());
-                    dto.setHasPromotion(size.isPromotionActive());
+                    dto.setHasPromotion(true);
                 } else {
-                    setProductDataAsDisplay(dto, product);
+                    var smallestPriceSize = product.getSizes().stream()
+                            .filter(size -> size != null && size.getPrice() != null)
+                            .min((s1, s2) -> s1.getPrice().compareTo(s2.getPrice()));
+                    
+                    if (smallestPriceSize.isPresent()) {
+                        var size = smallestPriceSize.get();
+                        dto.setDisplayOriginPrice(size.getPrice());
+                        dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
+                        dto.setDisplayPromotionValue(size.getPromotionValue());
+                        dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
+                        dto.setDisplayPromotionToDate(size.getPromotionToDate());
+                        dto.setHasPromotion(size.isPromotionActive());
+                    } else {
+                        setProductDataAsDisplay(dto, product);
+                    }
                 }
+            } else {
+                setProductDataAsDisplay(dto, product);
             }
-        } else {
+        } catch (Exception e) {
+            // ✅ FALLBACK: Use product data if size processing fails
             setProductDataAsDisplay(dto, product);
         }
     }
     
     default void setDisplayFieldsForDetail(ProductDetailDto dto, Product product) {
-        if (product.hasSizes() && product.getSizes() != null && !product.getSizes().isEmpty()) {
-            var sizeWithPromotion = product.getSizes().stream()
-                    .filter(size -> size != null && size.isPromotionActive())
-                    .findFirst();
-            
-            if (sizeWithPromotion.isPresent()) {
-                var size = sizeWithPromotion.get();
-                dto.setDisplayOriginPrice(size.getPrice());
-                dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
-                dto.setDisplayPromotionValue(size.getPromotionValue());
-                dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
-                dto.setDisplayPromotionToDate(size.getPromotionToDate());
-                dto.setHasPromotion(true);
-            } else {
-                var smallestPriceSize = product.getSizes().stream()
-                        .filter(size -> size != null && size.getPrice() != null)
-                        .min((s1, s2) -> s1.getPrice().compareTo(s2.getPrice()));
+        try {
+            if (product.hasSizes() && product.getSizes() != null && !product.getSizes().isEmpty()) {
+                var sizeWithPromotion = product.getSizes().stream()
+                        .filter(size -> size != null && size.isPromotionActive())
+                        .findFirst();
                 
-                if (smallestPriceSize.isPresent()) {
-                    var size = smallestPriceSize.get();
+                if (sizeWithPromotion.isPresent()) {
+                    var size = sizeWithPromotion.get();
                     dto.setDisplayOriginPrice(size.getPrice());
                     dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
                     dto.setDisplayPromotionValue(size.getPromotionValue());
                     dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
                     dto.setDisplayPromotionToDate(size.getPromotionToDate());
-                    dto.setHasPromotion(size.isPromotionActive());
+                    dto.setHasPromotion(true);
                 } else {
-                    setProductDataAsDisplayForDetail(dto, product);
+                    var smallestPriceSize = product.getSizes().stream()
+                            .filter(size -> size != null && size.getPrice() != null)
+                            .min((s1, s2) -> s1.getPrice().compareTo(s2.getPrice()));
+                    
+                    if (smallestPriceSize.isPresent()) {
+                        var size = smallestPriceSize.get();
+                        dto.setDisplayOriginPrice(size.getPrice());
+                        dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
+                        dto.setDisplayPromotionValue(size.getPromotionValue());
+                        dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
+                        dto.setDisplayPromotionToDate(size.getPromotionToDate());
+                        dto.setHasPromotion(size.isPromotionActive());
+                    } else {
+                        setProductDataAsDisplayForDetail(dto, product);
+                    }
                 }
+            } else {
+                setProductDataAsDisplayForDetail(dto, product);
             }
-        } else {
+        } catch (Exception e) {
+            // ✅ FALLBACK: Use product data if size processing fails
             setProductDataAsDisplayForDetail(dto, product);
         }
     }

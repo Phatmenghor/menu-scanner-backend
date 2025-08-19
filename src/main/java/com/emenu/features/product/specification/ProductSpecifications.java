@@ -7,15 +7,13 @@ import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class ProductSpecifications {
 
     /**
-     * 🚀 MAIN SPECIFICATION - Optimized for database indexes
+     * 🚀 MAIN SPECIFICATION - Optimized for database indexes with relationship support
      * All filters use the indexes we created in the Product entity
      */
     public static Specification<Product> withFilter(ProductFilterDto filter) {
@@ -45,7 +43,7 @@ public class ProductSpecifications {
                 predicates.add(criteriaBuilder.equal(root.get("brandId"), filter.getBrandId()));
             }
 
-            // ✅ PRICE RANGE FILTER - Uses idx_products_business_price_status_deleted or idx_products_price_deleted
+            // ✅ PRICE RANGE FILTER - Uses idx_products_price_deleted
             if (filter.getMinPrice() != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), filter.getMinPrice()));
             }
@@ -123,15 +121,32 @@ public class ProductSpecifications {
                 }
             }
 
-            // ✅ SEARCH FILTER - Uses idx_products_name_deleted and optimized JOINs
+            // ✅ SEARCH FILTER - Uses idx_products_name_deleted and JOIN FETCH for relationships
             if (StringUtils.hasText(filter.getSearch())) {
                 String searchPattern = "%" + filter.getSearch().toLowerCase() + "%";
                 
+                // ✅ FIXED: Enhanced search with relationship joins
+                Join<Object, Object> businessJoin = root.join("business", JoinType.LEFT);
+                Join<Object, Object> categoryJoin = root.join("category", JoinType.LEFT);
+                Join<Object, Object> brandJoin = root.join("brand", JoinType.LEFT);
+                
                 Predicate productNamePredicate = criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("name")), searchPattern);
+                
+                Predicate businessNamePredicate = criteriaBuilder.like(
+                        criteriaBuilder.lower(businessJoin.get("name")), searchPattern);
+                
+                Predicate categoryNamePredicate = criteriaBuilder.like(
+                        criteriaBuilder.lower(categoryJoin.get("name")), searchPattern);
+                
+                Predicate brandNamePredicate = criteriaBuilder.like(
+                        criteriaBuilder.lower(brandJoin.get("name")), searchPattern);
 
                 predicates.add(criteriaBuilder.or(
-                        productNamePredicate
+                        productNamePredicate,
+                        businessNamePredicate,
+                        categoryNamePredicate,
+                        brandNamePredicate
                 ));
                 
                 // Ensure distinct results when using JOINs
@@ -142,10 +157,57 @@ public class ProductSpecifications {
         };
     }
 
-    private static Specification<Product> hasStatus(com.emenu.enums.product.ProductStatus status) {
+    /**
+     * ✅ UTILITY: Get products with active status
+     */
+    public static Specification<Product> hasActiveStatus() {
         return (root, query, criteriaBuilder) -> criteriaBuilder.and(
-            criteriaBuilder.equal(root.get("status"), status),
+            criteriaBuilder.equal(root.get("status"), com.emenu.enums.product.ProductStatus.ACTIVE),
             criteriaBuilder.equal(root.get("isDeleted"), false)
         );
+    }
+
+    /**
+     * ✅ UTILITY: Get products by business with relationships
+     */
+    public static Specification<Product> byBusinessWithRelationships(java.util.UUID businessId) {
+        return (root, query, criteriaBuilder) -> {
+            // Fetch relationships for better performance
+            if (query.getResultType().equals(Product.class)) {
+                root.fetch("business", JoinType.LEFT);
+                root.fetch("category", JoinType.LEFT);
+                root.fetch("brand", JoinType.LEFT);
+            }
+            
+            return criteriaBuilder.and(
+                criteriaBuilder.equal(root.get("businessId"), businessId),
+                criteriaBuilder.equal(root.get("isDeleted"), false)
+            );
+        };
+    }
+
+    /**
+     * ✅ UTILITY: Get products with promotions
+     */
+    public static Specification<Product> hasActivePromotions() {
+        return (root, query, criteriaBuilder) -> {
+            Predicate productPromotion = criteriaBuilder.and(
+                criteriaBuilder.isNotNull(root.get("promotionType")),
+                criteriaBuilder.isNotNull(root.get("promotionValue")),
+                criteriaBuilder.or(
+                    criteriaBuilder.isNull(root.get("promotionFromDate")),
+                    criteriaBuilder.lessThanOrEqualTo(root.get("promotionFromDate"), criteriaBuilder.currentTimestamp())
+                ),
+                criteriaBuilder.or(
+                    criteriaBuilder.isNull(root.get("promotionToDate")),
+                    criteriaBuilder.greaterThanOrEqualTo(root.get("promotionToDate"), criteriaBuilder.currentTimestamp())
+                )
+            );
+
+            return criteriaBuilder.and(
+                productPromotion,
+                criteriaBuilder.equal(root.get("isDeleted"), false)
+            );
+        };
     }
 }

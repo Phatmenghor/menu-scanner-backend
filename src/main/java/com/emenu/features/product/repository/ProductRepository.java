@@ -18,6 +18,25 @@ import java.util.UUID;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
     
+    // ✅ OPTIMIZED: Single query with all relationships and sizes
+    @Query("SELECT DISTINCT p FROM Product p " +
+           "LEFT JOIN FETCH p.category c " +
+           "LEFT JOIN FETCH p.brand b " +
+           "LEFT JOIN FETCH p.business bus " +
+           "LEFT JOIN FETCH p.sizes sz " +
+           "WHERE p.id = :id AND p.isDeleted = false " +
+           "AND (sz.isDeleted = false OR sz.isDeleted IS NULL)")
+    Optional<Product> findByIdWithAllDetails(@Param("id") UUID id);
+
+    // ✅ OPTIMIZED: Batch query with all relationships - NO sizes to avoid cartesian product
+    @Query("SELECT DISTINCT p FROM Product p " +
+           "LEFT JOIN FETCH p.category c " +
+           "LEFT JOIN FETCH p.brand b " +
+           "LEFT JOIN FETCH p.business bus " +
+           "WHERE p.id IN :productIds AND p.isDeleted = false")
+    List<Product> findByIdInWithRelationships(@Param("productIds") List<UUID> productIds);
+
+    // ✅ OPTIMIZED: Get products with relationships but without collections
     @Query("SELECT DISTINCT p FROM Product p " +
            "LEFT JOIN FETCH p.category c " +
            "LEFT JOIN FETCH p.brand b " +
@@ -25,12 +44,53 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE p.id = :id AND p.isDeleted = false")
     Optional<Product> findByIdWithDetails(@Param("id") UUID id);
 
-    @Query("SELECT DISTINCT p FROM Product p " +
-            "LEFT JOIN FETCH p.category c " +
-            "LEFT JOIN FETCH p.brand b " +
-            "LEFT JOIN FETCH p.business bus " +
-            "WHERE p.id IN :productIds AND p.isDeleted = false")
-    List<Product> findByIdInWithRelationships(@Param("productIds") List<UUID> productIds);
+    // ✅ NEW: High-performance paginated query with relationships only
+    @Query(value = "SELECT DISTINCT p FROM Product p " +
+                   "LEFT JOIN FETCH p.category c " +
+                   "LEFT JOIN FETCH p.brand b " +
+                   "LEFT JOIN FETCH p.business bus " +
+                   "WHERE p.isDeleted = false",
+           countQuery = "SELECT COUNT(DISTINCT p) FROM Product p WHERE p.isDeleted = false")
+    Page<Product> findAllWithRelationshipsOptimized(Pageable pageable);
+
+    // ✅ NEW: Optimized business products query
+    @Query(value = "SELECT DISTINCT p FROM Product p " +
+                   "LEFT JOIN FETCH p.category c " +
+                   "LEFT JOIN FETCH p.brand b " +
+                   "LEFT JOIN FETCH p.business bus " +
+                   "WHERE p.businessId = :businessId AND p.isDeleted = false",
+           countQuery = "SELECT COUNT(DISTINCT p) FROM Product p WHERE p.businessId = :businessId AND p.isDeleted = false")
+    Page<Product> findByBusinessIdWithRelationships(@Param("businessId") UUID businessId, Pageable pageable);
+
+    // ✅ NEW: Optimized category products query
+    @Query(value = "SELECT DISTINCT p FROM Product p " +
+                   "LEFT JOIN FETCH p.category c " +
+                   "LEFT JOIN FETCH p.brand b " +
+                   "LEFT JOIN FETCH p.business bus " +
+                   "WHERE p.categoryId = :categoryId AND p.isDeleted = false",
+           countQuery = "SELECT COUNT(DISTINCT p) FROM Product p WHERE p.categoryId = :categoryId AND p.isDeleted = false")
+    Page<Product> findByCategoryIdWithRelationships(@Param("categoryId") UUID categoryId, Pageable pageable);
+
+    // ✅ NEW: Optimized search query
+    @Query(value = "SELECT DISTINCT p FROM Product p " +
+                   "LEFT JOIN FETCH p.category c " +
+                   "LEFT JOIN FETCH p.brand b " +
+                   "LEFT JOIN FETCH p.business bus " +
+                   "WHERE (LOWER(p.name) LIKE LOWER(:searchPattern) " +
+                   "OR LOWER(c.name) LIKE LOWER(:searchPattern) " +
+                   "OR LOWER(b.name) LIKE LOWER(:searchPattern) " +
+                   "OR LOWER(bus.name) LIKE LOWER(:searchPattern)) " +
+                   "AND p.isDeleted = false",
+           countQuery = "SELECT COUNT(DISTINCT p) FROM Product p " +
+                       "LEFT JOIN p.category c " +
+                       "LEFT JOIN p.brand b " +
+                       "LEFT JOIN p.business bus " +
+                       "WHERE (LOWER(p.name) LIKE LOWER(:searchPattern) " +
+                       "OR LOWER(c.name) LIKE LOWER(:searchPattern) " +
+                       "OR LOWER(b.name) LIKE LOWER(:searchPattern) " +
+                       "OR LOWER(bus.name) LIKE LOWER(:searchPattern)) " +
+                       "AND p.isDeleted = false")
+    Page<Product> findBySearchWithRelationships(@Param("searchPattern") String searchPattern, Pageable pageable);
 
     Optional<Product> findByIdAndIsDeletedFalse(UUID id);
 
@@ -70,21 +130,15 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE p.businessId = :businessId AND p.isDeleted = false")
     int clearAllPromotionsForBusiness(@Param("businessId") UUID businessId);
     
-    @Query("SELECT p FROM Product p " +
+    // ✅ OPTIMIZED: Enhanced favorites query with relationships
+    @Query("SELECT DISTINCT p FROM Product p " +
            "INNER JOIN ProductFavorite pf ON p.id = pf.productId " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "LEFT JOIN FETCH p.business " +
+           "LEFT JOIN FETCH p.category c " +
+           "LEFT JOIN FETCH p.brand b " +
+           "LEFT JOIN FETCH p.business bus " +
            "WHERE pf.userId = :userId AND p.isDeleted = false AND pf.isDeleted = false " +
            "ORDER BY pf.createdAt DESC")
     Page<Product> findUserFavorites(@Param("userId") UUID userId, Pageable pageable);
-
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "LEFT JOIN FETCH p.business " +
-           "WHERE p.id IN :productIds AND p.isDeleted = false")
-    List<Product> findByIdIn(@Param("productIds") List<UUID> productIds);
 
     @Modifying
     @Query("UPDATE Product p SET p.status = :status " +
@@ -92,27 +146,36 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     int updateStatusForProducts(@Param("productIds") List<UUID> productIds, 
                                @Param("status") com.emenu.enums.product.ProductStatus status);
 
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "LEFT JOIN FETCH p.business " +
-           "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
-           "ORDER BY p.createdAt DESC")
+    // ✅ OPTIMIZED: Enhanced recent products with relationships
+    @Query(value = "SELECT DISTINCT p FROM Product p " +
+                   "LEFT JOIN FETCH p.category c " +
+                   "LEFT JOIN FETCH p.brand b " +
+                   "LEFT JOIN FETCH p.business bus " +
+                   "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
+                   "ORDER BY p.createdAt DESC",
+           countQuery = "SELECT COUNT(p) FROM Product p " +
+                       "WHERE p.status = 'ACTIVE' AND p.isDeleted = false")
     Page<Product> findRecentActiveProducts(Pageable pageable);
 
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "LEFT JOIN FETCH p.business " +
-           "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
-           "ORDER BY p.viewCount DESC, p.createdAt DESC")
+    // ✅ OPTIMIZED: Enhanced top viewed with relationships
+    @Query(value = "SELECT DISTINCT p FROM Product p " +
+                   "LEFT JOIN FETCH p.category c " +
+                   "LEFT JOIN FETCH p.brand b " +
+                   "LEFT JOIN FETCH p.business bus " +
+                   "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
+                   "ORDER BY p.viewCount DESC, p.createdAt DESC",
+           countQuery = "SELECT COUNT(p) FROM Product p " +
+                       "WHERE p.status = 'ACTIVE' AND p.isDeleted = false")
     Page<Product> findTopViewedProducts(Pageable pageable);
 
-    @Query("SELECT p FROM Product p " +
-           "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.brand " +
-           "LEFT JOIN FETCH p.business " +
-           "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
-           "ORDER BY p.favoriteCount DESC, p.createdAt DESC")
+    // ✅ OPTIMIZED: Enhanced top favorited with relationships
+    @Query(value = "SELECT DISTINCT p FROM Product p " +
+                   "LEFT JOIN FETCH p.category c " +
+                   "LEFT JOIN FETCH p.brand b " +
+                   "LEFT JOIN FETCH p.business bus " +
+                   "WHERE p.status = 'ACTIVE' AND p.isDeleted = false " +
+                   "ORDER BY p.favoriteCount DESC, p.createdAt DESC",
+           countQuery = "SELECT COUNT(p) FROM Product p " +
+                       "WHERE p.status = 'ACTIVE' AND p.isDeleted = false")
     Page<Product> findTopFavoritedProducts(Pageable pageable);
 }
