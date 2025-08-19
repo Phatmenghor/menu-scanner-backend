@@ -13,9 +13,8 @@ import java.util.UUID;
 public interface ProductImageRepository extends JpaRepository<ProductImage, UUID> {
 
     @Query("SELECT pi FROM ProductImage pi " +
-           "WHERE pi.productId = :productId AND pi.isDeleted = false " +
-           "ORDER BY " +
-           "CASE WHEN pi.imageType = 'MAIN' THEN 0 ELSE 1 END, " +
-           "pi.createdAt DESC")
+            "WHERE pi.productId = :productId AND pi.isDeleted = false " +
+            "ORDER BY " +
+            "CASE WHEN pi.imageType = 'MAIN' THEN 0 ELSE 1 END")
     List<ProductImage> findByProductIdOrderByMainAndSort(@Param("productId") UUID productId);
 }

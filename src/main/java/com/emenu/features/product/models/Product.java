@@ -11,7 +11,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.BatchSize;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -101,12 +100,10 @@ public class Product extends BaseUUIDEntity {
     private Long favoriteCount = 0L;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @BatchSize(size = 25)
-    @OrderBy("imageType ASC, createdAt DESC")
+    @OrderBy("imageType DESC, createdAt DESC")
     private List<ProductImage> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @BatchSize(size = 25)
     @OrderBy("price ASC")
     private List<ProductSize> sizes = new ArrayList<>();
 

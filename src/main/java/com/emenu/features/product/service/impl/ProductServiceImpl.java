@@ -86,19 +86,19 @@ public class ProductServiceImpl implements ProductService {
             log.debug("🔄 Using specification-based query");
             Specification<Product> spec = ProductSpecifications.withFilter(filter);
             productPage = productRepository.findAll(spec, pageable);
-            
+
             if (!productPage.getContent().isEmpty()) {
                 // ✅ OPTIMIZED: Batch load relationships
                 List<UUID> productIds = productPage.getContent().stream()
                         .map(Product::getId)
                         .toList();
-                
+
                 var productsWithRelationships = productRepository.findByIdInWithRelationships(productIds);
-                
+
                 // ✅ Map back to maintain order
                 Map<UUID, Product> productMap = productsWithRelationships.stream()
                         .collect(java.util.stream.Collectors.toMap(Product::getId, p -> p));
-                
+
                 productPage.getContent().forEach(product -> {
                     Product enriched = productMap.get(product.getId());
                     if (enriched != null) {
@@ -129,9 +129,9 @@ public class ProductServiceImpl implements ProductService {
         }
 
         long totalTime = System.currentTimeMillis() - startTime;
-        log.info("✅ Retrieved {} products in {}ms (query: {}ms)", 
-            response.getContent().size(), totalTime, queryTime);
-        
+        log.info("✅ Retrieved {} products in {}ms (query: {}ms)",
+                response.getContent().size(), totalTime, queryTime);
+
         return response;
     }
 
@@ -140,34 +140,34 @@ public class ProductServiceImpl implements ProductService {
      */
     private Page<Product> tryOptimizedQuery(ProductFilterDto filter, Pageable pageable) {
         // Simple business filter
-        if (filter.getBusinessId() != null && 
-            filter.getCategoryId() == null && 
-            filter.getBrandId() == null && 
-            !StringUtils.hasText(filter.getSearch()) &&
-            filter.getHasPromotion() == null) {
-            
+        if (filter.getBusinessId() != null &&
+                filter.getCategoryId() == null &&
+                filter.getBrandId() == null &&
+                !StringUtils.hasText(filter.getSearch()) &&
+                filter.getHasPromotion() == null) {
+
             log.debug("🎯 Using optimized business query");
             return productRepository.findByBusinessIdWithRelationships(filter.getBusinessId(), pageable);
         }
 
         // Simple category filter
-        if (filter.getCategoryId() != null && 
-            filter.getBusinessId() == null && 
-            filter.getBrandId() == null && 
-            !StringUtils.hasText(filter.getSearch()) &&
-            filter.getHasPromotion() == null) {
-            
+        if (filter.getCategoryId() != null &&
+                filter.getBusinessId() == null &&
+                filter.getBrandId() == null &&
+                !StringUtils.hasText(filter.getSearch()) &&
+                filter.getHasPromotion() == null) {
+
             log.debug("🎯 Using optimized category query");
             return productRepository.findByCategoryIdWithRelationships(filter.getCategoryId(), pageable);
         }
 
         // Simple search
-        if (StringUtils.hasText(filter.getSearch()) && 
-            filter.getBusinessId() == null && 
-            filter.getCategoryId() == null && 
-            filter.getBrandId() == null &&
-            filter.getHasPromotion() == null) {
-            
+        if (StringUtils.hasText(filter.getSearch()) &&
+                filter.getBusinessId() == null &&
+                filter.getCategoryId() == null &&
+                filter.getBrandId() == null &&
+                filter.getHasPromotion() == null) {
+
             log.debug("🎯 Using optimized search query");
             String searchPattern = "%" + filter.getSearch() + "%";
             return productRepository.findBySearchWithRelationships(searchPattern, pageable);
@@ -184,7 +184,7 @@ public class ProductServiceImpl implements ProductService {
         if (products.isEmpty()) return;
 
         long startTime = System.currentTimeMillis();
-        
+
         List<UUID> productIds = products.stream()
                 .map(Product::getId)
                 .toList();
@@ -210,7 +210,7 @@ public class ProductServiceImpl implements ProductService {
         if (products.isEmpty()) return;
 
         long startTime = System.currentTimeMillis();
-        
+
         List<UUID> productIds = products.stream()
                 .map(ProductListDto::getId)
                 .toList();
@@ -239,11 +239,6 @@ public class ProductServiceImpl implements ProductService {
             validateBusinessAccess(product, currentUser.get());
         }
 
-        // ✅ Load remaining collections if not loaded
-        if (product.getImages().isEmpty()) {
-            loadProductImages(product);
-        }
-
         ProductDetailDto dto = productMapper.toDetailDto(product);
 
         if (currentUser.isPresent()) {
@@ -268,10 +263,6 @@ public class ProductServiceImpl implements ProductService {
 
         if (!product.isActive()) {
             throw new NotFoundException("Product is not available");
-        }
-
-        if (product.getImages().isEmpty()) {
-            loadProductImages(product);
         }
 
         // ✅ Async increment view count (non-blocking)
@@ -347,13 +338,6 @@ public class ProductServiceImpl implements ProductService {
 
         log.info("✅ Product deleted: {}", deletedProduct.getName());
         return productMapper.toDetailDto(deletedProduct);
-    }
-    
-    // ✅ OPTIMIZED: Load only images if needed
-    private void loadProductImages(Product product) {
-        List<ProductImage> images = productImageRepository.findByProductIdOrderByMainAndSort(product.getId());
-        product.getImages().clear();
-        product.getImages().addAll(images);
     }
 
     private void handleProductImages(Product product, List<ProductImageCreateDto> imageDtos) {
