@@ -27,11 +27,4 @@ public class UserFilterRequest extends BaseFilterRequest {
     // ✅ NEW: Telegram-specific filters
     private Boolean hasTelegram; // Filter users who have/don't have Telegram linked
     private Boolean telegramNotificationsEnabled; // Filter users who can receive Telegram notifications
-
-    // ✅ NEW: Multi-recipient notification filters
-    private Boolean includePlatformUsers = false;
-    private Boolean includeBusinessOwners = false;
-    private Boolean includeCustomers = false;
-    private List<UUID> specificUserIds;
-    private List<RoleEnum> specificRoles;
 }

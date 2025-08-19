@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Order(2)
+@Order(1) // ✅ FIXED: Changed to Order 1 to run before other initialization
 public class DataInitializationService {
 
     private final RoleRepository roleRepository;
@@ -33,8 +33,9 @@ public class DataInitializationService {
     private final PasswordEncoder passwordEncoder;
     private final SubscriptionPlanService subscriptionPlanService;
 
-    // Prevent multiple executions
+    // ✅ ENHANCED: More robust synchronization
     private static final AtomicBoolean initialized = new AtomicBoolean(false);
+    private static final Object initLock = new Object();
 
     @Value("${app.init.create-admin:true}")
     private boolean createDefaultAdmin;
@@ -48,115 +49,150 @@ public class DataInitializationService {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void initializeData() {
-        // Prevent multiple executions
-        if (!initialized.compareAndSet(false, true)) {
-            log.warn("Data initialization already completed or in progress. Skipping...");
+        // ✅ ENHANCED: Double-checked locking pattern for thread safety
+        if (initialized.get()) {
+            log.info("Data initialization already completed. Skipping...");
             return;
         }
 
-        try {
-            log.info("Starting data initialization...");
-
-            // Initialize in order
-            ensureRolesExist();
-            initializeSubscriptionPlans();
-
-            if (createDefaultAdmin) {
-                initializeDefaultUsers();
+        synchronized (initLock) {
+            if (initialized.get()) {
+                log.info("Data initialization already completed (double-check). Skipping...");
+                return;
             }
 
-            log.info("Data initialization completed successfully.");
-        } catch (Exception e) {
-            log.error("Error during data initialization: {}", e.getMessage(), e);
-            // Reset flag on failure so it can be retried
-            initialized.set(false);
-            throw e;
+            try {
+                log.info("🚀 Starting Cambodia E-Menu Platform data initialization...");
+
+                // Initialize in strict order
+                int rolesCreated = ensureRolesExist();
+                log.info("✅ Roles initialization completed - {} roles processed", rolesCreated);
+
+                initializeSubscriptionPlans();
+                log.info("✅ Subscription plans initialization completed");
+
+                if (createDefaultAdmin) {
+                    int usersCreated = initializeDefaultUsers();
+                    log.info("✅ Default users initialization completed - {} users processed", usersCreated);
+                }
+
+                // Mark as initialized only after all steps complete
+                initialized.set(true);
+                log.info("🎉 Cambodia E-Menu Platform data initialization completed successfully!");
+
+            } catch (Exception e) {
+                log.error("❌ Error during data initialization: {}", e.getMessage(), e);
+                // Don't set initialized flag on failure so it can be retried
+                throw new RuntimeException("Data initialization failed", e);
+            }
         }
     }
 
-    private void ensureRolesExist() {
+    private int ensureRolesExist() {
         try {
-            log.info("Ensuring system roles exist...");
+            log.info("🔄 Ensuring system roles exist...");
 
             // Get all existing roles from database in one query
             List<RoleEnum> existingRoles = roleRepository.findAll()
                     .stream()
-                    .map(Role::getName) // Adjust this method name to match your Role entity
+                    .map(Role::getName)
                     .toList();
 
             // Get all enum values
             List<RoleEnum> allEnumRoles = Arrays.asList(RoleEnum.values());
 
-            // Find missing roles by comparing enum values with database roles
+            // Find missing roles
             List<RoleEnum> missingRoles = allEnumRoles.stream()
                     .filter(roleEnum -> !existingRoles.contains(roleEnum))
                     .toList();
 
             if (missingRoles.isEmpty()) {
-                log.info("All {} system roles already exist in database: {}",
-                        allEnumRoles.size(), existingRoles);
+                log.info("✅ All {} system roles already exist: {}", allEnumRoles.size(), existingRoles);
+                return existingRoles.size();
             } else {
-                log.info("Found {} missing roles out of {}: {}",
-                        missingRoles.size(), allEnumRoles.size(), missingRoles);
-                log.info("Existing roles in database: {}", existingRoles);
-                createMissingRoles(missingRoles);
+                log.info("🔧 Found {} missing roles out of {}: {}", missingRoles.size(), allEnumRoles.size(), missingRoles);
+                log.info("📋 Existing roles in database: {}", existingRoles);
+                
+                int createdCount = createMissingRoles(missingRoles);
+                log.info("✅ Successfully created {} missing roles", createdCount);
+                
+                return existingRoles.size() + createdCount;
             }
 
-            log.info("System roles verification completed.");
         } catch (Exception e) {
-            log.error("Error during roles verification: {}", e.getMessage(), e);
+            log.error("❌ Error during roles verification: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to ensure roles exist", e);
         }
     }
 
-    private void createMissingRoles(List<RoleEnum> missingRoles) {
-        missingRoles.forEach(roleEnum -> {
+    private int createMissingRoles(List<RoleEnum> missingRoles) {
+        int createdCount = 0;
+        
+        for (RoleEnum roleEnum : missingRoles) {
             try {
+                // ✅ ENHANCED: Check if role was created by another thread
+                if (roleRepository.existsByName(roleEnum)) {
+                    log.debug("Role {} already exists (created by another process)", roleEnum.name());
+                    continue;
+                }
+
                 Role role = new Role(roleEnum);
                 role = roleRepository.save(role);
-                log.info("Successfully created role: {} with ID: {}", roleEnum.name(), role.getId());
+                createdCount++;
+                
+                log.info("✅ Successfully created role: {} with ID: {}", roleEnum.name(), role.getId());
+                
             } catch (Exception e) {
-                log.error("Error creating role {}: {}", roleEnum.name(), e.getMessage());
-                throw new RuntimeException("Failed to create role: " + roleEnum.name(), e);
+                // ✅ ENHANCED: Handle potential constraint violations gracefully
+                if (e.getMessage() != null && e.getMessage().contains("constraint")) {
+                    log.warn("⚠️ Role {} likely already exists (constraint violation), continuing...", roleEnum.name());
+                    continue;
+                } else {
+                    log.error("❌ Error creating role {}: {}", roleEnum.name(), e.getMessage());
+                    throw new RuntimeException("Failed to create role: " + roleEnum.name(), e);
+                }
             }
-        });
-        log.info("Successfully created {} missing roles", missingRoles.size());
+        }
+        
+        return createdCount;
     }
 
     private void initializeSubscriptionPlans() {
         try {
-            log.info("Initializing subscription plans...");
+            log.info("🔄 Initializing subscription plans...");
             subscriptionPlanService.seedDefaultPlans();
-            log.info("Subscription plans initialization completed.");
         } catch (Exception e) {
-            log.error("Error initializing subscription plans: {}", e.getMessage(), e);
+            log.error("❌ Error initializing subscription plans: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to initialize subscription plans", e);
         }
     }
 
-    private void initializeDefaultUsers() {
+    private int initializeDefaultUsers() {
         try {
-            log.info("Initializing default users...");
-            createPlatformOwner();
-            createDemoBusinessOwner();
-            createDemoCustomer();
-            createTestAccounts(); // For testing different account statuses
-            log.info("Default users initialization completed.");
+            log.info("🔄 Initializing default users...");
+            
+            int usersCreated = 0;
+            usersCreated += createPlatformOwner();
+            usersCreated += createDemoBusinessOwner();
+            usersCreated += createDemoCustomer();
+            usersCreated += createTestAccounts();
+            
+            return usersCreated;
+            
         } catch (Exception e) {
-            log.error("Error initializing default users: {}", e.getMessage(), e);
+            log.error("❌ Error initializing default users: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to initialize default users", e);
         }
     }
 
-    private void createPlatformOwner() {
+    private int createPlatformOwner() {
         try {
-            // ✅ UPDATED: Use userIdentifier from config (defaultAdminEmail) as userIdentifier
-            String adminUserIdentifier = defaultAdminEmail; // Use email as userIdentifier for admin
+            String adminUserIdentifier = defaultAdminEmail;
 
             if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(adminUserIdentifier)) {
                 User admin = new User();
                 admin.setUserIdentifier(adminUserIdentifier);
-                admin.setEmail(defaultAdminEmail); // Optional email
+                admin.setEmail(defaultAdminEmail);
                 admin.setPassword(passwordEncoder.encode(defaultAdminPassword));
                 admin.setFirstName("Platform");
                 admin.setLastName("Administrator");
@@ -169,23 +205,25 @@ public class DataInitializationService {
                 admin.setRoles(List.of(platformOwnerRole));
 
                 admin = userRepository.save(admin);
-                log.info("Created platform owner: {} with ID: {}", adminUserIdentifier, admin.getId());
+                log.info("✅ Created platform owner: {} with ID: {}", adminUserIdentifier, admin.getId());
+                return 1;
             } else {
-                log.info("Platform owner already exists: {}", adminUserIdentifier);
+                log.info("ℹ️ Platform owner already exists: {}", adminUserIdentifier);
+                return 0;
             }
         } catch (Exception e) {
-            log.error("Error creating platform owner: {}", e.getMessage(), e);
+            log.error("❌ Error creating platform owner: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create platform owner", e);
         }
     }
 
-    private void createDemoBusinessOwner() {
+    private int createDemoBusinessOwner() {
         try {
             String businessUserIdentifier = "demo-business-owner";
             if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(businessUserIdentifier)) {
                 User businessOwner = new User();
                 businessOwner.setUserIdentifier(businessUserIdentifier);
-                businessOwner.setEmail("demo-business@emenu-platform.com"); // Optional email
+                businessOwner.setEmail("demo-business@emenu-platform.com");
                 businessOwner.setPassword(passwordEncoder.encode("88889999"));
                 businessOwner.setFirstName("Demo");
                 businessOwner.setLastName("Restaurant Owner");
@@ -200,23 +238,25 @@ public class DataInitializationService {
                 businessOwner.setRoles(List.of(businessOwnerRole));
 
                 businessOwner = userRepository.save(businessOwner);
-                log.info("Created demo business owner: {} with ID: {}", businessUserIdentifier, businessOwner.getId());
+                log.info("✅ Created demo business owner: {} with ID: {}", businessUserIdentifier, businessOwner.getId());
+                return 1;
             } else {
-                log.info("Demo business owner already exists: {}", businessUserIdentifier);
+                log.info("ℹ️ Demo business owner already exists: {}", businessUserIdentifier);
+                return 0;
             }
         } catch (Exception e) {
-            log.error("Error creating demo business owner: {}", e.getMessage(), e);
+            log.error("❌ Error creating demo business owner: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create demo business owner", e);
         }
     }
 
-    private void createDemoCustomer() {
+    private int createDemoCustomer() {
         try {
             String customerUserIdentifier = "demo-customer";
             if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(customerUserIdentifier)) {
                 User customer = new User();
                 customer.setUserIdentifier(customerUserIdentifier);
-                customer.setEmail("demo-customer@emenu-platform.com"); // Optional email
+                customer.setEmail("demo-customer@emenu-platform.com");
                 customer.setPassword(passwordEncoder.encode("88889999"));
                 customer.setFirstName("Demo");
                 customer.setLastName("Customer");
@@ -229,45 +269,42 @@ public class DataInitializationService {
                 customer.setRoles(List.of(customerRole));
 
                 customer = userRepository.save(customer);
-                log.info("Created demo customer: {} with ID: {}", customerUserIdentifier, customer.getId());
+                log.info("✅ Created demo customer: {} with ID: {}", customerUserIdentifier, customer.getId());
+                return 1;
             } else {
-                log.info("Demo customer already exists: {}", customerUserIdentifier);
+                log.info("ℹ️ Demo customer already exists: {}", customerUserIdentifier);
+                return 0;
             }
         } catch (Exception e) {
-            log.error("Error creating demo customer: {}", e.getMessage(), e);
+            log.error("❌ Error creating demo customer: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create demo customer", e);
         }
     }
 
-    private void createTestAccounts() {
+    private int createTestAccounts() {
         try {
-            log.info("Creating test accounts with different statuses...");
+            log.info("🔄 Creating test accounts with different statuses...");
 
-            // Inactive user
-            createTestUser("inactive-user", "Test", "Inactive",
-                    AccountStatus.INACTIVE, RoleEnum.CUSTOMER);
+            int created = 0;
+            created += createTestUser("inactive-user", "Test", "Inactive", AccountStatus.INACTIVE, RoleEnum.CUSTOMER);
+            created += createTestUser("locked-user", "Test", "Locked", AccountStatus.LOCKED, RoleEnum.CUSTOMER);
+            created += createTestUser("suspended-user", "Test", "Suspended", AccountStatus.SUSPENDED, RoleEnum.BUSINESS_OWNER);
 
-            // Locked user
-            createTestUser("locked-user", "Test", "Locked",
-                    AccountStatus.LOCKED, RoleEnum.CUSTOMER);
-
-            // Suspended user
-            createTestUser("suspended-user", "Test", "Suspended",
-                    AccountStatus.SUSPENDED, RoleEnum.BUSINESS_OWNER);
-
+            return created;
+            
         } catch (Exception e) {
-            log.error("Error creating test accounts: {}", e.getMessage(), e);
+            log.error("❌ Error creating test accounts: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create test accounts", e);
         }
     }
 
-    private void createTestUser(String userIdentifier, String firstName, String lastName,
-                                AccountStatus status, RoleEnum roleEnum) {
+    private int createTestUser(String userIdentifier, String firstName, String lastName,
+                              AccountStatus status, RoleEnum roleEnum) {
         try {
             if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(userIdentifier)) {
                 User user = new User();
                 user.setUserIdentifier(userIdentifier);
-                user.setEmail(userIdentifier + "@emenu-platform.com"); // Optional email based on userIdentifier
+                user.setEmail(userIdentifier + "@emenu-platform.com");
                 user.setPassword(passwordEncoder.encode("88889999"));
                 user.setFirstName(firstName);
                 user.setLastName(lastName);
@@ -280,12 +317,14 @@ public class DataInitializationService {
                 user.setRoles(List.of(role));
 
                 user = userRepository.save(user);
-                log.info("Created test user: {} with status: {} and ID: {}", userIdentifier, status, user.getId());
+                log.info("✅ Created test user: {} with status: {} and ID: {}", userIdentifier, status, user.getId());
+                return 1;
             } else {
-                log.info("Test user already exists: {}", userIdentifier);
+                log.info("ℹ️ Test user already exists: {}", userIdentifier);
+                return 0;
             }
         } catch (Exception e) {
-            log.error("Error creating test user {}: {}", userIdentifier, e.getMessage(), e);
+            log.error("❌ Error creating test user {}: {}", userIdentifier, e.getMessage(), e);
             throw new RuntimeException("Failed to create test user: " + userIdentifier, e);
         }
     }

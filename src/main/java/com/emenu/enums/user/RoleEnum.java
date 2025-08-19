@@ -32,15 +32,4 @@ public enum RoleEnum {
         this.customerRole = customerRole;
     }
 
-    public boolean isPlatformRole() {
-        return platformRole;
-    }
-
-    public boolean isBusinessRole() {
-        return businessRole;
-    }
-
-    public boolean isCustomerRole() {
-        return customerRole;
-    }
 }
