@@ -20,9 +20,9 @@ public class PaginationUtils {
         if (pageSize != null && pageSize <= 0) {
             throw new ValidationException("Page size must be greater than 0");
         }
-        if (pageSize != null && pageSize > MAX_PAGE_SIZE) {
-            throw new ValidationException("Page size cannot exceed " + MAX_PAGE_SIZE);
-        }
+//        if (pageSize != null && pageSize > MAX_PAGE_SIZE) {
+//            throw new ValidationException("Page size cannot exceed " + MAX_PAGE_SIZE);
+//        }
     }
 
     /**
