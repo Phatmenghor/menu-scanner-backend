@@ -261,10 +261,6 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findByIdWithAllDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
 
-        if (!product.isActive()) {
-            throw new NotFoundException("Product is not available");
-        }
-
         // ✅ Async increment view count (non-blocking)
         productRepository.incrementViewCount(id);
 
