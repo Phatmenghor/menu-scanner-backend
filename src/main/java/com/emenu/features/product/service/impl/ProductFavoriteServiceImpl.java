@@ -41,7 +41,6 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
     private final FavoriteMapper favoriteMapper;
     private final PaginationMapper paginationMapper;
     private final SecurityUtils securityUtils;
-    private final ProductFavoriteService productFavoriteService;
 
     @Override
     public FavoriteToggleDto toggleFavorite(UUID productId) {
@@ -141,15 +140,26 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<UUID> getFavoriteProductIds(UUID userId, List<UUID> productIds) {
+        if (userId == null || productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+        return favoriteRepository.findFavoriteProductIdsByUserIdAndProductIds(userId, productIds);
+    }
+
+    @Override
     public void enrichProductsWithFavorites(List<ProductListDto> products, UUID userId) {
-        if (userId == null || products.isEmpty()) return;
+        if (userId == null || products.isEmpty()) {
+            return;
+        }
 
         List<UUID> productIds = products.stream()
                 .map(ProductListDto::getId)
                 .toList();
 
         // Batch query for favorites
-        List<UUID> favoriteProductIds = productFavoriteService.getFavoriteProductIds(userId, productIds);
+        List<UUID> favoriteProductIds = getFavoriteProductIds(userId, productIds);
         
         products.forEach(product -> 
             product.setIsFavorited(favoriteProductIds.contains(product.getId())));

@@ -4,6 +4,7 @@ import com.emenu.features.product.dto.request.ProductCreateDto;
 import com.emenu.features.product.dto.response.ProductDetailDto;
 import com.emenu.features.product.dto.response.ProductListDto;
 import com.emenu.features.product.models.Product;
+import com.emenu.features.product.utils.ProductFavoriteQueryHelper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -19,7 +20,7 @@ import java.util.UUID;
 public abstract class ProductMapper {
 
     @Autowired
-    protected ProductFavoriteService favoriteService; // Inject for favorites check
+    protected ProductFavoriteQueryHelper favoriteQueryHelper; // Helper for favorites check
 
     // ================================
     // ENTITY CREATION
@@ -81,7 +82,7 @@ public abstract class ProductMapper {
                 .toList();
 
         // Batch query for favorites
-        List<UUID> favoriteProductIds = favoriteService.getFavoriteProductIds(userId, productIds);
+        List<UUID> favoriteProductIds = favoriteQueryHelper.getFavoriteProductIds(userId, productIds);
         
         products.forEach(product -> 
             product.setIsFavorited(favoriteProductIds.contains(product.getId())));
@@ -94,7 +95,7 @@ public abstract class ProductMapper {
      */
     public ProductDetailDto enrichWithFavorite(ProductDetailDto product, UUID userId) {
         if (userId != null) {
-            boolean isFavorited = favoriteService.isFavorited(userId, product.getId());
+            boolean isFavorited = favoriteQueryHelper.isFavorited(userId, product.getId());
             product.setIsFavorited(isFavorited);
         }
         return product;

@@ -18,9 +18,9 @@ import com.emenu.features.product.models.ProductSize;
 import com.emenu.features.product.repository.ProductImageRepository;
 import com.emenu.features.product.repository.ProductRepository;
 import com.emenu.features.product.repository.ProductSizeRepository;
-import com.emenu.features.product.service.ProductFavoriteService;
 import com.emenu.features.product.service.ProductService;
 import com.emenu.features.product.specification.ProductSpecifications;
+import com.emenu.features.product.utils.ProductFavoriteQueryHelper;
 import com.emenu.features.product.utils.ProductUtils;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
@@ -56,7 +56,7 @@ public class ProductServiceImpl implements ProductService {
     private final PaginationMapper paginationMapper;
     private final SecurityUtils securityUtils;
     private final ProductUtils productUtils;
-    private final ProductFavoriteService favoriteService;
+    private final ProductFavoriteQueryHelper favoriteQueryHelper;
 
     @Override
     @Transactional(readOnly = true)
@@ -83,14 +83,12 @@ public class ProductServiceImpl implements ProductService {
         
         // Map to DTOs
         PaginationResponse<ProductListDto> response = paginationMapper.toPaginationResponse(
-            productPage, 
-            products -> productMapper.toListDtos(products)
+            productPage,
+                productMapper::toListDtos
         );
         
         // Enrich with favorite status if user is authenticated
-        if (currentUser.isPresent()) {
-            favoriteService.enrichProductsWithFavorites(response.getContent(), currentUser.get().getId());
-        }
+        currentUser.ifPresent(user -> enrichProductsWithFavorites(response.getContent(), user.getId()));
 
         log.info("Retrieved {} products", response.getContent().size());
         return response;
@@ -114,7 +112,7 @@ public class ProductServiceImpl implements ProductService {
         
         // Enrich with favorite status if user is authenticated
         if (currentUser.isPresent()) {
-            boolean isFavorited = favoriteService.isFavorited(currentUser.get().getId(), product.getId());
+            boolean isFavorited = favoriteQueryHelper.isFavorited(currentUser.get().getId(), product.getId());
             dto.setIsFavorited(isFavorited);
         }
 
@@ -141,7 +139,7 @@ public class ProductServiceImpl implements ProductService {
         // Enrich with favorite status if user is authenticated
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
         if (currentUser.isPresent()) {
-            boolean isFavorited = favoriteService.isFavorited(currentUser.get().getId(), product.getId());
+            boolean isFavorited = favoriteQueryHelper.isFavorited(currentUser.get().getId(), product.getId());
             dto.setIsFavorited(isFavorited);
         }
 
@@ -221,6 +219,22 @@ public class ProductServiceImpl implements ProductService {
     // Helper Methods
     // ================================
 
+    private void enrichProductsWithFavorites(List<ProductListDto> products, UUID userId) {
+        if (userId == null || products.isEmpty()) {
+            return;
+        }
+
+        List<UUID> productIds = products.stream()
+                .map(ProductListDto::getId)
+                .toList();
+
+        // Batch query for favorites using helper
+        List<UUID> favoriteProductIds = favoriteQueryHelper.getFavoriteProductIds(userId, productIds);
+        
+        products.forEach(product -> 
+            product.setIsFavorited(favoriteProductIds.contains(product.getId())));
+    }
+
     private void handleProductImages(Product product, List<ProductImageCreateDto> imageDtos) {
         if (imageDtos == null || imageDtos.isEmpty()) return;
 
@@ -239,7 +253,7 @@ public class ProductServiceImpl implements ProductService {
             image.setProductId(product.getId());
             
             // Set first image as main if no main image specified
-            if (i == 0 && !hasMainImage && "GALLERY".equals(imageDto.getImageType())) {
+            if (i == 0 && "GALLERY".equals(imageDto.getImageType())) {
                 image.setImageType(com.emenu.enums.product.ImageType.MAIN);
                 hasMainImage = true;
             }

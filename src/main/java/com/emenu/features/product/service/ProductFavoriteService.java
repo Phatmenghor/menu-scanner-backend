@@ -19,6 +19,9 @@ public interface ProductFavoriteService {
     // Favorite Status Check
     boolean isFavorited(UUID userId, UUID productId);
     
-    // Batch Operations
+    // Batch Operations for Mappers
+    List<UUID> getFavoriteProductIds(UUID userId, List<UUID> productIds);
+    
+    // Batch Operations for UI
     void enrichProductsWithFavorites(List<ProductListDto> products, UUID userId);
 }
