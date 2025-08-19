@@ -17,7 +17,6 @@ public interface ProductSizeRepository extends JpaRepository<ProductSize, UUID> 
     
     Optional<ProductSize> findByIdAndIsDeletedFalse(UUID id);
 
-    // ✅ ADDED: Method to find sizes by product ID
     @Query("SELECT ps FROM ProductSize ps " +
            "WHERE ps.productId = :productId AND ps.isDeleted = false " +
            "ORDER BY ps.price ASC")
@@ -28,4 +27,10 @@ public interface ProductSizeRepository extends JpaRepository<ProductSize, UUID> 
             "ps.promotionFromDate = NULL, ps.promotionToDate = NULL " +
             "WHERE ps.promotionToDate < :now AND ps.promotionToDate IS NOT NULL")
     int clearExpiredPromotions(@Param("now") LocalDateTime now);
+    
+    @Modifying
+    @Query("UPDATE ProductSize ps SET ps.promotionType = NULL, ps.promotionValue = NULL, " +
+            "ps.promotionFromDate = NULL, ps.promotionToDate = NULL " +
+            "WHERE ps.product.businessId = :businessId AND ps.isDeleted = false")
+    int clearAllPromotionsForBusiness(@Param("businessId") UUID businessId);
 }

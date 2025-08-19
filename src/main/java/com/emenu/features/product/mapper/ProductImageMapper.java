@@ -9,12 +9,9 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", 
+        unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProductImageMapper {
-
-    // ================================
-    // CREATE OPERATIONS
-    // ================================
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "productId", ignore = true)
@@ -22,18 +19,14 @@ public interface ProductImageMapper {
     @Mapping(target = "product", ignore = true)
     ProductImage toEntity(ProductImageCreateDto dto);
 
-    // ================================
-    // UPDATE OPERATIONS
-    // ================================
-
-    @Mapping(target = "productId", ignore = true) // Keep existing
+    @Mapping(target = "productId", ignore = true)
     @Mapping(source = "imageType", target = "imageType", qualifiedByName = "imageStringToImageType")
     @Mapping(target = "product", ignore = true)
-    @Mapping(target = "createdAt", ignore = true) // Keep original
-    @Mapping(target = "updatedAt", ignore = true) // Auto-updated
-    @Mapping(target = "createdBy", ignore = true) // Keep original
-    @Mapping(target = "updatedBy", ignore = true) // Auto-updated
-    @Mapping(target = "isDeleted", ignore = true) // Keep existing
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "updatedBy", ignore = true)
+    @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
     void updateEntityFromDto(ProductImageUpdateDto dto, @MappingTarget ProductImage entity);
@@ -44,22 +37,11 @@ public interface ProductImageMapper {
     @Mapping(target = "product", ignore = true)
     ProductImage toEntityFromUpdate(ProductImageUpdateDto dto);
 
-    // ================================
-    // RESPONSE MAPPING
-    // ================================
-
     @Mapping(source = "imageType", target = "imageType", qualifiedByName = "imageTypeToString")
     ProductImageDto toDto(ProductImage entity);
 
     List<ProductImageDto> toDtos(List<ProductImage> entities);
 
-    // ================================
-    // BATCH OPERATIONS FOR UPDATES
-    // ================================
-
-    /**
-     * Convert update DTOs to entities for new images
-     */
     default List<ProductImage> toEntitiesFromUpdate(List<ProductImageUpdateDto> dtos) {
         if (dtos == null) {
             return null;
@@ -71,9 +53,6 @@ public interface ProductImageMapper {
                 .toList();
     }
 
-    /**
-     * Get IDs of images to delete
-     */
     default List<java.util.UUID> getIdsToDelete(List<ProductImageUpdateDto> dtos) {
         if (dtos == null) {
             return List.of();
@@ -85,9 +64,6 @@ public interface ProductImageMapper {
                 .toList();
     }
 
-    /**
-     * Get DTOs for existing images to update
-     */
     default List<ProductImageUpdateDto> getExistingToUpdate(List<ProductImageUpdateDto> dtos) {
         if (dtos == null) {
             return List.of();
@@ -97,10 +73,6 @@ public interface ProductImageMapper {
                 .filter(dto -> !dto.shouldDelete() && dto.isExisting())
                 .toList();
     }
-
-    // ================================
-    // CONVERSION HELPERS - UNIQUE METHOD NAMES
-    // ================================
 
     @Named("imageStringToImageType")
     default ImageType imageStringToImageType(String imageType) {

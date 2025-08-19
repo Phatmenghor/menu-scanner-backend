@@ -38,8 +38,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,22 +61,16 @@ public class ProductServiceImpl implements ProductService {
     private final ProductUtils productUtils;
     private final ProductFavoriteQueryHelper favoriteQueryHelper;
 
-    // ================================
-    // CRUD OPERATIONS
-    // ================================
-
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<ProductListDto> getAllProducts(ProductFilterDto filter) {
         log.info("Getting products with filter - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
 
-        // Apply business filter for authenticated business users
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
         if (currentUser.isPresent() && currentUser.get().isBusinessUser() && filter.getBusinessId() == null) {
             filter.setBusinessId(currentUser.get().getBusinessId());
         }
 
-        // Create pageable
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo() != null ? filter.getPageNo() - 1 : null,
                 filter.getPageSize(),
@@ -81,17 +78,39 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSortDirection()
         );
 
-        // Build specification and execute query
         Specification<Product> spec = ProductSpecifications.withFilter(filter);
         Page<Product> productPage = productRepository.findAll(spec, pageable);
 
-        // Map to DTOs
+        if (!productPage.getContent().isEmpty()) {
+            List<UUID> productIds = productPage.getContent().stream()
+                    .map(Product::getId)
+                    .toList();
+
+            List<Product> productsWithRelationships = productRepository.findByIdInWithRelationships(productIds);
+
+            Map<UUID, Product> productMap = productsWithRelationships.stream()
+                    .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+            productPage.getContent().forEach(product -> {
+                Product productWithRelationships = productMap.get(product.getId());
+                if (productWithRelationships != null) {
+                    product.setBusiness(productWithRelationships.getBusiness());
+                    product.setCategory(productWithRelationships.getCategory());
+                    product.setBrand(productWithRelationships.getBrand());
+
+                    // Load sizes for proper hasSizes calculation
+                    List<ProductSize> sizes = productSizeRepository.findByProductIdAndIsDeletedFalse(product.getId());
+                    product.getSizes().clear();
+                    product.getSizes().addAll(sizes);
+                }
+            });
+        }
+
         PaginationResponse<ProductListDto> response = paginationMapper.toPaginationResponse(
                 productPage,
                 productMapper::toListDtos
         );
 
-        // Enrich with favorite status if user is authenticated
         currentUser.ifPresent(user -> enrichProductsWithFavorites(response.getContent(), user.getId()));
 
         log.info("Retrieved {} products", response.getContent().size());
@@ -103,14 +122,11 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailDto getProductById(UUID id) {
         log.info("Getting product by ID: {}", id);
 
-        // ✅ FIXED: Load product with basic details (no collections to avoid MultipleBagFetchException)
         Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
 
-        // ✅ FIXED: Manually load collections separately
         loadProductCollections(product);
 
-        // Validate access for business users
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
         if (currentUser.isPresent() && currentUser.get().isBusinessUser()) {
             validateBusinessAccess(product, currentUser.get());
@@ -118,7 +134,6 @@ public class ProductServiceImpl implements ProductService {
 
         ProductDetailDto dto = productMapper.toDetailDto(product);
 
-        // Enrich with favorite status if user is authenticated
         if (currentUser.isPresent()) {
             boolean isFavorited = favoriteQueryHelper.isFavorited(currentUser.get().getId(), product.getId());
             dto.setIsFavorited(isFavorited);
@@ -132,7 +147,6 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailDto getProductByIdPublic(UUID id) {
         log.info("Getting product by ID (public): {}", id);
 
-        // ✅ FIXED: Load product with basic details (no collections to avoid MultipleBagFetchException)
         Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
 
@@ -140,15 +154,12 @@ public class ProductServiceImpl implements ProductService {
             throw new NotFoundException("Product is not available");
         }
 
-        // ✅ FIXED: Manually load collections separately
         loadProductCollections(product);
 
-        // Increment view count
         productRepository.incrementViewCount(id);
 
         ProductDetailDto dto = productMapper.toDetailDto(product);
 
-        // Enrich with favorite status if user is authenticated
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
         if (currentUser.isPresent()) {
             boolean isFavorited = favoriteQueryHelper.isFavorited(currentUser.get().getId(), product.getId());
@@ -165,16 +176,13 @@ public class ProductServiceImpl implements ProductService {
         User currentUser = securityUtils.getCurrentUser();
         validateUserBusinessAssociation(currentUser);
 
-        // Create main product entity
         Product product = productMapper.toEntity(request);
         product.setBusinessId(currentUser.getBusinessId());
         product.setViewCount(0L);
         product.setFavoriteCount(0L);
 
-        // Save product first to get ID
         Product savedProduct = productRepository.save(product);
 
-        // Handle images and sizes
         handleProductImages(savedProduct, request.getImages());
         handleProductSizes(savedProduct, request.getSizes());
 
@@ -192,12 +200,10 @@ public class ProductServiceImpl implements ProductService {
         User currentUser = securityUtils.getCurrentUser();
         validateBusinessOwnership(product, currentUser);
 
-        // Update basic product fields using MapStruct
         productMapper.updateEntityFromDto(request, product);
 
         Product updatedProduct = productRepository.save(product);
 
-        // Handle collections with smart update logic
         updateProductImages(updatedProduct, request.getImages());
         updateProductSizes(updatedProduct, request.getSizes());
 
@@ -221,26 +227,16 @@ public class ProductServiceImpl implements ProductService {
         log.info("Product deleted successfully: {}", deletedProduct.getName());
         return productMapper.toDetailDto(deletedProduct);
     }
-
-    // ================================
-    // ✅ NEW: Helper method to load collections separately
-    // ================================
     
     private void loadProductCollections(Product product) {
-        // Load images
         List<ProductImage> images = productImageRepository.findByProductIdOrderByMainAndSort(product.getId());
         product.getImages().clear();
         product.getImages().addAll(images);
 
-        // Load sizes using proper repository method
         List<ProductSize> sizes = productSizeRepository.findByProductIdAndIsDeletedFalse(product.getId());
         product.getSizes().clear();
         product.getSizes().addAll(sizes);
     }
-
-    // ================================
-    // HELPER METHODS
-    // ================================
 
     private void enrichProductsWithFavorites(List<ProductListDto> products, UUID userId) {
         if (userId == null || products.isEmpty()) {
@@ -251,7 +247,6 @@ public class ProductServiceImpl implements ProductService {
                 .map(ProductListDto::getId)
                 .toList();
 
-        // Batch query for favorites using helper
         List<UUID> favoriteProductIds = favoriteQueryHelper.getFavoriteProductIds(userId, productIds);
 
         products.forEach(product ->
@@ -291,14 +286,11 @@ public class ProductServiceImpl implements ProductService {
 
     private void updateProductImages(Product product, List<ProductImageUpdateDto> imageDtos) {
         if (imageDtos == null || imageDtos.isEmpty()) {
-            // If no images provided, keep existing ones
             return;
         }
 
-        // Get current images
         List<ProductImage> existingImages = productImageRepository.findByProductIdOrderByMainAndSort(product.getId());
 
-        // Handle deletions
         List<UUID> idsToDelete = productImageMapper.getIdsToDelete(imageDtos);
         if (!idsToDelete.isEmpty()) {
             existingImages.stream()
@@ -309,7 +301,6 @@ public class ProductServiceImpl implements ProductService {
                     });
         }
 
-        // Handle updates
         List<ProductImageUpdateDto> toUpdate = productImageMapper.getExistingToUpdate(imageDtos);
         for (ProductImageUpdateDto updateDto : toUpdate) {
             existingImages.stream()
@@ -321,7 +312,6 @@ public class ProductServiceImpl implements ProductService {
                     });
         }
 
-        // Handle new images
         List<ProductImage> newImages = productImageMapper.toEntitiesFromUpdate(imageDtos);
         newImages.forEach(img -> img.setProductId(product.getId()));
         if (!newImages.isEmpty()) {
@@ -331,14 +321,11 @@ public class ProductServiceImpl implements ProductService {
 
     private void updateProductSizes(Product product, List<ProductSizeUpdateDto> sizeDtos) {
         if (sizeDtos == null || sizeDtos.isEmpty()) {
-            // If no sizes provided, keep existing ones
             return;
         }
 
-        // Get current sizes
         List<ProductSize> existingSizes = product.getSizes();
 
-        // Handle deletions
         List<UUID> idsToDelete = productSizeMapper.getIdsToDelete(sizeDtos);
         if (!idsToDelete.isEmpty()) {
             existingSizes.stream()
@@ -349,7 +336,6 @@ public class ProductServiceImpl implements ProductService {
                     });
         }
 
-        // Handle updates
         List<ProductSizeUpdateDto> toUpdate = productSizeMapper.getExistingToUpdate(sizeDtos);
         for (ProductSizeUpdateDto updateDto : toUpdate) {
             existingSizes.stream()
@@ -361,7 +347,6 @@ public class ProductServiceImpl implements ProductService {
                     });
         }
 
-        // Handle new sizes
         List<ProductSize> newSizes = productSizeMapper.toEntitiesFromUpdate(sizeDtos);
         newSizes.forEach(size -> size.setProductId(product.getId()));
         if (!newSizes.isEmpty()) {

@@ -6,7 +6,6 @@ import com.emenu.features.product.dto.response.ProductDetailDto;
 import com.emenu.features.product.dto.response.ProductListDto;
 import com.emenu.features.product.dto.update.ProductUpdateDto;
 import com.emenu.features.product.models.Product;
-import com.emenu.features.product.models.ProductSize;
 import org.mapstruct.*;
 
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.List;
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProductMapper {
 
-    // Create entity from DTO
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "viewCount", constant = "0L")
@@ -33,7 +31,6 @@ public interface ProductMapper {
     @Mapping(target = "deletedBy", ignore = true)
     Product toEntity(ProductCreateDto dto);
 
-    // Update entity from DTO
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "viewCount", ignore = true)
@@ -59,70 +56,66 @@ public interface ProductMapper {
     }
     void updateEntityFromDto(ProductUpdateDto dto, @MappingTarget Product entity);
 
-    // For listing
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "brand.name", target = "brandName")
-    
-    // ✅ Original fields from product table (always from database)
     @Mapping(source = "price", target = "price")
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
     @Mapping(source = "promotionValue", target = "promotionValue")
     @Mapping(source = "promotionFromDate", target = "promotionFromDate")
     @Mapping(source = "promotionToDate", target = "promotionToDate")
-    
-    // Calculated fields
     @Mapping(target = "displayPrice", expression = "java(product.getDisplayPrice())")
-    @Mapping(target = "hasSizes", expression = "java(product.hasSizes())")
     @Mapping(target = "mainImageUrl", expression = "java(product.getMainImageUrl())")
     @Mapping(target = "isFavorited", constant = "false")
     @AfterMapping
     default void afterListMapping(@MappingTarget ProductListDto dto, Product product) {
-        // ✅ ALWAYS set display fields using conditional logic
+        // Fix hasSizes calculation
+        boolean hasSizes = product.getSizes() != null && !product.getSizes().isEmpty();
+        dto.setHasSizes(hasSizes);
+
+        // Fix null boolean fields
+        if (dto.getIsFavorited() == null) {
+            dto.setIsFavorited(false);
+        }
+
         setDisplayFieldsForList(dto, product);
     }
     ProductListDto toListDto(Product product);
 
     List<ProductListDto> toListDtos(List<Product> products);
 
-    // For detail
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "brand.name", target = "brandName")
-    
-    // ✅ Original fields from product table (always from database)
     @Mapping(source = "price", target = "price")
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
     @Mapping(source = "promotionValue", target = "promotionValue")
     @Mapping(source = "promotionFromDate", target = "promotionFromDate")
     @Mapping(source = "promotionToDate", target = "promotionToDate")
-    
-    // Calculated fields
     @Mapping(target = "displayPrice", expression = "java(product.getDisplayPrice())")
-    @Mapping(target = "hasSizes", expression = "java(product.hasSizes())")
     @Mapping(target = "isFavorited", constant = "false")
     @AfterMapping
     default void afterDetailMapping(@MappingTarget ProductDetailDto dto, Product product) {
-        // ✅ ALWAYS set display fields using conditional logic
+        // Fix hasSizes calculation
+        boolean hasSizes = product.getSizes() != null && !product.getSizes().isEmpty();
+        dto.setHasSizes(hasSizes);
+
+        // Fix null boolean fields
+        if (dto.getIsFavorited() == null) {
+            dto.setIsFavorited(false);
+        }
+
         setDisplayFieldsForDetail(dto, product);
     }
     ProductDetailDto toDetailDto(Product product);
 
-    // ================================
-    // ✅ CONDITIONAL LOGIC FOR DISPLAY FIELDS
-    // ================================
-    
     default void setDisplayFieldsForList(ProductListDto dto, Product product) {
-        if (product.hasSizes() && !product.getSizes().isEmpty()) {
-            // When has sizes: use conditional logic for display fields
-            
-            // First try to find a size with active promotion
+        if (product.hasSizes() && product.getSizes() != null && !product.getSizes().isEmpty()) {
             var sizeWithPromotion = product.getSizes().stream()
-                    .filter(ProductSize::isPromotionActive)
+                    .filter(size -> size != null && size.isPromotionActive())
                     .findFirst();
             
             if (sizeWithPromotion.isPresent()) {
-                // Use first size with promotion for display fields
                 var size = sizeWithPromotion.get();
                 dto.setDisplayOriginPrice(size.getPrice());
                 dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
@@ -131,8 +124,8 @@ public interface ProductMapper {
                 dto.setDisplayPromotionToDate(size.getPromotionToDate());
                 dto.setHasPromotion(true);
             } else {
-                // No size has promotion, use size with smallest price for display fields
                 var smallestPriceSize = product.getSizes().stream()
+                        .filter(size -> size != null && size.getPrice() != null)
                         .min((s1, s2) -> s1.getPrice().compareTo(s2.getPrice()));
                 
                 if (smallestPriceSize.isPresent()) {
@@ -143,30 +136,22 @@ public interface ProductMapper {
                     dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
                     dto.setDisplayPromotionToDate(size.getPromotionToDate());
                     dto.setHasPromotion(size.isPromotionActive());
+                } else {
+                    setProductDataAsDisplay(dto, product);
                 }
             }
         } else {
-            // When no sizes: display fields also use conditional logic (same as product data)
-            dto.setDisplayOriginPrice(product.getPrice());
-            dto.setDisplayPromotionType(promotionTypeToString(product.getPromotionType()));
-            dto.setDisplayPromotionValue(product.getPromotionValue());
-            dto.setDisplayPromotionFromDate(product.getPromotionFromDate());
-            dto.setDisplayPromotionToDate(product.getPromotionToDate());
-            dto.setHasPromotion(product.isPromotionActive());
+            setProductDataAsDisplay(dto, product);
         }
     }
     
     default void setDisplayFieldsForDetail(ProductDetailDto dto, Product product) {
-        if (product.hasSizes() && !product.getSizes().isEmpty()) {
-            // When has sizes: use conditional logic for display fields
-            
-            // First try to find a size with active promotion
+        if (product.hasSizes() && product.getSizes() != null && !product.getSizes().isEmpty()) {
             var sizeWithPromotion = product.getSizes().stream()
-                    .filter(ProductSize::isPromotionActive)
+                    .filter(size -> size != null && size.isPromotionActive())
                     .findFirst();
             
             if (sizeWithPromotion.isPresent()) {
-                // Use first size with promotion for display fields
                 var size = sizeWithPromotion.get();
                 dto.setDisplayOriginPrice(size.getPrice());
                 dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
@@ -175,8 +160,8 @@ public interface ProductMapper {
                 dto.setDisplayPromotionToDate(size.getPromotionToDate());
                 dto.setHasPromotion(true);
             } else {
-                // No size has promotion, use size with smallest price for display fields
                 var smallestPriceSize = product.getSizes().stream()
+                        .filter(size -> size != null && size.getPrice() != null)
                         .min((s1, s2) -> s1.getPrice().compareTo(s2.getPrice()));
                 
                 if (smallestPriceSize.isPresent()) {
@@ -187,23 +172,33 @@ public interface ProductMapper {
                     dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
                     dto.setDisplayPromotionToDate(size.getPromotionToDate());
                     dto.setHasPromotion(size.isPromotionActive());
+                } else {
+                    setProductDataAsDisplayForDetail(dto, product);
                 }
             }
         } else {
-            // When no sizes: display fields also use conditional logic (same as product data)
-            dto.setDisplayOriginPrice(product.getPrice());
-            dto.setDisplayPromotionType(promotionTypeToString(product.getPromotionType()));
-            dto.setDisplayPromotionValue(product.getPromotionValue());
-            dto.setDisplayPromotionFromDate(product.getPromotionFromDate());
-            dto.setDisplayPromotionToDate(product.getPromotionToDate());
-            dto.setHasPromotion(product.isPromotionActive());
+            setProductDataAsDisplayForDetail(dto, product);
         }
     }
-
-    // ================================
-    // CONVERTERS
-    // ================================
     
+    default void setProductDataAsDisplay(ProductListDto dto, Product product) {
+        dto.setDisplayOriginPrice(product.getPrice());
+        dto.setDisplayPromotionType(promotionTypeToString(product.getPromotionType()));
+        dto.setDisplayPromotionValue(product.getPromotionValue());
+        dto.setDisplayPromotionFromDate(product.getPromotionFromDate());
+        dto.setDisplayPromotionToDate(product.getPromotionToDate());
+        dto.setHasPromotion(product.isPromotionActive());
+    }
+    
+    default void setProductDataAsDisplayForDetail(ProductDetailDto dto, Product product) {
+        dto.setDisplayOriginPrice(product.getPrice());
+        dto.setDisplayPromotionType(promotionTypeToString(product.getPromotionType()));
+        dto.setDisplayPromotionValue(product.getPromotionValue());
+        dto.setDisplayPromotionFromDate(product.getPromotionFromDate());
+        dto.setDisplayPromotionToDate(product.getPromotionToDate());
+        dto.setHasPromotion(product.isPromotionActive());
+    }
+
     @Named("stringToPromotionType")
     default PromotionType stringToPromotionType(String promotionType) {
         if (promotionType == null || promotionType.trim().isEmpty()) {
