@@ -90,15 +90,15 @@ public class ProductSize extends BaseUUIDEntity {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        
+
         if (promotionFromDate != null && now.isBefore(promotionFromDate)) {
             return false;
         }
-        
+
         if (promotionToDate != null && now.isAfter(promotionToDate)) {
             return false;
         }
-        
+
         return true;
     }
 

@@ -26,10 +26,10 @@ public class ProductImage extends BaseUUIDEntity {
     private UUID productId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private Product product;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)
@@ -71,4 +71,5 @@ public class ProductImage extends BaseUUIDEntity {
             this.productId = null;
         }
     }
+
 }

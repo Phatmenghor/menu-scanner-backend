@@ -43,24 +43,24 @@ public class Product extends BaseUUIDEntity {
     private UUID businessId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "business_id")
+    @JoinColumn(name = "business_id", insertable = false, updatable = false)
     private Business business;
 
     @Column(name = "category_id", nullable = false)
     private UUID categoryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "category_id", insertable = false, updatable = false)
     private Category category;
 
     @Column(name = "brand_id")
     private UUID brandId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "brand_id")
+    @JoinColumn(name = "brand_id", insertable = false, updatable = false)
     private Brand brand;
 
-    @Column(name = "name")
+    @Column(name = "name", nullable = false, length = 255)
     private String name;
 
     @Column(name = "description", columnDefinition = "TEXT")
