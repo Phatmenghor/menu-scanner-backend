@@ -77,39 +77,31 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSortDirection()
         );
 
-        // ✅ STRATEGY 1: Try optimized direct queries first
-        Page<Product> productPage = tryOptimizedQuery(filter, pageable);
+        Specification<Product> spec = ProductSpecifications.withFilter(filter);
+        Page<Product> productPage = productRepository.findAll(spec, pageable);
 
-        // ✅ STRATEGY 2: Fall back to specification if needed
-        if (productPage == null) {
-            log.debug("🔄 Using specification-based query");
-            Specification<Product> spec = ProductSpecifications.withFilter(filter);
-            productPage = productRepository.findAll(spec, pageable);
+        if (!productPage.getContent().isEmpty()) {
+            // ✅ OPTIMIZED: Batch load relationships
+            List<UUID> productIds = productPage.getContent().stream()
+                    .map(Product::getId)
+                    .toList();
 
-            if (!productPage.getContent().isEmpty()) {
-                // ✅ OPTIMIZED: Batch load relationships
-                List<UUID> productIds = productPage.getContent().stream()
-                        .map(Product::getId)
-                        .toList();
+            var productsWithRelationships = productRepository.findByIdInWithRelationships(productIds);
 
-                var productsWithRelationships = productRepository.findByIdInWithRelationships(productIds);
+            // ✅ Map back to maintain order
+            Map<UUID, Product> productMap = productsWithRelationships.stream()
+                    .collect(java.util.stream.Collectors.toMap(Product::getId, p -> p));
 
-                // ✅ Map back to maintain order
-                Map<UUID, Product> productMap = productsWithRelationships.stream()
-                        .collect(java.util.stream.Collectors.toMap(Product::getId, p -> p));
-
-                productPage.getContent().forEach(product -> {
-                    Product enriched = productMap.get(product.getId());
-                    if (enriched != null) {
-                        product.setBusiness(enriched.getBusiness());
-                        product.setCategory(enriched.getCategory());
-                        product.setBrand(enriched.getBrand());
-                    }
-                });
-            }
+            productPage.getContent().forEach(product -> {
+                Product enriched = productMap.get(product.getId());
+                if (enriched != null) {
+                    product.setBusiness(enriched.getBusiness());
+                    product.setCategory(enriched.getCategory());
+                    product.setBrand(enriched.getBrand());
+                }
+            });
         }
 
-        // ✅ OPTIMIZED: Batch load sizes for all products
         if (!productPage.getContent().isEmpty()) {
             batchLoadSizes(productPage.getContent());
         }

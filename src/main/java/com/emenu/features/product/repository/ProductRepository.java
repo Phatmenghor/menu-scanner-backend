@@ -18,7 +18,6 @@ import java.util.UUID;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
     
-    // ✅ OPTIMIZED: Single query with all relationships and sizes
     @Query("SELECT DISTINCT p FROM Product p " +
            "LEFT JOIN FETCH p.category c " +
            "LEFT JOIN FETCH p.brand b " +
@@ -28,7 +27,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "AND (sz.isDeleted = false OR sz.isDeleted IS NULL)")
     Optional<Product> findByIdWithAllDetails(@Param("id") UUID id);
 
-    // ✅ OPTIMIZED: Batch query with all relationships - NO sizes to avoid cartesian product
     @Query("SELECT DISTINCT p FROM Product p " +
            "LEFT JOIN FETCH p.category c " +
            "LEFT JOIN FETCH p.brand b " +
@@ -36,7 +34,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE p.id IN :productIds AND p.isDeleted = false")
     List<Product> findByIdInWithRelationships(@Param("productIds") List<UUID> productIds);
 
-    // ✅ OPTIMIZED: Get products with relationships but without collections
     @Query("SELECT DISTINCT p FROM Product p " +
            "LEFT JOIN FETCH p.category c " +
            "LEFT JOIN FETCH p.brand b " +
@@ -44,7 +41,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE p.id = :id AND p.isDeleted = false")
     Optional<Product> findByIdWithDetails(@Param("id") UUID id);
 
-    // ✅ NEW: High-performance paginated query with relationships only
     @Query(value = "SELECT DISTINCT p FROM Product p " +
                    "LEFT JOIN FETCH p.category c " +
                    "LEFT JOIN FETCH p.brand b " +
@@ -53,7 +49,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            countQuery = "SELECT COUNT(DISTINCT p) FROM Product p WHERE p.isDeleted = false")
     Page<Product> findAllWithRelationshipsOptimized(Pageable pageable);
 
-    // ✅ NEW: Optimized business products query
     @Query(value = "SELECT DISTINCT p FROM Product p " +
                    "LEFT JOIN FETCH p.category c " +
                    "LEFT JOIN FETCH p.brand b " +
@@ -62,7 +57,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            countQuery = "SELECT COUNT(DISTINCT p) FROM Product p WHERE p.businessId = :businessId AND p.isDeleted = false")
     Page<Product> findByBusinessIdWithRelationships(@Param("businessId") UUID businessId, Pageable pageable);
 
-    // ✅ NEW: Optimized category products query
     @Query(value = "SELECT DISTINCT p FROM Product p " +
                    "LEFT JOIN FETCH p.category c " +
                    "LEFT JOIN FETCH p.brand b " +
@@ -71,7 +65,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            countQuery = "SELECT COUNT(DISTINCT p) FROM Product p WHERE p.categoryId = :categoryId AND p.isDeleted = false")
     Page<Product> findByCategoryIdWithRelationships(@Param("categoryId") UUID categoryId, Pageable pageable);
 
-    // ✅ NEW: Optimized search query
     @Query(value = "SELECT DISTINCT p FROM Product p " +
                    "LEFT JOIN FETCH p.category c " +
                    "LEFT JOIN FETCH p.brand b " +
@@ -130,7 +123,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE p.businessId = :businessId AND p.isDeleted = false")
     int clearAllPromotionsForBusiness(@Param("businessId") UUID businessId);
     
-    // ✅ OPTIMIZED: Enhanced favorites query with relationships
     @Query("SELECT DISTINCT p FROM Product p " +
            "INNER JOIN ProductFavorite pf ON p.id = pf.productId " +
            "LEFT JOIN FETCH p.category c " +
@@ -146,7 +138,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     int updateStatusForProducts(@Param("productIds") List<UUID> productIds, 
                                @Param("status") com.emenu.enums.product.ProductStatus status);
 
-    // ✅ OPTIMIZED: Enhanced recent products with relationships
     @Query(value = "SELECT DISTINCT p FROM Product p " +
                    "LEFT JOIN FETCH p.category c " +
                    "LEFT JOIN FETCH p.brand b " +
@@ -157,7 +148,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
                        "WHERE p.status = 'ACTIVE' AND p.isDeleted = false")
     Page<Product> findRecentActiveProducts(Pageable pageable);
 
-    // ✅ OPTIMIZED: Enhanced top viewed with relationships
     @Query(value = "SELECT DISTINCT p FROM Product p " +
                    "LEFT JOIN FETCH p.category c " +
                    "LEFT JOIN FETCH p.brand b " +
@@ -168,7 +158,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
                        "WHERE p.status = 'ACTIVE' AND p.isDeleted = false")
     Page<Product> findTopViewedProducts(Pageable pageable);
 
-    // ✅ OPTIMIZED: Enhanced top favorited with relationships
     @Query(value = "SELECT DISTINCT p FROM Product p " +
                    "LEFT JOIN FETCH p.category c " +
                    "LEFT JOIN FETCH p.brand b " +
