@@ -36,12 +36,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -63,13 +60,15 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<ProductListDto> getAllProducts(ProductFilterDto filter) {
-        log.info("🚀 High-performance product search - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
+        log.info("Getting products - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
 
+        // Set business filter for business users
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
         if (currentUser.isPresent() && currentUser.get().isBusinessUser() && filter.getBusinessId() == null) {
             filter.setBusinessId(currentUser.get().getBusinessId());
         }
 
+        // Create pageable
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo() != null ? filter.getPageNo() - 1 : null,
                 filter.getPageSize(),
@@ -77,129 +76,94 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSortDirection()
         );
 
+        // Use specifications for flexible filtering
         Specification<Product> spec = ProductSpecifications.withFilter(filter);
         Page<Product> productPage = productRepository.findAll(spec, pageable);
 
-        if (!productPage.getContent().isEmpty()) {
-            // ✅ OPTIMIZED: Batch load relationships
-            List<UUID> productIds = productPage.getContent().stream()
-                    .map(Product::getId)
-                    .toList();
+        if (productPage.getContent().isEmpty()) {
+            return paginationMapper.toPaginationResponse(productPage, Collections.emptyList());
+        }
 
-            var productsWithRelationships = productRepository.findByIdInWithRelationships(productIds);
+        // Process products with async operations
+        List<ProductListDto> dtoList = processProducts(productPage.getContent(), currentUser.orElse(null));
+        return paginationMapper.toPaginationResponse(productPage, dtoList);
+    }
 
-            // ✅ Map back to maintain order
-            Map<UUID, Product> productMap = productsWithRelationships.stream()
-                    .collect(java.util.stream.Collectors.toMap(Product::getId, p -> p));
+    /**
+     * Process products with async batch loading
+     */
+    private List<ProductListDto> processProducts(List<Product> products, User currentUser) {
+        List<UUID> productIds = products.stream().map(Product::getId).toList();
+        
+        // Start async operations
+        CompletableFuture<Map<UUID, List<ProductSize>>> sizesFuture = CompletableFuture.supplyAsync(() -> 
+            productSizeRepository.findSizesByProductIdsGrouped(productIds));
+        
+        CompletableFuture<List<UUID>> favoritesFuture = CompletableFuture.supplyAsync(() -> 
+            currentUser != null ? favoriteQueryHelper.getFavoriteProductIds(currentUser.getId(), productIds) : Collections.emptyList());
 
-            productPage.getContent().forEach(product -> {
-                Product enriched = productMap.get(product.getId());
-                if (enriched != null) {
-                    product.setBusiness(enriched.getBusiness());
-                    product.setCategory(enriched.getCategory());
-                    product.setBrand(enriched.getBrand());
-                }
+        // Convert to DTOs
+        List<ProductListDto> dtoList = productMapper.toListDtos(products);
+
+        try {
+            // Get async results
+            Map<UUID, List<ProductSize>> sizesMap = sizesFuture.get();
+            List<UUID> favoriteIds = favoritesFuture.get();
+            Set<UUID> favoriteSet = new HashSet<>(favoriteIds);
+
+            // Enrich DTOs
+            for (int i = 0; i < dtoList.size(); i++) {
+                ProductListDto dto = dtoList.get(i);
+                Product product = products.get(i);
+                
+                List<ProductSize> sizes = sizesMap.getOrDefault(dto.getId(), Collections.emptyList());
+                dto.setHasSizes(!sizes.isEmpty());
+                
+                setDisplayFields(dto, product, sizes);
+                dto.setIsFavorited(favoriteSet.contains(dto.getId()));
+            }
+
+        } catch (Exception e) {
+            log.error("Error processing products", e);
+            dtoList.forEach(dto -> {
+                dto.setHasSizes(false);
+                dto.setIsFavorited(false);
             });
         }
 
-        if (!productPage.getContent().isEmpty()) {
-            batchLoadSizes(productPage.getContent());
-        }
-
-        PaginationResponse<ProductListDto> response = paginationMapper.toPaginationResponse(
-                productPage,
-                productMapper::toListDtos
-        );
-
-        currentUser.ifPresent(user -> batchEnrichFavorites(response.getContent(), user.getId()));
-        return response;
+        return dtoList;
     }
 
     /**
-     * 🚀 OPTIMIZED: Try direct optimized queries based on filter
+     * Set display fields for product
      */
-    private Page<Product> tryOptimizedQuery(ProductFilterDto filter, Pageable pageable) {
-        // Simple business filter
-        if (filter.getBusinessId() != null &&
-                filter.getCategoryId() == null &&
-                filter.getBrandId() == null &&
-                !StringUtils.hasText(filter.getSearch()) &&
-                filter.getHasPromotion() == null) {
-
-            log.debug("🎯 Using optimized business query");
-            return productRepository.findByBusinessIdWithRelationships(filter.getBusinessId(), pageable);
+    private void setDisplayFields(ProductListDto dto, Product product, List<ProductSize> sizes) {
+        if (sizes.isEmpty()) {
+            // Use product data
+            dto.setDisplayOriginPrice(product.getPrice());
+            dto.setDisplayPromotionType(product.getPromotionType() != null ? product.getPromotionType().name() : null);
+            dto.setDisplayPromotionValue(product.getPromotionValue());
+            dto.setDisplayPromotionFromDate(product.getPromotionFromDate());
+            dto.setDisplayPromotionToDate(product.getPromotionToDate());
+            dto.setHasPromotion(product.isPromotionActive());
+        } else {
+            // Use first size (smallest price)
+            ProductSize firstSize = sizes.get(0);
+            
+            dto.setDisplayOriginPrice(firstSize.getPrice());
+            dto.setDisplayPromotionType(firstSize.getPromotionType() != null ? firstSize.getPromotionType().name() : null);
+            dto.setDisplayPromotionValue(firstSize.getPromotionValue());
+            dto.setDisplayPromotionFromDate(firstSize.getPromotionFromDate());
+            dto.setDisplayPromotionToDate(firstSize.getPromotionToDate());
+            dto.setHasPromotion(firstSize.isPromotionActive());
         }
-
-        // Simple category filter
-        if (filter.getCategoryId() != null &&
-                filter.getBusinessId() == null &&
-                filter.getBrandId() == null &&
-                !StringUtils.hasText(filter.getSearch()) &&
-                filter.getHasPromotion() == null) {
-
-            log.debug("🎯 Using optimized category query");
-            return productRepository.findByCategoryIdWithRelationships(filter.getCategoryId(), pageable);
-        }
-
-        // Simple search
-        if (StringUtils.hasText(filter.getSearch()) &&
-                filter.getBusinessId() == null &&
-                filter.getCategoryId() == null &&
-                filter.getBrandId() == null &&
-                filter.getHasPromotion() == null) {
-
-            log.debug("🎯 Using optimized search query");
-            String searchPattern = "%" + filter.getSearch() + "%";
-            return productRepository.findBySearchWithRelationships(searchPattern, pageable);
-        }
-
-        // No optimization available
-        return null;
-    }
-
-    /**
-     * 🚀 OPTIMIZED: Batch load sizes for multiple products
-     */
-    private void batchLoadSizes(List<Product> products) {
-        if (products.isEmpty()) return;
-
-        List<UUID> productIds = products.stream()
-                .map(Product::getId)
-                .toList();
-
-        // ✅ Single query to get all sizes
-        Map<UUID, List<ProductSize>> sizesByProduct = productSizeRepository.findSizesByProductIdsGrouped(productIds);
-
-        // ✅ Assign sizes to products
-        products.forEach(product -> {
-            List<ProductSize> sizes = sizesByProduct.getOrDefault(product.getId(), List.of());
-            product.getSizes().clear();
-            product.getSizes().addAll(sizes);
-        });
-    }
-
-    /**
-     * 🚀 OPTIMIZED: Batch enrich favorites
-     */
-    private void batchEnrichFavorites(List<ProductListDto> products, UUID userId) {
-        if (products.isEmpty()) return;
-
-        List<UUID> productIds = products.stream()
-                .map(ProductListDto::getId)
-                .toList();
-
-        List<UUID> favoriteProductIds = favoriteQueryHelper.getFavoriteProductIds(userId, productIds);
-
-        products.forEach(product ->
-                product.setIsFavorited(favoriteProductIds.contains(product.getId())));
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductDetailDto getProductById(UUID id) {
-        log.info("🔍 Getting product details: {}", id);
+        log.info("Getting product details: {}", id);
 
-        // ✅ OPTIMIZED: Single query with all details including sizes
         Product product = productRepository.findByIdWithAllDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
 
@@ -221,13 +185,19 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDetailDto getProductByIdPublic(UUID id) {
-        log.info("🌐 Getting public product: {}", id);
+        log.info("Getting public product: {}", id);
 
         Product product = productRepository.findByIdWithAllDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
 
-        // ✅ Async increment view count (non-blocking)
-        productRepository.incrementViewCount(id);
+        // Async view count increment
+        CompletableFuture.runAsync(() -> {
+            try {
+                productRepository.incrementViewCount(id);
+            } catch (Exception e) {
+                log.warn("Failed to increment view count for product {}: {}", id, e.getMessage());
+            }
+        });
 
         ProductDetailDto dto = productMapper.toDetailDto(product);
 
@@ -242,7 +212,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDetailDto createProduct(ProductCreateDto request) {
-        log.info("📝 Creating product: {}", request.getName());
+        log.info("Creating product: {}", request.getName());
 
         User currentUser = securityUtils.getCurrentUser();
         validateUserBusinessAssociation(currentUser);
@@ -257,13 +227,13 @@ public class ProductServiceImpl implements ProductService {
         handleProductImages(savedProduct, request.getImages());
         handleProductSizes(savedProduct, request.getSizes());
 
-        log.info("✅ Product created: {}", savedProduct.getName());
+        log.info("Product created: {}", savedProduct.getName());
         return getProductById(savedProduct.getId());
     }
 
     @Override
     public ProductDetailDto updateProduct(UUID id, ProductUpdateDto request) {
-        log.info("✏️ Updating product: {}", id);
+        log.info("Updating product: {}", id);
 
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
@@ -277,13 +247,13 @@ public class ProductServiceImpl implements ProductService {
         updateProductImages(updatedProduct, request.getImages());
         updateProductSizes(updatedProduct, request.getSizes());
 
-        log.info("✅ Product updated: {}", updatedProduct.getName());
+        log.info("Product updated: {}", updatedProduct.getName());
         return getProductById(updatedProduct.getId());
     }
 
     @Override
     public ProductDetailDto deleteProduct(UUID id) {
-        log.info("🗑️ Deleting product: {}", id);
+        log.info("Deleting product: {}", id);
 
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
@@ -294,10 +264,11 @@ public class ProductServiceImpl implements ProductService {
         product.softDelete();
         Product deletedProduct = productRepository.save(product);
 
-        log.info("✅ Product deleted: {}", deletedProduct.getName());
+        log.info("Product deleted: {}", deletedProduct.getName());
         return productMapper.toDetailDto(deletedProduct);
     }
 
+    // Helper methods
     private void handleProductImages(Product product, List<ProductImageCreateDto> imageDtos) {
         if (imageDtos == null || imageDtos.isEmpty()) return;
 
@@ -312,7 +283,6 @@ public class ProductServiceImpl implements ProductService {
 
         if (!images.isEmpty()) {
             productImageRepository.saveAll(images);
-            log.debug("Created {} images for product {}", images.size(), product.getId());
         }
     }
 
@@ -328,7 +298,6 @@ public class ProductServiceImpl implements ProductService {
                 .toList();
 
         productSizeRepository.saveAll(sizes);
-        log.debug("📏 Created {} sizes for product {}", sizes.size(), product.getId());
     }
 
     private void updateProductImages(Product product, List<ProductImageUpdateDto> imageDtos) {
