@@ -76,7 +76,7 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSortDirection()
         );
 
-        // Use specifications for flexible filtering
+        // ✅ OPTIMIZED: Use specifications WITHOUT expensive joins
         Specification<Product> spec = ProductSpecifications.withFilter(filter);
         Page<Product> productPage = productRepository.findAll(spec, pageable);
 
@@ -84,15 +84,15 @@ public class ProductServiceImpl implements ProductService {
             return paginationMapper.toPaginationResponse(productPage, Collections.emptyList());
         }
 
-        // Process products with async operations
-        List<ProductListDto> dtoList = processProducts(productPage.getContent(), currentUser.orElse(null));
+        // ✅ OPTIMIZED: Process products without relationship loading
+        List<ProductListDto> dtoList = processProductsOptimized(productPage.getContent(), currentUser.orElse(null));
         return paginationMapper.toPaginationResponse(productPage, dtoList);
     }
 
     /**
-     * Process products with async batch loading
+     * ✅ OPTIMIZED: Process products without expensive relationship loading
      */
-    private List<ProductListDto> processProducts(List<Product> products, User currentUser) {
+    private List<ProductListDto> processProductsOptimized(List<Product> products, User currentUser) {
         List<UUID> productIds = products.stream().map(Product::getId).toList();
         
         // Start async operations
@@ -102,7 +102,7 @@ public class ProductServiceImpl implements ProductService {
         CompletableFuture<List<UUID>> favoritesFuture = CompletableFuture.supplyAsync(() -> 
             currentUser != null ? favoriteQueryHelper.getFavoriteProductIds(currentUser.getId(), productIds) : Collections.emptyList());
 
-        // Convert to DTOs
+        // ✅ OPTIMIZED: Convert to DTOs (no relationship data)
         List<ProductListDto> dtoList = productMapper.toListDtos(products);
 
         try {
@@ -135,7 +135,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /**
-     * Set display fields for product
+     * Set display fields for product listing
      */
     private void setDisplayFields(ProductListDto dto, Product product, List<ProductSize> sizes) {
         if (sizes.isEmpty()) {
@@ -164,6 +164,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailDto getProductById(UUID id) {
         log.info("Getting product details: {}", id);
 
+        // ✅ DETAIL: Use expensive query with relationships (only for single product)
         Product product = productRepository.findByIdWithAllDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
 
@@ -187,6 +188,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailDto getProductByIdPublic(UUID id) {
         log.info("Getting public product: {}", id);
 
+        // ✅ DETAIL: Use expensive query with relationships (only for single product)
         Product product = productRepository.findByIdWithAllDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
 
@@ -268,7 +270,7 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toDetailDto(deletedProduct);
     }
 
-    // Helper methods
+    // Helper methods (unchanged)
     private void handleProductImages(Product product, List<ProductImageCreateDto> imageDtos) {
         if (imageDtos == null || imageDtos.isEmpty()) return;
 

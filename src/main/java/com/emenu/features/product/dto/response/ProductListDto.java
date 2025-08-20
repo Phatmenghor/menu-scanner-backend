@@ -35,17 +35,10 @@ public class ProductListDto {
     private Long viewCount;
     private Long favoriteCount;
     private Boolean isFavorited;
-    private LocalDateTime createdAt;
-    
-    // Business info
+
+    // ✅ OPTIMIZED: Keep only IDs for listing (no expensive relationship names)
     private UUID businessId;
-    private String businessName;
-    
-    // Category info
     private UUID categoryId;
-    private String categoryName;
-    
-    // Brand info
     private UUID brandId;
-    private String brandName;
-} 
+    private LocalDateTime createdAt;
+}

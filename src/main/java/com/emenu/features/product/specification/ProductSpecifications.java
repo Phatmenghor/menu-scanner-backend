@@ -8,6 +8,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class ProductSpecifications {
 
@@ -28,12 +29,12 @@ public class ProductSpecifications {
                 predicates.add(cb.equal(root.get("status"), filter.getStatus()));
             }
 
-            // Category filter
+            // Category filter - use categoryId directly (no JOIN)
             if (filter.getCategoryId() != null) {
                 predicates.add(cb.equal(root.get("categoryId"), filter.getCategoryId()));
             }
 
-            // Brand filter
+            // Brand filter - use brandId directly (no JOIN)
             if (filter.getBrandId() != null) {
                 predicates.add(cb.equal(root.get("brandId"), filter.getBrandId()));
             }
@@ -46,9 +47,9 @@ public class ProductSpecifications {
                 predicates.add(cb.lessThanOrEqualTo(root.get("price"), filter.getMaxPrice()));
             }
 
-            // Search - only join if needed
+            // ✅ OPTIMIZED SEARCH: Only search product name (no expensive JOINs)
             if (StringUtils.hasText(filter.getSearch())) {
-                addSearchPredicate(root, query, cb, predicates, filter.getSearch());
+                addOptimizedSearchPredicate(root, cb, predicates, filter.getSearch());
             }
 
             // Promotion filter
@@ -60,15 +61,38 @@ public class ProductSpecifications {
         };
     }
 
-    private static void addSearchPredicate(Root<Product> root, CriteriaQuery<?> query, 
-                                         CriteriaBuilder cb, List<Predicate> predicates, String search) {
+    /**
+     * ✅ OPTIMIZED SEARCH: Only search product name to avoid expensive JOINs
+     * For relationship-based searches, use separate service methods
+     */
+    private static void addOptimizedSearchPredicate(Root<Product> root, CriteriaBuilder cb, 
+                                                   List<Predicate> predicates, String search) {
         String pattern = "%" + search.toLowerCase() + "%";
         
-        // Product name first (no join needed)
+        // Only search product name - fast and uses index
         Predicate productName = cb.like(cb.lower(root.get("name")), pattern);
-        
-        // Only join for longer searches
-        if (search.length() >= 3) {
+        predicates.add(productName);
+    }
+
+    /**
+     * ✅ SEPARATE SPECIFICATION: For relationship-based search (when needed)
+     * Use this only for advanced search functionality
+     */
+    public static Specification<Product> withRelationshipSearch(String search) {
+        return (root, query, cb) -> {
+            if (!StringUtils.hasText(search)) {
+                return cb.conjunction();
+            }
+
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("isDeleted"), false));
+
+            String pattern = "%" + search.toLowerCase() + "%";
+            
+            // Product name first (no join needed)
+            Predicate productName = cb.like(cb.lower(root.get("name")), pattern);
+            
+            // Only join for relationship search
             Join<Object, Object> business = root.join("business", JoinType.LEFT);
             Join<Object, Object> category = root.join("category", JoinType.LEFT);
             Join<Object, Object> brand = root.join("brand", JoinType.LEFT);
@@ -79,9 +103,9 @@ public class ProductSpecifications {
 
             predicates.add(cb.or(productName, businessName, categoryName, brandName));
             query.distinct(true);
-        } else {
-            predicates.add(productName);
-        }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
     }
 
     private static void addPromotionPredicate(Root<Product> root, CriteriaBuilder cb, 
@@ -109,5 +133,27 @@ public class ProductSpecifications {
                 cb.lessThan(root.get("promotionToDate"), cb.currentTimestamp())
             ));
         }
+    }
+
+    /**
+     * ✅ OPTIMIZED: Simple filters without relationships
+     */
+    public static Specification<Product> withSimpleFilters(UUID businessId, UUID categoryId, UUID brandId) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("isDeleted"), false));
+
+            if (businessId != null) {
+                predicates.add(cb.equal(root.get("businessId"), businessId));
+            }
+            if (categoryId != null) {
+                predicates.add(cb.equal(root.get("categoryId"), categoryId));
+            }
+            if (brandId != null) {
+                predicates.add(cb.equal(root.get("brandId"), brandId));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
     }
 }

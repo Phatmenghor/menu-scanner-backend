@@ -56,13 +56,7 @@ public interface ProductMapper {
     }
     void updateEntityFromDto(ProductUpdateDto dto, @MappingTarget Product entity);
 
-    // ✅ FIXED: Enhanced mapping with proper null handling
-    @Mapping(source = "business.name", target = "businessName", 
-             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
-    @Mapping(source = "category.name", target = "categoryName",
-             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
-    @Mapping(source = "brand.name", target = "brandName",
-             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
+    // ✅ OPTIMIZED: Simple mapping for listing (no relationship access)
     @Mapping(source = "price", target = "price")
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
     @Mapping(source = "promotionValue", target = "promotionValue")
@@ -73,17 +67,8 @@ public interface ProductMapper {
     @Mapping(target = "isFavorited", constant = "false")
     @AfterMapping
     default void afterListMapping(@MappingTarget ProductListDto dto, Product product) {
-        // ✅ FIXED: Enhanced null-safe relationship mapping
-        if (product.getBusiness() != null) {
-            dto.setBusinessName(product.getBusiness().getName());
-        }
-        if (product.getCategory() != null) {
-            dto.setCategoryName(product.getCategory().getName());
-        }
-        if (product.getBrand() != null) {
-            dto.setBrandName(product.getBrand().getName());
-        }
-
+        // ✅ OPTIMIZED: No relationship access - only entity data
+        
         // Fix hasSizes calculation
         boolean hasSizes = product.getSizes() != null && !product.getSizes().isEmpty();
         dto.setHasSizes(hasSizes);
@@ -99,7 +84,7 @@ public interface ProductMapper {
 
     List<ProductListDto> toListDtos(List<Product> products);
 
-    // ✅ FIXED: Enhanced detail mapping with proper null handling
+    // ✅ DETAIL MAPPING: Keep relationship mapping for detail view only
     @Mapping(source = "business.name", target = "businessName",
              nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
     @Mapping(source = "category.name", target = "categoryName",
@@ -115,7 +100,7 @@ public interface ProductMapper {
     @Mapping(target = "isFavorited", constant = "false")
     @AfterMapping
     default void afterDetailMapping(@MappingTarget ProductDetailDto dto, Product product) {
-        // ✅ FIXED: Enhanced null-safe relationship mapping
+        //  Enhanced null-safe relationship mapping
         if (product.getBusiness() != null) {
             dto.setBusinessName(product.getBusiness().getName());
         }
@@ -139,7 +124,7 @@ public interface ProductMapper {
     }
     ProductDetailDto toDetailDto(Product product);
 
-    // ✅ FIXED: Enhanced display field logic with null safety
+    // Display field logic with null safety
     default void setDisplayFieldsForList(ProductListDto dto, Product product) {
         try {
             if (product.hasSizes() && product.getSizes() != null && !product.getSizes().isEmpty()) {
