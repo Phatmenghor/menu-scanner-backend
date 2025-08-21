@@ -14,15 +14,23 @@ import java.util.UUID;
 @Table(name = "product_favorites",
         uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"}),
         indexes = {
-                // ✅ EXISTING: Keep current good indexes
-                @Index(name = "idx_product_favorites_user_deleted", columnList = "user_id, is_deleted"),
-                @Index(name = "idx_product_favorites_product_deleted", columnList = "product_id, is_deleted"),
-                @Index(name = "idx_product_favorites_user_created_deleted", columnList = "user_id, created_at, is_deleted"),
+                // ✅ ESSENTIAL INDEXES ONLY for ProductFavorite
 
-                // ✅ FIXED: Additional BaseUUIDEntity indexes
-                @Index(name = "idx_product_favorite_deleted", columnList = "is_deleted"),
-                @Index(name = "idx_product_favorite_deleted_created", columnList = "is_deleted, created_at"),
-                @Index(name = "idx_product_favorite_user_product_deleted", columnList = "user_id, product_id, is_deleted")
+                // 1. Check if user favorited specific product (most common)
+                @Index(name = "idx_product_favorites_user_product_deleted",
+                        columnList = "user_id, product_id, is_deleted"),
+
+                // 2. Get user's favorites (for favorites page)
+                @Index(name = "idx_product_favorites_user_deleted_created",
+                        columnList = "user_id, is_deleted, created_at"),
+
+                // 3. Batch check favorites for multiple products
+                @Index(name = "idx_product_favorites_user_deleted",
+                        columnList = "user_id, is_deleted"),
+
+                // 4. Base soft delete index
+                @Index(name = "idx_product_favorites_deleted",
+                        columnList = "is_deleted")
         })
 @Data
 @EqualsAndHashCode(callSuper = true)

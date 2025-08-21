@@ -13,15 +13,19 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "categories", indexes = {
-        // ✅ FIXED: BaseUUIDEntity indexes
-        @Index(name = "idx_category_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_category_deleted_created", columnList = "is_deleted, created_at"),
+        // ✅ ESSENTIAL INDEXES ONLY for Category
 
-        // ✅ FIXED: Business relationship indexes
-        @Index(name = "idx_category_business_deleted", columnList = "business_id, is_deleted"),
-        @Index(name = "idx_category_status_deleted", columnList = "status, is_deleted"),
-        @Index(name = "idx_category_business_status_deleted", columnList = "business_id, status, is_deleted"),
-        @Index(name = "idx_category_name_deleted", columnList = "name, is_deleted")
+        // 1. Business categories (most common in product filtering)
+        @Index(name = "idx_categories_business_deleted",
+                columnList = "business_id, is_deleted"),
+
+        // 2. Business categories by status
+        @Index(name = "idx_categories_business_status_deleted",
+                columnList = "business_id, status, is_deleted"),
+
+        // 3. Base soft delete index
+        @Index(name = "idx_categories_deleted",
+                columnList = "is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
