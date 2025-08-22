@@ -1,4 +1,4 @@
-# application.yml - Cambodia E-Menu Platform Configuration with Telegram Integration
+# application.yml - Cambodia E-Menu Platform Configuration
 spring:
   application:
     name: cambodia-emenu-platform
@@ -61,7 +61,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,telegram
+        include: health,info,metrics
       base-path: /actuator
   endpoint:
     health:
@@ -74,148 +74,12 @@ cambodia:
   language: "km"
   country: "KH"
 
-# ===== TELEGRAM CONFIGURATION =====
+# ===== TELEGRAM CONFIGURATION (MINIMAL) =====
 telegram:
   bot:
     token: "8464259107:AAHdIC3EZb_3uID4vnhteY6PYtmO9WGDBjU"
     enabled: true
-    chat-id: "1898032377" # Primary admin chat ID
-    name: "Cambodia E-Menu Bot"
-    username: "cambodia_emenu_bot"
-    description: "Digital menu platform for Cambodia restaurants"
-    webhook-url: "https://your-domain.com/api/v1/telegram/bot"
-    polling: false # Use webhook instead of polling
-    timeout: 30
-    retry-attempts: 3
-    base-url: "https://api.telegram.org/bot"
-
-  notifications:
-    enabled: true
-    product-created: true
-    user-registered: true
-    business-registered: true
-    order-placed: true
-    payment-received: true
-    subscription-expiring: true
-    system-alerts: true
-
-    recipients:
-      notify-platform-users: true
-      notify-business-owners: false
-      notify-customers: true
-      notify-admins-only: false
-
-  webhook:
-    enabled: true
-    url: "https://your-domain.com/api/v1/telegram/bot"
-    secret-token: "your-webhook-secret-token"
-    max-connections: 40
-    allowed-updates: ["message", "callback_query", "inline_query"]
-    drop-pending-updates: true
-
-  features:
-    bot-commands: true
-    inline-keyboards: true
-    file-uploads: false
-    group-chat: false
-    channel-posts: false
-    inline-queries: true
-    callback-queries: true
-
-    # Authentication features
-    login-widget: true
-    registration: true
-    account-linking: true
-
-    # Business features
-    business-management: true
-    order-notifications: true
-    menu-updates: true
-
-    # Admin features
-    admin-commands: true
-    system-monitoring: true
-    user-management: true
-
-  templates:
-    # User registration notification
-    user-registered: |
-      👤 <b>New User Registered!</b>
-      
-      🆔 <b>User ID:</b> {userIdentifier}
-      👤 <b>Name:</b> {fullName}
-      🏷️ <b>Type:</b> {userType}
-      📧 <b>Email:</b> {email}
-      📱 <b>Provider:</b> {socialProvider}
-      🔗 <b>Telegram:</b> {hasTelegram}
-      📅 <b>Date:</b> {registeredAt}
-
-    # Business registration notification
-    business-registered: |
-      🏪 <b>New Business Registered!</b>
-      
-      🏢 <b>Business:</b> {businessName}
-      👤 <b>Owner:</b> {ownerName} ({ownerUserIdentifier})
-      📧 <b>Email:</b> {businessEmail}
-      📞 <b>Phone:</b> {phoneNumber}
-      🌐 <b>Subdomain:</b> {subdomain}
-      📅 <b>Date:</b> {registeredAt}
-
-    # Product creation notification
-    product-created: |
-      🆕 <b>New Product Created!</b>
-      
-      📱 <b>Product:</b> {productName}
-      🏪 <b>Business:</b> {businessName}
-      💰 <b>Price:</b> ${price}
-      📂 <b>Category:</b> {categoryName}
-      👤 <b>Created by:</b> {createdBy}
-      📅 <b>Date:</b> {createdAt}
-
-    # Welcome message for new Telegram users
-    welcome-message: |
-      🇰🇭 <b>Welcome to Cambodia E-Menu Platform!</b> 🇰🇭
-      
-      👋 Hello {userName}!
-      
-      🎉 <b>What is Cambodia E-Menu Platform?</b>
-      • 🏪 Digital menu platform for restaurants
-      • 📱 Easy online ordering system
-      • 💰 Affordable SaaS solution for Cambodia
-      
-      ✨ <b>What you can do:</b>
-      • 📋 Browse restaurant menus
-      • 🛒 Place orders online
-      • 🔔 Get notifications
-      • 🏢 Manage your business (if owner)
-      
-      🚀 <b>Get started:</b>
-      /register - Create your account
-      /login - Access existing account
-      /help - See all commands
-
-    # Help message
-    help-message: |
-      🆘 <b>Cambodia E-Menu Platform Help</b>
-      
-      🚀 <b>Getting Started:</b>
-      /start - Welcome & introduction
-      /register - Create new account
-      /login - Access existing account
-      
-      👤 <b>Account Management:</b>
-      /profile - View your profile
-      /notifications - Manage notifications
-      
-      🏪 <b>Business Users:</b>
-      /businesses - Business information
-      
-      ⚙️ <b>Other Commands:</b>
-      /help - Show this help message
-      /cancel - Cancel current operation
-      
-      💬 <b>Contact Support:</b>
-      Email: support@cambodia-emenu.com
+    chat-id: "1898032377" # Platform owner's Telegram chat ID for notifications
 
 # Application Configuration
 app:
@@ -229,9 +93,9 @@ app:
     admin-email: "phatmenghor19@gmail.com"
     admin-password: "88889999"
 
-  # CORS Configuration - Enhanced for Telegram
+  # CORS Configuration
   cors:
-    allowed-origins: "http://localhost:3000,http://localhost:4200,http://localhost:5173,http://152.42.219.13:8080,https://152.42.219.13:8080,http://152.42.219.13,https://152.42.219.13,https://web.telegram.org,https://telegram.org"
+    allowed-origins: "http://localhost:3000,http://localhost:4200,http://localhost:5173,http://152.42.219.13:8080,https://152.42.219.13:8080,http://152.42.219.13,https://152.42.219.13"
     allowed-methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
     allowed-headers: "*"
     allow-credentials: true
@@ -242,19 +106,6 @@ app:
       enabled: true
       schedule: "0 0 2 * * ?" # Daily at 2 AM
       retention-weeks: 1
-
-    # Dual authentication support
-    dual-login:
-      enabled: true
-      allow-telegram-login: true
-      allow-traditional-login: true
-      require-password-for-local: true
-
-    # Session management
-    session:
-      telegram-session-timeout: 30 # days
-      cleanup-inactive-sessions: true
-      cleanup-schedule: "0 0 3 * * SUN" # Weekly cleanup
 
   # Subdomain Configuration
   subdomain:
@@ -272,22 +123,6 @@ app:
     verification:
       required: false
       token-expiry-hours: 24
-
-  # Notification Configuration
-  notifications:
-    enabled: true
-    multi-channel: true
-    default-channel: "telegram"
-    fallback-channel: "email"
-
-    # Auto-notifications for events
-    auto-notify:
-      user-registration: true
-      business-registration: true
-      product-creation: true
-      order-placement: true
-      payment-received: true
-      subscription-expiring: true
 
 ---
 # Development Profile
@@ -313,22 +148,6 @@ spring:
       ddl-auto: update
     show-sql: false
 
-# Development-specific Telegram settings
-telegram:
-  bot:
-    polling: true # Use polling in development
-    webhook-url: "" # Disable webhook in development
-
-  webhook:
-    enabled: false # Disable webhook in development
-
-  features:
-    # Enable all features in development
-    file-uploads: true
-    group-chat: true
-    admin-commands: true
-    system-monitoring: true
-
 ---
 # Production Profile
 spring:
@@ -341,27 +160,7 @@ spring:
       ddl-auto: validate # Don't auto-update schema in production
     show-sql: false
 
-# Production-specific Telegram settings
-telegram:
-  bot:
-    polling: false # Always use webhook in production
-    timeout: 60
-    retry-attempts: 5
-
-  webhook:
-    enabled: true
-    max-connections: 100
-
-  notifications:
-    # More conservative notifications in production
-    system-alerts: true
-
-  features:
-    # Disable some features in production for security
-    file-uploads: false
-    group-chat: false
-
-# FIXED: Hide SQL queries in development
+# Logging Configuration
 logging:
   level:
     root: INFO

@@ -1,3 +1,4 @@
+// src/main/java/com/emenu/features/auth/service/impl/AuthServiceImpl.java
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.user.RoleEnum;
@@ -13,6 +14,7 @@ import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.AuthService;
+import com.emenu.features.notification.service.TelegramNotificationService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.security.jwt.JWTGenerator;
 import com.emenu.security.jwt.TokenBlacklistService;
@@ -43,6 +45,7 @@ public class AuthServiceImpl implements AuthService {
     private final JWTGenerator jwtGenerator;
     private final SecurityUtils securityUtils;
     private final TokenBlacklistService tokenBlacklistService;
+    private final TelegramNotificationService telegramNotificationService;
 
     // ===== TRADITIONAL LOGIN =====
     
@@ -51,7 +54,6 @@ public class AuthServiceImpl implements AuthService {
         log.info("🔐 Login attempt for userIdentifier: {}", request.getUserIdentifier());
 
         try {
-            // Traditional userIdentifier/password authentication
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUserIdentifier(), request.getPassword())
             );
@@ -61,7 +63,6 @@ public class AuthServiceImpl implements AuthService {
 
             securityUtils.validateAccountStatus(user);
             
-            // Update last activity if user has Telegram
             if (user.hasTelegramLinked()) {
                 user.updateTelegramActivity();
                 userRepository.save(user);
@@ -87,21 +88,22 @@ public class AuthServiceImpl implements AuthService {
 
         validateCustomerRegistration(request);
 
-        // Create customer user
         User user = registrationMapper.toCustomerEntity(request);
         user.setUserIdentifier(request.getUserIdentifier());
-        user.setEmail(request.getEmail()); // Optional
-        user.setPhoneNumber(request.getPhoneNumber()); // Optional
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Set customer role
         Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
                 .orElseThrow(() -> new ValidationException("Customer role not found"));
         user.setRoles(List.of(customerRole));
 
         User savedUser = userRepository.save(user);
+        
+        // 📱 Send Telegram notification for customer registration
+        telegramNotificationService.sendCustomerRegistrationNotification(savedUser);
+        
         log.info("✅ Customer registered successfully: {}", savedUser.getUserIdentifier());
-
         return userMapper.toResponse(savedUser);
     }
 
@@ -191,12 +193,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void validateCustomerRegistration(RegisterRequest request) {
-        // Check userIdentifier uniqueness
         if (!isUserIdentifierAvailable(request.getUserIdentifier())) {
             throw new ValidationException("User identifier is already in use");
         }
-
-        // Email and phone are optional for regular customers
-        // No uniqueness validation required for customers
     }
 }

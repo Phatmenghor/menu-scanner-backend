@@ -139,43 +139,10 @@ public class AuthController {
      * Admin reset password for any user
      */
     @PostMapping("/admin/reset-password")
-    @PreAuthorize("hasRole('PLATFORM_OWNER') or hasRole('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> adminResetPassword(
             @Valid @RequestBody AdminPasswordResetRequest request) {
         log.info("🔑 Admin password reset request for user: {}", request.getUserId());
         UserResponse response = authService.adminResetPassword(request);
         return ResponseEntity.ok(ApiResponse.success("Password reset successful", response));
-    }
-
-    // ===== AUTHENTICATION STATUS =====
-
-    /**
-     * Check authentication status and get user info
-     */
-    @GetMapping("/me")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<String>> getCurrentAuthStatus() {
-        return ResponseEntity.ok(ApiResponse.success("User is authenticated", 
-                "You are successfully authenticated and can access protected resources."));
-    }
-
-    /**
-     * Test endpoint to verify JWT token is working
-     */
-    @GetMapping("/test")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<String>> testAuth() {
-        return ResponseEntity.ok(ApiResponse.success("Authentication test successful", 
-                "JWT token is valid and authentication is working properly."));
-    }
-
-    /**
-     * Get current user's Telegram status
-     */
-    @GetMapping("/telegram/status")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<Boolean>> getTelegramStatus() {
-        // This would need to be implemented to check current user's Telegram link status
-        return ResponseEntity.ok(ApiResponse.success("Telegram status retrieved", false));
     }
 }

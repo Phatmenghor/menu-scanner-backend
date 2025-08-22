@@ -24,6 +24,7 @@ import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.BusinessService;
 import com.emenu.features.auth.service.UserService;
 import com.emenu.features.auth.specification.UserSpecification;
+import com.emenu.features.notification.service.TelegramNotificationService;
 import com.emenu.features.payment.dto.request.PaymentCreateRequest;
 import com.emenu.features.payment.dto.response.PaymentResponse;
 import com.emenu.features.payment.service.PaymentService;
@@ -46,8 +47,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -70,6 +69,7 @@ public class UserServiceImpl implements UserService {
     private final SubscriptionService subscriptionService;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final BusinessOwnerCreateResponseMapper businessOwnerResponseMapper;
+    private final TelegramNotificationService telegramNotificationService;
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
@@ -100,7 +100,6 @@ public class UserServiceImpl implements UserService {
             if (request.getBusinessId() != null) {
                 validateAndAssignBusiness(user, request.getBusinessId());
             }
-
             // Set and validate roles
             setUserRoles(user, request.getRoles());
 
@@ -225,11 +224,10 @@ public class UserServiceImpl implements UserService {
         log.info("🚀 Creating comprehensive business owner with business: {} for userIdentifier: {}",
                 request.getBusinessName(), request.getOwnerUserIdentifier());
 
-        // Validate business owner creation early
         validateBusinessOwnerCreation(request);
 
         try {
-            // STEP 1: Create business with enhanced settings
+            // STEP 1: Create business
             log.info("🏢 Step 1: Creating business: {}", request.getBusinessName());
             BusinessResponse businessResponse = createBusinessForOwner(request);
 
@@ -240,25 +238,17 @@ public class UserServiceImpl implements UserService {
             // STEP 3: Create subdomain
             log.info("🌐 Step 3: Creating subdomain: {}", request.getPreferredSubdomain());
             SubdomainResponse subdomainResponse;
-            try {
-                subdomainResponse = subdomainService.createSubdomainForBusiness(
-                        businessResponse.getId(),
-                        request.getPreferredSubdomain()
-                );
-                log.info("✅ Subdomain created successfully: {}", subdomainResponse.getFullUrl());
-            } catch (ValidationException e) {
-                log.error("❌ Subdomain creation failed: {}", e.getMessage());
-                throw new ValidationException("Subdomain creation failed: " + e.getMessage());
-            } catch (Exception e) {
-                log.error("❌ Unexpected error creating subdomain: {}", e.getMessage(), e);
-                throw new ValidationException("Failed to create subdomain '" + request.getPreferredSubdomain() + "': " + e.getMessage());
-            }
 
-            // STEP 4: Create subscription (ALWAYS - never null)
+            subdomainResponse = subdomainService.createSubdomainForBusiness(
+                    businessResponse.getId(),
+                    request.getPreferredSubdomain()
+            );
+
+            // STEP 4: Create subscription
             log.info("📋 Step 4: Creating subscription with plan: {}", request.getSubscriptionPlanId());
             SubscriptionResponse subscriptionResponse = createSubscriptionForBusiness(request, businessResponse.getId());
 
-            // STEP 5: Create payment if requested (OPTIONAL)
+            // STEP 5: Create payment if requested
             PaymentResponse paymentResponse = null;
             if (request.hasPaymentInfo() && request.isPaymentInfoComplete()) {
                 log.info("💳 Step 5: Creating payment record: ${}", request.getPaymentAmount());
@@ -267,21 +257,38 @@ public class UserServiceImpl implements UserService {
                     log.info("✅ Payment created successfully: {}", paymentResponse.getId());
                 } catch (Exception e) {
                     log.warn("⚠️ Payment creation failed, continuing without payment: {}", e.getMessage());
-                    // Continue without payment - don't fail the entire process
                 }
             }
 
-            // STEP 6: Use mapper to create comprehensive response
+            // STEP 6: Send Telegram notifications
+            log.info("📱 Step 6: Sending Telegram notifications");
+            try {
+                // Get the created user for notifications
+                User businessOwner = userRepository.findByIdAndIsDeletedFalse(UUID.fromString(userResponse.getId().toString()))
+                        .orElse(null);
+
+                if (businessOwner != null) {
+                    telegramNotificationService.sendBusinessRegistrationNotification(
+                            businessOwner,
+                            businessResponse.getName(),
+                            subdomainResponse.getSubdomain()
+                    );
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to send Telegram notifications: {}", e.getMessage());
+                // Don't fail the entire process for notification errors
+            }
+
+            // STEP 7: Create comprehensive response
             BusinessOwnerCreateResponse response = businessOwnerResponseMapper.create(
                     userResponse,
                     businessResponse,
                     subdomainResponse,
-                    subscriptionResponse, // Never null
-                    paymentResponse       // Can be null
+                    subscriptionResponse,
+                    paymentResponse
             );
 
             log.info("✅ Comprehensive business owner creation completed successfully: {}", userResponse.getUserIdentifier());
-
             return response;
 
         } catch (ValidationException ve) {

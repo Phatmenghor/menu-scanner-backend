@@ -1,3 +1,4 @@
+// src/main/java/com/emenu/features/auth/service/impl/TelegramAuthServiceImpl.java
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.auth.SocialProvider;
@@ -13,6 +14,7 @@ import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.TelegramService;
+import com.emenu.features.notification.service.TelegramNotificationService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.security.jwt.JWTGenerator;
 import lombok.RequiredArgsConstructor;
@@ -38,13 +40,13 @@ public class TelegramAuthServiceImpl implements TelegramService {
     private final RoleRepository roleRepository;
     private final SecurityUtils securityUtils;
     private final JWTGenerator jwtGenerator;
+    private final TelegramNotificationService telegramNotificationService;
 
     // ===== TELEGRAM LOGIN =====
     @Override
     public TelegramAuthResponse loginWithTelegram(TelegramAuthRequest request) {
-        log.info("🔐 Telegram login attempt for user: {}", request.getTelegramUserId());
+        log.info("📱 Telegram login attempt for user: {}", request.getTelegramUserId());
         
-        // Find user by Telegram ID
         Optional<User> userOpt = userRepository.findByTelegramUserIdAndIsDeletedFalse(request.getTelegramUserId());
         
         if (userOpt.isEmpty()) {
@@ -53,19 +55,14 @@ public class TelegramAuthServiceImpl implements TelegramService {
         }
         
         User user = userOpt.get();
-        
-        // Validate account status
         validateAccountStatus(user);
         
-        // Update Telegram activity
         user.updateTelegramActivity();
         userRepository.save(user);
         
-        // Generate JWT token
         Authentication authentication = createAuthenticationFromUser(user);
         String token = jwtGenerator.generateAccessToken(authentication);
         
-        // Build response
         TelegramAuthResponse response = buildTelegramAuthResponse(user, token, false);
         
         log.info("✅ Telegram login successful for user: {}", user.getUserIdentifier());
@@ -78,28 +75,25 @@ public class TelegramAuthServiceImpl implements TelegramService {
     public TelegramAuthResponse registerCustomerWithTelegram(TelegramAuthRequest request) {
         log.info("📝 Telegram customer registration for user: {}", request.getTelegramUserId());
         
-        // Check if Telegram user already exists
         if (userRepository.existsByTelegramUserIdAndIsDeletedFalse(request.getTelegramUserId())) {
             throw new ValidationException("This Telegram account is already linked to a user. Please login instead.");
         }
         
-        // Generate user identifier if not provided
         String userIdentifier = generateUserIdentifier(request);
         
-        // Check user identifier availability
         if (userRepository.existsByUserIdentifierAndIsDeletedFalse(userIdentifier)) {
             throw new ValidationException("User identifier '" + userIdentifier + "' is already taken. Please try again.");
         }
         
-        // Create customer user
         User user = createCustomerFromTelegramData(request, userIdentifier);
         user = userRepository.save(user);
         
-        // Generate JWT token
+        // 📱 Send Telegram notification for customer registration
+        telegramNotificationService.sendCustomerRegistrationNotification(user);
+        
         Authentication authentication = createAuthenticationFromUser(user);
         String token = jwtGenerator.generateAccessToken(authentication);
         
-        // Build response
         TelegramAuthResponse response = buildTelegramAuthResponse(user, token, true);
         response.setMessage("Customer account created successfully with Telegram!");
         
@@ -117,17 +111,14 @@ public class TelegramAuthServiceImpl implements TelegramService {
     public void linkTelegramToUser(UUID userId, TelegramLinkRequest request) {
         log.info("🔗 Linking Telegram {} to user: {}", request.getTelegramUserId(), userId);
         
-        // Check if Telegram is already linked to another user
         Optional<User> existingTelegramUser = userRepository.findByTelegramUserIdAndIsDeletedFalse(request.getTelegramUserId());
         if (existingTelegramUser.isPresent() && !existingTelegramUser.get().getId().equals(userId)) {
             throw new ValidationException("This Telegram account is already linked to another user.");
         }
         
-        // Get user
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new ValidationException("User not found"));
         
-        // Link Telegram
         user.linkTelegram(
                 request.getTelegramUserId(),
                 request.getTelegramUsername(),
@@ -136,6 +127,9 @@ public class TelegramAuthServiceImpl implements TelegramService {
         );
         
         userRepository.save(user);
+        
+        // 📱 Send Telegram notification for successful linking
+        telegramNotificationService.sendTelegramLinkNotification(user);
         
         log.info("✅ Telegram successfully linked to user: {}", user.getUserIdentifier());
     }
@@ -157,7 +151,6 @@ public class TelegramAuthServiceImpl implements TelegramService {
             throw new ValidationException("User does not have Telegram linked");
         }
         
-        // Unlink from user
         user.unlinkTelegram();
         userRepository.save(user);
         
@@ -189,10 +182,8 @@ public class TelegramAuthServiceImpl implements TelegramService {
             base = "telegramuser";
         }
         
-        // Add random numbers to ensure uniqueness
         String userIdentifier = base + "_" + ThreadLocalRandom.current().nextInt(1000, 9999);
         
-        // Ensure uniqueness
         int attempts = 0;
         while (userRepository.existsByUserIdentifierAndIsDeletedFalse(userIdentifier) && attempts < 10) {
             userIdentifier = base + "_" + ThreadLocalRandom.current().nextInt(10000, 99999);
@@ -205,17 +196,15 @@ public class TelegramAuthServiceImpl implements TelegramService {
     private User createCustomerFromTelegramData(TelegramAuthRequest request, String userIdentifier) {
         User user = new User();
         
-        // Basic user info
         user.setUserIdentifier(userIdentifier);
-        user.setEmail(request.getEmail()); // Optional
-        user.setPhoneNumber(request.getPhoneNumber()); // Optional
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
         user.setFirstName(request.getTelegramFirstName());
         user.setLastName(request.getTelegramLastName());
         user.setUserType(UserType.CUSTOMER);
         user.setAccountStatus(AccountStatus.ACTIVE);
         user.setSocialProvider(SocialProvider.TELEGRAM);
         
-        // Telegram info
         user.linkTelegram(
                 request.getTelegramUserId(),
                 request.getTelegramUsername(),
@@ -223,7 +212,6 @@ public class TelegramAuthServiceImpl implements TelegramService {
                 request.getTelegramLastName()
         );
         
-        // Set customer role
         Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
                 .orElseThrow(() -> new ValidationException("Customer role not found"));
         user.setRoles(List.of(customerRole));
@@ -242,11 +230,8 @@ public class TelegramAuthServiceImpl implements TelegramService {
     private TelegramAuthResponse buildTelegramAuthResponse(User user, String token, boolean isNewUser) {
         TelegramAuthResponse response = new TelegramAuthResponse();
         
-        // Authentication
         response.setAccessToken(token);
         response.setTokenType("Bearer");
-        
-        // User info
         response.setUserId(user.getId());
         response.setUserIdentifier(user.getUserIdentifier());
         response.setEmail(user.getEmail());
@@ -254,23 +239,16 @@ public class TelegramAuthServiceImpl implements TelegramService {
         response.setDisplayName(user.getDisplayName());
         response.setUserType(user.getUserType());
         response.setRoles(user.getRoles().stream().map(role -> role.getName().name()).toList());
-        
-        // Business info
         response.setBusinessId(user.getBusinessId());
         response.setBusinessName(user.getBusiness() != null ? user.getBusiness().getName() : null);
-        
-        // Telegram info
         response.setSocialProvider(user.getSocialProvider());
         response.setTelegramUserId(user.getTelegramUserId());
         response.setTelegramUsername(user.getTelegramUsername());
         response.setTelegramDisplayName(user.getTelegramDisplayName());
         response.setTelegramLinkedAt(user.getTelegramLinkedAt());
-        
-        // Status
         response.setIsNewUser(isNewUser);
         response.setHasPasswordSet(user.getPassword() != null);
         
-        // Welcome message
         if (isNewUser) {
             response.setWelcomeMessage(String.format("Welcome to Cambodia E-Menu Platform, %s! 🇰🇭🎉", user.getDisplayName()));
         } else {

@@ -1,7 +1,7 @@
+// src/main/java/com/emenu/features/auth/mapper/AuthMapper.java
 package com.emenu.features.auth.mapper;
 
 import com.emenu.features.auth.dto.response.LoginResponse;
-import com.emenu.features.auth.dto.response.TelegramLoginResponse;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
 import org.mapstruct.*;
@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class AuthMapper {
 
-    // ===== TRADITIONAL LOGIN RESPONSE =====
+    // ===== LOGIN RESPONSE MAPPING =====
     
     @Mapping(source = "user", target = "fullName", qualifiedByName = "getFullName")
     @Mapping(source = "user.roles", target = "roles", qualifiedByName = "rolesToStringList")
@@ -36,18 +36,6 @@ public abstract class AuthMapper {
     protected String getFullName(User user) {
         if (user == null) return null;
         return user.getFullName();
-    }
-
-    @Named("getDisplayName")
-    protected String getDisplayName(User user) {
-        if (user == null) return null;
-        return user.getDisplayName();
-    }
-
-    @Named("getTelegramDisplayName")
-    protected String getTelegramDisplayName(User user) {
-        if (user == null) return null;
-        return user.getTelegramDisplayName();
     }
 
     @Named("rolesToStringList")
@@ -75,16 +63,6 @@ public abstract class AuthMapper {
                 timeOfDay, userName, telegramStatus);
     }
 
-    protected String createTelegramWelcomeMessage(User user) {
-        if (user == null) return "Welcome via Telegram!";
-
-        String userName = user.getDisplayName();
-        String userType = user.getUserType().getDescription();
-
-        return String.format("🎉 Welcome back, %s! You're logged in as %s via Telegram.",
-                userName, userType);
-    }
-
     private String getTimeOfDayGreeting() {
         int hour = java.time.LocalTime.now().getHour();
         if (hour < 12) {
@@ -100,14 +78,7 @@ public abstract class AuthMapper {
 
     @AfterMapping
     protected void enhanceLoginResponse(@MappingTarget LoginResponse response, User user) {
-        // Add additional features based on user type and Telegram status
         response.setAvailableFeatures(getAvailableFeatures(user));
-    }
-
-    @AfterMapping
-    protected void enhanceTelegramLoginResponse(@MappingTarget TelegramLoginResponse response, User user) {
-        // Add available features specific to Telegram users
-        response.setAvailableFeatures(getTelegramAvailableFeatures(user));
     }
 
     private List<String> getAvailableFeatures(User user) {
@@ -120,7 +91,7 @@ public abstract class AuthMapper {
         // Telegram features
         if (user.hasTelegramLinked()) {
             features.add("Telegram Notifications");
-            features.add("Telegram Bot Commands");
+            features.add("Telegram Login");
         } else {
             features.add("Link Telegram Account");
         }
@@ -129,7 +100,6 @@ public abstract class AuthMapper {
         if (user.isBusinessUser()) {
             features.add("Business Management");
             features.add("Menu Management");
-            features.add("Staff Management");
             features.add("Order Processing");
         } else if (user.isCustomer()) {
             features.add("Browse Menus");
@@ -139,32 +109,6 @@ public abstract class AuthMapper {
             features.add("Platform Administration");
             features.add("User Management");
             features.add("Business Oversight");
-            features.add("System Analytics");
-        }
-        
-        return features;
-    }
-
-    private List<String> getTelegramAvailableFeatures(User user) {
-        List<String> features = new java.util.ArrayList<>();
-        
-        // Telegram specific features
-        features.add("Telegram Login");
-        features.add("Real-time Notifications");
-        features.add("Bot Commands");
-        features.add("Quick Actions");
-        
-        // User type specific Telegram features
-        if (user.isBusinessUser()) {
-            features.add("Business Notifications");
-            features.add("Order Alerts");
-        } else if (user.isCustomer()) {
-            features.add("Order Status Updates");
-            features.add("Promotional Notifications");
-        } else if (user.isPlatformUser()) {
-            features.add("System Alerts");
-            features.add("Admin Notifications");
-            features.add("Platform Statistics");
         }
         
         return features;

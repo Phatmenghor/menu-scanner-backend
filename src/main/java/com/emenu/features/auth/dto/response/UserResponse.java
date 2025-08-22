@@ -1,3 +1,4 @@
+// src/main/java/com/emenu/features/auth/dto/response/UserResponse.java
 package com.emenu.features.auth.dto.response;
 
 import com.emenu.enums.auth.SocialProvider;
@@ -15,6 +16,8 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class UserResponse extends BaseAuditResponse {
+    
+    // ===== CORE USER INFORMATION =====
     private String userIdentifier;
     private String email;
     private String firstName;
@@ -25,23 +28,60 @@ public class UserResponse extends BaseAuditResponse {
     private String profileImageUrl;
     private UserType userType;
     private AccountStatus accountStatus;
-    private UUID businessId;
-    private String businessName;
     private List<RoleEnum> roles;
     private String position;
     private String address;
     private String notes;
 
-    // ✅ NEW: Social Login & Telegram Fields
+    // ===== BUSINESS ASSOCIATION =====
+    private UUID businessId;
+    private String businessName;
+
+    // ===== SOCIAL LOGIN & TELEGRAM INTEGRATION =====
     private SocialProvider socialProvider;
     private Boolean hasTelegramLinked;
     private Long telegramUserId;
     private String telegramUsername;
-    private String telegramFirstName;
-    private String telegramLastName;
     private String telegramDisplayName;
     private LocalDateTime telegramLinkedAt;
     private Boolean telegramNotificationsEnabled;
     private Boolean canReceiveTelegramNotifications;
-    private LocalDateTime lastTelegramActivity;
+    
+    // ===== COMPUTED PROPERTIES =====
+    
+    public boolean isTelegramUser() {
+        return SocialProvider.TELEGRAM.equals(socialProvider);
+    }
+    
+    public boolean isLocalUser() {
+        return SocialProvider.LOCAL.equals(socialProvider);
+    }
+    
+    public boolean isActive() {
+        return AccountStatus.ACTIVE.equals(accountStatus);
+    }
+    
+    public boolean isPlatformUser() {
+        return UserType.PLATFORM_USER.equals(userType);
+    }
+    
+    public boolean isBusinessUser() {
+        return UserType.BUSINESS_USER.equals(userType);
+    }
+    
+    public boolean isCustomer() {
+        return UserType.CUSTOMER.equals(userType);
+    }
+    
+    public String getAuthenticationMethod() {
+        if (hasTelegramLinked != null && hasTelegramLinked) {
+            if (isTelegramUser()) {
+                return "Telegram Only";
+            } else {
+                return "Traditional + Telegram";
+            }
+        } else {
+            return "Traditional";
+        }
+    }
 }
