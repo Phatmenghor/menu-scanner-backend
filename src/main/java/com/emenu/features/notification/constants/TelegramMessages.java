@@ -1,5 +1,7 @@
 package com.emenu.features.notification.constants;
 
+import com.emenu.features.notification.dto.response.PlatformUserCreationNotificationDto;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -124,6 +126,35 @@ public class TelegramMessages {
                 subdomain, 
                 FORMATTER.format(registeredAt));
     }
+
+    public static String buildPlatformUserCreationMessage(PlatformUserCreationNotificationDto dto) {
+        return String.format("""
+                🔧 <b>New Platform User Created!</b>
+                
+                👤 <b>User:</b> %s (%s)
+                📧 <b>Email:</b> %s
+                📞 <b>Phone:</b> %s
+                🏷️ <b>Roles:</b> %s
+                📱 <b>Status:</b> %s
+                💼 <b>Position:</b> %s
+                👨‍💼 <b>Created by:</b> %s (%s)
+                📅 <b>Date:</b> %s
+                
+                <i>Platform team expansion! 🚀</i>
+                """,
+                dto.getFullName() != null ? dto.getFullName() : dto.getUserIdentifier(),
+                dto.getUserIdentifier(),
+                dto.getEmail() != null ? dto.getEmail() : "Not provided",
+                dto.getPhoneNumber() != null ? dto.getPhoneNumber() : "Not provided",
+                dto.getRoles(),
+                dto.getAccountStatus(),
+                dto.getPosition() != null ? dto.getPosition() : "Not specified",
+                dto.getCreatedByFullName() != null ? dto.getCreatedByFullName() : dto.getCreatedByUserIdentifier(),
+                dto.getCreatedByUserIdentifier(),
+                FORMATTER.format(dto.getCreatedAt())
+        );
+    }
+
 
     // ===== ERROR & INFO MESSAGES =====
 

@@ -79,7 +79,22 @@ telegram:
   bot:
     token: "8464259107:AAHdIC3EZb_3uID4vnhteY6PYtmO9WGDBjU"
     enabled: true
-    chat-id: "1898032377" # Platform owner's Telegram chat ID for notifications
+    group-chat-id: "-2784141362" # Group chat ID for all platform notifications
+    notifications:
+      # Platform-wide notifications (sent to group)
+      customer-registration: true
+      business-registration: true
+      telegram-linking: true
+      system-events: true
+
+      # Business-specific notifications (sent to business owners only)
+      order-notifications: true
+      subscription-alerts: true
+      payment-updates: true
+
+      # Personal notifications (sent to individual users)
+      welcome-messages: true
+      account-updates: true
 
 # Application Configuration
 app:

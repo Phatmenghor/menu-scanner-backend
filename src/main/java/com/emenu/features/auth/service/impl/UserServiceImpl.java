@@ -104,8 +104,21 @@ public class UserServiceImpl implements UserService {
             setUserRoles(user, request.getRoles());
 
             User savedUser = userRepository.save(user);
-            log.info("✅ User created successfully: {} with type: {}", savedUser.getUserIdentifier(), savedUser.getUserType());
 
+            try {
+                User currentUser = securityUtils.getCurrentUser();
+                // Send platform user creation notification
+                telegramNotificationService.sendPlatformUserCreationNotification(savedUser, currentUser);
+                log.info("📱 Platform user creation notification sent for: {} (created by: {})",
+                        savedUser.getUserIdentifier(), currentUser.getUserIdentifier());
+
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to send Telegram notification for user creation: {} - {}",
+                        savedUser.getUserIdentifier(), e.getMessage());
+                // Don't fail the user creation if notification fails
+            }
+
+            log.info("✅ User created successfully: {} with type: {}", savedUser.getUserIdentifier(), savedUser.getUserType());
             return userMapper.toResponse(savedUser);
 
         } catch (Exception e) {

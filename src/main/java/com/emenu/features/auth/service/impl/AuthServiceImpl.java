@@ -99,9 +99,14 @@ public class AuthServiceImpl implements AuthService {
         user.setRoles(List.of(customerRole));
 
         User savedUser = userRepository.save(user);
-        
-        // 📱 Send Telegram notification for customer registration
-        telegramNotificationService.sendCustomerRegistrationNotification(savedUser);
+
+        try {
+            telegramNotificationService.sendCustomerRegistrationNotification(savedUser);
+            log.info("📱 Telegram notification sent for customer registration: {}", savedUser.getUserIdentifier());
+        } catch (Exception e) {
+            log.warn("⚠️ Failed to send Telegram notification for customer registration: {} - {}",
+                    savedUser.getUserIdentifier(), e.getMessage());
+        }
         
         log.info("✅ Customer registered successfully: {}", savedUser.getUserIdentifier());
         return userMapper.toResponse(savedUser);
