@@ -4,8 +4,6 @@ import com.emenu.enums.user.RoleEnum;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.request.*;
 import com.emenu.features.auth.dto.response.LoginResponse;
-import com.emenu.features.auth.dto.response.TelegramLoginResponse;
-import com.emenu.features.auth.dto.response.TelegramRegisterResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.mapper.AuthMapper;
 import com.emenu.features.auth.mapper.RegistrationMapper;
@@ -15,7 +13,6 @@ import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.AuthService;
-import com.emenu.features.notification.service.TelegramService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.security.jwt.JWTGenerator;
 import com.emenu.security.jwt.TokenBlacklistService;
@@ -28,8 +25,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -48,17 +43,15 @@ public class AuthServiceImpl implements AuthService {
     private final JWTGenerator jwtGenerator;
     private final SecurityUtils securityUtils;
     private final TokenBlacklistService tokenBlacklistService;
-    private final TelegramAuthService telegramAuthService;
-    private final TelegramService telegramService;
 
-    // ===== DUAL LOGIN SYSTEM =====
+    // ===== TRADITIONAL LOGIN =====
     
     @Override
     public LoginResponse login(LoginRequest request) {
         log.info("🔐 Login attempt for userIdentifier: {}", request.getUserIdentifier());
 
         try {
-            // Try traditional userIdentifier/password authentication
+            // Traditional userIdentifier/password authentication
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUserIdentifier(), request.getPassword())
             );
@@ -86,16 +79,6 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    // ===== TELEGRAM LOGIN INTEGRATION =====
-    
-    public TelegramLoginResponse loginWithTelegram(TelegramLoginRequest request) {
-        return telegramAuthService.loginWithTelegram(request);
-    }
-    
-    public TelegramRegisterResponse registerWithTelegram(TelegramRegisterRequest request) {
-        return telegramAuthService.registerWithTelegram(request);
-    }
-
     // ===== CUSTOMER REGISTRATION =====
     
     @Override
@@ -118,14 +101,6 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
         log.info("✅ Customer registered successfully: {}", savedUser.getUserIdentifier());
-
-        // ✅ NEW: Send notification to platform users about new customer registration
-        notifyPlatformUsersAboutNewCustomer(savedUser);
-
-        // ✅ NEW: If user has Telegram linked, send welcome message
-        if (savedUser.hasTelegramLinked()) {
-            telegramService.sendWelcomeMessage(savedUser.getTelegramUserId(), savedUser.getDisplayName());
-        }
 
         return userMapper.toResponse(savedUser);
     }
@@ -201,20 +176,6 @@ public class AuthServiceImpl implements AuthService {
         return userMapper.toResponse(savedUser);
     }
 
-    // ===== TELEGRAM ACCOUNT LINKING =====
-    
-    public void linkTelegramToCurrentUser(TelegramLoginRequest telegramData) {
-        User currentUser = securityUtils.getCurrentUser();
-        telegramAuthService.linkExistingUserToTelegram(currentUser.getId(), telegramData);
-        log.info("✅ Telegram linked to current user: {}", currentUser.getUserIdentifier());
-    }
-    
-    public void unlinkTelegramFromCurrentUser() {
-        User currentUser = securityUtils.getCurrentUser();
-        telegramAuthService.unlinkTelegramFromUser(currentUser.getId());
-        log.info("✅ Telegram unlinked from current user: {}", currentUser.getUserIdentifier());
-    }
-
     // ===== HELPER METHODS =====
     
     private String extractToken(String authorizationHeader) {
@@ -236,25 +197,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Email and phone are optional for regular customers
-        // No uniqueness validation required
-    }
-
-    private void notifyPlatformUsersAboutNewCustomer(User customer) {
-        try {
-            String registeredAt = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
-            
-            // ✅ Send notification to all platform users about new customer registration
-            telegramService.sendUserRegisteredNotification(
-                    customer.getUserIdentifier(),
-                    customer.getDisplayName(),
-                    customer.getUserType().name(),
-                    registeredAt
-            );
-            
-            log.info("📢 Platform users notified about new customer: {}", customer.getUserIdentifier());
-        } catch (Exception e) {
-            log.error("Failed to notify platform users about new customer: {}", e.getMessage());
-            // Don't fail registration if notification fails
-        }
+        // No uniqueness validation required for customers
     }
 }

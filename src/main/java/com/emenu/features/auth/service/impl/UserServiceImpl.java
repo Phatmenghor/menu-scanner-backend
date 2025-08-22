@@ -24,9 +24,6 @@ import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.BusinessService;
 import com.emenu.features.auth.service.UserService;
 import com.emenu.features.auth.specification.UserSpecification;
-import com.emenu.features.notification.dto.request.MultiRecipientNotificationRequest;
-import com.emenu.features.notification.mapper.NotificationMapper;
-import com.emenu.features.notification.service.TelegramService;
 import com.emenu.features.payment.dto.request.PaymentCreateRequest;
 import com.emenu.features.payment.dto.response.PaymentResponse;
 import com.emenu.features.payment.service.PaymentService;
@@ -73,10 +70,6 @@ public class UserServiceImpl implements UserService {
     private final SubscriptionService subscriptionService;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final BusinessOwnerCreateResponseMapper businessOwnerResponseMapper;
-    
-    // ✅ NEW: Telegram integration dependencies
-    private final TelegramService telegramService;
-    private final NotificationMapper notificationMapper;
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
@@ -113,9 +106,6 @@ public class UserServiceImpl implements UserService {
 
             User savedUser = userRepository.save(user);
             log.info("✅ User created successfully: {} with type: {}", savedUser.getUserIdentifier(), savedUser.getUserType());
-
-            // ✅ NEW: Send notification about new user creation
-            sendUserCreatedNotification(savedUser);
 
             return userMapper.toResponse(savedUser);
 
@@ -291,10 +281,6 @@ public class UserServiceImpl implements UserService {
             );
 
             log.info("✅ Comprehensive business owner creation completed successfully: {}", userResponse.getUserIdentifier());
-            log.info("📋 {}", response.getSummary());
-
-            // ✅ NEW: Send notifications about new business registration
-            sendBusinessCreatedNotification(businessResponse, userResponse, subdomainResponse);
 
             return response;
 
@@ -304,106 +290,6 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             log.error("❌ Failed to create comprehensive business owner: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create business owner: " + e.getMessage(), e);
-        }
-    }
-
-    // ===== NOTIFICATION METHODS =====
-
-    /**
-     * ✅ NEW: Send notification when a new user is created
-     */
-    private void sendUserCreatedNotification(User user) {
-        try {
-            log.info("📢 Sending user creation notification for: {}", user.getDisplayName());
-            
-            // Create notification request using mapper
-            MultiRecipientNotificationRequest notificationRequest = notificationMapper.createUserRegistrationNotification(user);
-            
-            // Send notification asynchronously
-            telegramService.sendMultiRecipientNotification(notificationRequest)
-                    .thenAccept(result -> {
-                        if (result.getAllSuccessful()) {
-                            log.info("✅ User creation notification sent successfully to {} recipients", 
-                                    result.getSuccessfulSends());
-                        } else {
-                            log.warn("⚠️ User creation notification partially failed: {}", result.getSummary());
-                        }
-                    })
-                    .exceptionally(throwable -> {
-                        log.error("❌ Failed to send user creation notification: {}", throwable.getMessage());
-                        return null;
-                    });
-            
-        } catch (Exception e) {
-            log.error("❌ Error preparing user creation notification: {}", e.getMessage(), e);
-            // Don't fail user creation if notification fails
-        }
-    }
-
-    /**
-     * ✅ NEW: Send notification when a new business is created
-     */
-    private void sendBusinessCreatedNotification(BusinessResponse business, UserResponse owner, SubdomainResponse subdomain) {
-        try {
-            log.info("📢 Sending business creation notification for: {}", business.getName());
-            
-            // Create notification request using mapper
-            MultiRecipientNotificationRequest notificationRequest = notificationMapper.createBusinessRegistrationNotification(
-                    business.getName(),
-                    owner.getDisplayName(),
-                    owner.getUserIdentifier(),
-                    business.getEmail(),
-                    business.getPhone(),
-                    subdomain.getSubdomain()
-            );
-            
-            // Send notification asynchronously
-            telegramService.sendMultiRecipientNotification(notificationRequest)
-                    .thenAccept(result -> {
-                        if (result.getAllSuccessful()) {
-                            log.info("✅ Business creation notification sent successfully to {} recipients", 
-                                    result.getSuccessfulSends());
-                        } else {
-                            log.warn("⚠️ Business creation notification partially failed: {}", result.getSummary());
-                        }
-                    })
-                    .exceptionally(throwable -> {
-                        log.error("❌ Failed to send business creation notification: {}", throwable.getMessage());
-                        return null;
-                    });
-            
-        } catch (Exception e) {
-            log.error("❌ Error preparing business creation notification: {}", e.getMessage(), e);
-            // Don't fail business creation if notification fails
-        }
-    }
-
-    /**
-     * ✅ NEW: Send welcome notification to new user (especially Telegram users)
-     */
-    public void sendWelcomeNotification(User user) {
-        try {
-            log.info("🎉 Sending welcome notification to: {}", user.getDisplayName());
-            
-            // Create welcome notification
-            MultiRecipientNotificationRequest welcomeRequest = notificationMapper.createWelcomeNotification(user);
-            
-            // Send welcome message
-            telegramService.sendMultiRecipientNotification(welcomeRequest)
-                    .thenAccept(result -> {
-                        if (result.getAllSuccessful()) {
-                            log.info("✅ Welcome notification sent successfully to: {}", user.getDisplayName());
-                        } else {
-                            log.warn("⚠️ Welcome notification failed for: {}", user.getDisplayName());
-                        }
-                    })
-                    .exceptionally(throwable -> {
-                        log.error("❌ Failed to send welcome notification: {}", throwable.getMessage());
-                        return null;
-                    });
-            
-        } catch (Exception e) {
-            log.error("❌ Error sending welcome notification: {}", e.getMessage(), e);
         }
     }
 
