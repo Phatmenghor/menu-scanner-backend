@@ -79,7 +79,7 @@ telegram:
   bot:
     token: "8464259107:AAHdIC3EZb_3uID4vnhteY6PYtmO9WGDBjU"
     enabled: true
-    group-chat-id: "-2784141362" # Group chat ID for all platform notifications
+    group-chat-id: "-1002784141362" # Group chat ID for all platform notifications
     notifications:
       # Platform-wide notifications (sent to group)
       customer-registration: true
