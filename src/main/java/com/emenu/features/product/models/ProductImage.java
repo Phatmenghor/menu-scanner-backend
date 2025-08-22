@@ -12,15 +12,19 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "product_images", indexes = {
-        // ✅ EXISTING: Keep current good indexes
-        @Index(name = "idx_product_images_product_type_deleted", columnList = "product_id, image_type, is_deleted"),
-        @Index(name = "idx_product_images_product_created_deleted", columnList = "product_id, created_at, is_deleted"),
-        @Index(name = "idx_product_images_type_deleted", columnList = "image_type, is_deleted"),
+        // ✅ ESSENTIAL INDEXES ONLY for ProductImage
 
-        // ✅ FIXED: Additional BaseUUIDEntity indexes
-        @Index(name = "idx_product_image_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_product_image_deleted_created", columnList = "is_deleted, created_at"),
-        @Index(name = "idx_product_image_product_deleted", columnList = "product_id, is_deleted")
+        // 1. Loading images by product (most common query)
+        @Index(name = "idx_product_images_product_deleted",
+                columnList = "product_id, is_deleted"),
+
+        // 2. Finding main images specifically (for getMainImageUrl)
+        @Index(name = "idx_product_images_product_type_deleted",
+                columnList = "product_id, image_type, is_deleted"),
+
+        // 3. Base soft delete index
+        @Index(name = "idx_product_images_deleted",
+                columnList = "is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)

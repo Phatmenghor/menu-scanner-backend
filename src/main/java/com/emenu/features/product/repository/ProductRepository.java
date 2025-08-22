@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -39,8 +40,9 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     // ✅ UPDATE OPERATIONS: Simple field updates
     @Modifying
+    @Transactional
     @Query("UPDATE Product p SET p.viewCount = COALESCE(p.viewCount, 0) + 1 WHERE p.id = :productId")
-    void incrementViewCount(@Param("productId") UUID productId);
+    int incrementViewCount(@Param("productId") UUID productId);
 
     @Modifying
     @Query("UPDATE Product p SET p.favoriteCount = COALESCE(p.favoriteCount, 0) + 1 WHERE p.id = :productId")

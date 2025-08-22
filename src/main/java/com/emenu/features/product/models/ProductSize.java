@@ -15,17 +15,19 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "product_sizes", indexes = {
-        // ✅ EXISTING: Keep current good indexes
-        @Index(name = "idx_product_sizes_product_price_deleted", columnList = "product_id, price, is_deleted"),
-        @Index(name = "idx_product_sizes_product_created_deleted", columnList = "product_id, created_at, is_deleted"),
-        @Index(name = "idx_product_sizes_product_promotion_deleted", columnList = "product_id, promotion_type, is_deleted"),
-        @Index(name = "idx_product_sizes_promotion_dates_deleted", columnList = "promotion_from_date, promotion_to_date, is_deleted"),
+        // ✅ ESSENTIAL INDEXES ONLY for ProductSize
 
-        // ✅ FIXED: Additional BaseUUIDEntity indexes
-        @Index(name = "idx_product_size_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_product_size_deleted_created", columnList = "is_deleted, created_at"),
-        @Index(name = "idx_product_size_product_deleted", columnList = "product_id, is_deleted"),
-        @Index(name = "idx_product_size_name_deleted", columnList = "name, is_deleted")
+        // 1. Loading sizes by product (most common - used in batch loading)
+        @Index(name = "idx_product_sizes_product_deleted",
+                columnList = "product_id, is_deleted"),
+
+        // 2. Loading sizes by product ordered by price (for getDisplayPrice logic)
+        @Index(name = "idx_product_sizes_product_price_deleted",
+                columnList = "product_id, price, is_deleted"),
+
+        // 3. Base soft delete index
+        @Index(name = "idx_product_sizes_deleted",
+                columnList = "is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
