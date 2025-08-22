@@ -30,31 +30,6 @@ public abstract class AuthMapper {
     @Mapping(target = "telegramDisplayName", expression = "java(user.getTelegramDisplayName())")
     public abstract LoginResponse toLoginResponse(User user, String token);
 
-    // ===== TELEGRAM LOGIN RESPONSE =====
-    
-    @Mapping(source = "user.id", target = "userId")
-    @Mapping(source = "user.userIdentifier", target = "userIdentifier")
-    @Mapping(source = "user.email", target = "email")
-    @Mapping(source = "user", target = "fullName", qualifiedByName = "getFullName")
-    @Mapping(source = "user", target = "displayName", qualifiedByName = "getDisplayName")
-    @Mapping(source = "user.profileImageUrl", target = "profileImageUrl")
-    @Mapping(source = "user.userType", target = "userType")
-    @Mapping(source = "user.roles", target = "roles", qualifiedByName = "rolesToStringList")
-    @Mapping(source = "user.businessId", target = "businessId")
-    @Mapping(source = "user.business.name", target = "businessName")
-    @Mapping(source = "user.socialProvider", target = "socialProvider")
-    @Mapping(source = "user.telegramUserId", target = "telegramUserId")
-    @Mapping(source = "user.telegramUsername", target = "telegramUsername")
-    @Mapping(source = "user", target = "telegramDisplayName", qualifiedByName = "getTelegramDisplayName")
-    @Mapping(source = "user.telegramLinkedAt", target = "telegramLinkedAt")
-    @Mapping(source = "user.telegramNotificationsEnabled", target = "telegramNotificationsEnabled")
-    @Mapping(source = "token", target = "accessToken")
-    @Mapping(target = "tokenType", constant = "Bearer")
-    @Mapping(target = "isNewUser", expression = "java(isNewUser)")
-    @Mapping(target = "hasPasswordSet", expression = "java(user.getPassword() != null)")
-    @Mapping(target = "welcomeMessage", expression = "java(createTelegramWelcomeMessage(user))")
-    public abstract TelegramLoginResponse toTelegramLoginResponse(User user, String token, boolean isNewUser);
-
     // ===== MAPPING HELPER METHODS =====
 
     @Named("getFullName")
@@ -91,12 +66,12 @@ public abstract class AuthMapper {
         if (user == null) return "Welcome!";
 
         String timeOfDay = getTimeOfDayGreeting();
-        String userName = user.getFirstName() != null ? user.getFirstName() : 
+        String userName = user.getFirstName() != null ? user.getFirstName() :
                          user.getUserIdentifier() != null ? user.getUserIdentifier() : "User";
 
         String telegramStatus = user.hasTelegramLinked() ? " (Telegram linked)" : "";
-        
-        return String.format("%s, %s! Welcome to Cambodia E-Menu Platform%s", 
+
+        return String.format("%s, %s! Welcome to Cambodia E-Menu Platform%s",
                 timeOfDay, userName, telegramStatus);
     }
 
@@ -105,8 +80,8 @@ public abstract class AuthMapper {
 
         String userName = user.getDisplayName();
         String userType = user.getUserType().getDescription();
-        
-        return String.format("🎉 Welcome back, %s! You're logged in as %s via Telegram.", 
+
+        return String.format("🎉 Welcome back, %s! You're logged in as %s via Telegram.",
                 userName, userType);
     }
 

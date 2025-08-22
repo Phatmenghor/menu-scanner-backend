@@ -13,7 +13,7 @@ public class RegisterRequest {
     @NotBlank(message = "User identifier is required")
     private String userIdentifier;
     
-    private String email; // Optional - can be null
+    private String email;
 
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters long")
@@ -25,7 +25,7 @@ public class RegisterRequest {
     private String firstName;
     private String lastName;
     private String profileImageUrl;
-    private String phoneNumber; // Optional - can be null
+    private String phoneNumber;
     private String address;
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
 }
