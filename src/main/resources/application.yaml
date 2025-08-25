@@ -41,8 +41,9 @@ spring:
 server:
   port: 8080
   url: "http://152.42.219.13:8080"
+  address: 0.0.0.0  # IMPORTANT: Listen on all interfaces
 
-# JWT Configuration
+# JWT telegram
 jwt:
   secret: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
   expiration: 99999999999999999 # Extended for development

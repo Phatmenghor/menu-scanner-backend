@@ -50,6 +50,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/images/**").permitAll()
 
+                        // ===== TELEGRAM BOT ENDPOINTS - ALL PUBLIC FOR EASY SETUP =====
+                        .requestMatchers("/api/v1/telegram/bot/**").permitAll()
+
                         // ===== TELEGRAM BOT ENDPOINTS =====
                         .requestMatchers("/api/v1/telegram/bot/webhook").permitAll() // Telegram webhook
                         .requestMatchers("/api/v1/telegram/bot/callback").permitAll() // Telegram callbacks

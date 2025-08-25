@@ -107,30 +107,37 @@ public class TelegramAuthServiceImpl implements TelegramService {
         User currentUser = securityUtils.getCurrentUser();
         linkTelegramToUser(currentUser.getId(), request);
     }
-    
+
     public void linkTelegramToUser(UUID userId, TelegramLinkRequest request) {
-        log.info("🔗 Linking Telegram {} to user: {}", request.getTelegramUserId(), userId);
-        
+        log.info("🔗 Linking Telegram {} to user ID: {}", request.getTelegramUserId(), userId);
+
         Optional<User> existingTelegramUser = userRepository.findByTelegramUserIdAndIsDeletedFalse(request.getTelegramUserId());
         if (existingTelegramUser.isPresent() && !existingTelegramUser.get().getId().equals(userId)) {
             throw new ValidationException("This Telegram account is already linked to another user.");
         }
-        
+
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new ValidationException("User not found"));
-        
+
+        if (user.hasTelegramLinked()) {
+            throw new ValidationException("User already has a Telegram account linked");
+        }
+
         user.linkTelegram(
                 request.getTelegramUserId(),
                 request.getTelegramUsername(),
                 request.getTelegramFirstName(),
                 request.getTelegramLastName()
         );
-        
+
         userRepository.save(user);
-        
-        // 📱 Send Telegram notification for successful linking
-        telegramNotificationService.sendTelegramLinkNotification(user);
-        
+
+        try {
+            telegramNotificationService.sendTelegramLinkNotification(user);
+        } catch (Exception e) {
+            log.warn("⚠️ Failed to send Telegram link notification: {}", e.getMessage());
+        }
+
         log.info("✅ Telegram successfully linked to user: {}", user.getUserIdentifier());
     }
 
