@@ -134,10 +134,10 @@ public class UserServiceImpl implements UserService {
 //                request.getUserType(), request.getAccountStatus(), request.getBusinessId());
 
         // Security: Business users can only see users from their business
-        User currentUser = securityUtils.getCurrentUser();
-        if (currentUser.isBusinessUser() && request.getBusinessId() == null) {
-            request.setBusinessId(currentUser.getBusinessId());
-        }
+//        User currentUser = securityUtils.getCurrentUser();
+//        if (currentUser.isBusinessUser() && request.getBusinessId() == null) {
+//            request.setBusinessId(currentUser.getBusinessId());
+//        }
 
         Specification<User> spec = UserSpecification.buildSearchSpecification(request);
 
