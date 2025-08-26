@@ -30,7 +30,7 @@ public class SubscriptionPlanController {
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<SubscriptionPlanResponse>>> getAllPlans(
             @Valid @RequestBody SubscriptionPlanFilterRequest filter) {
-        log.info("Getting subscription plans with filter - Status: {}, Search: {}", filter.getStatus(), filter.getSearch());
+        log.info("Getting subscription plans with filter - Search: {}", filter.getSearch());
         PaginationResponse<SubscriptionPlanResponse> plans = subscriptionPlanService.getAllPlans(filter);
         return ResponseEntity.ok(ApiResponse.success("Subscription plans retrieved successfully", plans));
     }

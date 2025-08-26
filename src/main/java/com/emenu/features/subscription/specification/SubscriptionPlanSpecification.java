@@ -18,16 +18,8 @@ public class SubscriptionPlanSpecification {
 
             predicates.add(criteriaBuilder.equal(root.get("isDeleted"), false));
 
-            if (filter.getStatus() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("status"), filter.getStatus()));
-            }
-
             if (filter.getStatuses() != null && !filter.getStatuses().isEmpty()) {
                 predicates.add(root.get("status").in(filter.getStatuses()));
-            }
-
-            if (filter.getPublicOnly() != null && filter.getPublicOnly()) {
-                predicates.add(criteriaBuilder.equal(root.get("status"), SubscriptionPlanStatus.PUBLIC));
             }
 
             if (filter.getFreeOnly() != null && filter.getFreeOnly()) {

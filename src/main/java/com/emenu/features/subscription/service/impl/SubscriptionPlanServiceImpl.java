@@ -53,8 +53,8 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<SubscriptionPlanResponse> getAllPlans(SubscriptionPlanFilterRequest filter) {
-        log.debug("Getting subscription plans with filter - Status: {}, Search: {}, PublicOnly: {}",
-                filter.getStatus(), filter.getSearch(), filter.getPublicOnly());
+        log.debug("Getting subscription plans with filter Search: {}",
+                 filter.getSearch());
 
         Specification<SubscriptionPlan> spec = SubscriptionPlanSpecification.buildSpecification(filter);
 
