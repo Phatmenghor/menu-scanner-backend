@@ -130,14 +130,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<UserResponse> getAllUsers(UserFilterRequest request) {
-//        log.debug("📋 Getting all users with filter - UserType: {}, AccountStatus: {}, BusinessId: {}",
-//                request.getUserType(), request.getAccountStatus(), request.getBusinessId());
+        log.debug("📋 Getting all users with filter - UserType: {}, AccountStatus: {}, BusinessId: {}",
+                request.getUserType(), request.getAccountStatus(), request.getBusinessId());
 
         // Security: Business users can only see users from their business
-//        User currentUser = securityUtils.getCurrentUser();
-//        if (currentUser.isBusinessUser() && request.getBusinessId() == null) {
-//            request.setBusinessId(currentUser.getBusinessId());
-//        }
+        User currentUser = securityUtils.getCurrentUser();
+        if (currentUser.isBusinessUser() && request.getBusinessId() == null) {
+            request.setBusinessId(currentUser.getBusinessId());
+        }
 
         Specification<User> spec = UserSpecification.buildSearchSpecification(request);
 

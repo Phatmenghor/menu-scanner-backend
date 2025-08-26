@@ -47,37 +47,6 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
-    @GetMapping("profile/{userId}")
-    public ResponseEntity<ApiResponse<UserResponse>> profile(@PathVariable UUID userId) {
-        log.info("Traditional login request for userId: {}", userId);
-        UserResponse response = userService.getUserById(userId);
-        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
-    }
-
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getAllUsers(
-            // Pagination parameters (from BaseFilterRequest)
-            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
-            @RequestParam(value = "size", required = false, defaultValue = "10") int size,
-            @RequestParam(value = "search", required = false) String search
-    ) {
-
-        log.info("Getting all users with filters - , pageNo: {} , Search: {}", page, search);
-
-        // Create UserFilterRequest object from parameters
-        UserFilterRequest request = new UserFilterRequest();
-
-        // Set pagination fields (BaseFilterRequest)
-        request.setPageNo(page);
-        request.setPageSize(size);
-        request.setSearch(search);
-
-
-        PaginationResponse<UserResponse> response = userService.getAllUsers(request);
-        return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", response));
-    }
-
-
     /**
      * User logout (both traditional and Telegram users)
      */
