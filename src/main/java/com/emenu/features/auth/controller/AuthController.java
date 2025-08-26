@@ -1,5 +1,9 @@
 package com.emenu.features.auth.controller;
 
+import com.emenu.enums.auth.SocialProvider;
+import com.emenu.enums.user.AccountStatus;
+import com.emenu.enums.user.RoleEnum;
+import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.*;
 import com.emenu.features.auth.dto.response.LoginResponse;
@@ -18,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -51,9 +56,23 @@ public class AuthController {
 
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getAllUsers(
-            @Valid @RequestBody UserFilterRequest request) {
-        log.info("Getting all users with filters - UserType: {}, AccountStatus: {}, Search: {}",
-                request.getUserType(), request.getAccountStatus(), request.getSearch());
+            // Pagination parameters (from BaseFilterRequest)
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") int size,
+            @RequestParam(value = "search", required = false) String search
+    ) {
+
+        log.info("Getting all users with filters - , pageNo: {} , Search: {}", page, search);
+
+        // Create UserFilterRequest object from parameters
+        UserFilterRequest request = new UserFilterRequest();
+
+        // Set pagination fields (BaseFilterRequest)
+        request.setPageNo(page);
+        request.setPageSize(size);
+        request.setSearch(search);
+
+
         PaginationResponse<UserResponse> response = userService.getAllUsers(request);
         return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", response));
     }
@@ -112,7 +131,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Boolean>> checkTelegramUser(@PathVariable Long telegramUserId) {
         log.info("🔍 Checking if Telegram user {} is registered", telegramUserId);
         boolean isLinked = telegramAuthServiceImpl.isTelegramLinked(telegramUserId);
-        
+
         String message = isLinked ? "Telegram user is registered" : "Telegram user is not registered";
         return ResponseEntity.ok(ApiResponse.success(message, isLinked));
     }
@@ -128,7 +147,7 @@ public class AuthController {
             @Valid @RequestBody TelegramLinkRequest request) {
         log.info("🔗 Linking Telegram account: {}", request.getTelegramUserId());
         telegramAuthServiceImpl.linkTelegramToCurrentUser(request);
-        return ResponseEntity.ok(ApiResponse.success("Telegram account linked successfully", 
+        return ResponseEntity.ok(ApiResponse.success("Telegram account linked successfully",
                 "Your Telegram account has been linked. You can now login with Telegram."));
     }
 
@@ -140,7 +159,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> unlinkTelegramAccount() {
         log.info("🔓 Unlinking Telegram account from current user");
         telegramAuthServiceImpl.unlinkTelegramFromCurrentUser();
-        return ResponseEntity.ok(ApiResponse.success("Telegram account unlinked successfully", 
+        return ResponseEntity.ok(ApiResponse.success("Telegram account unlinked successfully",
                 "Your Telegram account has been unlinked. You can now only login with username/password."));
     }
 
