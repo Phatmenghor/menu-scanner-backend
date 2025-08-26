@@ -5,6 +5,7 @@ import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.TelegramAuthResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.service.AuthService;
+import com.emenu.features.auth.service.UserService;
 import com.emenu.features.auth.service.impl.TelegramAuthServiceImpl;
 import com.emenu.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
@@ -15,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
     private final TelegramAuthServiceImpl telegramAuthServiceImpl;
 
     // ===== TRADITIONAL AUTHENTICATION =====
@@ -33,6 +37,13 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
         log.info("🔐 Traditional login request for: {}", request.getUserIdentifier());
         LoginResponse response = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+    }
+
+    @GetMapping("profile/{userId}")
+    public ResponseEntity<ApiResponse<UserResponse>> profile(@PathVariable UUID userId) {
+        log.info("Traditional login request for userId: {}", userId);
+        UserResponse response = userService.getUserById(userId);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
