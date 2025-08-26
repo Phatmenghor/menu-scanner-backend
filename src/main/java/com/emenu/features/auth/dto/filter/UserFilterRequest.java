@@ -21,7 +21,6 @@ public class UserFilterRequest extends BaseFilterRequest {
     private UserType userType;
     private List<RoleEnum> roles;
 
-    // ✅ NEW: Social login filters
     private SocialProvider socialProvider;
 
     // ✅ NEW: Telegram-specific filters

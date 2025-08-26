@@ -1,5 +1,6 @@
 package com.emenu.features.auth.controller;
 
+import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.*;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.TelegramAuthResponse;
@@ -8,6 +9,7 @@ import com.emenu.features.auth.service.AuthService;
 import com.emenu.features.auth.service.UserService;
 import com.emenu.features.auth.service.impl.TelegramAuthServiceImpl;
 import com.emenu.shared.dto.ApiResponse;
+import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +48,16 @@ public class AuthController {
         UserResponse response = userService.getUserById(userId);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getAllUsers(
+            @Valid @RequestBody UserFilterRequest request) {
+        log.info("Getting all users with filters - UserType: {}, AccountStatus: {}, Search: {}",
+                request.getUserType(), request.getAccountStatus(), request.getSearch());
+        PaginationResponse<UserResponse> response = userService.getAllUsers(request);
+        return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", response));
+    }
+
 
     /**
      * User logout (both traditional and Telegram users)
