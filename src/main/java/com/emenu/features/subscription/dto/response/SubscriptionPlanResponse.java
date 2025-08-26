@@ -17,6 +17,5 @@ public class SubscriptionPlanResponse extends BaseAuditResponse {
     private BigDecimal price;
     private Integer durationDays;
     private SubscriptionPlanStatus status;
-    private String pricingDisplay;
     private Long activeSubscriptionsCount;
 }
