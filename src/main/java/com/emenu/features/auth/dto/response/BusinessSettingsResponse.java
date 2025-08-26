@@ -23,7 +23,6 @@ public class BusinessSettingsResponse {
     private String instagramUrl;
     private String telegramUrl;
     
-    // Currency Exchange Rate (Frontend will use this for calculations)
     private Double usdToKhrRate;
     
     // Pricing Settings
@@ -38,7 +37,7 @@ public class BusinessSettingsResponse {
     // System Info
     private String currency; // Always "USD" for Cambodia
     private String timezone; // Always "Asia/Phnom_Penh"
-    
-    // Last Updated
+
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

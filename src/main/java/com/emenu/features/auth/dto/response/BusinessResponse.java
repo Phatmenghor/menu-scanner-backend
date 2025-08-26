@@ -35,11 +35,9 @@ public class BusinessResponse extends BaseAuditResponse {
     private Long daysRemaining;
     private Boolean isExpiringSoon;
     
-    // Statistics
     private Integer totalStaff;
-    private Integer totalCustomers;
-    private Integer totalMenuItems;
-    private Integer totalTables;
-    private Boolean hasActiveSubscription;
     private String currentSubscriptionPlan;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

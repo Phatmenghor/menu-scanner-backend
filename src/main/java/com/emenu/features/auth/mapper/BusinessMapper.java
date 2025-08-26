@@ -38,14 +38,11 @@ public abstract class BusinessMapper {
 
     @AfterMapping
     protected void setCalculatedFields(@MappingTarget BusinessResponse response, Business business) {
-        // ✅ FIXED: Calculate subscription status properly
         boolean hasActiveSubscription = business.hasActiveSubscription();
-        response.setHasActiveSubscription(hasActiveSubscription);
         response.setIsSubscriptionActive(hasActiveSubscription);
         response.setIsExpiringSoon(business.isSubscriptionExpiringSoon(7));
         response.setDaysRemaining(business.getDaysRemaining());
         
-        // ✅ FIXED: Get current subscription plan from active subscriptions
         if (hasActiveSubscription && business.getSubscriptions() != null) {
             business.getSubscriptions().stream()
                     .filter(sub -> sub.getIsActive() && !sub.isExpired())
@@ -66,7 +63,6 @@ public abstract class BusinessMapper {
         }
     }
 
-    // ✅ UNIVERSAL PAGINATION MAPPER USAGE
     public PaginationResponse<BusinessResponse> toPaginationResponse(Page<Business> businessPage) {
         return paginationMapper.toPaginationResponse(businessPage, this::toResponseList);
     }

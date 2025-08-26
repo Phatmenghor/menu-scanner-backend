@@ -10,7 +10,6 @@ import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.BusinessService;
 import com.emenu.features.auth.specification.BusinessSpecification;
-import com.emenu.features.subdomain.service.SubdomainService;
 import com.emenu.features.subscription.repository.SubscriptionRepository;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -34,7 +33,6 @@ public class BusinessServiceImpl implements BusinessService {
     private final BusinessRepository businessRepository;
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
-    private final SubdomainService subdomainService;
     private final BusinessMapper businessMapper;
 
     @Override
@@ -65,68 +63,99 @@ public class BusinessServiceImpl implements BusinessService {
     @Override
     @Transactional(readOnly = true)
     public BusinessResponse getBusinessById(UUID id) {
-        // ✅ FIXED: Use method that loads all relationships
-        Business business = businessRepository.findByIdWithAllRelationships(id)
+        log.info("Getting business by ID: {}", id);
+        
+        Business business = businessRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
         BusinessResponse response = businessMapper.toResponse(business);
 
-        // ✅ FIXED: Add statistics with proper loading
-        response.setTotalStaff((int) userRepository.countByBusinessIdAndIsDeletedFalse(id));
-        
-        // ✅ FIXED: Check subscription status properly
-        var activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(id, LocalDateTime.now());
-        response.setHasActiveSubscription(activeSubscription.isPresent());
-        
-        if (activeSubscription.isPresent()) {
-            if (activeSubscription.get().getPlan() != null) {
-                response.setCurrentSubscriptionPlan(activeSubscription.get().getPlan().getName());
-            }
-            response.setDaysRemaining(activeSubscription.get().getDaysRemaining());
-        } else {
-            response.setCurrentSubscriptionPlan("No Active Plan");
-            response.setDaysRemaining(0L);
-        }
+        enrichBusinessResponse(response, id);
 
+        log.info("Successfully retrieved business: {} with subscription status: {}", 
+                business.getName(), response.getIsSubscriptionActive());
+        
         return response;
     }
 
     @Override
     public BusinessResponse updateBusiness(UUID id, BusinessUpdateRequest request) {
-        // ✅ FIXED: Load with relationships
-        Business business = businessRepository.findByIdWithAllRelationships(id)
+        log.info("Updating business: {}", id);
+        
+        Business business = businessRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
         businessMapper.updateEntity(request, business);
         Business updatedBusiness = businessRepository.save(business);
 
+        BusinessResponse response = businessMapper.toResponse(updatedBusiness);
+        enrichBusinessResponse(response, id);
+
         log.info("Business updated successfully: {}", updatedBusiness.getName());
-        return businessMapper.toResponse(updatedBusiness);
+        return response;
     }
 
     @Override
     public BusinessResponse deleteBusiness(UUID id) {
-        // ✅ FIXED: Load with relationships
-        Business business = businessRepository.findByIdWithAllRelationships(id)
+        log.info("Deleting business: {}", id);
+        
+        Business business = businessRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
         business.softDelete();
         business = businessRepository.save(business);
 
         BusinessResponse response = businessMapper.toResponse(business);
-        response.setTotalStaff((int) userRepository.countByBusinessIdAndIsDeletedFalse(id));
-
-        // Check subscription status
-        var activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(id, LocalDateTime.now());
-        response.setHasActiveSubscription(activeSubscription.isPresent());
-        if (activeSubscription.isPresent()) {
-            if (activeSubscription.get().getPlan() != null) {
-                response.setCurrentSubscriptionPlan(activeSubscription.get().getPlan().getName());
-            }
-            response.setDaysRemaining(activeSubscription.get().getDaysRemaining());
-        }
+        enrichBusinessResponse(response, id);
         
         log.info("Business deleted successfully: {}", business.getName());
         return response;
+    }
+
+    /**
+     * ✅ NEW: Helper method to enrich business response with additional statistics
+     * This method fetches additional data separately to avoid collection fetching issues
+     */
+    private void enrichBusinessResponse(BusinessResponse response, UUID businessId) {
+        try {
+            // Get user count
+            long userCount = userRepository.countByBusinessIdAndIsDeletedFalse(businessId);
+            response.setTotalStaff((int) userCount);
+            
+            // Get active subscription details
+            var activeSubscription = subscriptionRepository.findCurrentActiveByBusinessId(businessId, LocalDateTime.now());
+            boolean hasActiveSubscription = activeSubscription.isPresent();
+            response.setIsSubscriptionActive(hasActiveSubscription);
+            
+            if (hasActiveSubscription) {
+                var subscription = activeSubscription.get();
+                if (subscription.getPlan() != null) {
+                    response.setCurrentSubscriptionPlan(subscription.getPlan().getName());
+                } else {
+                    response.setCurrentSubscriptionPlan("Unknown Plan");
+                }
+                response.setDaysRemaining(subscription.getDaysRemaining());
+                response.setSubscriptionStartDate(subscription.getStartDate());
+                response.setSubscriptionEndDate(subscription.getEndDate());
+                response.setIsExpiringSoon(subscription.getDaysRemaining() <= 7);
+            } else {
+                response.setCurrentSubscriptionPlan("No Active Plan");
+                response.setDaysRemaining(0L);
+                response.setIsExpiringSoon(false);
+            }
+            
+            log.debug("Enriched business response - Users: {}, HasSubscription: {}, Plan: {}", 
+                    userCount, hasActiveSubscription, response.getCurrentSubscriptionPlan());
+                    
+        } catch (Exception e) {
+            log.warn("Failed to enrich business response for ID: {} - {}", businessId, e.getMessage());
+            
+            // Set safe defaults
+            response.setTotalStaff(0);
+            response.setIsSubscriptionActive(false);
+            response.setCurrentSubscriptionPlan("No Active Plan");
+            response.setDaysRemaining(0L);
+            response.setIsExpiringSoon(false);
+        }
     }
 }

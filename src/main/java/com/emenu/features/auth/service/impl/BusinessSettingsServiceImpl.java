@@ -34,7 +34,9 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
     public BusinessSettingsResponse getBusinessSettings(UUID businessId) {
         log.debug("Getting business settings for business ID: {}", businessId);
 
-        Business business = findBusinessById(businessId);
+        Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)
+                .orElseThrow(() -> new ValidationException("Business not found with ID: " + businessId));
+
         BusinessSettingsResponse response = businessSettingsMapper.toResponse(business);
 
         log.debug("Successfully retrieved business settings for: {}", business.getName());
@@ -47,10 +49,11 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
         log.info("Updating business settings for business ID: {} - Exchange rate: {}",
                 businessId, request.getUsdToKhrRate());
 
-        Business business = findBusinessById(businessId);
+        Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)
+                .orElseThrow(() -> new ValidationException("Business not found with ID: " + businessId));
 
         // Store original values for audit logging
-        BusinessSettingsResponse originalSettings = businessSettingsMapper.toResponse(business);
+        Double originalRate = business.getUsdToKhrRate();
 
         // Validate request before updating
         validateBusinessSettingsRequest(request);
@@ -61,8 +64,8 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
         Business updatedBusiness = businessRepository.save(business);
         BusinessSettingsResponse response = businessSettingsMapper.toResponse(updatedBusiness);
 
-        log.info("Business settings updated successfully for: {} - Exchange rate: {}",
-                business.getName(), business.getUsdToKhrRate());
+        log.info("Business settings updated successfully for: {} - Exchange rate: {} -> {}",
+                business.getName(), originalRate, updatedBusiness.getUsdToKhrRate());
 
         return response;
     }
@@ -101,20 +104,9 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
         log.debug("Clearing business settings cache for business ID: {}", businessId);
     }
 
-    public boolean validateExchangeRate(Double rate) {
-        return businessSettingsMapper.isValidExchangeRate(rate);
-    }
-
-    // Private helper methods
-    private Business findBusinessById(UUID businessId) {
-        return businessRepository.findByIdAndIsDeletedFalse(businessId)
-                .orElseThrow(() -> new ValidationException("Business not found with ID: " + businessId));
-    }
-
     private void validateBusinessSettingsRequest(BusinessSettingsRequest request) {
         validateExchangeRateRequest(request);
         validateTaxRateRequest(request);
-        validateBusinessInformation(request);
     }
 
     private void validateExchangeRateRequest(BusinessSettingsRequest request) {
@@ -135,15 +127,4 @@ public class BusinessSettingsServiceImpl implements BusinessSettingsService {
         }
     }
 
-    private void validateBusinessInformation(BusinessSettingsRequest request) {
-        // Validate business name length
-        if (request.getName() != null && request.getName().trim().length() > 100) {
-            throw new ValidationException("Business name cannot exceed 100 characters");
-        }
-
-        // Validate description length
-        if (request.getDescription() != null && request.getDescription().length() > 1000) {
-            throw new ValidationException("Business description cannot exceed 1000 characters");
-        }
-    }
 }
