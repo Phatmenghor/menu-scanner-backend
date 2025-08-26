@@ -9,7 +9,7 @@ import org.springframework.data.domain.Sort;
 @Slf4j
 public class PaginationUtils {
 
-    private static final int MAX_PAGE_SIZE = 1000;
+    private static final int MAX_PAGE_SIZE = 20;
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int DEFAULT_PAGE_NUMBER = 0;
 
@@ -20,9 +20,9 @@ public class PaginationUtils {
         if (pageSize != null && pageSize <= 0) {
             throw new ValidationException("Page size must be greater than 0");
         }
-//        if (pageSize != null && pageSize > MAX_PAGE_SIZE) {
-//            throw new ValidationException("Page size cannot exceed " + MAX_PAGE_SIZE);
-//        }
+        if (pageSize != null && pageSize > MAX_PAGE_SIZE) {
+            throw new ValidationException("Page size cannot exceed " + MAX_PAGE_SIZE);
+        }
     }
 
     /**
