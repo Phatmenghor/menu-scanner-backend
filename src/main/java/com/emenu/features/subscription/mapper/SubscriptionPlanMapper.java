@@ -32,10 +32,6 @@ public abstract class SubscriptionPlanMapper {
 
     @AfterMapping
     protected void setCalculatedFields(@MappingTarget SubscriptionPlanResponse response, SubscriptionPlan plan) {
-        response.setPricingDisplay(plan.getPricingDisplay());
-        response.setIsFree(plan.isFree());
-        response.setIsPublic(plan.isPublic());
-        response.setIsPrivate(plan.isPrivate());
         
         if (plan.getSubscriptions() != null) {
             response.setActiveSubscriptionsCount((long) plan.getSubscriptions().size());

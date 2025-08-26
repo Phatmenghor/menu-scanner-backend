@@ -17,13 +17,6 @@ public class SubscriptionPlanResponse extends BaseAuditResponse {
     private BigDecimal price;
     private Integer durationDays;
     private SubscriptionPlanStatus status;
-    
-    // Computed fields
     private String pricingDisplay;
-    private Boolean isFree;
-    private Boolean isPublic;
-    private Boolean isPrivate;
-    
-    // Statistics
     private Long activeSubscriptionsCount;
 }

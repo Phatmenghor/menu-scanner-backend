@@ -53,7 +53,7 @@ public abstract class BusinessSettingsMapper {
                     .findFirst()
                     .ifPresent(subscription -> {
                         if (subscription.getPlan() != null) {
-                            response.setCurrentPlan(subscription.getPlan().getDisplayName());
+                            response.setCurrentPlan(subscription.getPlan().getName());
                         }
                     });
         }
