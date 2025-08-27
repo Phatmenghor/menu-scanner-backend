@@ -30,21 +30,10 @@ public class PaymentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(@Valid @RequestBody PaymentCreateRequest request) {
-
-        // ✅ Determine payment type for logging
-        String paymentType = "Unknown";
-
-        if (request.hasSubscriptionInfo()) {
-            paymentType = "Subscription Payment";
-        } else if (request.hasBusinessInfo()) {
-            paymentType = "Business Record";
-        }
-
-
         PaymentResponse payment = paymentService.createPayment(request);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(paymentType + " created successfully", payment));
+                .body(ApiResponse.success( "Payment retrieved successfully", payment));
     }
 
 

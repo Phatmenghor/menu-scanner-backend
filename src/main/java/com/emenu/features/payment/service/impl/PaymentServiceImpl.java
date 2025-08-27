@@ -4,21 +4,20 @@ import com.emenu.enums.payment.PaymentType;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.Business;
+import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.payment.dto.filter.PaymentFilterRequest;
 import com.emenu.features.payment.dto.request.PaymentCreateRequest;
 import com.emenu.features.payment.dto.response.PaymentResponse;
 import com.emenu.features.payment.dto.update.PaymentUpdateRequest;
 import com.emenu.features.payment.mapper.PaymentMapper;
 import com.emenu.features.payment.models.Payment;
-import com.emenu.features.subscription.models.Subscription;
-import com.emenu.features.subscription.models.SubscriptionPlan;
-import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.payment.repository.PaymentRepository;
-import com.emenu.features.subscription.repository.SubscriptionPlanRepository;
-import com.emenu.features.subscription.repository.SubscriptionRepository;
 import com.emenu.features.payment.service.ExchangeRateService;
 import com.emenu.features.payment.service.PaymentService;
 import com.emenu.features.payment.specification.PaymentSpecification;
+import com.emenu.features.subscription.models.Subscription;
+import com.emenu.features.subscription.repository.SubscriptionPlanRepository;
+import com.emenu.features.subscription.repository.SubscriptionRepository;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.generate.PaymentReferenceGenerator;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -51,10 +50,6 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentResponse createPayment(PaymentCreateRequest request) {
         log.info("Creating payment - Amount: {}, Type: {}", request.getAmount(), request.getPaymentType());
-
-        if (!request.isValidPaymentRequest()) {
-            throw new ValidationException("Invalid payment request: must specify exactly one payment target");
-        }
 
         // ✅ FIXED: Allow duplicate reference numbers - just use provided or generate new
         String finalReferenceNumber = determineReferenceNumber(request);

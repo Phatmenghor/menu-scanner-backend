@@ -13,7 +13,7 @@ public class SubscriptionRenewRequest {
     private Integer customDurationDays;
     
     // Auto-create payment when renewing
-    private Boolean createPayment = false; // If true, creates payment record
+    private Boolean createPayment = false;
     private String paymentImageUrl;
     private BigDecimal paymentAmount;
     private PaymentMethod paymentMethod;

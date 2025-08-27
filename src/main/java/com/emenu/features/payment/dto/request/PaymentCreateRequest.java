@@ -37,7 +37,7 @@ public class PaymentCreateRequest {
     private String notes;
 
     // Payment type for different scenarios
-    private PaymentType paymentType = PaymentType.SUBSCRIPTION; // Default to existing behavior
+    private PaymentType paymentType = PaymentType.SUBSCRIPTION;
 
     // Helper methods for validation
     public boolean hasSubscriptionInfo() {
@@ -46,14 +46,5 @@ public class PaymentCreateRequest {
 
     public boolean hasBusinessInfo() {
         return businessId != null;
-    }
-
-    public boolean isValidPaymentRequest() {
-        // Must have exactly one way to identify what the payment is for
-        int methods = 0;
-        if (hasSubscriptionInfo()) methods++;
-        if (hasBusinessInfo()) methods++;
-        
-        return methods == 1;
     }
 }
