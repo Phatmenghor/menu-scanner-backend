@@ -14,7 +14,6 @@ public class SubscriptionResponse extends BaseAuditResponse {
     private UUID businessId;
     private String businessName;
     
-    // Plan information
     private UUID planId;
     private String planName;
     private Double planPrice;
@@ -22,19 +21,6 @@ public class SubscriptionResponse extends BaseAuditResponse {
     
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private Boolean isActive;
-    private Boolean isExpired;
     private Long daysRemaining;
     private Boolean autoRenew;
-    
-    // Display information
-    private String displayName;
-    
-    // Payment information
-    private BigDecimal totalPaidAmount;
-    private Boolean isFullyPaid;
-    private String paymentStatusSummary;
-    private Long totalPaymentsCount;
-    private Long completedPaymentsCount;
-    private Long pendingPaymentsCount;
 }

@@ -26,19 +26,9 @@ public class SubscriptionSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("businessId"), filter.getBusinessId()));
             }
 
-            // Multiple business IDs filter
-            if (filter.getBusinessIds() != null && !filter.getBusinessIds().isEmpty()) {
-                predicates.add(root.get("businessId").in(filter.getBusinessIds()));
-            }
-
             // Plan ID filter
             if (filter.getPlanId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("planId"), filter.getPlanId()));
-            }
-
-            // Multiple plan IDs filter
-            if (filter.getPlanIds() != null && !filter.getPlanIds().isEmpty()) {
-                predicates.add(root.get("planId").in(filter.getPlanIds()));
             }
 
             // Active status filter
@@ -70,16 +60,6 @@ public class SubscriptionSpecification {
 
             if (filter.getToDate() != null) {
                 predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("startDate"), filter.getToDate()));
-            }
-
-            // Expiring soon filter
-            if (filter.getExpiringSoon() != null && filter.getExpiringSoon()) {
-                LocalDateTime now = LocalDateTime.now();
-                LocalDateTime futureDate = now.plusDays(filter.getExpiringSoonDays());
-                predicates.add(criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("isActive"), true),
-                    criteriaBuilder.between(root.get("endDate"), now, futureDate)
-                ));
             }
 
             // Basic search across business and plan names
@@ -115,41 +95,4 @@ public class SubscriptionSpecification {
         };
     }
 
-    public static Specification<Subscription> isExpired() {
-        return (root, query, criteriaBuilder) -> {
-            LocalDateTime now = LocalDateTime.now();
-            return criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("isDeleted"), false),
-                    criteriaBuilder.lessThanOrEqualTo(root.get("endDate"), now)
-            );
-        };
-    }
-
-    public static Specification<Subscription> expiringSoon(int days) {
-        return (root, query, criteriaBuilder) -> {
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime futureDate = now.plusDays(days);
-            return criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("isDeleted"), false),
-                    criteriaBuilder.equal(root.get("isActive"), true),
-                    criteriaBuilder.between(root.get("endDate"), now, futureDate)
-            );
-        };
-    }
-
-    public static Specification<Subscription> byBusiness(java.util.UUID businessId) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.and(
-                        criteriaBuilder.equal(root.get("isDeleted"), false),
-                        criteriaBuilder.equal(root.get("businessId"), businessId)
-                );
-    }
-
-    public static Specification<Subscription> byPlan(java.util.UUID planId) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.and(
-                        criteriaBuilder.equal(root.get("isDeleted"), false),
-                        criteriaBuilder.equal(root.get("planId"), planId)
-                );
-    }
 }

@@ -18,7 +18,6 @@ public class UserCreateRequest {
     @NotBlank(message = "User identifier is required")
     private String userIdentifier;
 
-    // ✅ UPDATED: Email is now optional for regular users
     private String email; // Optional - can be null
 
     @NotBlank(message = "Password is required")
@@ -38,10 +37,8 @@ public class UserCreateRequest {
     
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
 
-    // ✅ BUSINESS ASSIGNMENT (Optional - for business users)
     private UUID businessId; // Assign user to existing business
     
-    // ✅ ROLES (Required)
     @NotNull(message = "At least one role is required")
     private List<RoleEnum> roles;
 }
