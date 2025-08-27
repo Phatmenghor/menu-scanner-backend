@@ -102,8 +102,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        // ✅ FIXED: Use repository method that loads relationships
-        Page<Subscription> subscriptionPage = subscriptionRepository.findAllWithRelationships(pageable);
+        Page<Subscription> subscriptionPage = subscriptionRepository.findAll(spec, pageable);
         return subscriptionMapper.toPaginationResponse(subscriptionPage);
     }
 

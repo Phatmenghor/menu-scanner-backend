@@ -103,10 +103,8 @@ public class SubscriptionController {
 
         log.info("Renewing subscription: {} with payment creation: {}", id, request.shouldCreatePayment());
 
-        // ✅ Call enhanced service method
         SubscriptionResponse subscription = subscriptionService.renewSubscription(id, request);
 
-        // ✅ Create comprehensive response
         SubscriptionRenewalResponse response = new SubscriptionRenewalResponse();
         response.setSubscription(subscription);
         response.setPaymentCreated(request.shouldCreatePayment());

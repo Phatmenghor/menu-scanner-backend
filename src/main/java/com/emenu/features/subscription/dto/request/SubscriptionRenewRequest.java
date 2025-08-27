@@ -14,11 +14,11 @@ public class SubscriptionRenewRequest {
     
     // Auto-create payment when renewing
     private Boolean createPayment = false; // If true, creates payment record
-    private String paymentImageUrl; // Receipt image URL
-    private BigDecimal paymentAmount; // Payment amount
-    private PaymentMethod paymentMethod; // Required if createPayment is true
+    private String paymentImageUrl;
+    private BigDecimal paymentAmount;
+    private PaymentMethod paymentMethod;
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
-    private String paymentReferenceNumber; // Optional, will auto-generate
+    private String paymentReferenceNumber;
     private String paymentNotes;
 
     // Helper methods
