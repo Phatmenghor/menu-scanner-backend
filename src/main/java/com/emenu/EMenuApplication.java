@@ -17,14 +17,7 @@ public class EMenuApplication {
 		System.out.println("""
             
             🇰🇭 Cambodia E-Menu Platform Started Successfully! 🇰🇭
-            
-            🏗️ Clean Architecture Features:
-            ✅ Universal Pagination Mappers
-            ✅ Specification-Based Filtering
-            ✅ Clean Service Implementations
-            ✅ Cambodia-Specific Configuration
-            ✅ Payment & Subscription System
-            ✅ UserIdentifier-Based Authentication
+           
             
             🌐 Access Points:
             • Application: http://localhost:8080

@@ -7,8 +7,8 @@ spring:
 
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://152.42.219.13:5432/e_menu_platform
-    username: admin
+    url: jdbc:postgresql://152.42.254.193:5432/e_menu_platform
+    username: admin_user
     password: Hour1819
     driver-class-name: org.postgresql.Driver
     hikari:

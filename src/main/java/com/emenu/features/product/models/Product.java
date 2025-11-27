@@ -21,7 +21,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "products", indexes = {
-        // ✅ CORE INDEXES FOR GET ALL PRODUCTS API
 
         // 1. Most critical - Business filtering (90% of queries use businessId)
         @Index(name = "idx_products_business_deleted_created",
