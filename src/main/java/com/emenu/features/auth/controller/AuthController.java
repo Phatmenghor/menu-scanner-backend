@@ -1,19 +1,12 @@
 package com.emenu.features.auth.controller;
 
-import com.emenu.enums.auth.SocialProvider;
-import com.emenu.enums.user.AccountStatus;
-import com.emenu.enums.user.RoleEnum;
-import com.emenu.enums.user.UserType;
-import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.*;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.TelegramAuthResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.service.AuthService;
 import com.emenu.features.auth.service.UserService;
-import com.emenu.features.auth.service.impl.TelegramAuthServiceImpl;
 import com.emenu.shared.dto.ApiResponse;
-import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -33,7 +23,6 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserService userService;
-    private final TelegramAuthServiceImpl telegramAuthServiceImpl;
 
     // ===== TRADITIONAL AUTHENTICATION =====
 
@@ -67,72 +56,6 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Customer registration successful", response));
     }
-
-    // ===== TELEGRAM AUTHENTICATION =====
-
-    /**
-     * Telegram login for existing users
-     */
-    @PostMapping("/telegram/login")
-    public ResponseEntity<ApiResponse<TelegramAuthResponse>> loginWithTelegram(
-            @Valid @RequestBody TelegramAuthRequest request) {
-        log.info("📱 Telegram login request for user: {}", request.getTelegramUserId());
-        TelegramAuthResponse response = telegramAuthServiceImpl.loginWithTelegram(request);
-        return ResponseEntity.ok(ApiResponse.success("Telegram login successful", response));
-    }
-
-    /**
-     * Telegram registration for new customers
-     */
-    @PostMapping("/telegram/register")
-    public ResponseEntity<ApiResponse<TelegramAuthResponse>> registerCustomerWithTelegram(
-            @Valid @RequestBody TelegramAuthRequest request) {
-        log.info("📱 Telegram customer registration for user: {}", request.getTelegramUserId());
-        TelegramAuthResponse response = telegramAuthServiceImpl.registerCustomerWithTelegram(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Telegram customer registration successful", response));
-    }
-
-    /**
-     * Check if Telegram user is already registered
-     */
-    @GetMapping("/telegram/check/{telegramUserId}")
-    public ResponseEntity<ApiResponse<Boolean>> checkTelegramUser(@PathVariable Long telegramUserId) {
-        log.info("🔍 Checking if Telegram user {} is registered", telegramUserId);
-        boolean isLinked = telegramAuthServiceImpl.isTelegramLinked(telegramUserId);
-
-        String message = isLinked ? "Telegram user is registered" : "Telegram user is not registered";
-        return ResponseEntity.ok(ApiResponse.success(message, isLinked));
-    }
-
-    // ===== TELEGRAM ACCOUNT LINKING =====
-
-    /**
-     * Link Telegram account to current authenticated user
-     */
-    @PostMapping("/telegram/link")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<String>> linkTelegramAccount(
-            @Valid @RequestBody TelegramLinkRequest request) {
-        log.info("🔗 Linking Telegram account: {}", request.getTelegramUserId());
-        telegramAuthServiceImpl.linkTelegramToCurrentUser(request);
-        return ResponseEntity.ok(ApiResponse.success("Telegram account linked successfully",
-                "Your Telegram account has been linked. You can now login with Telegram."));
-    }
-
-    /**
-     * Unlink Telegram account from current authenticated user
-     */
-    @PostMapping("/telegram/unlink")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<String>> unlinkTelegramAccount() {
-        log.info("🔓 Unlinking Telegram account from current user");
-        telegramAuthServiceImpl.unlinkTelegramFromCurrentUser();
-        return ResponseEntity.ok(ApiResponse.success("Telegram account unlinked successfully",
-                "Your Telegram account has been unlinked. You can now only login with username/password."));
-    }
-
-    // ===== PASSWORD MANAGEMENT =====
 
     /**
      * Change password for current authenticated user

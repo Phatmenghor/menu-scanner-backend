@@ -24,7 +24,6 @@ import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.BusinessService;
 import com.emenu.features.auth.service.UserService;
 import com.emenu.features.auth.specification.UserSpecification;
-import com.emenu.features.notification.service.TelegramNotificationService;
 import com.emenu.features.payment.dto.request.PaymentCreateRequest;
 import com.emenu.features.payment.dto.response.PaymentResponse;
 import com.emenu.features.payment.service.PaymentService;
@@ -69,7 +68,6 @@ public class UserServiceImpl implements UserService {
     private final SubscriptionService subscriptionService;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final BusinessOwnerCreateResponseMapper businessOwnerResponseMapper;
-    private final TelegramNotificationService telegramNotificationService;
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
@@ -104,19 +102,6 @@ public class UserServiceImpl implements UserService {
             setUserRoles(user, request.getRoles());
 
             User savedUser = userRepository.save(user);
-
-            try {
-                User currentUser = securityUtils.getCurrentUser();
-                // Send platform user creation notification
-                telegramNotificationService.sendPlatformUserCreationNotification(savedUser, currentUser);
-                log.info("📱 Platform user creation notification sent for: {} (created by: {})",
-                        savedUser.getUserIdentifier(), currentUser.getUserIdentifier());
-
-            } catch (Exception e) {
-                log.warn("⚠️ Failed to send Telegram notification for user creation: {} - {}",
-                        savedUser.getUserIdentifier(), e.getMessage());
-                // Don't fail the user creation if notification fails
-            }
 
             log.info("✅ User created successfully: {} with type: {}", savedUser.getUserIdentifier(), savedUser.getUserType());
             return userMapper.toResponse(savedUser);
@@ -271,25 +256,6 @@ public class UserServiceImpl implements UserService {
                 } catch (Exception e) {
                     log.warn("⚠️ Payment creation failed, continuing without payment: {}", e.getMessage());
                 }
-            }
-
-            // STEP 6: Send Telegram notifications
-            log.info("📱 Step 6: Sending Telegram notifications");
-            try {
-                // Get the created user for notifications
-                User businessOwner = userRepository.findByIdAndIsDeletedFalse(UUID.fromString(userResponse.getId().toString()))
-                        .orElse(null);
-
-                if (businessOwner != null) {
-                    telegramNotificationService.sendBusinessRegistrationNotification(
-                            businessOwner,
-                            businessResponse.getName(),
-                            subdomainResponse.getSubdomain()
-                    );
-                }
-            } catch (Exception e) {
-                log.warn("⚠️ Failed to send Telegram notifications: {}", e.getMessage());
-                // Don't fail the entire process for notification errors
             }
 
             // STEP 7: Create comprehensive response

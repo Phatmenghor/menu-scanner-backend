@@ -14,7 +14,6 @@ import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.AuthService;
-import com.emenu.features.notification.service.TelegramNotificationService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.security.jwt.JWTGenerator;
 import com.emenu.security.jwt.TokenBlacklistService;
@@ -45,7 +44,6 @@ public class AuthServiceImpl implements AuthService {
     private final JWTGenerator jwtGenerator;
     private final SecurityUtils securityUtils;
     private final TokenBlacklistService tokenBlacklistService;
-    private final TelegramNotificationService telegramNotificationService;
 
     // ===== TRADITIONAL LOGIN =====
     
@@ -99,14 +97,6 @@ public class AuthServiceImpl implements AuthService {
         user.setRoles(List.of(customerRole));
 
         User savedUser = userRepository.save(user);
-
-        try {
-            telegramNotificationService.sendCustomerRegistrationNotification(savedUser);
-            log.info("📱 Telegram notification sent for customer registration: {}", savedUser.getUserIdentifier());
-        } catch (Exception e) {
-            log.warn("⚠️ Failed to send Telegram notification for customer registration: {} - {}",
-                    savedUser.getUserIdentifier(), e.getMessage());
-        }
         
         log.info("✅ Customer registered successfully: {}", savedUser.getUserIdentifier());
         return userMapper.toResponse(savedUser);
