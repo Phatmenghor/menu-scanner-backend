@@ -1,6 +1,5 @@
 package com.emenu.features.auth.models;
 
-import com.emenu.enums.auth.SocialProvider;
 import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.UserType;
 import com.emenu.shared.domain.BaseUUIDEntity;
@@ -10,27 +9,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users", indexes = { // ✅ FIXED: Changed from "businesses" to "users"
-        // ✅ FIXED: Core BaseUUIDEntity indexes
+@Table(name = "users", indexes = {
         @Index(name = "idx_user_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_user_deleted_created", columnList = "is_deleted, created_at"),
-        @Index(name = "idx_user_deleted_updated", columnList = "is_deleted, updated_at"),
-
-        // ✅ FIXED: User-specific indexes
-        @Index(name = "idx_user_identifier_deleted", columnList = "user_identifier, is_deleted"),
-        @Index(name = "idx_user_email_deleted", columnList = "email, is_deleted"),
-        @Index(name = "idx_user_telegram_user_id_deleted", columnList = "telegram_user_id, is_deleted"),
-        @Index(name = "idx_user_account_status_deleted", columnList = "account_status, is_deleted"),
-        @Index(name = "idx_user_business_id_deleted", columnList = "business_id, is_deleted"),
-        @Index(name = "idx_user_type_deleted", columnList = "user_type, is_deleted"),
-        @Index(name = "idx_user_social_provider_deleted", columnList = "social_provider, is_deleted"),
-        @Index(name = "idx_user_business_status_deleted", columnList = "business_id, account_status, is_deleted"),
-        @Index(name = "idx_user_telegram_notifications_deleted", columnList = "telegram_notifications_enabled, is_deleted")
+        @Index(name = "idx_user_identifier", columnList = "user_identifier, is_deleted"),
+        @Index(name = "idx_user_business", columnList = "business_id, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -44,7 +30,7 @@ public class User extends BaseUUIDEntity {
     @Column(name = "email")
     private String email;
 
-    @Column(name = "password") // Nullable for social login users
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Column(name = "first_name")
@@ -91,37 +77,6 @@ public class User extends BaseUUIDEntity {
     @Column(name = "notes")
     private String notes;
 
-    // ✅ Social Login Integration
-    @Enumerated(EnumType.STRING)
-    @Column(name = "social_provider", nullable = false)
-    private SocialProvider socialProvider = SocialProvider.LOCAL;
-
-    // ✅ Telegram Integration Fields
-    @Column(name = "telegram_user_id", unique = true)
-    private Long telegramUserId;
-
-    @Column(name = "telegram_username")
-    private String telegramUsername;
-
-    @Column(name = "telegram_first_name")
-    private String telegramFirstName;
-
-    @Column(name = "telegram_last_name")
-    private String telegramLastName;
-
-    @Column(name = "telegram_linked_at")
-    private LocalDateTime telegramLinkedAt;
-
-    @Column(name = "telegram_notifications_enabled")
-    private Boolean telegramNotificationsEnabled = true;
-
-    @Column(name = "last_telegram_activity")
-    private LocalDateTime lastTelegramActivity;
-
-    // ================================
-    // BUSINESS METHODS
-    // ================================
-
     public String getFullName() {
         if (firstName != null && lastName != null) {
             return firstName + " " + lastName;
@@ -129,17 +84,6 @@ public class User extends BaseUUIDEntity {
             return firstName;
         } else if (lastName != null) {
             return lastName;
-        }
-        return userIdentifier;
-    }
-
-    public String getDisplayName() {
-        String fullName = getFullName();
-        if (!fullName.equals(userIdentifier)) {
-            return fullName;
-        }
-        if (telegramFirstName != null) {
-            return telegramFirstName + (telegramLastName != null ? " " + telegramLastName : "");
         }
         return userIdentifier;
     }
@@ -158,64 +102,5 @@ public class User extends BaseUUIDEntity {
 
     public boolean isCustomer() {
         return UserType.CUSTOMER.equals(userType);
-    }
-
-    public boolean hasBusinessAccess() {
-        return businessId != null && (isBusinessUser() || isPlatformUser());
-    }
-
-    public boolean hasTelegramLinked() {
-        return telegramUserId != null && telegramLinkedAt != null;
-    }
-
-    public boolean canReceiveTelegramNotifications() {
-        return hasTelegramLinked() && Boolean.TRUE.equals(telegramNotificationsEnabled);
-    }
-
-    public boolean isSocialUser() {
-        return socialProvider != null && socialProvider.isSocial();
-    }
-
-    public boolean requiresPassword() {
-        return socialProvider == null || socialProvider.requiresPassword();
-    }
-
-    public void linkTelegram(Long telegramUserId, String telegramUsername,
-                             String telegramFirstName, String telegramLastName) {
-        this.telegramUserId = telegramUserId;
-        this.telegramUsername = telegramUsername;
-        this.telegramFirstName = telegramFirstName;
-        this.telegramLastName = telegramLastName;
-        this.telegramLinkedAt = LocalDateTime.now();
-        this.lastTelegramActivity = LocalDateTime.now();
-
-        // If this was a Telegram-created user, update social provider
-        if (this.socialProvider == SocialProvider.LOCAL && this.password == null) {
-            this.socialProvider = SocialProvider.TELEGRAM;
-        }
-    }
-
-    public void unlinkTelegram() {
-        this.telegramUserId = null;
-        this.telegramUsername = null;
-        this.telegramFirstName = null;
-        this.telegramLastName = null;
-        this.telegramLinkedAt = null;
-        this.telegramNotificationsEnabled = true;
-        this.lastTelegramActivity = null;
-    }
-
-    public void updateTelegramActivity() {
-        this.lastTelegramActivity = LocalDateTime.now();
-    }
-
-    public String getTelegramDisplayName() {
-        if (telegramUsername != null) {
-            return "@" + telegramUsername;
-        }
-        if (telegramFirstName != null) {
-            return telegramFirstName + (telegramLastName != null ? " " + telegramLastName : "");
-        }
-        return telegramUserId != null ? "User " + telegramUserId : "Unknown";
     }
 }

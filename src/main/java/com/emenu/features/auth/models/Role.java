@@ -12,10 +12,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "roles", indexes = {
-        // ✅ FIXED: Role management indexes
         @Index(name = "idx_role_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_role_deleted_created", columnList = "is_deleted, created_at"),
-        @Index(name = "idx_role_name_deleted", columnList = "name, is_deleted")
+        @Index(name = "idx_role_name", columnList = "name, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -36,17 +34,5 @@ public class Role extends BaseUUIDEntity {
     public Role(RoleEnum name) {
         this.name = name;
         this.description = name.getDescription();
-    }
-
-    public boolean isPlatformRole() {
-        return name.isPlatformRole();
-    }
-
-    public boolean isBusinessRole() {
-        return name.isBusinessRole();
-    }
-
-    public boolean isCustomerRole() {
-        return name.isCustomerRole();
     }
 }

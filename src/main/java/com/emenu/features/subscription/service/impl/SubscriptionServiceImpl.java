@@ -83,7 +83,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Subscription savedSubscription = subscriptionRepository.save(subscription);
 
         // ✅ FIXED: Update business subscription status
-        business.activateSubscription(startDate, subscription.getEndDate());
+        business.activateSubscription();
         businessRepository.save(business);
 
         log.info("Subscription created successfully: {} starting from {}", savedSubscription.getId(), startDate);
@@ -228,7 +228,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 savedNewSubscription.getPlan() != null ? savedNewSubscription.getPlan().getName() : "NULL");
 
         // ✅ FIXED: Update business subscription status
-        business.activateSubscription(savedNewSubscription.getStartDate(), savedNewSubscription.getEndDate());
+        business.activateSubscription();
         businessRepository.save(business);
 
         // ✅ ENHANCED: Create payment if requested

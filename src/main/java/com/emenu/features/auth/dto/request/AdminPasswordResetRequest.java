@@ -14,10 +14,10 @@ public class AdminPasswordResetRequest {
     private UUID userId;
     
     @NotBlank(message = "New password is required")
-    @Size(min = 4, message = "Password must be at least 4 characters long")
+    @Size(min = 4)
     private String newPassword;
     
     @NotBlank(message = "Password confirmation is required")
-    @Size(min = 4, message = "Password must be at least 4 characters long")
+    @Size(min = 4)
     private String confirmPassword;
 }

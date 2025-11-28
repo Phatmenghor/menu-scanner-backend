@@ -21,10 +21,4 @@ public class LoginResponse {
     private List<String> roles;
     private UUID businessId;
     private String businessName;
-    private String welcomeMessage;
-    
-    // ✅ NEW: Telegram Integration Fields
-    private Boolean hasTelegramLinked;
-    private String telegramDisplayName;
-    private List<String> availableFeatures;
 }

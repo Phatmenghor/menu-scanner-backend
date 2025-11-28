@@ -12,17 +12,19 @@ import java.util.UUID;
 
 public interface UserService {
 
-    // ===== BASIC USER CRUD =====
     UserResponse createUser(UserCreateRequest request);
+    
     PaginationResponse<UserResponse> getAllUsers(UserFilterRequest request);
+    
     UserResponse getUserById(UUID userId);
+    
     UserResponse updateUser(UUID userId, UserUpdateRequest request);
+    
     UserResponse deleteUser(UUID userId);
-
-    // ===== CURRENT USER OPERATIONS =====
+    
     UserResponse getCurrentUser();
+    
     UserResponse updateCurrentUser(UserUpdateRequest request);
-
-    // ===== BUSINESS OWNER CREATION =====
+    
     BusinessOwnerCreateResponse createBusinessOwner(BusinessOwnerCreateRequest request);
 }

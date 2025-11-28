@@ -14,15 +14,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "blacklisted_tokens", indexes = {
-        // ✅ EXISTING: Keep critical security indexes
-        @Index(name = "idx_token_hash", columnList = "tokenHash"),
-        @Index(name = "idx_expires_at", columnList = "expiresAt"),
-        @Index(name = "idx_user_email", columnList = "userEmail"),
-
-        // ✅ FIXED: BaseUUIDEntity indexes with unique names
-        @Index(name = "idx_blacklisted_token_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_blacklisted_token_deleted_created", columnList = "is_deleted, created_at"),
-        @Index(name = "idx_blacklisted_token_expires_deleted", columnList = "expires_at, is_deleted")
+        @Index(name = "idx_blacklisted_token", columnList = "token"),
+        @Index(name = "idx_blacklisted_user", columnList = "user_identifier"),
+        @Index(name = "idx_blacklisted_expiry", columnList = "expiry_date")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -30,34 +24,30 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BlacklistedToken extends BaseUUIDEntity {
 
-    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
-    private String tokenHash; // SHA-256 hash of the token for security
+    @Column(name = "token", nullable = false, unique = true, length = 500)
+    private String token;
 
-    @Column(name = "user_email", nullable = false)
-    private String userEmail;
+    @Column(name = "user_identifier", nullable = false)
+    private String userIdentifier;
 
-    @Column(name = "expires_at", nullable = false)
-    private LocalDateTime expiresAt;
+    @Column(name = "blacklisted_at", nullable = false)
+    private LocalDateTime blacklistedAt;
+
+    @Column(name = "expiry_date", nullable = false)
+    private LocalDateTime expiryDate;
 
     @Column(name = "reason")
-    private String reason; // LOGOUT, ADMIN_REVOKE, etc.
+    private String reason;
 
-    @Column(name = "user_agent")
-    private String userAgent;
-
-    @Column(name = "ip_address")
-    private String ipAddress;
-
-    // Constructor for creating blacklisted token
-    public BlacklistedToken(String tokenHash, String userEmail, LocalDateTime expiresAt, String reason) {
-        this.tokenHash = tokenHash;
-        this.userEmail = userEmail;
-        this.expiresAt = expiresAt;
+    public BlacklistedToken(String token, String userIdentifier, LocalDateTime expiryDate, String reason) {
+        this.token = token;
+        this.userIdentifier = userIdentifier;
+        this.blacklistedAt = LocalDateTime.now();
+        this.expiryDate = expiryDate;
         this.reason = reason;
     }
 
-    // Check if token is expired (can be cleaned up)
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return LocalDateTime.now().isAfter(expiryDate);
     }
 }

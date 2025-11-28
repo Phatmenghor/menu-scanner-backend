@@ -14,19 +14,18 @@ import java.util.UUID;
 @Data
 public class UserCreateRequest {
 
-    // ✅ NEW: Required userIdentifier for login (no validation - can be anything)
     @NotBlank(message = "User identifier is required")
     private String userIdentifier;
 
-    private String email; // Optional - can be null
+    private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 4, max = 100, message = "Password must be between 4 and 100 characters")
+    @Size(min = 4, max = 100)
     private String password;
 
     private String firstName;
     private String lastName;
-    private String phoneNumber; // Optional - can be null
+    private String phoneNumber;
     private String profileImageUrl;
     private String position;
     private String address;
@@ -36,8 +35,7 @@ public class UserCreateRequest {
     private UserType userType;
     
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
-
-    private UUID businessId; // Assign user to existing business
+    private UUID businessId;
     
     @NotNull(message = "At least one role is required")
     private List<RoleEnum> roles;

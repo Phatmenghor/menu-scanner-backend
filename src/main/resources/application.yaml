@@ -120,25 +120,6 @@ app:
   security:
     token-cleanup:
       enabled: true
-      schedule: "0 0 2 * * ?" # Daily at 2 AM
-      retention-weeks: 1
-
-  # Subdomain Configuration
-  subdomain:
-    base-domain: "menu.com"
-    auto-create-enabled: true
-    maintenance:
-      enabled: true
-      access-log-retention-days: 90
-      expired-check-cron: "0 0 */6 * * ?" # Every 6 hours
-      statistics-cron: "0 0 1 * * ?"       # Daily at 1 AM
-      cleanup-cron: "0 0 2 * * SUN"        # Weekly on Sunday at 2 AM
-    ssl:
-      auto-enable: false
-      certificate-provider: "letsencrypt"
-    verification:
-      required: false
-      token-expiry-hours: 24
 
 ---
 # Development Profile

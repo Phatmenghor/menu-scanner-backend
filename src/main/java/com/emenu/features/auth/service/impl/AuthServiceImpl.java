@@ -1,13 +1,14 @@
-// src/main/java/com/emenu/features/auth/service/impl/AuthServiceImpl.java
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.user.RoleEnum;
+import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ValidationException;
-import com.emenu.features.auth.dto.request.*;
+import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
+import com.emenu.features.auth.dto.request.LoginRequest;
+import com.emenu.features.auth.dto.request.PasswordChangeRequest;
+import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
-import com.emenu.features.auth.mapper.AuthMapper;
-import com.emenu.features.auth.mapper.RegistrationMapper;
 import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
@@ -36,8 +37,6 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final AuthMapper authMapper;
-    private final RegistrationMapper registrationMapper;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -45,11 +44,9 @@ public class AuthServiceImpl implements AuthService {
     private final SecurityUtils securityUtils;
     private final TokenBlacklistService tokenBlacklistService;
 
-    // ===== TRADITIONAL LOGIN =====
-    
     @Override
     public LoginResponse login(LoginRequest request) {
-        log.info("🔐 Login attempt for userIdentifier: {}", request.getUserIdentifier());
+        log.info("Login attempt: {}", request.getUserIdentifier());
 
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -61,35 +58,28 @@ public class AuthServiceImpl implements AuthService {
 
             securityUtils.validateAccountStatus(user);
             
-            if (user.hasTelegramLinked()) {
-                user.updateTelegramActivity();
-                userRepository.save(user);
-            }
-            
             String token = jwtGenerator.generateAccessToken(authentication);
-            LoginResponse response = authMapper.toLoginResponse(user, token);
+            LoginResponse response = userMapper.toLoginResponse(user, token);
 
-            log.info("✅ Traditional login successful for user: {}", user.getUserIdentifier());
+            log.info("Login successful: {}", user.getUserIdentifier());
             return response;
             
         } catch (Exception e) {
-            log.warn("❌ Traditional login failed for userIdentifier: {} - {}", request.getUserIdentifier(), e.getMessage());
-            throw new ValidationException("Invalid credentials. Please check your user identifier and password.");
+            log.warn("Login failed: {}", request.getUserIdentifier());
+            throw new ValidationException("Invalid credentials");
         }
     }
 
-    // ===== CUSTOMER REGISTRATION =====
-    
     @Override
     public UserResponse registerCustomer(RegisterRequest request) {
-        log.info("📝 Customer registration for userIdentifier: {}", request.getUserIdentifier());
+        log.info("Customer registration: {}", request.getUserIdentifier());
 
-        validateCustomerRegistration(request);
+        if (userRepository.existsByUserIdentifierAndIsDeletedFalse(request.getUserIdentifier())) {
+            throw new ValidationException("User identifier already exists");
+        }
 
-        User user = registrationMapper.toCustomerEntity(request);
-        user.setUserIdentifier(request.getUserIdentifier());
-        user.setEmail(request.getEmail());
-        user.setPhoneNumber(request.getPhoneNumber());
+        User user = userMapper.toEntity(request);
+        user.setUserType(UserType.CUSTOMER);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
@@ -98,40 +88,25 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
         
-        log.info("✅ Customer registered successfully: {}", savedUser.getUserIdentifier());
+        log.info("Customer registered: {}", savedUser.getUserIdentifier());
         return userMapper.toResponse(savedUser);
     }
 
-    // ===== LOGOUT =====
-    
     @Override
     public void logout(String authorizationHeader) {
-        log.info("🚪 Processing logout request");
+        log.info("Processing logout");
         String token = extractToken(authorizationHeader);
 
-        if (token == null || token.trim().isEmpty()) {
-            throw new ValidationException("Invalid token format. Authorization header must contain 'Bearer <token>'");
+        if (token == null || !jwtGenerator.validateToken(token)) {
+            throw new ValidationException("Invalid token");
         }
 
-        if (!jwtGenerator.validateToken(token)) {
-            throw new ValidationException("Token is invalid or expired");
-        }
-
-        String userIdentifier;
-        try {
-            userIdentifier = jwtGenerator.getUsernameFromJWT(token);
-            log.info("Processing logout for user: {}", userIdentifier);
-        } catch (Exception e) {
-            log.error("Failed to extract userIdentifier from token during logout: {}", e.getMessage());
-            throw new ValidationException("Invalid token - cannot extract user information");
-        }
-
+        String userIdentifier = jwtGenerator.getUsernameFromJWT(token);
         tokenBlacklistService.blacklistToken(token, userIdentifier, "LOGOUT");
-        log.info("✅ Logout successful for user: {} - token blacklisted", userIdentifier);
+        
+        log.info("Logout successful: {}", userIdentifier);
     }
 
-    // ===== PASSWORD MANAGEMENT =====
-    
     @Override
     public UserResponse changePassword(PasswordChangeRequest request) {
         User currentUser = securityUtils.getCurrentUser();
@@ -148,14 +123,14 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(currentUser);
 
         tokenBlacklistService.blacklistAllUserTokens(currentUser.getUserIdentifier(), "PASSWORD_CHANGE");
-        log.info("✅ Password changed successfully for user: {}", currentUser.getUserIdentifier());
+        log.info("Password changed: {}", currentUser.getUserIdentifier());
 
         return userMapper.toResponse(savedUser);
     }
 
     @Override
     public UserResponse adminResetPassword(AdminPasswordResetRequest request) {
-        log.info("🔑 Admin password reset for user: {}", request.getUserId());
+        log.info("Admin password reset: {}", request.getUserId());
 
         User user = userRepository.findByIdAndIsDeletedFalse(request.getUserId())
                 .orElseThrow(() -> new ValidationException("User not found"));
@@ -168,28 +143,15 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
 
         tokenBlacklistService.blacklistAllUserTokens(user.getUserIdentifier(), "ADMIN_PASSWORD_RESET");
-        log.info("✅ Admin password reset successful for user: {} by admin", user.getUserIdentifier());
+        log.info("Admin password reset: {}", user.getUserIdentifier());
 
         return userMapper.toResponse(savedUser);
     }
 
-    // ===== HELPER METHODS =====
-    
     private String extractToken(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             return authorizationHeader.substring(7).trim();
         }
         return null;
-    }
-
-    @Transactional(readOnly = true)
-    private boolean isUserIdentifierAvailable(String userIdentifier) {
-        return !userRepository.existsByUserIdentifierAndIsDeletedFalse(userIdentifier);
-    }
-
-    private void validateCustomerRegistration(RegisterRequest request) {
-        if (!isUserIdentifierAvailable(request.getUserIdentifier())) {
-            throw new ValidationException("User identifier is already in use");
-        }
     }
 }

@@ -82,7 +82,7 @@ public class SecurityConfig {
         // Add Telegram-specific origins (for web apps)
         configuration.addAllowedOriginPattern("https://web.telegram.org");
         configuration.addAllowedOriginPattern("https://telegram.org");
-        
+
         // Add server-specific origins
         configuration.addAllowedOriginPattern("http://152.42.219.13:*");
         configuration.addAllowedOriginPattern("http://localhost:*");

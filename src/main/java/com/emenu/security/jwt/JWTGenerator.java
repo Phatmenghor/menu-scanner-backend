@@ -1,5 +1,6 @@
 package com.emenu.security.jwt;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -10,6 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,21 +23,22 @@ public class JWTGenerator {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration:86400000}")
-    private long jwtExpirationTime;
+    @Value("${jwt.expiration:86400000}") // Default 24 hours in milliseconds
+    private long jwtExpiration;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateAccessToken(Authentication authentication) {
         String username = authentication.getName();
         Date currentDate = new Date();
-        Date expiryDate = new Date(currentDate.getTime() + jwtExpirationTime);
+        Date expiryDate = new Date(currentDate.getTime() + jwtExpiration);
 
-        List<String> roles = authentication.getAuthorities().stream()
+        String roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+                .collect(Collectors.joining(","));
 
         return Jwts.builder()
                 .setSubject(username)
@@ -47,12 +50,21 @@ public class JWTGenerator {
     }
 
     public String getUsernameFromJWT(String token) {
-        return Jwts.parserBuilder()
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                .getBody();
+        return claims.getSubject();
+    }
+
+    public Date getExpirationDateFromJWT(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getExpiration();
     }
 
     public boolean validateToken(String token) {
@@ -63,8 +75,17 @@ public class JWTGenerator {
                     .parseClaimsJws(token);
             return true;
         } catch (Exception e) {
-            log.debug("JWT validation failed: {}", e.getMessage());
+            log.error("JWT validation error: {}", e.getMessage());
             return false;
+        }
+    }
+
+    public boolean isTokenExpired(String token) {
+        try {
+            Date expiration = getExpirationDateFromJWT(token);
+            return expiration.before(new Date());
+        } catch (Exception e) {
+            return true;
         }
     }
 }

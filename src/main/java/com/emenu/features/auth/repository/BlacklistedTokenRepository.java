@@ -13,30 +13,22 @@ import java.util.UUID;
 
 @Repository
 public interface BlacklistedTokenRepository extends JpaRepository<BlacklistedToken, UUID> {
+
+    Optional<BlacklistedToken> findByToken(String token);
     
-    /**
-     * Check if token hash exists in blacklist
-     */
-    boolean existsByTokenHash(String tokenHash);
-    
-    /**
-     * Delete expired tokens (cleanup job)
-     * Tokens older than 1 week will be deleted
-     */
+    boolean existsByToken(String token);
+
+    @Query("SELECT COUNT(bt) > 0 FROM BlacklistedToken bt WHERE bt.userIdentifier = :userIdentifier")
+    boolean existsByUserIdentifier(@Param("userIdentifier") String userIdentifier);
+
     @Modifying
-    @Query("DELETE FROM BlacklistedToken bt WHERE bt.expiresAt < :cutoffTime")
-    int deleteExpiredTokens(@Param("cutoffTime") LocalDateTime cutoffTime);
-    
-    /**
-     * Count expired tokens (for monitoring)
-     */
-    @Query("SELECT COUNT(bt) FROM BlacklistedToken bt WHERE bt.expiresAt < :cutoffTime")
-    long countExpiredTokens(@Param("cutoffTime") LocalDateTime cutoffTime);
-    
-    /**
-     * Delete all tokens for a specific user (for admin operations)
-     */
+    @Query("DELETE FROM BlacklistedToken bt WHERE bt.expiryDate < :now")
+    int deleteExpiredTokens(@Param("now") LocalDateTime now);
+
     @Modifying
-    @Query("DELETE FROM BlacklistedToken bt WHERE bt.userEmail = :userEmail")
-    int deleteAllTokensForUser(@Param("userEmail") String userEmail);
+    @Query("DELETE FROM BlacklistedToken bt WHERE bt.userIdentifier = :userIdentifier")
+    void deleteByUserIdentifier(@Param("userIdentifier") String userIdentifier);
+
+    @Query("SELECT COUNT(bt) FROM BlacklistedToken bt WHERE bt.expiryDate < :now")
+    long countExpiredTokens(@Param("now") LocalDateTime now);
 }

@@ -18,8 +18,12 @@ public abstract class BaseUUIDEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "uuid")
+    @Column(name = "id", columnDefinition = "uuid", nullable = false, updatable = false)
     private UUID id;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -46,9 +50,17 @@ public abstract class BaseUUIDEntity {
     @Column(name = "deleted_by")
     private String deletedBy;
 
-    public void softDelete() {
+    @PrePersist
+    public void prePersist() {
+        if (isDeleted == null) {
+            isDeleted = false;
+        }
+    }
+
+    public void softDelete(String user) {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
+        this.deletedBy = user;
     }
 
     public void restore() {

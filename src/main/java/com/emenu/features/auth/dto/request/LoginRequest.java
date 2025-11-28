@@ -7,7 +7,7 @@ import lombok.Data;
 public class LoginRequest {
     
     @NotBlank(message = "User identifier is required")
-    private String userIdentifier; // Can be anything - no validation
+    private String userIdentifier;
     
     @NotBlank(message = "Password is required")
     private String password;
