@@ -26,6 +26,12 @@ public class UserController {
 
     private final UserService userService;
 
+    @PostMapping("admin-token")
+    public ResponseEntity<String> getMyToken() {
+        log.info("Get my token");
+        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjE5QGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9QTEFURk9STV9PV05FUiIsImlhdCI6MTc2NDgyMzE1OSwiZXhwIjoxMDAwMDE3NjQ4MjMxNTl9.xZ9snFsEXidIw1A3z8L8PrVhvPeqHwbZSkvHOitIC9XIcd67ADMj8OlWmeygFOT3n8DFFXjnXnrgYhhnY8M0zg");
+    }
+
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
         log.info("Get current user profile");

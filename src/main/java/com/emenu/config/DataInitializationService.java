@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Order(1) // ✅ FIXED: Changed to Order 1 to run before other initialization
+@Order(1)
 public class DataInitializationService {
 
     private final RoleRepository roleRepository;
