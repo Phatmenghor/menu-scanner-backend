@@ -27,18 +27,9 @@ public class OpenApiConfig {
     @Value("${server.url:http://localhost:8080}")
     private String serverUrl;
 
-    // Read default token from application.yml
-    @Value("${swagger.default-token:}")
-    private String defaultToken;
-
     @Bean
     public OpenAPI customOpenAPI() {
         String securityDescription = "JWT authentication token";
-        
-        // Add hint about default token if it exists
-        if (!defaultToken.isEmpty()) {
-            securityDescription += "\n\n🔥 **DEV MODE**: Token is auto-filled! Just click 'Authorize' → 'Authorize'";
-        }
 
         return new OpenAPI()
                 .info(new Info()
