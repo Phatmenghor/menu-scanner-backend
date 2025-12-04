@@ -1,6 +1,7 @@
 package com.emenu.features.auth.repository;
 
 import com.emenu.enums.user.AccountStatus;
+import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.models.User;
 import org.springframework.data.domain.Page;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,23 +19,28 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByUserIdentifierAndIsDeletedFalse(String userIdentifier);
-    
+
     boolean existsByUserIdentifierAndIsDeletedFalse(String userIdentifier);
-    
+
     Optional<User> findByIdAndIsDeletedFalse(UUID id);
 
-    @Query("SELECT u FROM User u WHERE u.isDeleted = false " +
-           "AND (:businessId IS NULL OR u.businessId = :businessId) " +
-           "AND (:userType IS NULL OR u.userType = :userType) " +
-           "AND (:accountStatus IS NULL OR u.accountStatus = :accountStatus) " +
-           "AND (:search IS NULL OR LOWER(u.userIdentifier) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "    OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "    OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "    OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
+    @Query("SELECT DISTINCT u FROM User u " +
+            "LEFT JOIN u.roles r " +
+            "WHERE u.isDeleted = false " +
+            "AND (:businessId IS NULL OR u.businessId = :businessId) " +
+            "AND (:userTypes IS NULL OR u.userType IN :userTypes) " +
+            "AND (:accountStatuses IS NULL OR u.accountStatus IN :accountStatuses) " +
+            "AND (:roles IS NULL OR r.name IN :roles) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "    LOWER(u.userIdentifier) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "    LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "    LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "    LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<User> searchUsers(
             @Param("businessId") UUID businessId,
-            @Param("userType") UserType userType,
-            @Param("accountStatus") AccountStatus accountStatus,
+            @Param("userTypes") List<UserType> userTypes,
+            @Param("accountStatuses") List<AccountStatus> accountStatuses,
+            @Param("roles") List<RoleEnum> roles,
             @Param("search") String search,
             Pageable pageable
     );

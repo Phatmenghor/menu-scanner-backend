@@ -104,14 +104,23 @@ public class UserServiceImpl implements UserService {
                 pageNo, request.getPageSize(), request.getSortBy(), request.getSortDirection()
         );
 
+        // Convert empty lists to null to skip filtering
+        List<UserType> userTypes = (request.getUserTypes() != null && !request.getUserTypes().isEmpty())
+                ? request.getUserTypes() : null;
+        List<AccountStatus> accountStatuses = (request.getAccountStatuses() != null && !request.getAccountStatuses().isEmpty())
+                ? request.getAccountStatuses() : null;
+        List<RoleEnum> roles = (request.getRoles() != null && !request.getRoles().isEmpty())
+                ? request.getRoles() : null;
+
         Page<User> userPage = userRepository.searchUsers(
                 request.getBusinessId(),
-                request.getUserType(),
-                request.getAccountStatus(),
+                userTypes,
+                accountStatuses,
+                roles,
                 request.getSearch(),
                 pageable
         );
-        
+
         return userMapper.toPaginationResponse(userPage);
     }
 
