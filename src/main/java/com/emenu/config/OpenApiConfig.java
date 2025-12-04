@@ -7,12 +7,10 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
 
 @Configuration
 public class OpenApiConfig {
@@ -26,15 +24,22 @@ public class OpenApiConfig {
     @Value("${app.description:Simple E-Menu Platform for Restaurant Management}")
     private String appDescription;
 
-    // ✅ FIXED: Use server.url from application.yaml
     @Value("${server.url:http://localhost:8080}")
     private String serverUrl;
 
-    @Value("${server.port:8080}")
-    private String serverPort;
+    // Read default token from application.yml
+    @Value("${swagger.default-token:}")
+    private String defaultToken;
 
     @Bean
     public OpenAPI customOpenAPI() {
+        String securityDescription = "JWT authentication token";
+        
+        // Add hint about default token if it exists
+        if (!defaultToken.isEmpty()) {
+            securityDescription += "\n\n🔥 **DEV MODE**: Token is auto-filled! Just click 'Authorize' → 'Authorize'";
+        }
+
         return new OpenAPI()
                 .info(new Info()
                         .title(appName + " API")
@@ -54,6 +59,6 @@ public class OpenApiConfig {
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
-                                        .description("JWT authentication token")));
+                                        .description(securityDescription)));
     }
 }

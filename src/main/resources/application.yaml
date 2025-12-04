@@ -43,7 +43,7 @@ server:
   url: "http://152.42.219.13:8080"
   address: 0.0.0.0  # IMPORTANT: Listen on all interfaces
 
-# JWT telegram
+# JWT Configuration
 jwt:
   secret: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
   expiration: 99999999999999999 # Extended for development
@@ -53,6 +53,7 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+    persistAuthorization: true  # ✅ Saves JWT token in browser
   api-docs:
     path: /v3/api-docs
     enabled: true
@@ -145,6 +146,10 @@ spring:
       ddl-auto: update
     show-sql: false
 
+# ✅ Swagger Default Token (DEV ONLY - Never use in production!)
+swagger:
+  default-token: "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjE5QGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9QTEFURk9STV9PV05FUiIsImlhdCI6MTc2NDgxOTA3OCwiZXhwIjoxMDAwMDE3NjQ4MTkwNzh9.WjekMwWCyYM3SGF2TRbkh5tF2ot87l6nNptqA8OyhNB1IphlHkR8Rhf4XoydpJQTtkN1bWP04xBmyIq8KMrexA"
+
 ---
 # Production Profile
 spring:
@@ -156,6 +161,10 @@ spring:
     hibernate:
       ddl-auto: validate # Don't auto-update schema in production
     show-sql: false
+
+# ⚠️ NO DEFAULT TOKEN IN PRODUCTION!
+swagger:
+  default-token: ""
 
 # Logging Configuration
 logging:
