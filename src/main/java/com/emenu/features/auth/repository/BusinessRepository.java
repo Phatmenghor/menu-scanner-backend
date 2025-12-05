@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,14 +24,14 @@ public interface BusinessRepository extends JpaRepository<Business, UUID> {
 
     @Query("SELECT b FROM Business b " +
            "WHERE b.isDeleted = false " +
-           "AND (:status IS NULL OR b.status = :status) " +
-           "AND (:hasActiveSubscription IS NULL OR b.isSubscriptionActive = :hasActiveSubscription) " +
+            "AND (:status IS NULL OR b.status IN :status) " +
+            "AND (:hasActiveSubscription IS NULL OR b.isSubscriptionActive = :hasActiveSubscription) " +
            "AND (:search IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "    OR LOWER(b.email) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "    OR LOWER(b.phone) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "    OR LOWER(b.address) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Business> searchBusinesses(
-            @Param("status") BusinessStatus status,
+            @Param("status") List<BusinessStatus> status,
             @Param("hasActiveSubscription") Boolean hasActiveSubscription,
             @Param("search") String search,
             Pageable pageable

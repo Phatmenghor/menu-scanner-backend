@@ -1,5 +1,7 @@
 package com.emenu.features.auth.service.impl;
 
+import com.emenu.enums.user.BusinessStatus;
+import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.BusinessFilterRequest;
 import com.emenu.features.auth.dto.request.BusinessCreateRequest;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -56,8 +59,11 @@ public class BusinessServiceImpl implements BusinessService {
                 request.getSortDirection()
         );
 
+        List<BusinessStatus> businessStatuses = (request.getStatus() != null && !request.getStatus().isEmpty())
+                ? request.getStatus() : null;
+
         Page<Business> businessPage = businessRepository.searchBusinesses(
-                request.getStatus(),
+                businessStatuses,
                 request.getHasActiveSubscription(),
                 request.getSearch(),
                 pageable
