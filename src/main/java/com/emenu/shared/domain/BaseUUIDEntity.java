@@ -24,8 +24,8 @@ public abstract class BaseUUIDEntity {
     private UUID id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -56,6 +56,18 @@ public abstract class BaseUUIDEntity {
     public void prePersist() {
         if (isDeleted == null) {
             isDeleted = false;
+        }
+        // Ensure version is never null
+        if (version == null) {
+            version = 0L;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        // Ensure version is never null during updates
+        if (version == null) {
+            version = 0L;
         }
     }
 
