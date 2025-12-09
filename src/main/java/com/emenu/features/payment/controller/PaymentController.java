@@ -30,50 +30,50 @@ public class PaymentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(@Valid @RequestBody PaymentCreateRequest request) {
+        log.info("POST /payments - amount: {}", request.getAmount());
         PaymentResponse payment = paymentService.createPayment(request);
-
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success( "Payment retrieved successfully", payment));
+                .body(ApiResponse.success("Payment created successfully", payment));
     }
 
-
     @PostMapping("/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<PaymentResponse>>> getAllPayments(@Valid @RequestBody PaymentFilterRequest filter) {
-        log.info("Getting all payments with filter");
+    public ResponseEntity<ApiResponse<PaginationResponse<PaymentResponse>>> getAllPayments(
+            @Valid @RequestBody PaymentFilterRequest filter) {
+        log.info("POST /payments/all - page: {}", filter.getPageNo());
         PaginationResponse<PaymentResponse> payments = paymentService.getAllPayments(filter);
         return ResponseEntity.ok(ApiResponse.success("Payments retrieved successfully", payments));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PaymentResponse>> getPaymentById(@PathVariable UUID id) {
-        log.info("Getting payment by ID: {}", id);
+        log.info("GET /payments/{}", id);
         PaymentResponse payment = paymentService.getPaymentById(id);
         return ResponseEntity.ok(ApiResponse.success("Payment retrieved successfully", payment));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<PaymentResponse>> updatePayment(@PathVariable UUID id, @Valid @RequestBody PaymentUpdateRequest request) {
-        log.info("Updating payment: {}", id);
+    public ResponseEntity<ApiResponse<PaymentResponse>> updatePayment(
+            @PathVariable UUID id,
+            @Valid @RequestBody PaymentUpdateRequest request) {
+        log.info("PUT /payments/{}", id);
         PaymentResponse payment = paymentService.updatePayment(id, request);
         return ResponseEntity.ok(ApiResponse.success("Payment updated successfully", payment));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<PaymentResponse>> deletePayment(@PathVariable UUID id) {
-        log.info("Deleting payment: {}", id);
+        log.info("DELETE /payments/{}", id);
         PaymentResponse payment = paymentService.deletePayment(id);
         return ResponseEntity.ok(ApiResponse.success("Payment deleted successfully", payment));
     }
 
-
     @GetMapping("/generate-reference")
-    public ResponseEntity<Map<String, String>> generateTestReference() {
+    public ResponseEntity<Map<String, String>> generateReference() {
+        log.info("GET /payments/generate-reference");
         String reference = referenceGenerator.generateUniqueReference();
-        Map<String, String> response = Map.of(
+        return ResponseEntity.ok(Map.of(
                 "reference", reference,
                 "timestamp", LocalDateTime.now().toString()
-        );
-        return ResponseEntity.ok(response);
+        ));
     }
-
 }

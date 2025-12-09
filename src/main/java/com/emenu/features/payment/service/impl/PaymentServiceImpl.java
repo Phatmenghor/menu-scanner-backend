@@ -14,7 +14,6 @@ import com.emenu.features.payment.models.Payment;
 import com.emenu.features.payment.repository.PaymentRepository;
 import com.emenu.features.payment.service.ExchangeRateService;
 import com.emenu.features.payment.service.PaymentService;
-import com.emenu.features.payment.specification.PaymentSpecification;
 import com.emenu.features.subscription.models.Subscription;
 import com.emenu.features.subscription.repository.SubscriptionPlanRepository;
 import com.emenu.features.subscription.repository.SubscriptionRepository;
@@ -23,10 +22,8 @@ import com.emenu.shared.generate.PaymentReferenceGenerator;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,51 +46,49 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public PaymentResponse createPayment(PaymentCreateRequest request) {
-        log.info("Creating payment - Amount: {}, Type: {}", request.getAmount(), request.getPaymentType());
+        log.info("Creating payment: amount={}, type={}", request.getAmount(), request.getPaymentType());
 
-        // ✅ FIXED: Allow duplicate reference numbers - just use provided or generate new
-        String finalReferenceNumber = determineReferenceNumber(request);
+        String referenceNumber = determineReferenceNumber(request);
+        PaymentType paymentType = determinePaymentType(request);
 
-        try {
-            PaymentResponse response = switch (determinePaymentType(request)) {
-                case SUBSCRIPTION -> createPaymentForSubscription(request, finalReferenceNumber);
-                case BUSINESS_RECORD -> createPaymentForBusinessRecord(request, finalReferenceNumber);
-                case USER_PLAN -> throw new ValidationException("USER_PLAN payment type not implemented");
-            };
+        PaymentResponse response = switch (paymentType) {
+            case SUBSCRIPTION -> createSubscriptionPayment(request, referenceNumber);
+            case BUSINESS_RECORD -> createBusinessPayment(request, referenceNumber);
+            case USER_PLAN -> throw new ValidationException("USER_PLAN not implemented");
+        };
 
-            log.info("✅ Payment created: {} with reference: {}", response.getId(), finalReferenceNumber);
-            return response;
-
-        } catch (DataIntegrityViolationException e) {
-            // Handle database-level duplicate reference constraint (if it exists)
-            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("reference")) {
-                log.warn("Database constraint violation for reference: {} - continuing anyway", finalReferenceNumber);
-                // Don't throw exception - allow duplicate references
-            }
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed to create payment with reference {}: {}", finalReferenceNumber, e.getMessage(), e);
-            throw new RuntimeException("Failed to create payment: " + e.getMessage(), e);
-        }
+        log.info("Payment created: id={}, reference={}", response.getId(), referenceNumber);
+        return response;
     }
 
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<PaymentResponse> getAllPayments(PaymentFilterRequest filter) {
-        Specification<Payment> spec = PaymentSpecification.buildSpecification(filter);
+        log.info("Fetching payments: businessId={}, status={}", filter.getBusinessId(), filter.getStatuses());
 
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
                 pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        Page<Payment> paymentPage = paymentRepository.findAll(spec, pageable);
+        Page<Payment> paymentPage = paymentRepository.findAllWithFilters(
+                filter.getBusinessId(),
+                filter.getPlanId(),
+                filter.getPaymentMethods(),
+                filter.getStatuses(),
+                filter.getCreatedFrom(),
+                filter.getCreatedTo(),
+                filter.getSearch(),
+                pageable
+        );
+
         return paymentMapper.toPaginationResponse(paymentPage);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PaymentResponse getPaymentById(UUID id) {
+        log.info("Fetching payment: id={}", id);
         Payment payment = paymentRepository.findByIdWithRelationships(id)
                 .orElseThrow(() -> new NotFoundException("Payment not found"));
         return paymentMapper.toResponse(payment);
@@ -101,31 +96,28 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public PaymentResponse updatePayment(UUID id, PaymentUpdateRequest request) {
-        Payment payment = findPaymentById(id);
+        log.info("Updating payment: id={}", id);
 
-        // ✅ FIXED: Remove uniqueness check for reference numbers
+        Payment payment = findPaymentById(id);
         paymentMapper.updateEntity(request, payment);
 
-        // Recalculate KHR amount if amount changed
         if (request.getAmount() != null) {
-            Double currentRate = exchangeRateService.getCurrentRateValue();
-            payment.calculateAmountKhr(currentRate);
+            Double rate = exchangeRateService.getCurrentRateValue();
+            payment.calculateAmountKhr(rate);
         }
 
-        Payment updatedPayment = paymentRepository.save(payment);
-        log.info("Payment updated successfully: {}", id);
-
-        return paymentMapper.toResponse(updatedPayment);
+        Payment updated = paymentRepository.save(payment);
+        return paymentMapper.toResponse(updated);
     }
 
     @Override
     public PaymentResponse deletePayment(UUID id) {
-        Payment payment = findPaymentById(id);
+        log.info("Deleting payment: id={}", id);
 
+        Payment payment = findPaymentById(id);
         payment.softDelete();
         payment = paymentRepository.save(payment);
 
-        log.info("Payment deleted successfully: {}", id);
         return paymentMapper.toResponse(payment);
     }
 
@@ -134,33 +126,21 @@ public class PaymentServiceImpl implements PaymentService {
         return referenceGenerator.generateUniqueReference();
     }
 
-    // ✅ FIXED: Simplified reference number determination - no uniqueness check
     private String determineReferenceNumber(PaymentCreateRequest request) {
         if (request.getReferenceNumber() != null && !request.getReferenceNumber().trim().isEmpty()) {
-            // User provided reference - use as-is (no uniqueness check)
-            String userReference = request.getReferenceNumber().trim();
-            log.debug("Using user-provided reference: {}", userReference);
-            return userReference;
-        } else {
-            // Generate new reference
-            String generatedReference = referenceGenerator.generateUniqueReference();
-            log.debug("Generated reference: {}", generatedReference);
-            return generatedReference;
+            return request.getReferenceNumber().trim();
         }
+        return referenceGenerator.generateUniqueReference();
     }
 
     private PaymentType determinePaymentType(PaymentCreateRequest request) {
-        if (request.hasSubscriptionInfo()) {
-            return PaymentType.SUBSCRIPTION;
-        } else if (request.hasBusinessInfo()) {
-            return PaymentType.BUSINESS_RECORD;
-        }
-        throw new ValidationException("Cannot determine payment type from request");
+        if (request.hasSubscriptionInfo()) return PaymentType.SUBSCRIPTION;
+        if (request.hasBusinessInfo()) return PaymentType.BUSINESS_RECORD;
+        throw new ValidationException("Cannot determine payment type");
     }
 
-    // Payment for subscription (unchanged)
-    private PaymentResponse createPaymentForSubscription(PaymentCreateRequest request, String referenceNumber) {
-        log.info("Creating subscription payment with reference: {}", referenceNumber);
+    private PaymentResponse createSubscriptionPayment(PaymentCreateRequest request, String referenceNumber) {
+        log.info("Creating subscription payment: subscriptionId={}", request.getSubscriptionId());
 
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(request.getSubscriptionId())
                 .orElseThrow(() -> new NotFoundException("Subscription not found"));
@@ -169,19 +149,18 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new NotFoundException("Business not found"));
 
         planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
-                .orElseThrow(() -> new NotFoundException("Subscription plan not found"));
+                .orElseThrow(() -> new NotFoundException("Plan not found"));
 
         Payment payment = createPaymentEntity(request, referenceNumber);
         payment.setBusinessId(subscription.getBusinessId());
         payment.setPlanId(subscription.getPlanId());
         payment.setSubscriptionId(subscription.getId());
 
-        return finalizePayment(payment);
+        return savePayment(payment);
     }
 
-    // Payment for business record (history only)
-    private PaymentResponse createPaymentForBusinessRecord(PaymentCreateRequest request, String referenceNumber) {
-        log.info("Creating business payment record with reference: {}", referenceNumber);
+    private PaymentResponse createBusinessPayment(PaymentCreateRequest request, String referenceNumber) {
+        log.info("Creating business payment: businessId={}", request.getBusinessId());
 
         Business business = businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
                 .orElseThrow(() -> new NotFoundException("Business not found"));
@@ -189,17 +168,15 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = createPaymentEntity(request, referenceNumber);
         payment.setBusinessId(business.getId());
 
-        // Link to active subscription if available
         subscriptionRepository.findCurrentActiveByBusinessId(business.getId(), LocalDateTime.now())
                 .ifPresent(subscription -> {
                     payment.setPlanId(subscription.getPlanId());
                     payment.setSubscriptionId(subscription.getId());
                 });
 
-        return finalizePayment(payment);
+        return savePayment(payment);
     }
 
-    // Create payment entity from request
     private Payment createPaymentEntity(PaymentCreateRequest request, String referenceNumber) {
         Payment payment = new Payment();
         payment.setImageUrl(request.getImageUrl());
@@ -211,19 +188,14 @@ public class PaymentServiceImpl implements PaymentService {
         return payment;
     }
 
-    // Finalize payment creation
-    private PaymentResponse finalizePayment(Payment payment) {
-        // Calculate KHR amount
-        Double currentRate = exchangeRateService.getCurrentRateValue();
-        payment.calculateAmountKhr(currentRate);
+    private PaymentResponse savePayment(Payment payment) {
+        Double rate = exchangeRateService.getCurrentRateValue();
+        payment.calculateAmountKhr(rate);
 
-        Payment savedPayment = paymentRepository.save(payment);
+        Payment saved = paymentRepository.save(payment);
+        Payment withRelations = paymentRepository.findByIdWithRelationships(saved.getId()).orElse(saved);
 
-        // Load with relationships for response
-        Payment paymentWithRelations = paymentRepository.findByIdWithRelationships(savedPayment.getId())
-                .orElse(savedPayment);
-
-        return paymentMapper.toResponse(paymentWithRelations);
+        return paymentMapper.toResponse(withRelations);
     }
 
     private Payment findPaymentById(UUID id) {

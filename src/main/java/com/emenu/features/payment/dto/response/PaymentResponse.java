@@ -12,23 +12,27 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class PaymentResponse extends BaseAuditResponse {
+
     private String imageUrl;
-    
+
     private UUID businessId;
     private String businessName;
+
     private UUID planId;
     private String planName;
-    
+
     private UUID subscriptionId;
     private String subscriptionDisplayName;
-    
+
     private BigDecimal amount;
     private BigDecimal amountKhr;
     private String formattedAmount;
     private String formattedAmountKhr;
+
     private PaymentMethod paymentMethod;
     private PaymentStatus status;
     private String statusDescription;
+
     private String referenceNumber;
     private String notes;
 }

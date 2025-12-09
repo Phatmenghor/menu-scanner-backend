@@ -3,22 +3,20 @@ package com.emenu.features.payment.dto.filter;
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.shared.dto.BaseFilterRequest;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class PaymentFilterRequest extends BaseFilterRequest {
-    private PaymentMethod paymentMethod;
-    private PaymentStatus status;
+    private List<PaymentMethod> paymentMethods;
+    private List<PaymentStatus> statuses;
     private UUID businessId;
     private UUID planId;
-
-    private LocalDateTime createdFrom;
-    private LocalDateTime createdTo;
+    private LocalDate createdFrom;
+    private LocalDate createdTo;
 }
