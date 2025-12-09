@@ -1,6 +1,7 @@
 package com.emenu.features.subscription.service.impl;
 
 import com.emenu.enums.sub_scription.SubscriptionPlanStatus;
+import com.emenu.enums.user.UserType;
 import com.emenu.features.subscription.dto.filter.SubscriptionPlanFilterRequest;
 import com.emenu.features.subscription.dto.request.SubscriptionPlanCreateRequest;
 import com.emenu.features.subscription.dto.response.SubscriptionPlanResponse;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -58,8 +60,12 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
                 pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
+        // Convert empty lists to null to skip filtering
+        List<SubscriptionPlanStatus> statusesTypes = (filter.getStatuses() != null && !filter.getStatuses().isEmpty())
+                ? filter.getStatuses() : null;
+
         Page<SubscriptionPlan> planPage = planRepository.findAllWithFilters(
-                filter.getStatuses(),
+                statusesTypes,
                 filter.getSearch(),
                 pageable
         );
