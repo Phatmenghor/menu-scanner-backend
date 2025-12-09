@@ -12,9 +12,4 @@ import java.util.List;
 @Data
 public class SubscriptionPlanFilterRequest extends BaseFilterRequest {
     private List<SubscriptionPlanStatus> statuses;
-    private BigDecimal minPrice;
-    private BigDecimal maxPrice;
-    private Integer minDurationDays;
-    private Integer maxDurationDays;
-    private Boolean freeOnly = false;
 }

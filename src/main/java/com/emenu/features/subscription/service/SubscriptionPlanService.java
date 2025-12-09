@@ -16,7 +16,4 @@ public interface SubscriptionPlanService {
     SubscriptionPlanResponse getPlanById(UUID planId);
     SubscriptionPlanResponse updatePlan(UUID planId, SubscriptionPlanUpdateRequest request);
     void deletePlan(UUID planId);
-
-    // System Operations
-    void seedDefaultPlans();
 }

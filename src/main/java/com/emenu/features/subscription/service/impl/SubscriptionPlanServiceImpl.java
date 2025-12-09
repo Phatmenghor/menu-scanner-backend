@@ -10,14 +10,12 @@ import com.emenu.features.subscription.models.SubscriptionPlan;
 import com.emenu.features.subscription.repository.SubscriptionPlanRepository;
 import com.emenu.features.subscription.repository.SubscriptionRepository;
 import com.emenu.features.subscription.service.SubscriptionPlanService;
-import com.emenu.features.subscription.specification.SubscriptionPlanSpecification;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,17 +51,19 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<SubscriptionPlanResponse> getAllPlans(SubscriptionPlanFilterRequest filter) {
-        log.debug("Getting subscription plans with filter Search: {}",
-                 filter.getSearch());
-
-        Specification<SubscriptionPlan> spec = SubscriptionPlanSpecification.buildSpecification(filter);
+        log.debug("Getting subscription plans with filter Search: {}", filter.getSearch());
 
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
                 pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        Page<SubscriptionPlan> planPage = planRepository.findAll(spec, pageable);
+        Page<SubscriptionPlan> planPage = planRepository.findAllWithFilters(
+                filter.getStatuses(),
+                filter.getSearch(),
+                pageable
+        );
+
         return planMapper.toPaginationResponse(planPage);
     }
 
@@ -117,33 +117,6 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         log.info("Subscription plan deleted successfully: {} - {}", plan.getId(), plan.getName());
     }
 
-    @Override
-    public void seedDefaultPlans() {
-        log.info("Seeding default subscription plans");
-
-        // Check if plans already exist
-        if (planRepository.count() > 0) {
-            log.info("Plans already exist ({}), skipping seed", planRepository.count());
-            return;
-        }
-
-        try {
-            // Create default plans with simplified structure
-            createDefaultPlan("Free Plan",
-                    "Basic plan to get started with essential features",
-                    BigDecimal.ZERO, 30, SubscriptionPlanStatus.PUBLIC);
-
-            createDefaultPlan("Basic Plan",
-                    "Perfect for small restaurants with standard features",
-                    new BigDecimal("9.99"), 30, SubscriptionPlanStatus.PUBLIC);
-
-            log.info("Default subscription plans seeded successfully");
-
-        } catch (Exception e) {
-            log.error("Error seeding default subscription plans: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to seed default subscription plans", e);
-        }
-    }
 
     @Transactional(readOnly = true)
     private boolean canDeletePlan(UUID planId) {
@@ -155,32 +128,5 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         long subscriptionCount = subscriptionRepository.countByPlan(planId);
         log.debug("Plan {} has {} subscriptions", planId, subscriptionCount);
         return subscriptionCount > 0;
-    }
-
-    // Private helper methods
-
-    private void createDefaultPlan(String name, String description, BigDecimal price,
-                                   Integer durationDays, SubscriptionPlanStatus status) {
-        try {
-            // Check if plan with this name already exists
-            if (planRepository.existsByNameAndIsDeletedFalse(name)) {
-                log.debug("Plan '{}' already exists, skipping creation", name);
-                return;
-            }
-
-            SubscriptionPlan plan = new SubscriptionPlan();
-            plan.setName(name);
-            plan.setDescription(description);
-            plan.setPrice(price);
-            plan.setDurationDays(durationDays);
-            plan.setStatus(status);
-
-            SubscriptionPlan saved = planRepository.save(plan);
-            log.debug("Created default plan: {} with ID: {}", name, saved.getId());
-
-        } catch (Exception e) {
-            log.error("Failed to create default plan '{}': {}", name, e.getMessage(), e);
-            throw new RuntimeException("Failed to create default plan: " + name, e);
-        }
     }
 }

@@ -68,8 +68,6 @@ public class DataInitializationService {
                 int rolesCreated = ensureRolesExist();
                 log.info("✅ Roles initialization completed - {} roles processed", rolesCreated);
 
-                initializeSubscriptionPlans();
-                log.info("✅ Subscription plans initialization completed");
 
                 if (createDefaultAdmin) {
                     int usersCreated = initializeDefaultUsers();
@@ -155,16 +153,6 @@ public class DataInitializationService {
         }
         
         return createdCount;
-    }
-
-    private void initializeSubscriptionPlans() {
-        try {
-            log.info("🔄 Initializing subscription plans...");
-            subscriptionPlanService.seedDefaultPlans();
-        } catch (Exception e) {
-            log.error("❌ Error initializing subscription plans: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to initialize subscription plans", e);
-        }
     }
 
     private int initializeDefaultUsers() {

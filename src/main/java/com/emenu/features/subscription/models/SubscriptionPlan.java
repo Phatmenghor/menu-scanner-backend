@@ -12,18 +12,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-@Table(name = "subscription_plans", indexes = {
-        // ✅ FIXED: BaseUUIDEntity indexes with UNIQUE NAMES
-        @Index(name = "idx_subscription_plan_entity_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_subscription_plan_entity_deleted_created", columnList = "is_deleted, created_at"),
-
-        // ✅ FIXED: Plan management indexes with UNIQUE NAMES
-        @Index(name = "idx_subscription_plan_entity_status_deleted", columnList = "status, is_deleted"),
-        @Index(name = "idx_subscription_plan_entity_name_deleted", columnList = "name, is_deleted"),
-        @Index(name = "idx_subscription_plan_entity_price_deleted", columnList = "price, is_deleted"),
-        @Index(name = "idx_subscription_plan_entity_duration_deleted", columnList = "duration_days, is_deleted"),
-        @Index(name = "idx_subscription_plan_entity_price_duration_deleted", columnList = "price, duration_days, is_deleted")
-})
+@Table(name = "subscription_plans")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
