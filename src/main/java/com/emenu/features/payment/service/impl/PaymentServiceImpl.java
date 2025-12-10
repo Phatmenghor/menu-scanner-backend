@@ -1,6 +1,10 @@
 package com.emenu.features.payment.service.impl;
 
+import com.emenu.enums.payment.PaymentMethod;
+import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.enums.payment.PaymentType;
+import com.emenu.enums.user.AccountStatus;
+import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.Business;
@@ -28,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -75,11 +80,17 @@ public class PaymentServiceImpl implements PaymentService {
                 pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
+        // Convert empty lists to null to skip filtering
+        List<PaymentMethod> paymentMethods = (filter.getPaymentMethods() != null && !filter.getPaymentMethods().isEmpty())
+                ? filter.getPaymentMethods() : null;
+        List<PaymentStatus> paymentStatuses = (filter.getStatuses() != null && !filter.getStatuses().isEmpty())
+                ? filter.getStatuses() : null;
+
         Page<Payment> paymentPage = paymentRepository.findAllWithFilters(
                 filter.getBusinessId(),
                 filter.getPlanId(),
-                filter.getPaymentMethods(),
-                filter.getStatuses(),
+                paymentMethods,
+                paymentStatuses,
                 filter.getCreatedFrom(),
                 filter.getCreatedTo(),
                 filter.getSearch(),
