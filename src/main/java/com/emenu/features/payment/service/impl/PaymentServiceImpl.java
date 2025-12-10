@@ -121,11 +121,6 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentMapper.toResponse(payment);
     }
 
-    @Override
-    public String generateReferenceNumber() {
-        return referenceGenerator.generateUniqueReference();
-    }
-
     private String determineReferenceNumber(PaymentCreateRequest request) {
         if (request.getReferenceNumber() != null && !request.getReferenceNumber().trim().isEmpty()) {
             return request.getReferenceNumber().trim();

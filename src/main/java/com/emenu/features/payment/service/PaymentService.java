@@ -15,7 +15,4 @@ public interface PaymentService {
     PaymentResponse getPaymentById(UUID id);
     PaymentResponse updatePayment(UUID id, PaymentUpdateRequest request);
     PaymentResponse deletePayment(UUID id);
-
-    // Utility Operations
-    String generateReferenceNumber();
 }
