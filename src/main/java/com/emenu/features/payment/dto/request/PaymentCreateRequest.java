@@ -31,7 +31,8 @@ public class PaymentCreateRequest {
     @Size(max = 1000, message = "Notes cannot exceed 1000 characters")
     private String notes;
 
-    private PaymentType paymentType = PaymentType.SUBSCRIPTION;
+    @NotNull(message = "Payment Type is required")
+    private PaymentType paymentType = PaymentType.OTHER;
 
     public boolean hasSubscriptionInfo() {
         return subscriptionId != null;
