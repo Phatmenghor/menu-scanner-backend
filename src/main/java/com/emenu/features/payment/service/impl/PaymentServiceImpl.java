@@ -54,7 +54,8 @@ public class PaymentServiceImpl implements PaymentService {
         PaymentResponse response = switch (paymentType) {
             case SUBSCRIPTION -> createSubscriptionPayment(request, referenceNumber);
             case BUSINESS_RECORD -> createBusinessPayment(request, referenceNumber);
-            case USER_PLAN -> throw new ValidationException("USER_PLAN not implemented");
+            case USER_PLAN -> createUserPlanPayment(request, referenceNumber);
+            case OTHER -> createOtherPayment(request, referenceNumber);
         };
 
         log.info("Payment created: id={}, reference={}", response.getId(), referenceNumber);
@@ -100,16 +101,14 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment payment = findPaymentById(id);
 
-        // Handle subscription update - if subscriptionId is being updated
+        // Handle relationship updates based on provided IDs
         if (request.getSubscriptionId() != null) {
             updatePaymentSubscription(payment, request.getSubscriptionId());
-        }
-        // Handle business update - if businessId is being updated (and subscriptionId is not)
-        else if (request.getBusinessId() != null) {
+        } else if (request.getBusinessId() != null) {
             updatePaymentBusiness(payment, request.getBusinessId());
         }
 
-        // Map other fields
+        // Map other fields using mapper
         paymentMapper.updateEntity(request, payment);
 
         // Recalculate KHR amount if amount changed
@@ -136,6 +135,85 @@ public class PaymentServiceImpl implements PaymentService {
         payment = paymentRepository.save(payment);
 
         return paymentMapper.toResponse(payment);
+    }
+
+    private String determineReferenceNumber(PaymentCreateRequest request) {
+        if (request.getReferenceNumber() != null && !request.getReferenceNumber().trim().isEmpty()) {
+            return request.getReferenceNumber().trim();
+        }
+        return referenceGenerator.generateUniqueReference();
+    }
+
+    private PaymentType determinePaymentType(PaymentCreateRequest request) {
+        if (request.hasSubscriptionInfo()) return PaymentType.SUBSCRIPTION;
+        if (request.hasBusinessInfo()) return PaymentType.BUSINESS_RECORD;
+        throw new ValidationException("Cannot determine payment type");
+    }
+
+    private PaymentResponse createSubscriptionPayment(PaymentCreateRequest request, String referenceNumber) {
+        log.info("Creating subscription payment: subscriptionId={}", request.getSubscriptionId());
+
+        Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(request.getSubscriptionId())
+                .orElseThrow(() -> new NotFoundException("Subscription not found"));
+
+        businessRepository.findByIdAndIsDeletedFalse(subscription.getBusinessId())
+                .orElseThrow(() -> new NotFoundException("Business not found"));
+
+        planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
+                .orElseThrow(() -> new NotFoundException("Plan not found"));
+
+        // Use mapper to create entity
+        Payment payment = paymentMapper.toEntity(request);
+        payment.setReferenceNumber(referenceNumber);
+        payment.setBusinessId(subscription.getBusinessId());
+        payment.setPlanId(subscription.getPlanId());
+        payment.setSubscriptionId(subscription.getId());
+
+        return savePayment(payment);
+    }
+
+    private PaymentResponse createBusinessPayment(PaymentCreateRequest request, String referenceNumber) {
+        log.info("Creating business payment: businessId={}", request.getBusinessId());
+
+        Business business = businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
+                .orElseThrow(() -> new NotFoundException("Business not found"));
+
+        // Use mapper to create entity
+        Payment payment = paymentMapper.toEntity(request);
+        payment.setReferenceNumber(referenceNumber);
+        payment.setBusinessId(business.getId());
+
+        subscriptionRepository.findCurrentActiveByBusinessId(business.getId(), LocalDateTime.now())
+                .ifPresent(subscription -> {
+                    payment.setPlanId(subscription.getPlanId());
+                    payment.setSubscriptionId(subscription.getId());
+                });
+
+        return savePayment(payment);
+    }
+
+    private PaymentResponse createUserPlanPayment(PaymentCreateRequest request, String referenceNumber) {
+        log.info("Creating USER_PLAN payment type");
+
+        // Use mapper to create entity
+        Payment payment = paymentMapper.toEntity(request);
+        payment.setReferenceNumber(referenceNumber);
+
+        // USER_PLAN payment type has no required relationships
+        // Simply save with the provided data
+        return savePayment(payment);
+    }
+
+    private PaymentResponse createOtherPayment(PaymentCreateRequest request, String referenceNumber) {
+        log.info("Creating OTHER payment type");
+
+        // Use mapper to create entity
+        Payment payment = paymentMapper.toEntity(request);
+        payment.setReferenceNumber(referenceNumber);
+
+        // OTHER payment type has no required relationships
+        // Simply save with the provided data
+        return savePayment(payment);
     }
 
     private void updatePaymentSubscription(Payment payment, UUID subscriptionId) {
@@ -183,68 +261,6 @@ public class PaymentServiceImpl implements PaymentService {
                             log.info("No active subscription found for business, cleared subscription fields");
                         }
                 );
-    }
-
-    private String determineReferenceNumber(PaymentCreateRequest request) {
-        if (request.getReferenceNumber() != null && !request.getReferenceNumber().trim().isEmpty()) {
-            return request.getReferenceNumber().trim();
-        }
-        return referenceGenerator.generateUniqueReference();
-    }
-
-    private PaymentType determinePaymentType(PaymentCreateRequest request) {
-        if (request.hasSubscriptionInfo()) return PaymentType.SUBSCRIPTION;
-        if (request.hasBusinessInfo()) return PaymentType.BUSINESS_RECORD;
-        throw new ValidationException("Cannot determine payment type");
-    }
-
-    private PaymentResponse createSubscriptionPayment(PaymentCreateRequest request, String referenceNumber) {
-        log.info("Creating subscription payment: subscriptionId={}", request.getSubscriptionId());
-
-        Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(request.getSubscriptionId())
-                .orElseThrow(() -> new NotFoundException("Subscription not found"));
-
-        businessRepository.findByIdAndIsDeletedFalse(subscription.getBusinessId())
-                .orElseThrow(() -> new NotFoundException("Business not found"));
-
-        planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
-                .orElseThrow(() -> new NotFoundException("Plan not found"));
-
-        Payment payment = createPaymentEntity(request, referenceNumber);
-        payment.setBusinessId(subscription.getBusinessId());
-        payment.setPlanId(subscription.getPlanId());
-        payment.setSubscriptionId(subscription.getId());
-
-        return savePayment(payment);
-    }
-
-    private PaymentResponse createBusinessPayment(PaymentCreateRequest request, String referenceNumber) {
-        log.info("Creating business payment: businessId={}", request.getBusinessId());
-
-        Business business = businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
-                .orElseThrow(() -> new NotFoundException("Business not found"));
-
-        Payment payment = createPaymentEntity(request, referenceNumber);
-        payment.setBusinessId(business.getId());
-
-        subscriptionRepository.findCurrentActiveByBusinessId(business.getId(), LocalDateTime.now())
-                .ifPresent(subscription -> {
-                    payment.setPlanId(subscription.getPlanId());
-                    payment.setSubscriptionId(subscription.getId());
-                });
-
-        return savePayment(payment);
-    }
-
-    private Payment createPaymentEntity(PaymentCreateRequest request, String referenceNumber) {
-        Payment payment = new Payment();
-        payment.setImageUrl(request.getImageUrl());
-        payment.setAmount(request.getAmount());
-        payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setStatus(request.getStatus());
-        payment.setNotes(request.getNotes());
-        payment.setReferenceNumber(referenceNumber);
-        return payment;
     }
 
     private PaymentResponse savePayment(Payment payment) {

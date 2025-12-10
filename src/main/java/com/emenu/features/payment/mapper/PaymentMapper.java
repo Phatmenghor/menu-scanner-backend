@@ -22,13 +22,20 @@ public abstract class PaymentMapper {
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "plan", ignore = true)
     @Mapping(target = "subscription", ignore = true)
+    @Mapping(target = "businessId", ignore = true)
+    @Mapping(target = "planId", ignore = true)
+    @Mapping(target = "subscriptionId", ignore = true)
     @Mapping(target = "amountKhr", ignore = true)
+    @Mapping(target = "isDeleted", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     public abstract Payment toEntity(PaymentCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "plan.name", target = "planName")
     @Mapping(source = "subscription.id", target = "subscriptionId")
     @Mapping(target = "subscriptionDisplayName", expression = "java(payment.getSubscriptionDisplayName())")
+    @Mapping(target = "statusDescription", expression = "java(payment.getStatus().getDescription())")
     @Mapping(target = "formattedAmount", expression = "java(payment.getFormattedAmount())")
     @Mapping(target = "formattedAmountKhr", expression = "java(payment.getFormattedAmountKhr())")
     @Mapping(source = "imageUrl", target = "imageUrl")
@@ -40,6 +47,9 @@ public abstract class PaymentMapper {
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "plan", ignore = true)
     @Mapping(target = "subscription", ignore = true)
+    @Mapping(target = "businessId", ignore = true)
+    @Mapping(target = "planId", ignore = true)
+    @Mapping(target = "subscriptionId", ignore = true)
     @Mapping(target = "amountKhr", ignore = true)
     public abstract void updateEntity(PaymentUpdateRequest request, @MappingTarget Payment payment);
 
