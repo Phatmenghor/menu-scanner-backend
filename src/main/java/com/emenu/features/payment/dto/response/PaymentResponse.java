@@ -31,7 +31,6 @@ public class PaymentResponse extends BaseAuditResponse {
 
     private PaymentMethod paymentMethod;
     private PaymentStatus status;
-    private String statusDescription;
 
     private String referenceNumber;
     private String notes;

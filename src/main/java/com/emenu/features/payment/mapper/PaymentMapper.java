@@ -29,7 +29,6 @@ public abstract class PaymentMapper {
     @Mapping(source = "plan.name", target = "planName")
     @Mapping(source = "subscription.id", target = "subscriptionId")
     @Mapping(target = "subscriptionDisplayName", expression = "java(payment.getSubscriptionDisplayName())")
-    @Mapping(target = "statusDescription", expression = "java(payment.getStatus().getDescription())")
     @Mapping(target = "formattedAmount", expression = "java(payment.getFormattedAmount())")
     @Mapping(target = "formattedAmountKhr", expression = "java(payment.getFormattedAmountKhr())")
     @Mapping(source = "imageUrl", target = "imageUrl")
