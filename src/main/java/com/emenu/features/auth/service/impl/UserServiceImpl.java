@@ -147,7 +147,12 @@ public class UserServiceImpl implements UserService {
 
         if (request.getRoles() != null && !request.getRoles().isEmpty()) {
             List<Role> roles = roleRepository.findByNameIn(request.getRoles());
-            user.setRoles(roles);
+            if (roles.size() != request.getRoles().size()) {
+                throw new ValidationException("One or more roles not found");
+            }
+
+            user.getRoles().clear();
+            user.getRoles().addAll(roles);
         }
 
         userMapper.updateEntity(request, user);

@@ -40,6 +40,8 @@ public abstract class UserMapper {
     public abstract List<UserResponse> toResponseList(List<User> users);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "roles", ignore = true)  // ADD THIS LINE - Don't let MapStruct touch roles
+    @Mapping(target = "password", ignore = true)  // ADD THIS LINE - Don't let MapStruct touch password
     public abstract void updateEntity(UserUpdateRequest request, @MappingTarget User user);
 
     public User toEntity(UserCreateRequest request) {
