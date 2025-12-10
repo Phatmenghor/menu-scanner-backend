@@ -48,8 +48,11 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponse createPayment(PaymentCreateRequest request) {
         log.info("Creating payment: amount={}, type={}", request.getAmount(), request.getPaymentType());
 
+        // Validate request based on payment type
+        validateCreateRequest(request);
+
         String referenceNumber = determineReferenceNumber(request);
-        PaymentType paymentType = determinePaymentType(request);
+        PaymentType paymentType = request.getPaymentType();
 
         PaymentResponse response = switch (paymentType) {
             case SUBSCRIPTION -> createSubscriptionPayment(request, referenceNumber);
@@ -101,6 +104,11 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment payment = findPaymentById(id);
 
+        // Validate update request if payment type is being changed
+        if (request.getPaymentType() != null && !request.getPaymentType().equals(payment.getPaymentType())) {
+            validatePaymentTypeChange(payment, request.getPaymentType(), request);
+        }
+
         // Handle relationship updates based on provided IDs
         if (request.getSubscriptionId() != null) {
             updatePaymentSubscription(payment, request.getSubscriptionId());
@@ -108,7 +116,7 @@ public class PaymentServiceImpl implements PaymentService {
             updatePaymentBusiness(payment, request.getBusinessId());
         }
 
-        // Map other fields using mapper
+        // Map other fields using mapper (this will handle paymentType if provided)
         paymentMapper.updateEntity(request, payment);
 
         // Recalculate KHR amount if amount changed
@@ -137,17 +145,36 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentMapper.toResponse(payment);
     }
 
+    private void validateCreateRequest(PaymentCreateRequest request) {
+        PaymentType paymentType = request.getPaymentType();
+
+        if (paymentType == PaymentType.SUBSCRIPTION && request.getSubscriptionId() == null) {
+            throw new ValidationException("Subscription ID is required for SUBSCRIPTION payment type");
+        }
+
+        if (paymentType == PaymentType.BUSINESS_RECORD && request.getBusinessId() == null) {
+            throw new ValidationException("Business ID is required for BUSINESS_RECORD payment type");
+        }
+    }
+
+    private void validatePaymentTypeChange(Payment payment, PaymentType newPaymentType, PaymentUpdateRequest request) {
+        log.info("Payment type changing from {} to {}", payment.getPaymentType(), newPaymentType);
+
+        // Validate that required fields are present for the new payment type
+        if (newPaymentType == PaymentType.SUBSCRIPTION && request.getSubscriptionId() == null && payment.getSubscriptionId() == null) {
+            throw new ValidationException("Subscription ID is required when changing to SUBSCRIPTION payment type");
+        }
+
+        if (newPaymentType == PaymentType.BUSINESS_RECORD && request.getBusinessId() == null && payment.getBusinessId() == null) {
+            throw new ValidationException("Business ID is required when changing to BUSINESS_RECORD payment type");
+        }
+    }
+
     private String determineReferenceNumber(PaymentCreateRequest request) {
         if (request.getReferenceNumber() != null && !request.getReferenceNumber().trim().isEmpty()) {
             return request.getReferenceNumber().trim();
         }
         return referenceGenerator.generateUniqueReference();
-    }
-
-    private PaymentType determinePaymentType(PaymentCreateRequest request) {
-        if (request.hasSubscriptionInfo()) return PaymentType.SUBSCRIPTION;
-        if (request.hasBusinessInfo()) return PaymentType.BUSINESS_RECORD;
-        throw new ValidationException("Cannot determine payment type");
     }
 
     private PaymentResponse createSubscriptionPayment(PaymentCreateRequest request, String referenceNumber) {
@@ -187,6 +214,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .ifPresent(subscription -> {
                     payment.setPlanId(subscription.getPlanId());
                     payment.setSubscriptionId(subscription.getId());
+                    log.info("Associated payment with active subscription: {}", subscription.getId());
                 });
 
         return savePayment(payment);

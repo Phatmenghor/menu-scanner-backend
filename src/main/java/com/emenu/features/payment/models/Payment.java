@@ -2,6 +2,7 @@ package com.emenu.features.payment.models;
 
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
+import com.emenu.enums.payment.PaymentType;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.subscription.models.Subscription;
 import com.emenu.features.subscription.models.SubscriptionPlan;
@@ -26,14 +27,14 @@ public class Payment extends BaseUUIDEntity {
 
     private String imageUrl;
 
-    @Column(name = "business_id", nullable = false)
+    @Column(name = "business_id")
     private UUID businessId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "business_id", insertable = false, updatable = false)
     private Business business;
 
-    @Column(name = "plan_id", nullable = false)
+    @Column(name = "plan_id")
     private UUID planId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -61,6 +62,10 @@ public class Payment extends BaseUUIDEntity {
     @Column(name = "status", nullable = false)
     private PaymentStatus status = PaymentStatus.PENDING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_type", nullable = false)
+    private PaymentType paymentType = PaymentType.OTHER;
+
     @Column(name = "reference_number")
     private String referenceNumber;
 
@@ -86,6 +91,14 @@ public class Payment extends BaseUUIDEntity {
         this.status = PaymentStatus.COMPLETED;
     }
 
+    public void markAsFailed() {
+        this.status = PaymentStatus.FAILED;
+    }
+
+    public void markAsPending() {
+        this.status = PaymentStatus.PENDING;
+    }
+
     public String getBusinessName() {
         return business != null ? business.getName() : "Unknown Business";
     }
@@ -96,5 +109,17 @@ public class Payment extends BaseUUIDEntity {
 
     public String getSubscriptionDisplayName() {
         return subscription != null ? subscription.getDisplayName() : "No Subscription";
+    }
+
+    public boolean hasSubscription() {
+        return subscriptionId != null;
+    }
+
+    public boolean hasBusiness() {
+        return businessId != null;
+    }
+
+    public boolean hasPlan() {
+        return planId != null;
     }
 }

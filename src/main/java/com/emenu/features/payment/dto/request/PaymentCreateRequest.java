@@ -33,12 +33,4 @@ public class PaymentCreateRequest {
 
     @NotNull(message = "Payment Type is required")
     private PaymentType paymentType = PaymentType.OTHER;
-
-    public boolean hasSubscriptionInfo() {
-        return subscriptionId != null;
-    }
-
-    public boolean hasBusinessInfo() {
-        return businessId != null;
-    }
 }
