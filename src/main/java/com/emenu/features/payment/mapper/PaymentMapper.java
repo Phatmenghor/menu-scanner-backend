@@ -38,12 +38,8 @@ public abstract class PaymentMapper {
     public abstract List<PaymentResponse> toResponseList(List<Payment> payments);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
-    @Mapping(target = "planId", ignore = true)
     @Mapping(target = "plan", ignore = true)
-    @Mapping(target = "subscriptionId", ignore = true)
     @Mapping(target = "subscription", ignore = true)
     @Mapping(target = "amountKhr", ignore = true)
     public abstract void updateEntity(PaymentUpdateRequest request, @MappingTarget Payment payment);

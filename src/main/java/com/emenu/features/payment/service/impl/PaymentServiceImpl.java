@@ -99,15 +99,32 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("Updating payment: id={}", id);
 
         Payment payment = findPaymentById(id);
+
+        // Handle subscription update - if subscriptionId is being updated
+        if (request.getSubscriptionId() != null) {
+            updatePaymentSubscription(payment, request.getSubscriptionId());
+        }
+        // Handle business update - if businessId is being updated (and subscriptionId is not)
+        else if (request.getBusinessId() != null) {
+            updatePaymentBusiness(payment, request.getBusinessId());
+        }
+
+        // Map other fields
         paymentMapper.updateEntity(request, payment);
 
+        // Recalculate KHR amount if amount changed
         if (request.getAmount() != null) {
             Double rate = exchangeRateService.getCurrentRateValue();
             payment.calculateAmountKhr(rate);
         }
 
         Payment updated = paymentRepository.save(payment);
-        return paymentMapper.toResponse(updated);
+
+        // Reload with relationships for response
+        Payment withRelations = paymentRepository.findByIdWithRelationships(updated.getId())
+                .orElse(updated);
+
+        return paymentMapper.toResponse(withRelations);
     }
 
     @Override
@@ -119,6 +136,53 @@ public class PaymentServiceImpl implements PaymentService {
         payment = paymentRepository.save(payment);
 
         return paymentMapper.toResponse(payment);
+    }
+
+    private void updatePaymentSubscription(Payment payment, UUID subscriptionId) {
+        log.info("Updating payment subscription: paymentId={}, subscriptionId={}",
+                payment.getId(), subscriptionId);
+
+        Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId)
+                .orElseThrow(() -> new NotFoundException("Subscription not found"));
+
+        // Validate business exists
+        businessRepository.findByIdAndIsDeletedFalse(subscription.getBusinessId())
+                .orElseThrow(() -> new NotFoundException("Business not found for subscription"));
+
+        // Validate plan exists
+        planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
+                .orElseThrow(() -> new NotFoundException("Plan not found for subscription"));
+
+        // Update all related IDs
+        payment.setSubscriptionId(subscription.getId());
+        payment.setBusinessId(subscription.getBusinessId());
+        payment.setPlanId(subscription.getPlanId());
+    }
+
+    private void updatePaymentBusiness(Payment payment, UUID businessId) {
+        log.info("Updating payment business: paymentId={}, businessId={}",
+                payment.getId(), businessId);
+
+        Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)
+                .orElseThrow(() -> new NotFoundException("Business not found"));
+
+        payment.setBusinessId(business.getId());
+
+        // Try to find current active subscription for the business
+        subscriptionRepository.findCurrentActiveByBusinessId(business.getId(), LocalDateTime.now())
+                .ifPresentOrElse(
+                        subscription -> {
+                            payment.setPlanId(subscription.getPlanId());
+                            payment.setSubscriptionId(subscription.getId());
+                            log.info("Associated payment with active subscription: {}", subscription.getId());
+                        },
+                        () -> {
+                            // Clear subscription-related fields if no active subscription
+                            payment.setPlanId(null);
+                            payment.setSubscriptionId(null);
+                            log.info("No active subscription found for business, cleared subscription fields");
+                        }
+                );
     }
 
     private String determineReferenceNumber(PaymentCreateRequest request) {
