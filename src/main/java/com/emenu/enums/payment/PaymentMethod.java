@@ -6,8 +6,8 @@ import lombok.Getter;
 public enum PaymentMethod {
     CASH("Cash Payment"),
     BANK_TRANSFER("Bank Transfer"),
-    MOBILE_PAYMENT("Mobile Payment (ABA/Wing/Pi Pay)"),
-    ONLINE("Online Payment");
+    ONLINE("Online Payment"),
+    OTHER("Other");
 
     private final String description;
 

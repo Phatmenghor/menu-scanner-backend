@@ -3,8 +3,6 @@ package com.emenu.features.payment.service.impl;
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.enums.payment.PaymentType;
-import com.emenu.enums.user.AccountStatus;
-import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.Business;
@@ -52,20 +50,15 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentResponse createPayment(PaymentCreateRequest request) {
         log.info("Creating payment: amount={}, type={}", request.getAmount(), request.getPaymentType());
-
-        // Validate request based on payment type
-        validateCreateRequest(request);
-
         String referenceNumber = determineReferenceNumber(request);
         PaymentType paymentType = request.getPaymentType();
-
         PaymentResponse response = switch (paymentType) {
             case SUBSCRIPTION -> createSubscriptionPayment(request, referenceNumber);
             case BUSINESS_RECORD -> createBusinessPayment(request, referenceNumber);
             case USER_PLAN -> createUserPlanPayment(request, referenceNumber);
+            case REFUND -> createRefundPayment(request, referenceNumber);
             case OTHER -> createOtherPayment(request, referenceNumber);
         };
-
         log.info("Payment created: id={}, reference={}", response.getId(), referenceNumber);
         return response;
     }
@@ -74,18 +67,12 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional(readOnly = true)
     public PaginationResponse<PaymentResponse> getAllPayments(PaymentFilterRequest filter) {
         log.info("Fetching payments: businessId={}, status={}", filter.getBusinessId(), filter.getStatuses());
-
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
-        Pageable pageable = PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
-        );
-
-        // Convert empty lists to null to skip filtering
+        Pageable pageable = PaginationUtils.createPageable(pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection());
         List<PaymentMethod> paymentMethods = (filter.getPaymentMethods() != null && !filter.getPaymentMethods().isEmpty())
                 ? filter.getPaymentMethods() : null;
         List<PaymentStatus> paymentStatuses = (filter.getStatuses() != null && !filter.getStatuses().isEmpty())
                 ? filter.getStatuses() : null;
-
         Page<Payment> paymentPage = paymentRepository.findAllWithFilters(
                 filter.getBusinessId(),
                 filter.getPlanId(),
@@ -96,7 +83,6 @@ public class PaymentServiceImpl implements PaymentService {
                 filter.getSearch(),
                 pageable
         );
-
         return paymentMapper.toPaginationResponse(paymentPage);
     }
 
@@ -112,73 +98,30 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentResponse updatePayment(UUID id, PaymentUpdateRequest request) {
         log.info("Updating payment: id={}", id);
-
         Payment payment = findPaymentById(id);
 
-        // Validate update request if payment type is being changed
-        if (request.getPaymentType() != null && !request.getPaymentType().equals(payment.getPaymentType())) {
-            validatePaymentTypeChange(payment, request.getPaymentType(), request);
-        }
-
-        // Handle relationship updates based on provided IDs
         if (request.getSubscriptionId() != null) {
             updatePaymentSubscription(payment, request.getSubscriptionId());
         } else if (request.getBusinessId() != null) {
             updatePaymentBusiness(payment, request.getBusinessId());
         }
-
-        // Map other fields using mapper (this will handle paymentType if provided)
         paymentMapper.updateEntity(request, payment);
-
-        // Recalculate KHR amount if amount changed
         if (request.getAmount() != null) {
             Double rate = exchangeRateService.getCurrentRateValue();
             payment.calculateAmountKhr(rate);
         }
-
         Payment updated = paymentRepository.save(payment);
-
-        // Reload with relationships for response
-        Payment withRelations = paymentRepository.findByIdWithRelationships(updated.getId())
-                .orElse(updated);
-
+        Payment withRelations = paymentRepository.findByIdWithRelationships(updated.getId()).orElse(updated);
         return paymentMapper.toResponse(withRelations);
     }
 
     @Override
     public PaymentResponse deletePayment(UUID id) {
         log.info("Deleting payment: id={}", id);
-
         Payment payment = findPaymentById(id);
         payment.softDelete();
         payment = paymentRepository.save(payment);
-
         return paymentMapper.toResponse(payment);
-    }
-
-    private void validateCreateRequest(PaymentCreateRequest request) {
-        PaymentType paymentType = request.getPaymentType();
-
-        if (paymentType == PaymentType.SUBSCRIPTION && request.getSubscriptionId() == null) {
-            throw new ValidationException("Subscription ID is required for SUBSCRIPTION payment type");
-        }
-
-        if (paymentType == PaymentType.BUSINESS_RECORD && request.getBusinessId() == null) {
-            throw new ValidationException("Business ID is required for BUSINESS_RECORD payment type");
-        }
-    }
-
-    private void validatePaymentTypeChange(Payment payment, PaymentType newPaymentType, PaymentUpdateRequest request) {
-        log.info("Payment type changing from {} to {}", payment.getPaymentType(), newPaymentType);
-
-        // Validate that required fields are present for the new payment type
-        if (newPaymentType == PaymentType.SUBSCRIPTION && request.getSubscriptionId() == null && payment.getSubscriptionId() == null) {
-            throw new ValidationException("Subscription ID is required when changing to SUBSCRIPTION payment type");
-        }
-
-        if (newPaymentType == PaymentType.BUSINESS_RECORD && request.getBusinessId() == null && payment.getBusinessId() == null) {
-            throw new ValidationException("Business ID is required when changing to BUSINESS_RECORD payment type");
-        }
     }
 
     private String determineReferenceNumber(PaymentCreateRequest request) {
@@ -190,102 +133,82 @@ public class PaymentServiceImpl implements PaymentService {
 
     private PaymentResponse createSubscriptionPayment(PaymentCreateRequest request, String referenceNumber) {
         log.info("Creating subscription payment: subscriptionId={}", request.getSubscriptionId());
-
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(request.getSubscriptionId())
                 .orElseThrow(() -> new NotFoundException("Subscription not found"));
-
         businessRepository.findByIdAndIsDeletedFalse(subscription.getBusinessId())
                 .orElseThrow(() -> new NotFoundException("Business not found"));
-
         planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
                 .orElseThrow(() -> new NotFoundException("Plan not found"));
-
-        // Use mapper to create entity
         Payment payment = paymentMapper.toEntity(request);
         payment.setReferenceNumber(referenceNumber);
         payment.setBusinessId(subscription.getBusinessId());
         payment.setPlanId(subscription.getPlanId());
         payment.setSubscriptionId(subscription.getId());
-
         return savePayment(payment);
     }
 
     private PaymentResponse createBusinessPayment(PaymentCreateRequest request, String referenceNumber) {
         log.info("Creating business payment: businessId={}", request.getBusinessId());
-
         Business business = businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
                 .orElseThrow(() -> new NotFoundException("Business not found"));
-
-        // Use mapper to create entity
         Payment payment = paymentMapper.toEntity(request);
         payment.setReferenceNumber(referenceNumber);
         payment.setBusinessId(business.getId());
-
         subscriptionRepository.findCurrentActiveByBusinessId(business.getId(), LocalDateTime.now())
                 .ifPresent(subscription -> {
                     payment.setPlanId(subscription.getPlanId());
                     payment.setSubscriptionId(subscription.getId());
                     log.info("Associated payment with active subscription: {}", subscription.getId());
                 });
-
         return savePayment(payment);
     }
 
     private PaymentResponse createUserPlanPayment(PaymentCreateRequest request, String referenceNumber) {
         log.info("Creating USER_PLAN payment type");
-
-        // Use mapper to create entity
         Payment payment = paymentMapper.toEntity(request);
         payment.setReferenceNumber(referenceNumber);
+        return savePayment(payment);
+    }
 
-        // USER_PLAN payment type has no required relationships
-        // Simply save with the provided data
+    private PaymentResponse createRefundPayment(PaymentCreateRequest request, String referenceNumber) {
+        log.info("Creating REFUND payment type");
+        Payment payment = paymentMapper.toEntity(request);
+        payment.setReferenceNumber(referenceNumber);
+        if (request.getSubscriptionId() != null) {
+            Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(request.getSubscriptionId())
+                    .orElseThrow(() -> new NotFoundException("Subscription not found"));
+            payment.setBusinessId(subscription.getBusinessId());
+            payment.setPlanId(subscription.getPlanId());
+            payment.setSubscriptionId(subscription.getId());
+        }
         return savePayment(payment);
     }
 
     private PaymentResponse createOtherPayment(PaymentCreateRequest request, String referenceNumber) {
         log.info("Creating OTHER payment type");
-
-        // Use mapper to create entity
         Payment payment = paymentMapper.toEntity(request);
         payment.setReferenceNumber(referenceNumber);
-
-        // OTHER payment type has no required relationships
-        // Simply save with the provided data
         return savePayment(payment);
     }
 
     private void updatePaymentSubscription(Payment payment, UUID subscriptionId) {
-        log.info("Updating payment subscription: paymentId={}, subscriptionId={}",
-                payment.getId(), subscriptionId);
-
+        log.info("Updating payment subscription: paymentId={}, subscriptionId={}", payment.getId(), subscriptionId);
         Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(subscriptionId)
                 .orElseThrow(() -> new NotFoundException("Subscription not found"));
-
-        // Validate business exists
         businessRepository.findByIdAndIsDeletedFalse(subscription.getBusinessId())
                 .orElseThrow(() -> new NotFoundException("Business not found for subscription"));
-
-        // Validate plan exists
         planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
                 .orElseThrow(() -> new NotFoundException("Plan not found for subscription"));
-
-        // Update all related IDs
         payment.setSubscriptionId(subscription.getId());
         payment.setBusinessId(subscription.getBusinessId());
         payment.setPlanId(subscription.getPlanId());
     }
 
     private void updatePaymentBusiness(Payment payment, UUID businessId) {
-        log.info("Updating payment business: paymentId={}, businessId={}",
-                payment.getId(), businessId);
-
+        log.info("Updating payment business: paymentId={}, businessId={}", payment.getId(), businessId);
         Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)
                 .orElseThrow(() -> new NotFoundException("Business not found"));
-
         payment.setBusinessId(business.getId());
-
-        // Try to find current active subscription for the business
         subscriptionRepository.findCurrentActiveByBusinessId(business.getId(), LocalDateTime.now())
                 .ifPresentOrElse(
                         subscription -> {
@@ -294,7 +217,6 @@ public class PaymentServiceImpl implements PaymentService {
                             log.info("Associated payment with active subscription: {}", subscription.getId());
                         },
                         () -> {
-                            // Clear subscription-related fields if no active subscription
                             payment.setPlanId(null);
                             payment.setSubscriptionId(null);
                             log.info("No active subscription found for business, cleared subscription fields");
@@ -305,10 +227,8 @@ public class PaymentServiceImpl implements PaymentService {
     private PaymentResponse savePayment(Payment payment) {
         Double rate = exchangeRateService.getCurrentRateValue();
         payment.calculateAmountKhr(rate);
-
         Payment saved = paymentRepository.save(payment);
         Payment withRelations = paymentRepository.findByIdWithRelationships(saved.getId()).orElse(saved);
-
         return paymentMapper.toResponse(withRelations);
     }
 

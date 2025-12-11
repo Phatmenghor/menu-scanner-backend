@@ -22,6 +22,9 @@ public interface BusinessRepository extends JpaRepository<Business, UUID> {
     
     boolean existsByNameAndIsDeletedFalse(String name);
 
+    @Query("SELECT b FROM Business b WHERE b.ownerId = :ownerId AND b.isDeleted = false")
+    Optional<Business> findByOwnerIdAndIsDeletedFalse(@Param("ownerId") UUID ownerId);
+
     @Query("SELECT b FROM Business b " +
            "WHERE b.isDeleted = false " +
             "AND (:status IS NULL OR b.status IN :status) " +

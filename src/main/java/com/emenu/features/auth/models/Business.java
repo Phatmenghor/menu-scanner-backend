@@ -11,12 +11,14 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "businesses", indexes = {
         @Index(name = "idx_business_deleted", columnList = "is_deleted"),
         @Index(name = "idx_business_status", columnList = "status, is_deleted"),
-        @Index(name = "idx_business_subscription", columnList = "is_subscription_active, is_deleted")
+        @Index(name = "idx_business_subscription", columnList = "is_subscription_active, is_deleted"),
+        @Index(name = "idx_business_owner", columnList = "owner_id, is_deleted")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -25,7 +27,6 @@ import java.util.List;
 @Slf4j
 public class Business extends BaseUUIDEntity {
 
-    // Core Business Info
     @Column(name = "name", nullable = false)
     private String name;
 
@@ -41,51 +42,30 @@ public class Business extends BaseUUIDEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    // Status
+    @Column(name = "owner_id")
+    private UUID ownerId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private BusinessStatus status = BusinessStatus.PENDING;
 
-    // Subscription Status (Only Active Flag)
     @Column(name = "is_subscription_active")
     private Boolean isSubscriptionActive = false;
-
-    // Relationships
-    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<User> users;
-
-    @OneToOne(mappedBy = "business", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private BusinessSetting businessSetting;
 
     @OneToMany(mappedBy = "business", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Subscription> subscriptions;
 
-    // Business Methods
     public boolean isActive() {
         return BusinessStatus.ACTIVE.equals(status);
     }
 
     public boolean hasActiveSubscription() {
-        log.debug("Checking active subscription for business: {}", this.getId());
-
-        // Check database flag
         if (Boolean.TRUE.equals(isSubscriptionActive)) {
-            log.debug("Active subscription found via database flag");
             return true;
         }
-
-        // Check subscriptions collection
         if (subscriptions != null && !subscriptions.isEmpty()) {
-            boolean hasActive = subscriptions.stream()
-                    .anyMatch(sub -> sub.getIsActive() && !sub.isExpired());
-
-            if (hasActive) {
-                log.debug("Active subscription found in collection");
-                return true;
-            }
+            return subscriptions.stream().anyMatch(sub -> sub.isActive());
         }
-
-        log.debug("No active subscription found");
         return false;
     }
 
