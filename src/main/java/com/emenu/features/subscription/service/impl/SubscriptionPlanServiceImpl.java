@@ -55,9 +55,8 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     public PaginationResponse<SubscriptionPlanResponse> getAllPlans(SubscriptionPlanFilterRequest filter) {
         log.debug("Getting subscription plans with filter Search: {}", filter.getSearch());
 
-        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+                filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
         // Convert empty lists to null to skip filtering

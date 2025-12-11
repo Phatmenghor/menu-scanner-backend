@@ -51,9 +51,8 @@ public class BusinessServiceImpl implements BusinessService {
     public PaginationResponse<BusinessResponse> getAllBusinesses(BusinessFilterRequest request) {
         log.info("Getting all businesses with filters");
 
-        int pageNo = request.getPageNo() != null && request.getPageNo() > 0 ? request.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
-                pageNo, 
+                request.getPageNo(),
                 request.getPageSize(), 
                 request.getSortBy(), 
                 request.getSortDirection()

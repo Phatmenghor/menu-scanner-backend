@@ -99,9 +99,8 @@ public class UserServiceImpl implements UserService {
             request.setBusinessId(currentUser.getBusinessId());
         }
 
-        int pageNo = request.getPageNo() != null && request.getPageNo() > 0 ? request.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
-                pageNo, request.getPageSize(), request.getSortBy(), request.getSortDirection()
+                request.getPageNo(), request.getPageSize(), request.getSortBy(), request.getSortDirection()
         );
 
         // Convert empty lists to null to skip filtering

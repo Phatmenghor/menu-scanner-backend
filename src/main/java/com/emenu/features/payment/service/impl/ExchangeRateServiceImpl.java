@@ -10,6 +10,7 @@ import com.emenu.features.payment.models.ExchangeRate;
 import com.emenu.features.payment.repository.ExchangeRateRepository;
 import com.emenu.features.payment.service.ExchangeRateService;
 import com.emenu.features.payment.specification.ExchangeRateSpecification;
+import com.emenu.shared.constants.Constants;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,6 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
 
     private final ExchangeRateRepository exchangeRateRepository;
     private final ExchangeRateMapper exchangeRateMapper;
-    private static final Double DEFAULT_EXCHANGE_RATE = 4000.00;
 
     @Override
     public ExchangeRateResponse createExchangeRate(ExchangeRateCreateRequest request) {
@@ -54,9 +54,8 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     public PaginationResponse<ExchangeRateResponse> getAllExchangeRates(ExchangeRateFilterRequest filter) {
         Specification<ExchangeRate> spec = ExchangeRateSpecification.buildSpecification(filter);
 
-        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+                filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
         Page<ExchangeRate> exchangeRatePage = exchangeRateRepository.findAll(spec, pageable);
@@ -117,8 +116,8 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         }
 
         // Return default rate if no active rate exists
-        log.warn("No active exchange rate found, using default: {}", DEFAULT_EXCHANGE_RATE);
-        return DEFAULT_EXCHANGE_RATE;
+        log.warn("No active exchange rate found, using default: {}", Constants.DEFAULT_EXCHANGE_RATE);
+        return Constants.DEFAULT_EXCHANGE_RATE;
     }
 
     // Private helper methods

@@ -18,7 +18,7 @@ import java.math.RoundingMode;
 import java.util.UUID;
 
 @Entity
-@Table(name = "payment_service")
+@Table(name = "payments")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
