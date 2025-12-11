@@ -1,5 +1,6 @@
 package com.emenu.features.subscription.repository;
 
+import com.emenu.enums.sub_scription.SubscriptionStatus;
 import com.emenu.features.subscription.models.Subscription;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -66,7 +67,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
             @Param("autoRenew") Boolean autoRenew,
             @Param("startDate") LocalDateTime startDate,
             @Param("toDate") LocalDateTime toDate,
-            @Param("status") String status,
+            @Param("status") SubscriptionStatus status,
             @Param("now") LocalDateTime now,
             @Param("expiryThreshold") LocalDateTime expiryThreshold,
             @Param("search") String search,

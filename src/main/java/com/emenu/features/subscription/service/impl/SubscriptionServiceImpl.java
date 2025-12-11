@@ -1,5 +1,6 @@
 package com.emenu.features.subscription.service.impl;
 
+import com.emenu.enums.sub_scription.SubscriptionStatus;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.payment.models.Payment;
@@ -78,7 +79,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Pageable pageable = PaginationUtils.createPageable(pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection());
         
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expiryThreshold = "EXPIRING_SOON".equals(filter.getStatus()) 
+        LocalDateTime expiryThreshold = SubscriptionStatus.EXPIRING_SOON.equals(filter.getStatus())
                 ? now.plusDays(filter.getExpiringSoonDays()) 
                 : null;
         
