@@ -12,6 +12,5 @@ public class DistrictResponse extends BaseAuditResponse {
     private String districtKh;
     private String provinceCode;
     
-    // Nested province information
     private ProvinceResponse province;
 }

@@ -12,12 +12,5 @@ public class VillageResponse extends BaseAuditResponse {
     private String villageKh;
     private String communeCode;
     
-    // Nested commune information
     private CommuneResponse commune;
-    
-    // Nested district information
-    private DistrictResponse district;
-    
-    // Nested province information
-    private ProvinceResponse province;
 }

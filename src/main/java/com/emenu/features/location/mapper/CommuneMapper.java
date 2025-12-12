@@ -11,16 +11,22 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = {DistrictMapper.class})  // Use DistrictMapper for nested district
 public abstract class CommuneMapper {
     @Autowired
     protected PaginationMapper paginationMapper;
     
-    @Mapping(source = "district", target = "district")
-    @Mapping(source = "district.province", target = "province")
+    @Autowired
+    protected DistrictMapper districtMapper;
+    
+    // Map commune with its district (district will include province automatically)
+    @Mapping(target = "district", source = "district")
     public abstract CommuneResponse toResponse(Commune commune);
     
     public abstract Commune toEntity(CommuneRequest request);
+    
     public abstract List<CommuneResponse> toResponseList(List<Commune> communes);
     
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

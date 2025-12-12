@@ -24,7 +24,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional
 public class DistrictServiceImpl implements DistrictService {
 
     private final DistrictRepository districtRepository;
@@ -32,10 +31,10 @@ public class DistrictServiceImpl implements DistrictService {
     private final ProvinceRepository provinceRepository;
 
     @Override
+    @Transactional  // Keep transaction open during mapping
     public DistrictResponse createDistrict(DistrictRequest request) {
         log.info("Creating district: {}", request.getDistrictCode());
         
-        // Validate province exists
         if (!provinceRepository.existsByProvinceCodeAndIsDeletedFalse(request.getProvinceCode())) {
             throw new ValidationException("Province code does not exist: " + request.getProvinceCode());
         }
@@ -46,15 +45,25 @@ public class DistrictServiceImpl implements DistrictService {
         
         District district = districtMapper.toEntity(request);
         District savedDistrict = districtRepository.save(district);
-        District districtWithProvince = districtRepository.findByIdAndIsDeletedFalse(savedDistrict.getId())
+        
+        // Fetch with province loaded
+        District districtWithProvince = districtRepository
+            .findByIdAndIsDeletedFalse(savedDistrict.getId())
             .orElseThrow(() -> new RuntimeException("District not found"));
         
-        log.info("District created: {}", districtWithProvince.getDistrictCode());
-        return districtMapper.toResponse(districtWithProvince);
+        // Map to response WITHIN transaction
+        DistrictResponse response = districtMapper.toResponse(districtWithProvince);
+        
+        log.info("District created: {} with province: {}", 
+                 districtWithProvince.getDistrictCode(),
+                 districtWithProvince.getProvince() != null ? 
+                 districtWithProvince.getProvince().getProvinceCode() : "null");
+        
+        return response;
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true)  // Keep transaction open during mapping
     public PaginationResponse<DistrictResponse> getAllDistricts(DistrictFilterRequest request) {
         log.info("Getting all districts with filters");
         
@@ -67,14 +76,17 @@ public class DistrictServiceImpl implements DistrictService {
             request.getProvinceCode(), request.getSearch(), pageable
         );
         
+        // Map WITHIN transaction
         return districtMapper.toPaginationResponse(districtPage);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true)  // Keep transaction open
     public DistrictResponse getDistrictById(UUID id) {
         District district = districtRepository.findByIdAndIsDeletedFalse(id)
             .orElseThrow(() -> new RuntimeException("District not found"));
+        
+        // Map WITHIN transaction
         return districtMapper.toResponse(district);
     }
 
@@ -103,13 +115,13 @@ public class DistrictServiceImpl implements DistrictService {
     }
 
     @Override
+    @Transactional
     public DistrictResponse updateDistrict(UUID id, DistrictRequest request) {
         log.info("Updating district: {}", id);
         
         District district = districtRepository.findByIdAndIsDeletedFalse(id)
             .orElseThrow(() -> new RuntimeException("District not found"));
         
-        // Validate province exists if provinceCode is being changed
         if (request.getProvinceCode() != null && 
             !request.getProvinceCode().equals(district.getProvinceCode())) {
             if (!provinceRepository.existsByProvinceCodeAndIsDeletedFalse(request.getProvinceCode())) {
@@ -120,6 +132,7 @@ public class DistrictServiceImpl implements DistrictService {
         districtMapper.updateEntity(request, district);
         districtRepository.save(district);
         
+        // Fetch updated district with province
         District updatedDistrict = districtRepository.findByIdAndIsDeletedFalse(id)
             .orElseThrow(() -> new RuntimeException("District not found"));
         
@@ -128,6 +141,7 @@ public class DistrictServiceImpl implements DistrictService {
     }
 
     @Override
+    @Transactional
     public void deleteDistrict(UUID id) {
         District district = districtRepository.findByIdAndIsDeletedFalse(id)
             .orElseThrow(() -> new RuntimeException("District not found"));
@@ -140,7 +154,8 @@ public class DistrictServiceImpl implements DistrictService {
     @Override
     @Transactional(readOnly = true)
     public List<DistrictResponse> getDistrictsByProvinceCode(String provinceCode) {
-        List<District> districts = districtRepository.findAllByProvinceCodeAndIsDeletedFalse(provinceCode);
+        List<District> districts = districtRepository
+            .findAllByProvinceCodeAndIsDeletedFalse(provinceCode);
         return districtMapper.toResponseList(districts);
     }
 }

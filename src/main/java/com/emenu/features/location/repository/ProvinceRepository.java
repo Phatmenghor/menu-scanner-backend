@@ -16,9 +16,9 @@ import java.util.UUID;
 public interface ProvinceRepository extends JpaRepository<Province, UUID> {
     Optional<Province> findByIdAndIsDeletedFalse(UUID id);
     Optional<Province> findByProvinceCodeAndIsDeletedFalse(String provinceCode);
-    Optional<Province> findByProvinceEnAndIsDeletedFalse(String provinceEn);
-    Optional<Province> findByProvinceKhAndIsDeletedFalse(String provinceKh);
     boolean existsByProvinceCodeAndIsDeletedFalse(String provinceCode);
+    Optional<Province> findByProvinceEnAndIsDeletedFalse(String nameEn);
+    Optional<Province> findByProvinceKhAndIsDeletedFalse(String nameKh);
     List<Province> findAllByIsDeletedFalse();
     
     @Query("SELECT p FROM Province p WHERE p.isDeleted = false " +

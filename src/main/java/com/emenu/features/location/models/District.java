@@ -8,11 +8,16 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-@Table(name = "location_district_cbc", indexes = {
-    @Index(name = "idx_district_code", columnList = "district_code"),
-    @Index(name = "idx_district_province", columnList = "province_code"),
-    @Index(name = "idx_district_deleted", columnList = "is_deleted")
-})
+@Table(name = "location_district_cbc",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_district_code", columnNames = "district_code")
+        },
+        indexes = {
+                @Index(name = "idx_district_code", columnList = "district_code"),
+                @Index(name = "idx_district_province", columnList = "province_code"),
+                @Index(name = "idx_district_deleted", columnList = "is_deleted")
+        }
+)
 public class District extends BaseUUIDEntity {
     @Column(name = "district_code", unique = true, nullable = false, length = 10)
     private String districtCode;
@@ -25,10 +30,9 @@ public class District extends BaseUUIDEntity {
     
     @Column(name = "province_code", nullable = false, length = 10)
     private String provinceCode;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "province_code", referencedColumnName = "province_code",
-                insertable = false, updatable = false, 
-                foreignKey = @ForeignKey(name = "fk_district_province"))
+            insertable = false, updatable = false)
     private Province province;
 }
