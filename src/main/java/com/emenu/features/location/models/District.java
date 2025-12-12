@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-@Table(name = "districts", indexes = {
+@Table(name = "location_district_cbc", indexes = {
     @Index(name = "idx_district_code", columnList = "district_code"),
     @Index(name = "idx_district_province", columnList = "province_code"),
     @Index(name = "idx_district_deleted", columnList = "is_deleted")

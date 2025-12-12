@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-@Table(name = "provinces", indexes = {
+@Table(name = "location_province_cbc", indexes = {
     @Index(name = "idx_province_code", columnList = "province_code"),
     @Index(name = "idx_province_deleted", columnList = "is_deleted")
 })
