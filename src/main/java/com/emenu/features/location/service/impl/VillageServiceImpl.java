@@ -147,12 +147,4 @@ public class VillageServiceImpl implements VillageService {
         villageRepository.save(village);
         log.info("Village deleted: {}", village.getVillageCode());
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<VillageResponse> getVillagesByCommuneCode(String communeCode) {
-        List<Village> villages = villageRepository
-            .findAllByCommuneCodeAndIsDeletedFalse(communeCode);
-        return villageMapper.toResponseList(villages);
-    }
 }

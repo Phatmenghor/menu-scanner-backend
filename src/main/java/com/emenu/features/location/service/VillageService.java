@@ -17,5 +17,4 @@ public interface VillageService {
     VillageResponse getVillageByNameKh(String nameKh);
     VillageResponse updateVillage(UUID id, VillageRequest request);
     void deleteVillage(UUID id);
-    List<VillageResponse> getVillagesByCommuneCode(String communeCode);
 }

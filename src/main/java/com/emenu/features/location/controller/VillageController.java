@@ -32,14 +32,6 @@ public class VillageController {
         return ResponseEntity.ok(ApiResponse.success("Villages retrieved", response));
     }
 
-    @GetMapping("/by-commune/{communeCode}")
-    public ResponseEntity<ApiResponse<List<VillageResponse>>> getVillagesByCommuneCode(
-            @PathVariable String communeCode) {
-        log.info("Get villages by commune code: {}", communeCode);
-        List<VillageResponse> response = villageService.getVillagesByCommuneCode(communeCode);
-        return ResponseEntity.ok(ApiResponse.success("Villages retrieved", response));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<VillageResponse>> getVillageById(@PathVariable UUID id) {
         log.info("Get village by id: {}", id);

@@ -17,5 +17,4 @@ public interface DistrictService {
     DistrictResponse getDistrictByNameKh(String nameKh);
     DistrictResponse updateDistrict(UUID id, DistrictRequest request);
     void deleteDistrict(UUID id);
-    List<DistrictResponse> getDistrictsByProvinceCode(String provinceCode);
 }

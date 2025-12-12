@@ -32,14 +32,6 @@ public class DistrictController {
         return ResponseEntity.ok(ApiResponse.success("Districts retrieved", response));
     }
 
-    @GetMapping("/by-province/{provinceCode}")
-    public ResponseEntity<ApiResponse<List<DistrictResponse>>> getDistrictsByProvinceCode(
-            @PathVariable String provinceCode) {
-        log.info("Get districts by province code: {}", provinceCode);
-        List<DistrictResponse> response = districtService.getDistrictsByProvinceCode(provinceCode);
-        return ResponseEntity.ok(ApiResponse.success("Districts retrieved", response));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<DistrictResponse>> getDistrictById(@PathVariable UUID id) {
         log.info("Get district by id: {}", id);

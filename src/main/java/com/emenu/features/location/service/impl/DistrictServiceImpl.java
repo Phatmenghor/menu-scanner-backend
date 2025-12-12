@@ -150,12 +150,4 @@ public class DistrictServiceImpl implements DistrictService {
         districtRepository.save(district);
         log.info("District deleted: {}", district.getDistrictCode());
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<DistrictResponse> getDistrictsByProvinceCode(String provinceCode) {
-        List<District> districts = districtRepository
-            .findAllByProvinceCodeAndIsDeletedFalse(provinceCode);
-        return districtMapper.toResponseList(districts);
-    }
 }

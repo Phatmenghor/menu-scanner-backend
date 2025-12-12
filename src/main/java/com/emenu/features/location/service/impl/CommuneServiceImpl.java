@@ -153,11 +153,4 @@ public class CommuneServiceImpl implements CommuneService {
         log.info("Commune deleted: {}", commune.getCommuneCode());
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<CommuneResponse> getCommunesByDistrictCode(String districtCode) {
-        List<Commune> communes = communeRepository
-            .findAllByDistrictCodeAndIsDeletedFalse(districtCode);
-        return communeMapper.toResponseList(communes);
-    }
 }

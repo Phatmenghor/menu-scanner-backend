@@ -17,5 +17,4 @@ public interface CommuneService {
     CommuneResponse getCommuneByNameKh(String nameKh);
     CommuneResponse updateCommune(UUID id, CommuneRequest request);
     void deleteCommune(UUID id);
-    List<CommuneResponse> getCommunesByDistrictCode(String districtCode);
 }
