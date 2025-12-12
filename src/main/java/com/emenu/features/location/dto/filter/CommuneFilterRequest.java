@@ -7,5 +7,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class CommuneFilterRequest extends BaseFilterRequest {
-    private String districtCode;
+    private String districtCode;  // Filter by district code
+    private String provinceCode;  // Optional: Filter by province code
 }

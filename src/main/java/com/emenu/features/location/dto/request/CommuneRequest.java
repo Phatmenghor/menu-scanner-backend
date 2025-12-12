@@ -13,7 +13,7 @@ public class CommuneRequest {
     
     @NotBlank(message = "Commune name (KH) is required")
     private String communeKh;
-
+    
     @NotBlank(message = "District code is required")
     private String districtCode;
 }

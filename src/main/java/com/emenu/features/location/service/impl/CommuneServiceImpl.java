@@ -7,6 +7,7 @@ import com.emenu.features.location.dto.response.CommuneResponse;
 import com.emenu.features.location.mapper.CommuneMapper;
 import com.emenu.features.location.models.Commune;
 import com.emenu.features.location.repository.CommuneRepository;
+import com.emenu.features.location.repository.DistrictRepository;
 import com.emenu.features.location.service.CommuneService;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -28,10 +29,16 @@ public class CommuneServiceImpl implements CommuneService {
 
     private final CommuneRepository communeRepository;
     private final CommuneMapper communeMapper;
+    private final DistrictRepository districtRepository;
 
     @Override
     public CommuneResponse createCommune(CommuneRequest request) {
         log.info("Creating commune: {}", request.getCommuneCode());
+        
+        // Validate district exists
+        if (!districtRepository.existsByDistrictCodeAndIsDeletedFalse(request.getDistrictCode())) {
+            throw new ValidationException("District code does not exist: " + request.getDistrictCode());
+        }
         
         if (communeRepository.existsByCommuneCodeAndIsDeletedFalse(request.getCommuneCode())) {
             throw new ValidationException("Commune code already exists");
@@ -57,7 +64,7 @@ public class CommuneServiceImpl implements CommuneService {
         );
         
         Page<Commune> communePage = communeRepository.searchCommunes(
-            request.getDistrictCode(), request.getSearch(), pageable
+            request.getDistrictCode(), request.getProvinceCode(), request.getSearch(), pageable
         );
         
         return communeMapper.toPaginationResponse(communePage);
@@ -101,6 +108,14 @@ public class CommuneServiceImpl implements CommuneService {
         
         Commune commune = communeRepository.findByIdAndIsDeletedFalse(id)
             .orElseThrow(() -> new RuntimeException("Commune not found"));
+        
+        // Validate district exists if districtCode is being changed
+        if (request.getDistrictCode() != null && 
+            !request.getDistrictCode().equals(commune.getDistrictCode())) {
+            if (!districtRepository.existsByDistrictCodeAndIsDeletedFalse(request.getDistrictCode())) {
+                throw new ValidationException("District code does not exist: " + request.getDistrictCode());
+            }
+        }
         
         communeMapper.updateEntity(request, commune);
         communeRepository.save(commune);

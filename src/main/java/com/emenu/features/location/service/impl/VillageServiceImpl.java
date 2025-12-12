@@ -6,6 +6,7 @@ import com.emenu.features.location.dto.request.VillageRequest;
 import com.emenu.features.location.dto.response.VillageResponse;
 import com.emenu.features.location.mapper.VillageMapper;
 import com.emenu.features.location.models.Village;
+import com.emenu.features.location.repository.CommuneRepository;
 import com.emenu.features.location.repository.VillageRepository;
 import com.emenu.features.location.service.VillageService;
 import com.emenu.shared.dto.PaginationResponse;
@@ -28,10 +29,16 @@ public class VillageServiceImpl implements VillageService {
 
     private final VillageRepository villageRepository;
     private final VillageMapper villageMapper;
+    private final CommuneRepository communeRepository;
 
     @Override
     public VillageResponse createVillage(VillageRequest request) {
         log.info("Creating village: {}", request.getVillageCode());
+        
+        // Validate commune exists
+        if (!communeRepository.existsByCommuneCodeAndIsDeletedFalse(request.getCommuneCode())) {
+            throw new ValidationException("Commune code does not exist: " + request.getCommuneCode());
+        }
         
         if (villageRepository.existsByVillageCodeAndIsDeletedFalse(request.getVillageCode())) {
             throw new ValidationException("Village code already exists");
@@ -57,7 +64,8 @@ public class VillageServiceImpl implements VillageService {
         );
         
         Page<Village> villagePage = villageRepository.searchVillages(
-            request.getCommuneCode(), request.getSearch(), pageable
+            request.getCommuneCode(), request.getDistrictCode(), 
+            request.getProvinceCode(), request.getSearch(), pageable
         );
         
         return villageMapper.toPaginationResponse(villagePage);
@@ -101,6 +109,14 @@ public class VillageServiceImpl implements VillageService {
         
         Village village = villageRepository.findByIdAndIsDeletedFalse(id)
             .orElseThrow(() -> new RuntimeException("Village not found"));
+        
+        // Validate commune exists if communeCode is being changed
+        if (request.getCommuneCode() != null && 
+            !request.getCommuneCode().equals(village.getCommuneCode())) {
+            if (!communeRepository.existsByCommuneCodeAndIsDeletedFalse(request.getCommuneCode())) {
+                throw new ValidationException("Commune code does not exist: " + request.getCommuneCode());
+            }
+        }
         
         villageMapper.updateEntity(request, village);
         villageRepository.save(village);

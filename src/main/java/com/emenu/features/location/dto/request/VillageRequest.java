@@ -13,7 +13,7 @@ public class VillageRequest {
     
     @NotBlank(message = "Village name (KH) is required")
     private String villageKh;
-
+    
     @NotBlank(message = "Commune code is required")
     private String communeCode;
 }

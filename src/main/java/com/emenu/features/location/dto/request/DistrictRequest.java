@@ -13,7 +13,7 @@ public class DistrictRequest {
     
     @NotBlank(message = "District name (KH) is required")
     private String districtKh;
-
+    
     @NotBlank(message = "Province code is required")
     private String provinceCode;
 }

@@ -7,6 +7,7 @@ import com.emenu.features.location.dto.response.DistrictResponse;
 import com.emenu.features.location.mapper.DistrictMapper;
 import com.emenu.features.location.models.District;
 import com.emenu.features.location.repository.DistrictRepository;
+import com.emenu.features.location.repository.ProvinceRepository;
 import com.emenu.features.location.service.DistrictService;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -28,10 +29,16 @@ public class DistrictServiceImpl implements DistrictService {
 
     private final DistrictRepository districtRepository;
     private final DistrictMapper districtMapper;
+    private final ProvinceRepository provinceRepository;
 
     @Override
     public DistrictResponse createDistrict(DistrictRequest request) {
         log.info("Creating district: {}", request.getDistrictCode());
+        
+        // Validate province exists
+        if (!provinceRepository.existsByProvinceCodeAndIsDeletedFalse(request.getProvinceCode())) {
+            throw new ValidationException("Province code does not exist: " + request.getProvinceCode());
+        }
         
         if (districtRepository.existsByDistrictCodeAndIsDeletedFalse(request.getDistrictCode())) {
             throw new ValidationException("District code already exists");
@@ -101,6 +108,14 @@ public class DistrictServiceImpl implements DistrictService {
         
         District district = districtRepository.findByIdAndIsDeletedFalse(id)
             .orElseThrow(() -> new RuntimeException("District not found"));
+        
+        // Validate province exists if provinceCode is being changed
+        if (request.getProvinceCode() != null && 
+            !request.getProvinceCode().equals(district.getProvinceCode())) {
+            if (!provinceRepository.existsByProvinceCodeAndIsDeletedFalse(request.getProvinceCode())) {
+                throw new ValidationException("Province code does not exist: " + request.getProvinceCode());
+            }
+        }
         
         districtMapper.updateEntity(request, district);
         districtRepository.save(district);

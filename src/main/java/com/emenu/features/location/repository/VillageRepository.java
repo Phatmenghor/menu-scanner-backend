@@ -57,10 +57,14 @@ public interface VillageRepository extends JpaRepository<Village, UUID> {
            "LEFT JOIN FETCH d.province " +
            "WHERE v.isDeleted = false " +
            "AND (:communeCode IS NULL OR :communeCode = '' OR v.communeCode = :communeCode) " +
+           "AND (:districtCode IS NULL OR :districtCode = '' OR c.districtCode = :districtCode) " +
+           "AND (:provinceCode IS NULL OR :provinceCode = '' OR d.provinceCode = :provinceCode) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "LOWER(v.villageCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(v.villageEn) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(v.villageKh) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Village> searchVillages(@Param("communeCode") String communeCode,
+                                 @Param("districtCode") String districtCode,
+                                 @Param("provinceCode") String provinceCode,
                                  @Param("search") String search, Pageable pageable);
 }

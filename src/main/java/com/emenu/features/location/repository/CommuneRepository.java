@@ -51,10 +51,12 @@ public interface CommuneRepository extends JpaRepository<Commune, UUID> {
            "LEFT JOIN FETCH d.province " +
            "WHERE c.isDeleted = false " +
            "AND (:districtCode IS NULL OR :districtCode = '' OR c.districtCode = :districtCode) " +
+           "AND (:provinceCode IS NULL OR :provinceCode = '' OR d.provinceCode = :provinceCode) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "LOWER(c.communeCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(c.communeEn) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(c.communeKh) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Commune> searchCommunes(@Param("districtCode") String districtCode,
+                                 @Param("provinceCode") String provinceCode,
                                  @Param("search") String search, Pageable pageable);
 }
