@@ -32,13 +32,6 @@ public class ProvinceController {
         return ResponseEntity.ok(ApiResponse.success("Provinces retrieved", response));
     }
 
-    @GetMapping("/list")
-    public ResponseEntity<ApiResponse<List<ProvinceResponse>>> getAllProvincesNoPaging() {
-        log.info("Get all provinces without paging");
-        List<ProvinceResponse> response = provinceService.getAllProvincesNoPaging();
-        return ResponseEntity.ok(ApiResponse.success("Provinces retrieved", response));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProvinceResponse>> getProvinceById(@PathVariable UUID id) {
         log.info("Get province by id: {}", id);

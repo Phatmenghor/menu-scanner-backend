@@ -17,5 +17,4 @@ public interface ProvinceService {
     ProvinceResponse getProvinceByNameKh(String nameKh);
     ProvinceResponse updateProvince(UUID id, ProvinceRequest request);
     void deleteProvince(UUID id);
-    List<ProvinceResponse> getAllProvincesNoPaging();
 }

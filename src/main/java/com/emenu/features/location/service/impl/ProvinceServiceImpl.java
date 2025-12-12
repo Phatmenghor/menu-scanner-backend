@@ -117,10 +117,4 @@ public class ProvinceServiceImpl implements ProvinceService {
         log.info("Province deleted: {}", province.getProvinceCode());
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ProvinceResponse> getAllProvincesNoPaging() {
-        List<Province> provinces = provinceRepository.findAllByIsDeletedFalse();
-        return provinceMapper.toResponseList(provinces);
-    }
 }
