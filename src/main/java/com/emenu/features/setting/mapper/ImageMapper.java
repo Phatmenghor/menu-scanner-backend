@@ -29,7 +29,7 @@ public interface ImageMapper {
         ImageDto imageDto = new ImageDto();
         imageDto.setId(image.getId());
         imageDto.setType(image.getType());
-        imageDto.setImageUrl("/api/images/" + image.getId());
+        imageDto.setImageUrl("http://152.42.254.193:8080/api/images/" + image.getId());
 
         return imageDto;
     }
