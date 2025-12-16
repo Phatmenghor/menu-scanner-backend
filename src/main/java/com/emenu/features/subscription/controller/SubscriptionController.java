@@ -132,10 +132,10 @@ public class SubscriptionController {
 
         log.info("Cancelling subscription: {} with refund amount: {}", id, request.getRefundAmount());
 
-        // ✅ Call enhanced service method
+        // Call enhanced service method
         SubscriptionResponse subscription = subscriptionService.cancelSubscription(id, request);
 
-        // ✅ Create comprehensive response
+        // Create comprehensive response
         SubscriptionCancellationResponse response = new SubscriptionCancellationResponse();
         response.setSubscription(subscription);
         response.setPaymentsCleared(true); // Always clear payments
