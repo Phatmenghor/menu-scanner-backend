@@ -102,11 +102,11 @@ public class NotificationController {
     // ===== DELETE (Only 2 methods - self notifications only) =====
     
     @DeleteMapping("/{notificationId}")
-    public ResponseEntity<ApiResponse<Void>> deleteNotification(
+    public ResponseEntity<ApiResponse<NotificationResponse>> deleteNotification(
             @PathVariable UUID notificationId) {
         log.info("Delete notification: {}", notificationId);
-        notificationService.deleteNotification(notificationId);
-        return ResponseEntity.ok(ApiResponse.success("Notification deleted", null));
+        NotificationResponse response = notificationService.deleteNotification(notificationId);
+        return ResponseEntity.ok(ApiResponse.success("Notification deleted", response));
     }
 
     @DeleteMapping("/delete-all")

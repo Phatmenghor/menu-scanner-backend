@@ -336,7 +336,7 @@ public class NotificationServiceImpl implements NotificationService {
     
     // ===== DELETE (Self notifications only) =====
     @Override
-    public void deleteNotification(UUID notificationId) {
+    public NotificationResponse deleteNotification(UUID notificationId) {
         User currentUser = securityUtils.getCurrentUser();
         
         Notification notification = notificationRepository
@@ -344,8 +344,9 @@ public class NotificationServiceImpl implements NotificationService {
                 .orElseThrow(() -> new ValidationException("Notification not found"));
         
         notification.softDelete();
-        notificationRepository.save(notification);
+        notification = notificationRepository.save(notification);
         log.info("Notification deleted: {}", notificationId);
+        return notificationMapper.toResponse(notification);
     }
     
     @Override
