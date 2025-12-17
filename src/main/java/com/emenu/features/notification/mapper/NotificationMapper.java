@@ -26,7 +26,7 @@ public abstract class NotificationMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", constant = "SENT")
     @Mapping(target = "isRead", constant = "false")
-    @Mapping(target = "isSystemCopy", constant = "false")
+    @Mapping(target = "isSeen", constant = "false")
     public abstract Notification toEntity(NotificationRequest request);
 
     public PaginationResponse<NotificationResponse> toPaginationResponse(Page<Notification> page) {

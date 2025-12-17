@@ -223,6 +223,9 @@ public class NotificationServiceImpl implements NotificationService {
     public PaginationResponse<NotificationResponse> getMyNotifications(NotificationFilterRequest request) {
         User currentUser = securityUtils.getCurrentUser();
         
+        // Force current user's ID for "my notifications"
+        request.setUserId(currentUser.getId());
+        
         Pageable pageable = PaginationUtils.createPageable(
                 request.getPageNo(),
                 request.getPageSize(),
@@ -230,19 +233,17 @@ public class NotificationServiceImpl implements NotificationService {
                 request.getSortDirection()
         );
         
-        Page<Notification> notificationPage;
-        
-        if (Boolean.TRUE.equals(request.getUnreadOnly())) {
-            notificationPage = notificationRepository.findUnreadByUserId(currentUser.getId(), pageable);
-        } else if (request.getMessageType() != null) {
-            notificationPage = notificationRepository.findByUserIdAndType(
-                currentUser.getId(), request.getMessageType(), pageable);
-        } else if (request.getSearch() != null && !request.getSearch().isEmpty()) {
-            notificationPage = notificationRepository.searchUserNotifications(
-                currentUser.getId(), request.getSearch(), pageable);
-        } else {
-            notificationPage = notificationRepository.findByUserId(currentUser.getId(), pageable);
-        }
+        // Use comprehensive search with current user filter
+        Page<Notification> notificationPage = notificationRepository.searchNotifications(
+            currentUser.getId(),
+            request.getBusinessId(),
+            request.getMessageType(),
+            request.getPriority(),
+            request.getIsRead(),
+            request.getRecipientType(),
+            request.getSearch(),
+            pageable
+        );
         
         return notificationMapper.toPaginationResponse(notificationPage);
     }
@@ -259,12 +260,22 @@ public class NotificationServiceImpl implements NotificationService {
         
         Page<Notification> notificationPage;
         
+        // If system notifications only is requested
         if (Boolean.TRUE.equals(request.getSystemNotificationsOnly())) {
-            notificationPage = notificationRepository.findByRecipientTypeAndIsDeletedFalse(
-                NotificationRecipientType.SYSTEM_OWNER_GROUP, pageable);
-        } else {
-            notificationPage = notificationRepository.findAll(pageable);
+            request.setRecipientType(NotificationRecipientType.SYSTEM_OWNER_GROUP);
         }
+        
+        // Use comprehensive search query with all filters
+        notificationPage = notificationRepository.searchNotifications(
+            request.getUserId(),
+            request.getBusinessId(),
+            request.getMessageType(),
+            request.getPriority(),
+            request.getIsRead(),
+            request.getRecipientType(),
+            request.getSearch(),
+            pageable
+        );
         
         return notificationMapper.toPaginationResponse(notificationPage);
     }
@@ -276,7 +287,24 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationRepository.countUnreadByUserId(currentUser.getId());
     }
     
-    // ===== UPDATE =====
+    @Override
+    @Transactional(readOnly = true)
+    public long getUnseenCount() {
+        User currentUser = securityUtils.getCurrentUser();
+        return notificationRepository.countUnseenByUserId(currentUser.getId());
+    }
+    
+    // ===== UPDATE (Self notifications only) =====
+    @Override
+    public int markAllAsSeen() {
+        User currentUser = securityUtils.getCurrentUser();
+        int updated = notificationRepository.markAllAsSeenForUser(
+                currentUser.getId(),
+                LocalDateTime.now()
+        );
+        log.info("Marked {} notifications as SEEN (badge cleared) for user: {}", updated, currentUser.getId());
+        return updated;
+    }
     @Override
     public NotificationResponse markAsRead(UUID notificationId) {
         User currentUser = securityUtils.getCurrentUser();
@@ -295,7 +323,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
     
     @Override
-    public void markAllAsRead() {
+    public int markAllAsRead() {
         User currentUser = securityUtils.getCurrentUser();
         int updated = notificationRepository.markAllAsReadForUser(
                 currentUser.getId(),
@@ -303,20 +331,10 @@ public class NotificationServiceImpl implements NotificationService {
                 MessageStatus.READ
         );
         log.info("Marked {} notifications as read for user: {}", updated, currentUser.getId());
-    }
-    
-    @Override
-    public int markGroupAsRead(UUID groupId) {
-        int updated = notificationRepository.markGroupAsRead(
-                groupId,
-                LocalDateTime.now(),
-                MessageStatus.READ
-        );
-        log.info("Marked {} notifications as read for group: {}", updated, groupId);
         return updated;
     }
     
-    // ===== DELETE =====
+    // ===== DELETE (Self notifications only) =====
     @Override
     public void deleteNotification(UUID notificationId) {
         User currentUser = securityUtils.getCurrentUser();
@@ -331,16 +349,13 @@ public class NotificationServiceImpl implements NotificationService {
     }
     
     @Override
-    public void deleteAllReadNotifications() {
-        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
-        int deleted = notificationRepository.softDeleteOldReadNotifications(sevenDaysAgo);
-        log.info("Deleted {} old read notifications", deleted);
-    }
-    
-    @Override
-    public int deleteGroupNotifications(UUID groupId) {
-        int deleted = notificationRepository.softDeleteGroupNotifications(groupId);
-        log.info("Deleted {} notifications for group: {}", deleted, groupId);
+    public int deleteAllNotifications() {
+        User currentUser = securityUtils.getCurrentUser();
+        
+        // Use efficient bulk update query
+        int deleted = notificationRepository.softDeleteAllUserNotifications(currentUser.getId());
+        
+        log.info("Deleted {} notifications for user: {}", deleted, currentUser.getId());
         return deleted;
     }
 }

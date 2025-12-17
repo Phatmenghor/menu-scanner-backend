@@ -19,6 +19,7 @@ import java.util.UUID;
     @Index(name = "idx_notification_user", columnList = "user_id, is_deleted"),
     @Index(name = "idx_notification_business", columnList = "business_id, is_deleted"),
     @Index(name = "idx_notification_read", columnList = "is_read, user_id"),
+    @Index(name = "idx_notification_seen", columnList = "is_seen, user_id"),
     @Index(name = "idx_notification_group", columnList = "group_id, is_deleted")
 })
 @Data
@@ -62,24 +63,36 @@ public class Notification extends BaseUUIDEntity {
 
     // Group Tracking
     @Column(name = "group_id")
-    private UUID groupId; // Same ID for all notifications sent together
+    private UUID groupId;
 
-    // Read Status
+    @Column(name = "is_seen", nullable = false)
+    private Boolean isSeen = false;
+    
+    @Column(name = "seen_at")
+    private LocalDateTime seenAt;
+
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
-    // Telegram Integration (Optional)
-    @Column(name = "telegram_chat_id")
-    private String telegramChatId;
 
-    // Helper Methods
+    public void markAsSeen() {
+        this.isSeen = true;
+        this.seenAt = LocalDateTime.now();
+    }
+
     public void markAsRead() {
         this.isRead = true;
         this.readAt = LocalDateTime.now();
         this.status = MessageStatus.READ;
+        
+        // Automatically mark as seen when read
+        if (!this.isSeen) {
+            this.isSeen = true;
+            this.seenAt = this.readAt;
+        }
     }
 
     public boolean isGroupNotification() {

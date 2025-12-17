@@ -10,32 +10,25 @@ import java.util.UUID;
 
 public interface NotificationService {
 
-    // ===== CREATE =====
-    /**
-     * Send notification(s) - automatically handles individual or group based on recipientType
-     */
     List<NotificationResponse> sendNotification(NotificationRequest request);
     
-    // ===== READ =====
     NotificationResponse getNotificationById(UUID notificationId);
     
     PaginationResponse<NotificationResponse> getMyNotifications(NotificationFilterRequest request);
     
     PaginationResponse<NotificationResponse> getAllNotifications(NotificationFilterRequest request);
-    
+
     long getUnreadCount();
-    
-    // ===== UPDATE =====
+
+    long getUnseenCount();
+
+    int markAllAsSeen();
+
     NotificationResponse markAsRead(UUID notificationId);
-    
-    void markAllAsRead();
-    
-    int markGroupAsRead(UUID groupId);
-    
-    // ===== DELETE =====
+
+    int markAllAsRead();
+
     void deleteNotification(UUID notificationId);
-    
-    void deleteAllReadNotifications();
-    
-    int deleteGroupNotifications(UUID groupId);
+
+    int deleteAllNotifications();
 }

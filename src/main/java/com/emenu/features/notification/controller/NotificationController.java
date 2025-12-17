@@ -25,6 +25,7 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
+    // ===== CREATE =====
     @PostMapping
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> sendNotification(
             @Valid @RequestBody NotificationRequest request) {
@@ -52,6 +53,7 @@ public class NotificationController {
     }
 
     @PostMapping("/all")
+    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<PaginationResponse<NotificationResponse>>> getAllNotifications(
             @Valid @RequestBody NotificationFilterRequest request) {
         log.info("Get all notifications");
@@ -66,7 +68,22 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("Unread count", count));
     }
 
-    // ===== UPDATE =====
+    @GetMapping("/unseen-count")
+    public ResponseEntity<ApiResponse<Long>> getUnseenCount() {
+        log.info("Get unseen count (for badge)");
+        long count = notificationService.getUnseenCount();
+        return ResponseEntity.ok(ApiResponse.success("Unseen count", count));
+    }
+
+    // ===== UPDATE (Only 3 methods - self notifications only) =====
+    
+    @PutMapping("/mark-all-seen")
+    public ResponseEntity<ApiResponse<Integer>> markAllAsSeen() {
+        log.info("Mark all as seen (clear badge)");
+        int updated = notificationService.markAllAsSeen();
+        return ResponseEntity.ok(ApiResponse.success("Badge cleared", updated));
+    }
+    
     @PutMapping("/{notificationId}/read")
     public ResponseEntity<ApiResponse<NotificationResponse>> markAsRead(
             @PathVariable UUID notificationId) {
@@ -76,39 +93,26 @@ public class NotificationController {
     }
 
     @PutMapping("/mark-all-read")
-    public ResponseEntity<ApiResponse<Void>> markAllAsRead() {
+    public ResponseEntity<ApiResponse<Integer>> markAllAsRead() {
         log.info("Mark all as read");
-        notificationService.markAllAsRead();
-        return ResponseEntity.ok(ApiResponse.success("All marked as read", null));
+        int updated = notificationService.markAllAsRead();
+        return ResponseEntity.ok(ApiResponse.success("All marked as read", updated));
     }
 
-    @PutMapping("/group/{groupId}/read")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER')")
-    public ResponseEntity<ApiResponse<Integer>> markGroupAsRead(@PathVariable UUID groupId) {
-        log.info("Mark group as read: {}", groupId);
-        int updated = notificationService.markGroupAsRead(groupId);
-        return ResponseEntity.ok(ApiResponse.success("Group marked as read", updated));
-    }
-
-    // ===== DELETE =====
+    // ===== DELETE (Only 2 methods - self notifications only) =====
+    
     @DeleteMapping("/{notificationId}")
-    public ResponseEntity<ApiResponse<Void>> deleteNotification(@PathVariable UUID notificationId) {
+    public ResponseEntity<ApiResponse<Void>> deleteNotification(
+            @PathVariable UUID notificationId) {
         log.info("Delete notification: {}", notificationId);
         notificationService.deleteNotification(notificationId);
         return ResponseEntity.ok(ApiResponse.success("Notification deleted", null));
     }
 
-    @DeleteMapping("/delete-read")
-    public ResponseEntity<ApiResponse<Void>> deleteAllReadNotifications() {
-        log.info("Delete all read notifications");
-        notificationService.deleteAllReadNotifications();
-        return ResponseEntity.ok(ApiResponse.success("Read notifications deleted", null));
-    }
-
-    @DeleteMapping("/group/{groupId}")
-    public ResponseEntity<ApiResponse<Integer>> deleteGroupNotifications(@PathVariable UUID groupId) {
-        log.info("Delete group notifications: {}", groupId);
-        int deleted = notificationService.deleteGroupNotifications(groupId);
-        return ResponseEntity.ok(ApiResponse.success("Group notifications deleted", deleted));
+    @DeleteMapping("/delete-all")
+    public ResponseEntity<ApiResponse<Integer>> deleteAllNotifications() {
+        log.info("Delete all my notifications");
+        int deleted = notificationService.deleteAllNotifications();
+        return ResponseEntity.ok(ApiResponse.success("All notifications deleted", deleted));
     }
 }

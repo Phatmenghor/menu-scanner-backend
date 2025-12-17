@@ -33,6 +33,35 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.isRead = false AND n.isDeleted = false")
     long countUnreadByUserId(@Param("userId") UUID userId);
 
+    // ===== SEEN STATUS QUERIES (For Badge Count) =====
+    @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.isSeen = false AND n.isDeleted = false")
+    long countUnseenByUserId(@Param("userId") UUID userId);
+
+    @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.isSeen = false AND n.isDeleted = false ORDER BY n.createdAt DESC")
+    Page<Notification> findUnseenByUserId(@Param("userId") UUID userId, Pageable pageable);
+
+    // ===== COMPREHENSIVE FILTER QUERY =====
+    @Query("SELECT n FROM Notification n WHERE n.isDeleted = false " +
+           "AND (:userId IS NULL OR n.userId = :userId) " +
+           "AND (:businessId IS NULL OR n.businessId = :businessId) " +
+           "AND (:messageType IS NULL OR n.messageType = :messageType) " +
+           "AND (:priority IS NULL OR n.priority = :priority) " +
+           "AND (:isRead IS NULL OR n.isRead = :isRead) " +
+           "AND (:recipientType IS NULL OR n.recipientType = :recipientType) " +
+           "AND (:search IS NULL OR LOWER(n.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "    OR LOWER(n.message) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "ORDER BY n.createdAt DESC")
+    Page<Notification> searchNotifications(
+        @Param("userId") UUID userId,
+        @Param("businessId") UUID businessId,
+        @Param("messageType") MessageType messageType,
+        @Param("priority") NotificationPriority priority,
+        @Param("isRead") Boolean isRead,
+        @Param("recipientType") NotificationRecipientType recipientType,
+        @Param("search") String search,
+        Pageable pageable
+    );
+
     // ===== GROUP QUERIES =====
     @Query("SELECT n FROM Notification n WHERE n.groupId = :groupId AND n.isDeleted = false ORDER BY n.createdAt DESC")
     List<Notification> findByGroupId(@Param("groupId") UUID groupId);
@@ -50,7 +79,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         Pageable pageable
     );
 
-    // ===== FILTER QUERIES =====
+    // ===== SPECIFIC FILTER QUERIES =====
     @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.messageType = :type AND n.isDeleted = false ORDER BY n.createdAt DESC")
     Page<Notification> findByUserIdAndType(
         @Param("userId") UUID userId,
@@ -65,16 +94,6 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         Pageable pageable
     );
 
-    @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.isDeleted = false " +
-           "AND (:search IS NULL OR LOWER(n.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "OR LOWER(n.message) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-           "ORDER BY n.createdAt DESC")
-    Page<Notification> searchUserNotifications(
-        @Param("userId") UUID userId,
-        @Param("search") String search,
-        Pageable pageable
-    );
-
     // ===== UPDATE OPERATIONS =====
     @Modifying
     @Query("UPDATE Notification n SET n.isRead = true, n.readAt = :readAt, n.status = :status WHERE n.userId = :userId AND n.isRead = false")
@@ -82,6 +101,13 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         @Param("userId") UUID userId,
         @Param("readAt") LocalDateTime readAt,
         @Param("status") MessageStatus status
+    );
+
+    @Modifying
+    @Query("UPDATE Notification n SET n.isSeen = true, n.seenAt = :seenAt WHERE n.userId = :userId AND n.isSeen = false")
+    int markAllAsSeenForUser(
+        @Param("userId") UUID userId,
+        @Param("seenAt") LocalDateTime seenAt
     );
 
     @Modifying
@@ -100,6 +126,10 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     @Modifying
     @Query("UPDATE Notification n SET n.isDeleted = true WHERE n.groupId = :groupId")
     int softDeleteGroupNotifications(@Param("groupId") UUID groupId);
+    
+    @Modifying
+    @Query("UPDATE Notification n SET n.isDeleted = true WHERE n.userId = :userId AND n.isDeleted = false")
+    int softDeleteAllUserNotifications(@Param("userId") UUID userId);
 
     // ===== STATISTICS =====
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.priority = :priority AND n.isRead = false AND n.isDeleted = false")
