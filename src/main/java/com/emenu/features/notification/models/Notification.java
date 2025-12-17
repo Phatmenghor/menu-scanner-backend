@@ -2,7 +2,8 @@ package com.emenu.features.notification.models;
 
 import com.emenu.enums.notification.MessageStatus;
 import com.emenu.enums.notification.MessageType;
-import com.emenu.enums.notification.NotificationChannel;
+import com.emenu.enums.notification.NotificationPriority;
+import com.emenu.enums.notification.NotificationRecipientType;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -14,13 +15,19 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "notifications")
+@Table(name = "notifications", indexes = {
+    @Index(name = "idx_notification_user", columnList = "user_id, is_deleted"),
+    @Index(name = "idx_notification_business", columnList = "business_id, is_deleted"),
+    @Index(name = "idx_notification_read", columnList = "is_read, user_id"),
+    @Index(name = "idx_notification_group", columnList = "group_id, is_deleted")
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Notification extends BaseUUIDEntity {
 
+    // Basic Information
     @Column(name = "title", nullable = false)
     private String title;
 
@@ -32,27 +39,30 @@ public class Notification extends BaseUUIDEntity {
     private MessageType messageType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "channel", nullable = false)
-    private NotificationChannel channel = NotificationChannel.IN_APP;
+    @Column(name = "priority", nullable = false)
+    private NotificationPriority priority = NotificationPriority.NORMAL;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private MessageStatus status = MessageStatus.SENT;
 
     // Recipient Information
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recipient_type", nullable = false)
+    private NotificationRecipientType recipientType = NotificationRecipientType.INDIVIDUAL_USER;
+
     @Column(name = "user_id", nullable = false)
     private UUID userId;
     
     @Column(name = "user_name")
     private String userName;
 
-    // Business Context (if applicable)
     @Column(name = "business_id")
     private UUID businessId;
 
-    // For System Owner Copy
-    @Column(name = "is_system_copy", nullable = false)
-    private Boolean isSystemCopy = false;  // true = copy sent to platform owner
+    // Group Tracking
+    @Column(name = "group_id")
+    private UUID groupId; // Same ID for all notifications sent together
 
     // Read Status
     @Column(name = "is_read", nullable = false)
@@ -61,50 +71,18 @@ public class Notification extends BaseUUIDEntity {
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
-    // Reference (optional - for linking to orders, payments, etc)
-    @Column(name = "reference_type")
-    private String referenceType; 
-    
-    @Column(name = "reference_id")
-    private UUID referenceId;
+    // Telegram Integration (Optional)
+    @Column(name = "telegram_chat_id")
+    private String telegramChatId;
 
-    // Action URL (for frontend navigation)
-    @Column(name = "action_url")
-    private String actionUrl;
-
-    // Helper methods
+    // Helper Methods
     public void markAsRead() {
         this.isRead = true;
         this.readAt = LocalDateTime.now();
         this.status = MessageStatus.READ;
     }
 
-    public static Notification createUserNotification(
-            String title, 
-            String message, 
-            MessageType type,
-            UUID userId,
-            String userName) {
-        Notification notification = new Notification();
-        notification.setTitle(title);
-        notification.setMessage(message);
-        notification.setMessageType(type);
-        notification.setUserId(userId);
-        notification.setUserName(userName);
-        notification.setIsSystemCopy(false);
-        return notification;
-    }
-
-    public static Notification createSystemCopy(Notification original, UUID platformOwnerId) {
-        Notification systemCopy = new Notification();
-        systemCopy.setTitle("[System] " + original.getTitle());
-        systemCopy.setMessage(original.getMessage() + "\n\nUser: " + original.getUserName());
-        systemCopy.setMessageType(original.getMessageType());
-        systemCopy.setUserId(platformOwnerId);
-        systemCopy.setIsSystemCopy(true);
-        systemCopy.setReferenceType(original.getReferenceType());
-        systemCopy.setReferenceId(original.getReferenceId());
-        systemCopy.setBusinessId(original.getBusinessId());
-        return systemCopy;
+    public boolean isGroupNotification() {
+        return groupId != null && recipientType.isGroupNotification();
     }
 }

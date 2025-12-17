@@ -47,4 +47,22 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.businessId = :businessId AND u.isDeleted = false")
     long countByBusinessId(@Param("businessId") UUID businessId);
+
+    // Find all users by business
+    @Query("SELECT u FROM User u WHERE u.businessId = :businessId AND u.isDeleted = false")
+    List<User> findAllByBusinessIdAndIsDeletedFalse(@Param("businessId") UUID businessId);
+
+    // Find users by role
+    @Query("SELECT DISTINCT u FROM User u " +
+            "LEFT JOIN u.roles r " +
+            "WHERE r.name = :role AND u.isDeleted = false")
+    List<User> findByRoleAndIsDeletedFalse(@Param("role") RoleEnum role);
+
+    // Find all platform users (all roles except CUSTOMER and BUSINESS roles)
+    @Query("SELECT u FROM User u WHERE u.userType = 'PLATFORM_USER' AND u.isDeleted = false")
+    List<User> findAllPlatformUsers();
+
+    // Find all active users (for ALL_USERS notifications)
+    @Query("SELECT u FROM User u WHERE u.accountStatus = 'ACTIVE' AND u.isDeleted = false")
+    List<User> findAllActiveUsers();
 }

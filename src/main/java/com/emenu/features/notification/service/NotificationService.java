@@ -5,25 +5,37 @@ import com.emenu.features.notification.dto.request.NotificationRequest;
 import com.emenu.features.notification.dto.resposne.NotificationResponse;
 import com.emenu.shared.dto.PaginationResponse;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface NotificationService {
 
-    // CREATE
-    NotificationResponse createNotification(NotificationRequest request);
+    // ===== CREATE =====
+    /**
+     * Send notification(s) - automatically handles individual or group based on recipientType
+     */
+    List<NotificationResponse> sendNotification(NotificationRequest request);
     
-    // READ
+    // ===== READ =====
     NotificationResponse getNotificationById(UUID notificationId);
+    
     PaginationResponse<NotificationResponse> getMyNotifications(NotificationFilterRequest request);
+    
     PaginationResponse<NotificationResponse> getAllNotifications(NotificationFilterRequest request);
+    
     long getUnreadCount();
     
-    // UPDATE
-    NotificationResponse updateNotification(UUID notificationId, NotificationRequest request);
+    // ===== UPDATE =====
     NotificationResponse markAsRead(UUID notificationId);
+    
     void markAllAsRead();
     
-    // DELETE
+    int markGroupAsRead(UUID groupId);
+    
+    // ===== DELETE =====
     void deleteNotification(UUID notificationId);
+    
     void deleteAllReadNotifications();
+    
+    int deleteGroupNotifications(UUID groupId);
 }

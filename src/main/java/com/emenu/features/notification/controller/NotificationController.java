@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -24,26 +25,24 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    // CREATE - Send new notification
     @PostMapping
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
-    public ResponseEntity<ApiResponse<NotificationResponse>> createNotification(
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> sendNotification(
             @Valid @RequestBody NotificationRequest request) {
-        log.info("Creating notification");
-        NotificationResponse response = notificationService.createNotification(request);
+        log.info("Sending notification - Recipient: {}", request.getRecipientType());
+        List<NotificationResponse> responses = notificationService.sendNotification(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Notification created", response));
+                .body(ApiResponse.success("Notification sent", responses));
     }
 
-    // READ - Get single notification
+    // ===== READ =====
     @GetMapping("/{notificationId}")
-    public ResponseEntity<ApiResponse<NotificationResponse>> getNotification(@PathVariable UUID notificationId) {
+    public ResponseEntity<ApiResponse<NotificationResponse>> getNotification(
+            @PathVariable UUID notificationId) {
         log.info("Get notification: {}", notificationId);
         NotificationResponse response = notificationService.getNotificationById(notificationId);
         return ResponseEntity.ok(ApiResponse.success("Notification retrieved", response));
     }
 
-    // READ - Get my notifications
     @PostMapping("/my")
     public ResponseEntity<ApiResponse<PaginationResponse<NotificationResponse>>> getMyNotifications(
             @Valid @RequestBody NotificationFilterRequest request) {
@@ -52,9 +51,7 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("Notifications retrieved", response));
     }
 
-    // READ - Get all notifications (Admin)
     @PostMapping("/all")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<PaginationResponse<NotificationResponse>>> getAllNotifications(
             @Valid @RequestBody NotificationFilterRequest request) {
         log.info("Get all notifications");
@@ -62,7 +59,6 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("All notifications retrieved", response));
     }
 
-    // READ - Get unread count
     @GetMapping("/unread-count")
     public ResponseEntity<ApiResponse<Long>> getUnreadCount() {
         log.info("Get unread count");
@@ -70,25 +66,15 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("Unread count", count));
     }
 
-    // UPDATE - Update notification
-    @PutMapping("/{notificationId}")
-    public ResponseEntity<ApiResponse<NotificationResponse>> updateNotification(
-            @PathVariable UUID notificationId,
-            @Valid @RequestBody NotificationRequest request) {
-        log.info("Update notification: {}", notificationId);
-        NotificationResponse response = notificationService.updateNotification(notificationId, request);
-        return ResponseEntity.ok(ApiResponse.success("Notification updated", response));
-    }
-
-    // UPDATE - Mark as read
+    // ===== UPDATE =====
     @PutMapping("/{notificationId}/read")
-    public ResponseEntity<ApiResponse<NotificationResponse>> markAsRead(@PathVariable UUID notificationId) {
+    public ResponseEntity<ApiResponse<NotificationResponse>> markAsRead(
+            @PathVariable UUID notificationId) {
         log.info("Mark as read: {}", notificationId);
         NotificationResponse response = notificationService.markAsRead(notificationId);
         return ResponseEntity.ok(ApiResponse.success("Marked as read", response));
     }
 
-    // UPDATE - Mark all as read
     @PutMapping("/mark-all-read")
     public ResponseEntity<ApiResponse<Void>> markAllAsRead() {
         log.info("Mark all as read");
@@ -96,7 +82,15 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("All marked as read", null));
     }
 
-    // DELETE - Delete notification
+    @PutMapping("/group/{groupId}/read")
+    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER')")
+    public ResponseEntity<ApiResponse<Integer>> markGroupAsRead(@PathVariable UUID groupId) {
+        log.info("Mark group as read: {}", groupId);
+        int updated = notificationService.markGroupAsRead(groupId);
+        return ResponseEntity.ok(ApiResponse.success("Group marked as read", updated));
+    }
+
+    // ===== DELETE =====
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<ApiResponse<Void>> deleteNotification(@PathVariable UUID notificationId) {
         log.info("Delete notification: {}", notificationId);
@@ -104,12 +98,17 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("Notification deleted", null));
     }
 
-    // DELETE - Delete all read notifications
     @DeleteMapping("/delete-read")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteAllReadNotifications() {
         log.info("Delete all read notifications");
         notificationService.deleteAllReadNotifications();
         return ResponseEntity.ok(ApiResponse.success("Read notifications deleted", null));
+    }
+
+    @DeleteMapping("/group/{groupId}")
+    public ResponseEntity<ApiResponse<Integer>> deleteGroupNotifications(@PathVariable UUID groupId) {
+        log.info("Delete group notifications: {}", groupId);
+        int deleted = notificationService.deleteGroupNotifications(groupId);
+        return ResponseEntity.ok(ApiResponse.success("Group notifications deleted", deleted));
     }
 }
