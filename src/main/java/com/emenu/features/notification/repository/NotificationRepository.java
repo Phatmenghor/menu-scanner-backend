@@ -23,6 +23,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
 
     // ===== INDIVIDUAL QUERIES =====
     Optional<Notification> findByIdAndUserIdAndIsDeletedFalse(UUID id, UUID userId);
+    Optional<Notification> findByIdAndIsDeletedFalse(UUID id);
 
     @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.isDeleted = false ORDER BY n.createdAt DESC")
     Page<Notification> findByUserId(@Param("userId") UUID userId, Pageable pageable);

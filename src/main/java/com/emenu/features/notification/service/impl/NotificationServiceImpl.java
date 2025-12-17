@@ -209,12 +209,23 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public NotificationResponse getNotificationById(UUID notificationId) {
-        User currentUser = securityUtils.getCurrentUser();
+
+        Notification notification = notificationRepository
+                .findByIdAndIsDeletedFalse(notificationId)
+                .orElseThrow(() -> new ValidationException("Notification not found"));
         
+        return notificationMapper.toResponse(notification);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public NotificationResponse getMyNotificationById(UUID notificationId) {
+        User currentUser = securityUtils.getCurrentUser();
+
         Notification notification = notificationRepository
                 .findByIdAndUserIdAndIsDeletedFalse(notificationId, currentUser.getId())
                 .orElseThrow(() -> new ValidationException("Notification not found"));
-        
+
         return notificationMapper.toResponse(notification);
     }
     

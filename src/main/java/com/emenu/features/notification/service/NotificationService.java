@@ -13,7 +13,8 @@ public interface NotificationService {
     List<NotificationResponse> sendNotification(NotificationRequest request);
     
     NotificationResponse getNotificationById(UUID notificationId);
-    
+    NotificationResponse getMyNotificationById(UUID notificationId);
+
     PaginationResponse<NotificationResponse> getMyNotifications(NotificationFilterRequest request);
     
     PaginationResponse<NotificationResponse> getAllNotifications(NotificationFilterRequest request);

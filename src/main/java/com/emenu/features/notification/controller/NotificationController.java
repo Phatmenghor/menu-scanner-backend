@@ -44,6 +44,14 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("Notification retrieved", response));
     }
 
+    @GetMapping("my/{notificationId}")
+    public ResponseEntity<ApiResponse<NotificationResponse>> getMyNotification(
+            @PathVariable UUID notificationId) {
+        log.info("Get my notification: {}", notificationId);
+        NotificationResponse response = notificationService.getMyNotificationById(notificationId);
+        return ResponseEntity.ok(ApiResponse.success("Notification retrieved", response));
+    }
+
     @PostMapping("/my")
     public ResponseEntity<ApiResponse<PaginationResponse<NotificationResponse>>> getMyNotifications(
             @Valid @RequestBody NotificationFilterRequest request) {
