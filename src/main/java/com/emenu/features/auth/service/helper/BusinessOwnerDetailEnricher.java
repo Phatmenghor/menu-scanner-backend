@@ -1,6 +1,7 @@
 package com.emenu.features.auth.service.helper;
 
 import com.emenu.enums.payment.PaymentStatus;
+import com.emenu.enums.sub_scription.SubscriptionStatus;
 import com.emenu.features.auth.dto.response.BusinessOwnerDetailResponse;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.payment.models.Payment;
@@ -18,9 +19,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Helper service to enrich BusinessOwnerDetailResponse with subscription and payment data
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -55,7 +53,7 @@ public class BusinessOwnerDetailEnricher {
         subscriptionRepository.findCurrentActiveByBusinessId(businessId, LocalDateTime.now())
                 .ifPresentOrElse(
                         subscription -> populateSubscriptionInfo(response, subscription),
-                        () -> response.setSubscriptionStatus("EXPIRED")
+                        () -> response.setSubscriptionStatus(SubscriptionStatus.EXPIRED)
                 );
     }
 
@@ -154,16 +152,16 @@ public class BusinessOwnerDetailEnricher {
     }
 
     /**
-     * Determine subscription status
+     * Determine subscription status using enum
      */
-    private String determineSubscriptionStatus(Subscription subscription) {
+    private SubscriptionStatus determineSubscriptionStatus(Subscription subscription) {
         if (subscription.isExpired()) {
-            return "EXPIRED";
+            return SubscriptionStatus.EXPIRED;
         }
         if (subscription.isExpiringSoon(7)) {
-            return "EXPIRING_SOON";
+            return SubscriptionStatus.EXPIRING_SOON;
         }
-        return "ACTIVE";
+        return SubscriptionStatus.ACTIVE;
     }
 
     /**
@@ -185,3 +183,5 @@ public class BusinessOwnerDetailEnricher {
         return "UNPAID";
     }
 }
+
+

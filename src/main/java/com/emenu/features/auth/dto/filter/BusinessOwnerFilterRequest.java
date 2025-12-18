@@ -1,14 +1,13 @@
 package com.emenu.features.auth.dto.filter;
 
 import com.emenu.enums.payment.PaymentStatus;
+import com.emenu.enums.sub_scription.SubscriptionStatus;
 import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.BusinessStatus;
 import com.emenu.shared.dto.BaseFilterRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
@@ -22,7 +21,7 @@ public class BusinessOwnerFilterRequest extends BaseFilterRequest {
     private List<AccountStatus> ownerAccountStatuses;
     
     // Subscription filters
-    private List<String> subscriptionStatuses; // ACTIVE, EXPIRED, EXPIRING_SOON
+    private List<SubscriptionStatus> subscriptionStatuses;
     private Boolean autoRenew;
     private Integer expiringSoonDays = 7;
     

@@ -3,6 +3,7 @@ package com.emenu.features.auth.service.impl;
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.enums.payment.PaymentType;
+import com.emenu.enums.sub_scription.SubscriptionStatus;
 import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.BusinessStatus;
 import com.emenu.enums.user.RoleEnum;
@@ -95,8 +96,6 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         return response;
     }
 
-    // Replace the getAllBusinessOwners method in BusinessOwnerServiceImpl.java
-
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<BusinessOwnerDetailResponse> getAllBusinessOwners(BusinessOwnerFilterRequest filter) {
@@ -114,10 +113,30 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
                 ? filter.getOwnerAccountStatuses() : null;
         List<BusinessStatus> businessStatuses = (filter.getBusinessStatuses() != null && !filter.getBusinessStatuses().isEmpty())
                 ? filter.getBusinessStatuses() : null;
+        List<SubscriptionStatus> subscriptionStatuses = (filter.getSubscriptionStatuses() != null && !filter.getSubscriptionStatuses().isEmpty())
+                ? filter.getSubscriptionStatuses() : null;
+        List<PaymentStatus> paymentStatuses = (filter.getPaymentStatuses() != null && !filter.getPaymentStatuses().isEmpty())
+                ? filter.getPaymentStatuses() : null;
+
+        // Parse subscription statuses
+        boolean hasActive = subscriptionStatuses != null && subscriptionStatuses.contains(SubscriptionStatus.ACTIVE);
+        boolean hasExpired = subscriptionStatuses != null && subscriptionStatuses.contains(SubscriptionStatus.EXPIRED);
+        boolean hasExpiringSoon = subscriptionStatuses != null && subscriptionStatuses.contains(SubscriptionStatus.EXPIRING_SOON);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiryThreshold = now.plusDays(filter.getExpiringSoonDays());
 
         Page<User> ownerPage = businessOwnerRepository.findAllBusinessOwnersWithFilters(
                 ownerStatuses,
                 businessStatuses,
+                subscriptionStatuses,
+                hasActive,
+                hasExpired,
+                hasExpiringSoon,
+                now,
+                expiryThreshold,
+                filter.getAutoRenew(),
+                paymentStatuses,
                 filter.getSearch(),
                 pageable
         );

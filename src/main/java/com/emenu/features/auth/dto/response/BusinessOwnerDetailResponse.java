@@ -1,5 +1,6 @@
 package com.emenu.features.auth.dto.response;
 
+import com.emenu.enums.sub_scription.SubscriptionStatus;
 import com.emenu.enums.user.BusinessStatus;
 import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
@@ -40,7 +41,7 @@ public class BusinessOwnerDetailResponse extends BaseAuditResponse {
     private LocalDateTime subscriptionEndDate;
     private Long daysRemaining;
     private Long daysActive;
-    private String subscriptionStatus;
+    private SubscriptionStatus subscriptionStatus;  // Changed from String to enum
     private Boolean autoRenew;
     private Boolean isExpiringSoon;
     
@@ -53,3 +54,5 @@ public class BusinessOwnerDetailResponse extends BaseAuditResponse {
     private String paymentStatus;
     private LocalDateTime lastPaymentDate;
 }
+
+

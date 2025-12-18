@@ -14,8 +14,6 @@ import org.mapstruct.ReportingPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -25,7 +23,7 @@ public abstract class BusinessOwnerMapper {
     protected PaginationMapper paginationMapper;
 
     /**
-     * Map to create responses
+     * Map to create response (used when creating new business owner)
      */
     @Mapping(target = "ownerId", source = "owner.id")
     @Mapping(target = "ownerUserIdentifier", source = "owner.userIdentifier")
@@ -41,7 +39,7 @@ public abstract class BusinessOwnerMapper {
     @Mapping(target = "planDurationDays", source = "subscription.plan.durationDays")
     @Mapping(target = "subscriptionStartDate", source = "subscription.startDate")
     @Mapping(target = "subscriptionEndDate", source = "subscription.endDate")
-    @Mapping(target = "daysRemaining", expression = "java(calculateDaysRemaining(subscription))")
+    @Mapping(target = "daysRemaining", expression = "java(subscription.getDaysRemaining())")
     @Mapping(target = "paymentId", source = "payment.id")
     @Mapping(target = "paymentAmount", source = "payment.amount")
     @Mapping(target = "paymentStatus", source = "payment.status")
@@ -55,7 +53,7 @@ public abstract class BusinessOwnerMapper {
     );
 
     /**
-     * Map to detail response - base mapping only
+     * Map to detail response - base mapping
      */
     @Mapping(target = "ownerId", source = "id")
     @Mapping(target = "ownerUserIdentifier", source = "userIdentifier")
@@ -77,20 +75,6 @@ public abstract class BusinessOwnerMapper {
      * Map list to detail responses
      */
     public abstract List<BusinessOwnerDetailResponse> toDetailResponseList(List<User> owners);
-
-    /**
-     * Calculate days remaining
-     */
-    protected Long calculateDaysRemaining(Subscription subscription) {
-        if (subscription == null || subscription.getEndDate() == null) {
-            return 0L;
-        }
-        LocalDateTime now = LocalDateTime.now();
-        if (now.isAfter(subscription.getEndDate())) {
-            return 0L;
-        }
-        return ChronoUnit.DAYS.between(now, subscription.getEndDate());
-    }
 
     /**
      * Pagination response
