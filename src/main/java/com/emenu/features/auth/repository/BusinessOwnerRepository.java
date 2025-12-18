@@ -44,14 +44,8 @@ public interface BusinessOwnerRepository extends JpaRepository<User, UUID> {
         WHERE u.userType = 'BUSINESS_USER'
         AND u.isDeleted = false
         AND b.isDeleted = false
-        
-        -- Owner account status filter
         AND (:ownerAccountStatuses IS NULL OR u.accountStatus IN :ownerAccountStatuses)
-        
-        -- Business status filter
         AND (:businessStatuses IS NULL OR b.status IN :businessStatuses)
-        
-        -- Subscription status filter
         AND (
             :subscriptionStatuses IS NULL 
             OR (
@@ -64,14 +58,8 @@ public interface BusinessOwnerRepository extends JpaRepository<User, UUID> {
                 :hasExpiringSoon = true AND s.endDate > :now AND s.endDate <= :expiryThreshold
             )
         )
-        
-        -- Auto-renew filter
         AND (:autoRenew IS NULL OR s.autoRenew = :autoRenew)
-        
-        -- Payment status filter
         AND (:paymentStatuses IS NULL OR p.status IN :paymentStatuses)
-        
-        -- Search filter
         AND (:search IS NULL OR :search = '' OR
              LOWER(u.userIdentifier) LIKE LOWER(CONCAT('%', :search, '%')) OR
              LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR
@@ -79,7 +67,6 @@ public interface BusinessOwnerRepository extends JpaRepository<User, UUID> {
              LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
              LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')) OR
              LOWER(b.email) LIKE LOWER(CONCAT('%', :search, '%')))
-        
         ORDER BY u.createdAt DESC
     """)
     Page<User> findAllBusinessOwnersWithFilters(
