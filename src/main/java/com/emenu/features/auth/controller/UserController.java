@@ -91,14 +91,6 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User deleted", response));
     }
 
-    @PostMapping("/business-owner")
-    public ResponseEntity<ApiResponse<BusinessOwnerCreateResponse>> createBusinessOwner(
-            @Valid @RequestBody BusinessOwnerCreateRequest request) {
-        log.info("Create business owner: {}", request.getOwnerUserIdentifier());
-        BusinessOwnerCreateResponse response = userService.createBusinessOwner(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Business owner created", response));
-    }
 
     @PostMapping("/admin/reset-password")
     public ResponseEntity<ApiResponse<UserResponse>> adminResetPassword(

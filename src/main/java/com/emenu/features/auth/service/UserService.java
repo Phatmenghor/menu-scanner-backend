@@ -25,6 +25,4 @@ public interface UserService {
     UserResponse getCurrentUser();
     
     UserResponse updateCurrentUser(UserUpdateRequest request);
-    
-    BusinessOwnerCreateResponse createBusinessOwner(BusinessOwnerCreateRequest request);
 }
