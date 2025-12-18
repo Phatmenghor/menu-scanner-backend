@@ -1,0 +1,110 @@
+package com.emenu.features.auth.repository;
+
+import com.emenu.enums.user.AccountStatus;
+import com.emenu.enums.user.BusinessStatus;
+import com.emenu.enums.user.UserType;
+import com.emenu.features.auth.models.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface BusinessOwnerRepository extends JpaRepository<User, UUID> {
+
+    /**
+     * Find business owner with all relationships loaded
+     */
+    @Query("""
+        SELECT DISTINCT u FROM User u
+        LEFT JOIN FETCH u.business b
+        LEFT JOIN FETCH b.subscriptions s
+        WHERE u.id = :ownerId 
+        AND u.userType = 'BUSINESS_USER'
+        AND u.isDeleted = false
+    """)
+    Optional<User> findBusinessOwnerById(@Param("ownerId") UUID ownerId);
+
+    /**
+     * Find all business owners with filters - Fixed for PostgreSQL
+     * Note: Pass null instead of empty lists for ownerAccountStatuses and businessStatuses
+     */
+    @Query("""
+        SELECT DISTINCT u FROM User u
+        LEFT JOIN u.business b
+        WHERE u.userType = 'BUSINESS_USER'
+        AND u.isDeleted = false
+        AND b.isDeleted = false
+        AND (:ownerAccountStatuses IS NULL OR u.accountStatus IN :ownerAccountStatuses)
+        AND (:businessStatuses IS NULL OR b.status IN :businessStatuses)
+        AND (:createdFrom IS NULL OR u.createdAt >= :createdFrom)
+        AND (:createdTo IS NULL OR u.createdAt <= :createdTo)
+        AND (:search IS NULL OR :search = '' OR
+             LOWER(u.userIdentifier) LIKE LOWER(CONCAT('%', :search, '%')) OR
+             LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR
+             LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+             LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+             LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')) OR
+             LOWER(b.email) LIKE LOWER(CONCAT('%', :search, '%')))
+        ORDER BY u.createdAt DESC
+    """)
+    Page<User> findAllBusinessOwnersWithFilters(
+            @Param("ownerAccountStatuses") List<AccountStatus> ownerAccountStatuses,
+            @Param("businessStatuses") List<BusinessStatus> businessStatuses,
+            @Param("createdFrom") LocalDateTime createdFrom,
+            @Param("createdTo") LocalDateTime createdTo,
+            @Param("search") String search,
+            Pageable pageable
+    );
+
+    /**
+     * Find business owner by email
+     */
+    @Query("""
+        SELECT u FROM User u
+        WHERE u.email = :email
+        AND u.userType = 'BUSINESS_USER'
+        AND u.isDeleted = false
+    """)
+    Optional<User> findBusinessOwnerByEmail(@Param("email") String email);
+
+    /**
+     * Check if business owner exists by email
+     */
+    @Query("""
+        SELECT COUNT(u) > 0 FROM User u
+        WHERE u.email = :email
+        AND u.userType = 'BUSINESS_USER'
+        AND u.isDeleted = false
+    """)
+    boolean existsBusinessOwnerByEmail(@Param("email") String email);
+
+    /**
+     * Count business owners by status
+     */
+    @Query("""
+        SELECT COUNT(u) FROM User u
+        WHERE u.userType = 'BUSINESS_USER'
+        AND u.accountStatus = :status
+        AND u.isDeleted = false
+    """)
+    long countByAccountStatus(@Param("status") AccountStatus status);
+
+    /**
+     * Find all BUSINESS_USER type users (for legacy compatibility)
+     */
+    @Query("""
+        SELECT u FROM User u
+        WHERE u.userType = 'BUSINESS_USER'
+        AND u.isDeleted = false
+        ORDER BY u.createdAt DESC
+    """)
+    List<User> findByUserTypeAndIsDeletedFalse(UserType userType);
+}

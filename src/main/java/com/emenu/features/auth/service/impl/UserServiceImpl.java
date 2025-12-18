@@ -1,19 +1,13 @@
 package com.emenu.features.auth.service.impl;
 
-import com.emenu.enums.payment.PaymentType;
 import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
-import com.emenu.features.auth.dto.request.BusinessCreateRequest;
-import com.emenu.features.auth.dto.request.BusinessOwnerCreateRequest;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
-import com.emenu.features.auth.dto.response.BusinessOwnerCreateResponse;
-import com.emenu.features.auth.dto.response.BusinessResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
-import com.emenu.features.auth.mapper.BusinessOwnerResponseMapper;
 import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.Role;
@@ -23,11 +17,7 @@ import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.BusinessService;
 import com.emenu.features.auth.service.UserService;
-import com.emenu.features.payment.dto.request.PaymentCreateRequest;
-import com.emenu.features.payment.dto.response.PaymentResponse;
 import com.emenu.features.payment.service.PaymentService;
-import com.emenu.features.subscription.dto.request.SubscriptionCreateRequest;
-import com.emenu.features.subscription.dto.response.SubscriptionResponse;
 import com.emenu.features.subscription.repository.SubscriptionPlanRepository;
 import com.emenu.features.subscription.service.SubscriptionService;
 import com.emenu.security.SecurityUtils;
@@ -57,10 +47,6 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final SecurityUtils securityUtils;
-    private final PaymentService paymentService;
-    private final SubscriptionService subscriptionService;
-    private final SubscriptionPlanRepository subscriptionPlanRepository;
-    private final BusinessOwnerResponseMapper businessOwnerResponseMapper;
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {

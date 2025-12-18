@@ -1,16 +1,17 @@
 package com.emenu.features.auth.dto.response;
 
 import com.emenu.enums.user.BusinessStatus;
-import lombok.Builder;
+import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
-public class BusinessOwnerDetailResponse {
+public class BusinessOwnerDetailResponse extends BaseAuditResponse {
     
     // Owner Information
     private UUID ownerId;
@@ -39,9 +40,9 @@ public class BusinessOwnerDetailResponse {
     private LocalDateTime subscriptionEndDate;
     private Long daysRemaining;
     private Long daysActive;
-    private String subscriptionStatus; // ACTIVE, EXPIRED, EXPIRING_SOON
+    private String subscriptionStatus;
     private Boolean autoRenew;
-    private Boolean isExpiringSoon; // Within 7 days
+    private Boolean isExpiringSoon;
     
     // Payment Summary
     private BigDecimal totalPaid;
@@ -49,10 +50,6 @@ public class BusinessOwnerDetailResponse {
     private Integer totalPayments;
     private Integer completedPayments;
     private Integer pendingPayments;
-    private String paymentStatus; // PAID, PARTIALLY_PAID, UNPAID, PENDING
+    private String paymentStatus;
     private LocalDateTime lastPaymentDate;
-    
-    // Timestamps
-    private LocalDateTime createdAt;
-    private LocalDateTime lastModifiedAt;
 }

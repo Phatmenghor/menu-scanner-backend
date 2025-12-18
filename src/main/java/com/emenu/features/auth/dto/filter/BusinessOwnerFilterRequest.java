@@ -3,54 +3,32 @@ package com.emenu.features.auth.dto.filter;
 import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.BusinessStatus;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import com.emenu.shared.dto.BaseFilterRequest;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class BusinessOwnerFilterRequest {
+public class BusinessOwnerFilterRequest extends BaseFilterRequest {
     
+    // Business filters
     private List<BusinessStatus> businessStatuses;
+    
+    // Owner account filters
     private List<AccountStatus> ownerAccountStatuses;
-    private List<String> subscriptionStatuses;
-    private List<PaymentStatus> paymentStatuses;
+    
+    // Subscription filters
+    private List<String> subscriptionStatuses; // ACTIVE, EXPIRED, EXPIRING_SOON
     private Boolean autoRenew;
-    private Integer expiringSoonDays;
+    private Integer expiringSoonDays = 7;
     
-    private String search;
+    // Payment filters
+    private List<PaymentStatus> paymentStatuses;
     
+    // Date filters
     private LocalDateTime createdFrom;
     private LocalDateTime createdTo;
-    
-    private Integer pageNo;
-    private Integer pageSize;
-    private String sortBy;
-    private String sortDir;
-    
-    public Integer getPageNo() {
-        return pageNo != null && pageNo >= 0 ? pageNo : 0;
-    }
-    
-    public Integer getPageSize() {
-        return pageSize != null && pageSize > 0 ? pageSize : 10;
-    }
-    
-    public String getSortBy() {
-        return sortBy != null && !sortBy.isBlank() ? sortBy : "createdAt";
-    }
-    
-    public String getSortDir() {
-        return sortDir != null && sortDir.equalsIgnoreCase("asc") ? "asc" : "desc";
-    }
-    
-    public Integer getExpiringSoonDays() {
-        return expiringSoonDays != null && expiringSoonDays > 0 ? expiringSoonDays : 7;
-    }
 }

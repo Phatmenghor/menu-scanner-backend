@@ -45,4 +45,16 @@ public interface BusinessRepository extends JpaRepository<Business, UUID> {
 
     @Query("SELECT COUNT(b) FROM Business b WHERE b.isSubscriptionActive = true AND b.isDeleted = false")
     long countActiveSubscriptions();
+
+    /**
+     * Check if business exists by email
+     */
+    @Query("SELECT COUNT(b) > 0 FROM Business b WHERE b.email = :email AND b.isDeleted = false")
+    boolean existsByEmailAndIsDeletedFalse(@Param("email") String email);
+
+    /**
+     * Find business by email
+     */
+    @Query("SELECT b FROM Business b WHERE b.email = :email AND b.isDeleted = false")
+    Optional<Business> findByEmailAndIsDeletedFalse(@Param("email") String email);
 }

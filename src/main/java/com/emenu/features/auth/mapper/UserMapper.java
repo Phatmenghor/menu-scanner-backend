@@ -75,18 +75,6 @@ public abstract class UserMapper {
         return user;
     }
 
-    public User toEntity(BusinessOwnerCreateRequest request) {
-        User user = new User();
-        user.setUserIdentifier(request.getOwnerUserIdentifier());
-        user.setEmail(request.getOwnerEmail());
-        user.setFirstName(request.getOwnerFirstName());
-        user.setLastName(request.getOwnerLastName());
-        user.setPhoneNumber(request.getOwnerPhone());
-        user.setAddress(request.getOwnerAddress());
-        user.setPosition("Owner");
-        return user;
-    }
-
     @Named("rolesToEnums")
     protected List<RoleEnum> rolesToEnums(List<Role> roles) {
         if (roles == null) return List.of();

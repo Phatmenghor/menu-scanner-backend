@@ -65,4 +65,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     // Find all active users (for ALL_USERS notifications)
     @Query("SELECT u FROM User u WHERE u.accountStatus = 'ACTIVE' AND u.isDeleted = false")
     List<User> findAllActiveUsers();
+
+    /**
+     * Check if user exists by email
+     */
+    @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.email = :email AND u.isDeleted = false")
+    boolean existsByEmailAndIsDeletedFalse(@Param("email") String email);
 }
