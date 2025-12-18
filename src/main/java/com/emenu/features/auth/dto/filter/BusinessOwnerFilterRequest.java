@@ -7,6 +7,7 @@ import com.emenu.shared.dto.BaseFilterRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,8 +28,4 @@ public class BusinessOwnerFilterRequest extends BaseFilterRequest {
     
     // Payment filters
     private List<PaymentStatus> paymentStatuses;
-    
-    // Date filters
-    private LocalDateTime createdFrom;
-    private LocalDateTime createdTo;
 }

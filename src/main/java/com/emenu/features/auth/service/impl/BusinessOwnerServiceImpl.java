@@ -95,6 +95,8 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         return response;
     }
 
+    // Replace the getAllBusinessOwners method in BusinessOwnerServiceImpl.java
+
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<BusinessOwnerDetailResponse> getAllBusinessOwners(BusinessOwnerFilterRequest filter) {
@@ -116,8 +118,6 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         Page<User> ownerPage = businessOwnerRepository.findAllBusinessOwnersWithFilters(
                 ownerStatuses,
                 businessStatuses,
-                filter.getCreatedFrom(),
-                filter.getCreatedTo(),
                 filter.getSearch(),
                 pageable
         );
@@ -302,12 +302,12 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         owner.setUserIdentifier(request.getOwnerUserIdentifier());
         owner.setEmail(request.getOwnerEmail());
         owner.setPassword(passwordEncoder.encode(request.getOwnerPassword()));
-        
+
         // Split full name
         String[] nameParts = request.getOwnerFullName().split(" ", 2);
         owner.setFirstName(nameParts[0]);
         owner.setLastName(nameParts.length > 1 ? nameParts[1] : "");
-        
+
         owner.setPhoneNumber(request.getOwnerPhone());
         owner.setUserType(UserType.BUSINESS_USER);
         owner.setAccountStatus(AccountStatus.ACTIVE);
@@ -325,15 +325,15 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         Subscription subscription = new Subscription();
         subscription.setBusinessId(businessId);
         subscription.setPlanId(request.getPlanId());
-        
+
         LocalDateTime startDate = LocalDateTime.now();
         subscription.setStartDate(startDate);
-        
-        Integer duration = request.getCustomDurationDays() != null 
-                ? request.getCustomDurationDays() 
+
+        Integer duration = request.getCustomDurationDays() != null
+                ? request.getCustomDurationDays()
                 : plan.getDurationDays();
         subscription.setEndDate(startDate.plusDays(duration));
-        
+
         subscription.setAutoRenew(false);
 
         return subscriptionRepository.save(subscription);
@@ -384,11 +384,11 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
 
     private BusinessOwnerDetailResponse buildEnrichedDetailResponse(User owner) {
         BusinessOwnerDetailResponse response = mapper.toDetailResponse(owner);
-        
+
         if (owner.getBusiness() != null) {
             enricher.enrichDetailResponse(response, owner.getBusiness());
         }
-        
+
         return response;
     }
 
