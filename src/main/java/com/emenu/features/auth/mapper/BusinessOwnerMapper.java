@@ -25,7 +25,7 @@ public abstract class BusinessOwnerMapper {
     protected PaginationMapper paginationMapper;
 
     /**
-     * Map to create response
+     * Map to create responses
      */
     @Mapping(target = "ownerId", source = "owner.id")
     @Mapping(target = "ownerUserIdentifier", source = "owner.userIdentifier")
