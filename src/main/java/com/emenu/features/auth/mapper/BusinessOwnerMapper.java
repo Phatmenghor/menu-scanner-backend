@@ -58,6 +58,7 @@ public abstract class BusinessOwnerMapper {
     @Mapping(target = "ownerId", source = "id")
     @Mapping(target = "ownerUserIdentifier", source = "userIdentifier")
     @Mapping(target = "ownerEmail", source = "email")
+    @Mapping(target = "ownerProfileImageUrl", source = "profileImageUrl ")
     @Mapping(target = "ownerFullName", expression = "java(owner.getFullName())")
     @Mapping(target = "ownerPhone", source = "phoneNumber")
     @Mapping(target = "ownerAccountStatus", source = "accountStatus")

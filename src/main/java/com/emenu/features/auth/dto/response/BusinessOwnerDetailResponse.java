@@ -21,6 +21,7 @@ public class BusinessOwnerDetailResponse extends BaseAuditResponse {
     private String ownerFullName;
     private String ownerPhone;
     private String ownerAccountStatus;
+    private String ownerProfileImageUrl;
     
     // Business Information
     private UUID businessId;
