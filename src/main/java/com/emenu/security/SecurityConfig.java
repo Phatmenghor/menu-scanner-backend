@@ -78,12 +78,8 @@ public class SecurityConfig {
         // Enhanced CORS configuration for Telegram and mobile apps
         configuration.setAllowedOriginPatterns(Arrays.asList(allowedOrigins));
 
-        // Add Telegram-specific origins (for web apps)
-        configuration.addAllowedOriginPattern("https://web.telegram.org");
-        configuration.addAllowedOriginPattern("https://telegram.org");
-
         // Add server-specific origins
-        configuration.addAllowedOriginPattern("http://152.42.219.13:*");
+        configuration.addAllowedOriginPattern("http://152.42.254.193:*");
         configuration.addAllowedOriginPattern("http://localhost:*");
         configuration.addAllowedOriginPattern("https://localhost:*");
 

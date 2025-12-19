@@ -40,7 +40,7 @@ spring:
 # Server Configuration
 server:
   port: 8080
-  url: "http://152.42.219.13:8080"
+  url: "http://152.42.254.193:8080"
   address: 0.0.0.0  # IMPORTANT: Listen on all interfaces
 
 # JWT telegram
