@@ -11,21 +11,7 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "product_images", indexes = {
-        // ✅ ESSENTIAL INDEXES ONLY for ProductImage
-
-        // 1. Loading images by product (most common query)
-        @Index(name = "idx_product_images_product_deleted",
-                columnList = "product_id, is_deleted"),
-
-        // 2. Finding main images specifically (for getMainImageUrl)
-        @Index(name = "idx_product_images_product_type_deleted",
-                columnList = "product_id, image_type, is_deleted"),
-
-        // 3. Base soft delete index
-        @Index(name = "idx_product_images_deleted",
-                columnList = "is_deleted")
-})
+@Table(name = "product_images")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

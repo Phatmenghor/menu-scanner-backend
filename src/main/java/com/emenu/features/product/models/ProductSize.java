@@ -14,21 +14,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "product_sizes", indexes = {
-        // ✅ ESSENTIAL INDEXES ONLY for ProductSize
-
-        // 1. Loading sizes by product (most common - used in batch loading)
-        @Index(name = "idx_product_sizes_product_deleted",
-                columnList = "product_id, is_deleted"),
-
-        // 2. Loading sizes by product ordered by price (for getDisplayPrice logic)
-        @Index(name = "idx_product_sizes_product_price_deleted",
-                columnList = "product_id, price, is_deleted"),
-
-        // 3. Base soft delete index
-        @Index(name = "idx_product_sizes_deleted",
-                columnList = "is_deleted")
-})
+@Table(name = "product_sizes")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

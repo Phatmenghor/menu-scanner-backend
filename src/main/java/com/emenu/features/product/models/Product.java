@@ -20,60 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "products", indexes = {
-
-        // 1. Most critical - Business filtering (90% of queries use businessId)
-        @Index(name = "idx_products_business_deleted_created",
-                columnList = "business_id, is_deleted, created_at"),
-
-        // 2. Business + Status filtering (very common combination)
-        @Index(name = "idx_products_business_status_deleted",
-                columnList = "business_id, status, is_deleted"),
-
-        // 3. Business + Category filtering
-        @Index(name = "idx_products_business_category_deleted",
-                columnList = "business_id, category_id, is_deleted"),
-
-        // 4. Business + Brand filtering
-        @Index(name = "idx_products_business_brand_deleted",
-                columnList = "business_id, brand_id, is_deleted"),
-
-        // 5. General queries without business filter (public API)
-        @Index(name = "idx_products_deleted_status_created",
-                columnList = "is_deleted, status, created_at"),
-
-        // 6. Name search (used frequently in ProductSpecifications)
-        @Index(name = "idx_products_name_deleted",
-                columnList = "name, is_deleted"),
-
-        // 7. Price range queries
-        @Index(name = "idx_products_price_deleted",
-                columnList = "price, is_deleted"),
-
-        // 8. Promotion filtering (for hasPromotion filter)
-        @Index(name = "idx_products_promotion_dates_deleted",
-                columnList = "promotion_from_date, promotion_to_date, is_deleted"),
-
-        // 9. Category filtering without business (public category pages)
-        @Index(name = "idx_products_category_deleted_created",
-                columnList = "category_id, is_deleted, created_at"),
-
-        // 10. Brand filtering without business (public brand pages)
-        @Index(name = "idx_products_brand_deleted_created",
-                columnList = "brand_id, is_deleted, created_at"),
-
-        // 11. Base index for soft delete (used in all queries)
-        @Index(name = "idx_products_deleted",
-                columnList = "is_deleted"),
-
-        // 12. For repository count methods
-        @Index(name = "idx_products_business_deleted",
-                columnList = "business_id, is_deleted"),
-        @Index(name = "idx_products_category_deleted",
-                columnList = "category_id, is_deleted"),
-        @Index(name = "idx_products_brand_deleted",
-                columnList = "brand_id, is_deleted")
-})
+@Table(name = "products")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
