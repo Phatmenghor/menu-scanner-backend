@@ -15,19 +15,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "business_order_payments", indexes = {
-        // ✅ FIXED: BaseUUIDEntity indexes
-        @Index(name = "idx_business_order_payment_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_business_order_payment_deleted_created", columnList = "is_deleted, created_at"),
-
-        // ✅ FIXED: Payment tracking indexes
-        @Index(name = "idx_business_order_payment_business_deleted", columnList = "business_id, is_deleted"),
-        @Index(name = "idx_business_order_payment_order_deleted", columnList = "order_id, is_deleted"),
-        @Index(name = "idx_business_order_payment_status_deleted", columnList = "status, is_deleted"),
-        @Index(name = "idx_business_order_payment_method_deleted", columnList = "payment_method, is_deleted"),
-        @Index(name = "idx_business_order_payment_reference_deleted", columnList = "payment_reference, is_deleted"),
-        @Index(name = "idx_business_order_payment_business_status_deleted", columnList = "business_id, status, is_deleted")
-})
+@Table(name = "business_order_payments")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
