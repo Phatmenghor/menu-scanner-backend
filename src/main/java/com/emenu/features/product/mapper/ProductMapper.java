@@ -6,9 +6,7 @@ import com.emenu.features.product.dto.response.ProductDetailDto;
 import com.emenu.features.product.dto.response.ProductListDto;
 import com.emenu.features.product.dto.update.ProductUpdateDto;
 import com.emenu.features.product.models.Product;
-import com.emenu.features.product.models.ProductSize;
 import org.mapstruct.*;
-
 import java.util.List;
 
 @Mapper(componentModel = "spring",
@@ -22,7 +20,7 @@ public interface ProductMapper {
     @Mapping(target = "favoriteCount", constant = "0L")
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "sizes", ignore = true)
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "productStringToPromotionType")
     Product toEntity(ProductCreateDto dto);
 
     @Mapping(target = "id", ignore = true)
@@ -31,7 +29,7 @@ public interface ProductMapper {
     @Mapping(target = "favoriteCount", ignore = true)
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "sizes", ignore = true)
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "productStringToPromotionType")
     @AfterMapping
     default void afterUpdate(ProductUpdateDto dto, @MappingTarget Product entity) {
         if (!dto.hasPromotionData()) {
@@ -43,7 +41,10 @@ public interface ProductMapper {
     }
     void updateEntity(ProductUpdateDto dto, @MappingTarget Product entity);
 
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
+    @Mapping(source = "business.name", target = "businessName")
+    @Mapping(source = "category.name", target = "categoryName")
+    @Mapping(source = "brand.name", target = "brandName")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "productPromotionTypeToString")
     @Mapping(target = "displayPrice", expression = "java(product.getDisplayPrice())")
     @Mapping(target = "isFavorited", constant = "false")
     @AfterMapping
@@ -52,6 +53,15 @@ public interface ProductMapper {
         dto.setHasSizes(hasSizes);
         if (dto.getIsFavorited() == null) {
             dto.setIsFavorited(false);
+        }
+        if (product.getBusiness() != null) {
+            dto.setBusinessName(product.getBusiness().getName());
+        }
+        if (product.getCategory() != null) {
+            dto.setCategoryName(product.getCategory().getName());
+        }
+        if (product.getBrand() != null) {
+            dto.setBrandName(product.getBrand().getName());
         }
         setDisplayFieldsForList(dto, product);
     }
@@ -62,7 +72,7 @@ public interface ProductMapper {
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "brand.name", target = "brandName")
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "productPromotionTypeToString")
     @Mapping(target = "displayPrice", expression = "java(product.getDisplayPrice())")
     @Mapping(target = "isFavorited", constant = "false")
     @AfterMapping
@@ -76,14 +86,11 @@ public interface ProductMapper {
         if (product.getBrand() != null) {
             dto.setBrandName(product.getBrand().getName());
         }
-
         boolean hasSizes = product.getSizes() != null && !product.getSizes().isEmpty();
         dto.setHasSizes(hasSizes);
-
         if (dto.getIsFavorited() == null) {
             dto.setIsFavorited(false);
         }
-
         setDisplayFieldsForDetail(dto, product);
     }
     ProductDetailDto toDetailDto(Product product);
@@ -98,7 +105,7 @@ public interface ProductMapper {
                 if (sizeWithPromotion.isPresent()) {
                     var size = sizeWithPromotion.get();
                     dto.setDisplayOriginPrice(size.getPrice());
-                    dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
+                    dto.setDisplayPromotionType(size.getPromotionType() != null ? size.getPromotionType().name() : null);
                     dto.setDisplayPromotionValue(size.getPromotionValue());
                     dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
                     dto.setDisplayPromotionToDate(size.getPromotionToDate());
@@ -111,7 +118,7 @@ public interface ProductMapper {
                     if (smallestPriceSize.isPresent()) {
                         var size = smallestPriceSize.get();
                         dto.setDisplayOriginPrice(size.getPrice());
-                        dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
+                        dto.setDisplayPromotionType(size.getPromotionType() != null ? size.getPromotionType().name() : null);
                         dto.setDisplayPromotionValue(size.getPromotionValue());
                         dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
                         dto.setDisplayPromotionToDate(size.getPromotionToDate());
@@ -138,7 +145,7 @@ public interface ProductMapper {
                 if (sizeWithPromotion.isPresent()) {
                     var size = sizeWithPromotion.get();
                     dto.setDisplayOriginPrice(size.getPrice());
-                    dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
+                    dto.setDisplayPromotionType(size.getPromotionType() != null ? size.getPromotionType().name() : null);
                     dto.setDisplayPromotionValue(size.getPromotionValue());
                     dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
                     dto.setDisplayPromotionToDate(size.getPromotionToDate());
@@ -151,7 +158,7 @@ public interface ProductMapper {
                     if (smallestPriceSize.isPresent()) {
                         var size = smallestPriceSize.get();
                         dto.setDisplayOriginPrice(size.getPrice());
-                        dto.setDisplayPromotionType(promotionTypeToString(size.getPromotionType()));
+                        dto.setDisplayPromotionType(size.getPromotionType() != null ? size.getPromotionType().name() : null);
                         dto.setDisplayPromotionValue(size.getPromotionValue());
                         dto.setDisplayPromotionFromDate(size.getPromotionFromDate());
                         dto.setDisplayPromotionToDate(size.getPromotionToDate());
@@ -170,7 +177,7 @@ public interface ProductMapper {
     
     default void setProductDataAsDisplay(ProductListDto dto, Product product) {
         dto.setDisplayOriginPrice(product.getPrice());
-        dto.setDisplayPromotionType(promotionTypeToString(product.getPromotionType()));
+        dto.setDisplayPromotionType(product.getPromotionType() != null ? product.getPromotionType().name() : null);
         dto.setDisplayPromotionValue(product.getPromotionValue());
         dto.setDisplayPromotionFromDate(product.getPromotionFromDate());
         dto.setDisplayPromotionToDate(product.getPromotionToDate());
@@ -179,15 +186,15 @@ public interface ProductMapper {
     
     default void setProductDataAsDisplayForDetail(ProductDetailDto dto, Product product) {
         dto.setDisplayOriginPrice(product.getPrice());
-        dto.setDisplayPromotionType(promotionTypeToString(product.getPromotionType()));
+        dto.setDisplayPromotionType(product.getPromotionType() != null ? product.getPromotionType().name() : null);
         dto.setDisplayPromotionValue(product.getPromotionValue());
         dto.setDisplayPromotionFromDate(product.getPromotionFromDate());
         dto.setDisplayPromotionToDate(product.getPromotionToDate());
         dto.setHasPromotion(product.isPromotionActive());
     }
 
-    @Named("stringToPromotionType")
-    default PromotionType stringToPromotionType(String promotionType) {
+    @Named("productStringToPromotionType")
+    default PromotionType productStringToPromotionType(String promotionType) {
         if (promotionType == null || promotionType.trim().isEmpty()) {
             return null;
         }
@@ -198,8 +205,8 @@ public interface ProductMapper {
         }
     }
 
-    @Named("promotionTypeToString")
-    default String promotionTypeToString(PromotionType promotionType) {
+    @Named("productPromotionTypeToString")
+    default String productPromotionTypeToString(PromotionType promotionType) {
         return promotionType != null ? promotionType.name() : null;
     }
 }

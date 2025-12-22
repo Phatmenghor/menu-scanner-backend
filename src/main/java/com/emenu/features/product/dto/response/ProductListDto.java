@@ -1,17 +1,13 @@
 package com.emenu.features.product.dto.response;
 
 import com.emenu.enums.product.ProductStatus;
-import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class ProductListDto  extends BaseAuditResponse {
+public class ProductListDto {
     private UUID id;
     private String name;
     private ProductStatus status;
@@ -37,6 +33,13 @@ public class ProductListDto  extends BaseAuditResponse {
     private Boolean isFavorited;
 
     private UUID businessId;
+    private String businessName;
+    
     private UUID categoryId;
+    private String categoryName;
+    
     private UUID brandId;
+    private String brandName;
+    
+    private LocalDateTime createdAt;
 }

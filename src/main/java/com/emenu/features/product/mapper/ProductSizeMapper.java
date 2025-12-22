@@ -6,7 +6,6 @@ import com.emenu.features.product.dto.response.ProductSizeDto;
 import com.emenu.features.product.dto.update.ProductSizeUpdateDto;
 import com.emenu.features.product.models.ProductSize;
 import org.mapstruct.*;
-
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -14,12 +13,12 @@ public interface ProductSizeMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "productId", ignore = true)
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizeStringToPromotionType")
     @Mapping(target = "product", ignore = true)
     ProductSize toEntity(ProductSizeCreateDto dto);
 
     @Mapping(target = "productId", ignore = true)
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizeStringToPromotionType")
     @Mapping(target = "product", ignore = true)
     @AfterMapping
     default void afterSizeUpdate(ProductSizeUpdateDto dto, @MappingTarget ProductSize entity) {
@@ -31,13 +30,13 @@ public interface ProductSizeMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "productId", ignore = true)
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizeStringToPromotionType")
     @Mapping(target = "product", ignore = true)
     ProductSize toEntityFromUpdate(ProductSizeUpdateDto dto);
 
     @Mapping(target = "finalPrice", expression = "java(entity.getFinalPrice())")
     @Mapping(target = "hasPromotion", expression = "java(entity.isPromotionActive())")
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizePromotionTypeToString")
     ProductSizeDto toDto(ProductSize entity);
 
     List<ProductSizeDto> toDtos(List<ProductSize> entities);
@@ -77,8 +76,8 @@ public interface ProductSizeMapper {
                 .toList();
     }
 
-    @Named("stringToPromotionType")
-    default PromotionType stringToPromotionType(String promotionType) {
+    @Named("sizeStringToPromotionType")
+    default PromotionType sizeStringToPromotionType(String promotionType) {
         if (promotionType == null || promotionType.trim().isEmpty()) {
             return null;
         }
@@ -89,8 +88,8 @@ public interface ProductSizeMapper {
         }
     }
 
-    @Named("promotionTypeToString")
-    default String promotionTypeToString(PromotionType promotionType) {
+    @Named("sizePromotionTypeToString")
+    default String sizePromotionTypeToString(PromotionType promotionType) {
         return promotionType != null ? promotionType.name() : null;
     }
 }
