@@ -17,7 +17,6 @@ import java.util.UUID;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
     
-    // ✅ DETAIL QUERY: Only for single product detail with relationships
     @Query("SELECT DISTINCT p FROM Product p " +
            "LEFT JOIN FETCH p.category c " +
            "LEFT JOIN FETCH p.brand b " +
@@ -27,7 +26,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "AND (sz.isDeleted = false OR sz.isDeleted IS NULL)")
     Optional<Product> findByIdWithAllDetails(@Param("id") UUID id);
 
-    // ✅ SIMPLE QUERIES: Basic operations without relationships
     Optional<Product> findByIdAndIsDeletedFalse(UUID id);
 
     @Query("SELECT COUNT(p) FROM Product p " +
@@ -38,7 +36,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE p.brandId = :brandId AND p.isDeleted = false")
     long countByBrandId(@Param("brandId") UUID brandId);
 
-    // ✅ UPDATE OPERATIONS: Simple field updates
     @Modifying
     @Transactional
     @Query("UPDATE Product p SET p.viewCount = COALESCE(p.viewCount, 0) + 1 WHERE p.id = :productId")
@@ -52,7 +49,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     @Query("UPDATE Product p SET p.favoriteCount = GREATEST(0, COALESCE(p.favoriteCount, 0) - 1) WHERE p.id = :productId")
     void decrementFavoriteCount(@Param("productId") UUID productId);
     
-    // ✅ FAVORITES: Optimized favorites query (no relationships in main query)
     @Query("SELECT DISTINCT p FROM Product p " +
            "INNER JOIN ProductFavorite pf ON p.id = pf.productId " +
            "WHERE pf.userId = :userId AND p.isDeleted = false AND pf.isDeleted = false " +

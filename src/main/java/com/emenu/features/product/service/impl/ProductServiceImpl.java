@@ -62,13 +62,11 @@ public class ProductServiceImpl implements ProductService {
     public PaginationResponse<ProductListDto> getAllProducts(ProductFilterDto filter) {
         log.info("Getting products - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
 
-        // Set business filter for business users
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
         if (currentUser.isPresent() && currentUser.get().isBusinessUser() && filter.getBusinessId() == null) {
             filter.setBusinessId(currentUser.get().getBusinessId());
         }
 
-        // Create pageable
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo() != null ? filter.getPageNo() - 1 : null,
                 filter.getPageSize(),
@@ -76,7 +74,6 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSortDirection()
         );
 
-        // ✅ OPTIMIZED: Use specifications WITHOUT expensive joins
         Specification<Product> spec = ProductSpecifications.withFilter(filter);
         Page<Product> productPage = productRepository.findAll(spec, pageable);
 
@@ -84,34 +81,26 @@ public class ProductServiceImpl implements ProductService {
             return paginationMapper.toPaginationResponse(productPage, Collections.emptyList());
         }
 
-        // ✅ OPTIMIZED: Process products without relationship loading
         List<ProductListDto> dtoList = processProductsOptimized(productPage.getContent(), currentUser.orElse(null));
         return paginationMapper.toPaginationResponse(productPage, dtoList);
     }
 
-    /**
-     * ✅ OPTIMIZED: Process products without expensive relationship loading
-     */
     private List<ProductListDto> processProductsOptimized(List<Product> products, User currentUser) {
         List<UUID> productIds = products.stream().map(Product::getId).toList();
         
-        // Start async operations
         CompletableFuture<Map<UUID, List<ProductSize>>> sizesFuture = CompletableFuture.supplyAsync(() -> 
             productSizeRepository.findSizesByProductIdsGrouped(productIds));
         
         CompletableFuture<List<UUID>> favoritesFuture = CompletableFuture.supplyAsync(() -> 
             currentUser != null ? favoriteQueryHelper.getFavoriteProductIds(currentUser.getId(), productIds) : Collections.emptyList());
 
-        // ✅ OPTIMIZED: Convert to DTOs (no relationship data)
         List<ProductListDto> dtoList = productMapper.toListDtos(products);
 
         try {
-            // Get async results
             Map<UUID, List<ProductSize>> sizesMap = sizesFuture.get();
             List<UUID> favoriteIds = favoritesFuture.get();
             Set<UUID> favoriteSet = new HashSet<>(favoriteIds);
 
-            // Enrich DTOs
             for (int i = 0; i < dtoList.size(); i++) {
                 ProductListDto dto = dtoList.get(i);
                 Product product = products.get(i);
@@ -124,7 +113,7 @@ public class ProductServiceImpl implements ProductService {
             }
 
         } catch (Exception e) {
-            log.error("Error processing products", e);
+            log.error("Error processing products: {}", e.getMessage());
             dtoList.forEach(dto -> {
                 dto.setHasSizes(false);
                 dto.setIsFavorited(false);
@@ -134,12 +123,8 @@ public class ProductServiceImpl implements ProductService {
         return dtoList;
     }
 
-    /**
-     * Set display fields for product listing
-     */
     private void setDisplayFields(ProductListDto dto, Product product, List<ProductSize> sizes) {
         if (sizes.isEmpty()) {
-            // Use product data
             dto.setDisplayOriginPrice(product.getPrice());
             dto.setDisplayPromotionType(product.getPromotionType() != null ? product.getPromotionType().name() : null);
             dto.setDisplayPromotionValue(product.getPromotionValue());
@@ -147,7 +132,6 @@ public class ProductServiceImpl implements ProductService {
             dto.setDisplayPromotionToDate(product.getPromotionToDate());
             dto.setHasPromotion(product.isPromotionActive());
         } else {
-            // Use first size (smallest price)
             ProductSize firstSize = sizes.get(0);
             
             dto.setDisplayOriginPrice(firstSize.getPrice());
@@ -162,11 +146,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductDetailDto getProductById(UUID id) {
-        log.info("Getting product details: {}", id);
+        log.info("Getting product: {}", id);
 
-        // ✅ DETAIL: Use expensive query with relationships (only for single product)
         Product product = productRepository.findByIdWithAllDetails(id)
-                .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
+                .orElseThrow(() -> new NotFoundException("Product not found: " + id));
 
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
         if (currentUser.isPresent() && currentUser.get().isBusinessUser()) {
@@ -188,11 +171,9 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailDto getProductByIdPublic(UUID id) {
         log.info("Getting public product: {}", id);
 
-        // ✅ DETAIL: Use expensive query with relationships (only for single product)
         Product product = productRepository.findByIdWithAllDetails(id)
-                .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
+                .orElseThrow(() -> new NotFoundException("Product not found: " + id));
 
-        // Async view count increment
         CompletableFuture.runAsync(() -> {
             try {
                 productRepository.incrementViewCount(id);
@@ -229,7 +210,7 @@ public class ProductServiceImpl implements ProductService {
         handleProductImages(savedProduct, request.getImages());
         handleProductSizes(savedProduct, request.getSizes());
 
-        log.info("Product created: {}", savedProduct.getName());
+        log.info("Product created: {}", savedProduct.getId());
         return getProductById(savedProduct.getId());
     }
 
@@ -238,18 +219,18 @@ public class ProductServiceImpl implements ProductService {
         log.info("Updating product: {}", id);
 
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
+                .orElseThrow(() -> new NotFoundException("Product not found: " + id));
 
         User currentUser = securityUtils.getCurrentUser();
         validateBusinessOwnership(product, currentUser);
 
-        productMapper.updateEntityFromDto(request, product);
+        productMapper.updateEntity(request, product);
         Product updatedProduct = productRepository.save(product);
 
         updateProductImages(updatedProduct, request.getImages());
         updateProductSizes(updatedProduct, request.getSizes());
 
-        log.info("Product updated: {}", updatedProduct.getName());
+        log.info("Product updated: {}", updatedProduct.getId());
         return getProductById(updatedProduct.getId());
     }
 
@@ -258,7 +239,7 @@ public class ProductServiceImpl implements ProductService {
         log.info("Deleting product: {}", id);
 
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new NotFoundException("Product not found with ID: " + id));
+                .orElseThrow(() -> new NotFoundException("Product not found: " + id));
 
         User currentUser = securityUtils.getCurrentUser();
         validateBusinessOwnership(product, currentUser);
@@ -266,11 +247,10 @@ public class ProductServiceImpl implements ProductService {
         product.softDelete();
         Product deletedProduct = productRepository.save(product);
 
-        log.info("Product deleted: {}", deletedProduct.getName());
+        log.info("Product deleted: {}", deletedProduct.getId());
         return productMapper.toDetailDto(deletedProduct);
     }
 
-    // Helper methods (unchanged)
     private void handleProductImages(Product product, List<ProductImageCreateDto> imageDtos) {
         if (imageDtos == null || imageDtos.isEmpty()) return;
 
@@ -305,7 +285,7 @@ public class ProductServiceImpl implements ProductService {
     private void updateProductImages(Product product, List<ProductImageUpdateDto> imageDtos) {
         if (imageDtos == null || imageDtos.isEmpty()) return;
 
-        List<ProductImage> existingImages = productImageRepository.findByProductIdOrderByMainAndSort(product.getId());
+        List<ProductImage> existingImages = productImageRepository.findByProductId(product.getId());
 
         List<UUID> idsToDelete = productImageMapper.getIdsToDelete(imageDtos);
         if (!idsToDelete.isEmpty()) {
@@ -323,7 +303,7 @@ public class ProductServiceImpl implements ProductService {
                     .filter(img -> img.getId().equals(updateDto.getId()))
                     .findFirst()
                     .ifPresent(existingImage -> {
-                        productImageMapper.updateEntityFromDto(updateDto, existingImage);
+                        productImageMapper.updateEntity(updateDto, existingImage);
                         productImageRepository.save(existingImage);
                     });
         }
@@ -338,7 +318,7 @@ public class ProductServiceImpl implements ProductService {
     private void updateProductSizes(Product product, List<ProductSizeUpdateDto> sizeDtos) {
         if (sizeDtos == null || sizeDtos.isEmpty()) return;
 
-        List<ProductSize> existingSizes = productSizeRepository.findByProductIdAndIsDeletedFalse(product.getId());
+        List<ProductSize> existingSizes = productSizeRepository.findByProductId(product.getId());
 
         List<UUID> idsToDelete = productSizeMapper.getIdsToDelete(sizeDtos);
         if (!idsToDelete.isEmpty()) {
@@ -356,7 +336,7 @@ public class ProductServiceImpl implements ProductService {
                     .filter(size -> size.getId().equals(updateDto.getId()))
                     .findFirst()
                     .ifPresent(existingSize -> {
-                        productSizeMapper.updateEntityFromDto(updateDto, existingSize);
+                        productSizeMapper.updateEntity(updateDto, existingSize);
                         productSizeRepository.save(existingSize);
                     });
         }

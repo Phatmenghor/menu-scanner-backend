@@ -8,5 +8,4 @@ import java.util.UUID;
 public class ProductImageDto {
     private UUID id;
     private String imageUrl;
-    private String imageType;
 }

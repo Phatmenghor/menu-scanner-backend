@@ -6,6 +6,7 @@ import com.emenu.features.product.dto.response.ProductDetailDto;
 import com.emenu.features.product.dto.response.ProductListDto;
 import com.emenu.features.product.dto.update.ProductUpdateDto;
 import com.emenu.features.product.models.Product;
+import com.emenu.features.product.models.ProductSize;
 import org.mapstruct.*;
 
 import java.util.List;
@@ -22,13 +23,6 @@ public interface ProductMapper {
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "sizes", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", constant = "false")
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     Product toEntity(ProductCreateDto dto);
 
     @Mapping(target = "id", ignore = true)
@@ -38,15 +32,8 @@ public interface ProductMapper {
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "sizes", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     @AfterMapping
-    default void afterUpdateMapping(ProductUpdateDto dto, @MappingTarget Product entity) {
+    default void afterUpdate(ProductUpdateDto dto, @MappingTarget Product entity) {
         if (!dto.hasPromotionData()) {
             entity.setPromotionType(null);
             entity.setPromotionValue(null);
@@ -54,53 +41,32 @@ public interface ProductMapper {
             entity.setPromotionToDate(null);
         }
     }
-    void updateEntityFromDto(ProductUpdateDto dto, @MappingTarget Product entity);
+    void updateEntity(ProductUpdateDto dto, @MappingTarget Product entity);
 
-    // ✅ OPTIMIZED: Simple mapping for listing (no relationship access)
-    @Mapping(source = "price", target = "price")
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
-    @Mapping(source = "promotionValue", target = "promotionValue")
-    @Mapping(source = "promotionFromDate", target = "promotionFromDate")
-    @Mapping(source = "promotionToDate", target = "promotionToDate")
     @Mapping(target = "displayPrice", expression = "java(product.getDisplayPrice())")
-    @Mapping(target = "mainImageUrl", expression = "java(product.getMainImageUrl())")
     @Mapping(target = "isFavorited", constant = "false")
     @AfterMapping
     default void afterListMapping(@MappingTarget ProductListDto dto, Product product) {
-        // ✅ OPTIMIZED: No relationship access - only entity data
-        
-        // Fix hasSizes calculation
         boolean hasSizes = product.getSizes() != null && !product.getSizes().isEmpty();
         dto.setHasSizes(hasSizes);
-
-        // Fix null boolean fields
         if (dto.getIsFavorited() == null) {
             dto.setIsFavorited(false);
         }
-
         setDisplayFieldsForList(dto, product);
     }
     ProductListDto toListDto(Product product);
 
     List<ProductListDto> toListDtos(List<Product> products);
 
-    // ✅ DETAIL MAPPING: Keep relationship mapping for detail view only
-    @Mapping(source = "business.name", target = "businessName",
-             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
-    @Mapping(source = "category.name", target = "categoryName",
-             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
-    @Mapping(source = "brand.name", target = "brandName",
-             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
-    @Mapping(source = "price", target = "price")
+    @Mapping(source = "business.name", target = "businessName")
+    @Mapping(source = "category.name", target = "categoryName")
+    @Mapping(source = "brand.name", target = "brandName")
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "promotionTypeToString")
-    @Mapping(source = "promotionValue", target = "promotionValue")
-    @Mapping(source = "promotionFromDate", target = "promotionFromDate")
-    @Mapping(source = "promotionToDate", target = "promotionToDate")
     @Mapping(target = "displayPrice", expression = "java(product.getDisplayPrice())")
     @Mapping(target = "isFavorited", constant = "false")
     @AfterMapping
     default void afterDetailMapping(@MappingTarget ProductDetailDto dto, Product product) {
-        //  Enhanced null-safe relationship mapping
         if (product.getBusiness() != null) {
             dto.setBusinessName(product.getBusiness().getName());
         }
@@ -111,11 +77,9 @@ public interface ProductMapper {
             dto.setBrandName(product.getBrand().getName());
         }
 
-        // Fix hasSizes calculation
         boolean hasSizes = product.getSizes() != null && !product.getSizes().isEmpty();
         dto.setHasSizes(hasSizes);
 
-        // Fix null boolean fields
         if (dto.getIsFavorited() == null) {
             dto.setIsFavorited(false);
         }
@@ -124,7 +88,6 @@ public interface ProductMapper {
     }
     ProductDetailDto toDetailDto(Product product);
 
-    // Display field logic with null safety
     default void setDisplayFieldsForList(ProductListDto dto, Product product) {
         try {
             if (product.hasSizes() && product.getSizes() != null && !product.getSizes().isEmpty()) {
@@ -161,7 +124,6 @@ public interface ProductMapper {
                 setProductDataAsDisplay(dto, product);
             }
         } catch (Exception e) {
-            // ✅ FALLBACK: Use product data if size processing fails
             setProductDataAsDisplay(dto, product);
         }
     }
@@ -202,7 +164,6 @@ public interface ProductMapper {
                 setProductDataAsDisplayForDetail(dto, product);
             }
         } catch (Exception e) {
-            // ✅ FALLBACK: Use product data if size processing fails
             setProductDataAsDisplayForDetail(dto, product);
         }
     }

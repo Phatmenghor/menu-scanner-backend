@@ -38,7 +38,7 @@ public class PublicProductController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductDetailDto>> getPublicProductById(@PathVariable UUID id) {
-        log.info("Getting public product by ID: {}", id);
+        log.info("Get public product: {}", id);
         
         ProductDetailDto product = productService.getProductByIdPublic(id);
         

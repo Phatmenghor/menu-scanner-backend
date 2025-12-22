@@ -23,34 +23,38 @@ public class ProductFavoriteController {
     
     private final ProductFavoriteService favoriteService;
 
-    @PostMapping("/{id}/favorite")
-    public ResponseEntity<ApiResponse<FavoriteToggleDto>> setFavoriteStatus(
-            @PathVariable UUID id,
-            @RequestParam boolean favorite) {
+    @PostMapping("/{productId}/toggle")
+    public ResponseEntity<ApiResponse<FavoriteToggleDto>> toggleFavorite(@PathVariable UUID productId) {
+        log.info("Toggle favorite - Product: {}", productId);
         
-        log.info("Setting favorite status to {} for product: {}", favorite, id);
+        FavoriteToggleDto result = favoriteService.toggleFavorite(productId);
         
-        // For now, we use toggle - in future could implement specific set operation
-        FavoriteToggleDto result = favoriteService.toggleFavorite(id);
-        
-        String action = favorite ? "added to" : "removed from";
-        return ResponseEntity.ok(ApiResponse.success("Product " + action + " favorites successfully", result));
+        return ResponseEntity.ok(ApiResponse.success(result.getMessage(), result));
     }
 
-    @PostMapping("/favorites")
+    @DeleteMapping("/{favoriteId}")
+    public ResponseEntity<ApiResponse<Void>> removeFavoriteById(@PathVariable UUID favoriteId) {
+        log.info("Remove favorite by ID: {}", favoriteId);
+        
+        favoriteService.removeFavoriteById(favoriteId);
+        
+        return ResponseEntity.ok(ApiResponse.success("Favorite removed successfully", null));
+    }
+
+    @PostMapping("/my-favorites")
     public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getUserFavorites(
             @Valid @RequestBody ProductFilterDto filter) {
         
-        log.info("Getting user's favorite products");
+        log.info("Get user favorites");
         
         PaginationResponse<ProductListDto> favorites = favoriteService.getUserFavorites(filter);
         
         return ResponseEntity.ok(ApiResponse.success("Favorite products retrieved successfully", favorites));
     }
 
-    @DeleteMapping("/favorites/all")
+    @DeleteMapping("/all")
     public ResponseEntity<ApiResponse<FavoriteRemoveAllDto>> removeAllFavorites() {
-        log.info("Removing all favorites for current user");
+        log.info("Remove all favorites");
         
         FavoriteRemoveAllDto result = favoriteService.removeAllFavorites();
         

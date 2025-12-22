@@ -12,7 +12,7 @@ import java.util.UUID;
 @Data
 public class ProductSizeUpdateDto {
     
-    private UUID id; // If provided, update existing; if null, create new
+    private UUID id;
 
     @NotBlank(message = "Size name is required")
     private String name;
@@ -21,15 +21,13 @@ public class ProductSizeUpdateDto {
     @DecimalMin(value = "0.0", message = "Price must be non-negative")
     private BigDecimal price;
     
-    // Promotion fields (optional)
     private String promotionType;
     private BigDecimal promotionValue;
     private LocalDateTime promotionFromDate;
     private LocalDateTime promotionToDate;
     
-    private Boolean toDelete = false; // Flag to mark for deletion
+    private Boolean toDelete = false;
     
-    // Helper methods
     public boolean isExisting() {
         return id != null;
     }

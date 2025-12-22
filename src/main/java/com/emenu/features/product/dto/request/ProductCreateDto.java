@@ -28,13 +28,13 @@ public class ProductCreateDto {
     @DecimalMin(value = "0.0", message = "Price must be non-negative")
     private BigDecimal price;
     
-    // Promotion fields (optional)
+    private String mainImageUrl;
+    
     private String promotionType;
     private BigDecimal promotionValue;
     private LocalDateTime promotionFromDate;
     private LocalDateTime promotionToDate;
     
-    // Collections (optional)
     @Valid
     private List<ProductImageCreateDto> images;
     

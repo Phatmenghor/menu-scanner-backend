@@ -1,6 +1,5 @@
 package com.emenu.features.product.models;
 
-import com.emenu.enums.product.ImageType;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -28,35 +27,13 @@ public class ProductImage extends BaseUUIDEntity {
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "image_type", nullable = false)
-    private ImageType imageType = ImageType.GALLERY;
-
-    public ProductImage(UUID productId, String imageUrl, ImageType imageType) {
+    public ProductImage(UUID productId, String imageUrl) {
         this.productId = productId;
         this.imageUrl = imageUrl;
-        this.imageType = imageType;
     }
 
-    public ProductImage(String imageUrl, ImageType imageType) {
+    public ProductImage(String imageUrl) {
         this.imageUrl = imageUrl;
-        this.imageType = imageType;
-    }
-
-    public void setAsMain() {
-        this.imageType = ImageType.MAIN;
-    }
-
-    public void setAsGallery() {
-        this.imageType = ImageType.GALLERY;
-    }
-
-    public boolean isMain() {
-        return ImageType.MAIN.equals(imageType);
-    }
-
-    public boolean isGallery() {
-        return ImageType.GALLERY.equals(imageType);
     }
 
     public void setProduct(Product product) {
@@ -67,5 +44,4 @@ public class ProductImage extends BaseUUIDEntity {
             this.productId = null;
         }
     }
-
 }

@@ -51,6 +51,7 @@ public class Product extends BaseUUIDEntity {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
+    @Lob
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
@@ -80,17 +81,16 @@ public class Product extends BaseUUIDEntity {
     @Column(name = "favorite_count", nullable = false)
     private Long favoriteCount = 0L;
 
+    @Column(name = "main_image_url")
+    private String mainImageUrl;
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @OrderBy("imageType DESC, createdAt DESC")
+    @OrderBy("createdAt DESC")
     private List<ProductImage> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @OrderBy("price ASC")
     private List<ProductSize> sizes = new ArrayList<>();
-
-    // ================================
-    // BUSINESS METHODS
-    // ================================
 
     public boolean hasSizes() {
         return sizes != null && !sizes.isEmpty();
@@ -145,17 +145,6 @@ public class Product extends BaseUUIDEntity {
         }
         
         return true;
-    }
-
-    public String getMainImageUrl() {
-        if (images == null || images.isEmpty()) {
-            return null;
-        }
-        return images.stream()
-                .filter(ProductImage::isMain)
-                .findFirst()
-                .map(ProductImage::getImageUrl)
-                .orElse(images.get(0).getImageUrl());
     }
 
     public void incrementViewCount() {

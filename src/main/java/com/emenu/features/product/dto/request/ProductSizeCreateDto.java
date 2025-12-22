@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Data
 public class ProductSizeCreateDto {
-    private UUID id; // For updates
+    private UUID id;
     
     @NotBlank(message = "Size name is required")
     private String name;
@@ -20,7 +20,6 @@ public class ProductSizeCreateDto {
     @DecimalMin(value = "0.0", message = "Price must be non-negative")
     private BigDecimal price;
     
-    // Promotion fields (optional)
     private String promotionType;
     private BigDecimal promotionValue;
     private LocalDateTime promotionFromDate;

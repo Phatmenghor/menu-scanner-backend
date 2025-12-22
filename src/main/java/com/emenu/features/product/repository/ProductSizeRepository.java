@@ -20,25 +20,19 @@ public interface ProductSizeRepository extends JpaRepository<ProductSize, UUID> 
     @Query("SELECT ps FROM ProductSize ps " +
            "WHERE ps.productId = :productId AND ps.isDeleted = false " +
            "ORDER BY ps.price ASC")
-    List<ProductSize> findByProductIdAndIsDeletedFalse(@Param("productId") UUID productId);
+    List<ProductSize> findByProductId(@Param("productId") UUID productId);
 
-    /**
-     * Batch load sizes for multiple products - ordered by price
-     */
     @Query("SELECT ps FROM ProductSize ps " +
            "WHERE ps.productId IN :productIds AND ps.isDeleted = false " +
            "ORDER BY ps.productId, ps.price ASC")
-    List<ProductSize> findByProductIdsAndIsDeletedFalse(@Param("productIds") List<UUID> productIds);
+    List<ProductSize> findByProductIds(@Param("productIds") List<UUID> productIds);
 
-    /**
-     * Group sizes by product ID for efficient batch processing
-     */
     default Map<UUID, List<ProductSize>> findSizesByProductIdsGrouped(List<UUID> productIds) {
         if (productIds == null || productIds.isEmpty()) {
             return Map.of();
         }
         
-        List<ProductSize> sizes = findByProductIdsAndIsDeletedFalse(productIds);
+        List<ProductSize> sizes = findByProductIds(productIds);
         return sizes.stream()
                 .collect(Collectors.groupingBy(ProductSize::getProductId));
     }

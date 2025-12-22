@@ -9,7 +9,7 @@ import java.util.UUID;
 public class FavoriteToggleDto {
     private UUID productId;
     private UUID userId;
-    private String action; // "added", "removed", "unchanged"
+    private String action;
     private Boolean isFavorited;
     private LocalDateTime timestamp;
     private String message;

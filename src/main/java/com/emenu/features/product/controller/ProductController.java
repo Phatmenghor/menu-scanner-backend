@@ -25,15 +25,11 @@ public class ProductController {
 
     private final ProductService productService;
 
-    // ================================
-    // Product CRUD Operations
-    // ================================
-
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> searchProducts(
             @Valid @RequestBody ProductFilterDto filter) {
         
-        log.info("Get all products - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
+        log.info("Search products - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
         
         PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
         
@@ -45,7 +41,7 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductDetailDto>> getProductById(@PathVariable UUID id) {
-        log.info("Getting product by ID: {}", id);
+        log.info("Get product: {}", id);
         
         ProductDetailDto product = productService.getProductById(id);
         
@@ -56,7 +52,7 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductDetailDto>> createProduct(
             @Valid @RequestBody ProductCreateDto request) {
         
-        log.info("Creating product: {}", request.getName());
+        log.info("Create product: {}", request.getName());
         
         ProductDetailDto product = productService.createProduct(request);
         
@@ -69,7 +65,7 @@ public class ProductController {
             @PathVariable UUID id,
             @Valid @RequestBody ProductUpdateDto request) {
         
-        log.info("Updating product: {} with data: {}", id, request.getName());
+        log.info("Update product: {}", id);
         
         ProductDetailDto product = productService.updateProduct(id, request);
         
@@ -78,7 +74,7 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductDetailDto>> deleteProduct(@PathVariable UUID id) {
-        log.info("Deleting product: {}", id);
+        log.info("Delete product: {}", id);
         
         ProductDetailDto product = productService.deleteProduct(id);
         
