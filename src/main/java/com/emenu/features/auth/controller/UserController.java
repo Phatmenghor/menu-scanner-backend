@@ -31,9 +31,15 @@ public class UserController {
     private final AuthService authService;
 
     @PostMapping("admin-token")
-    public ResponseEntity<String> getMyToken() {
-        log.info("Get my token");
+    public ResponseEntity<String> getMyAdminToken() {
+        log.info("Get my admin token");
         return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjE5QGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9QTEFURk9STV9PV05FUiIsImlhdCI6MTc2NDgyMzE1OSwiZXhwIjoxMDAwMDE3NjQ4MjMxNTl9.xZ9snFsEXidIw1A3z8L8PrVhvPeqHwbZSkvHOitIC9XIcd67ADMj8OlWmeygFOT3n8DFFXjnXnrgYhhnY8M0zg");
+    }
+
+    @PostMapping("business-token")
+    public ResponseEntity<String> getMyBusinessToken() {
+        log.info("Get my business token");
+        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIwQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9CVVNJTkVTU19PV05FUiIsImlhdCI6MTc2NjQ2NDgyMiwiZXhwIjoxMDAwMDE3NjY0NjQ4MjJ9.tErHRgZy75QaV1jGar20V9O-MCZSzQ3THNR1_qu3HZxqWnoNphq5sjCEumnI7bBfLa8xIwHMy0Pg7La0btUVow");
     }
 
     @GetMapping("/profile")
