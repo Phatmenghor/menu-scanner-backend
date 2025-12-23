@@ -19,15 +19,8 @@ public abstract class BannerMapper {
     protected PaginationMapper paginationMapper;
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true) // Will be set from current user
+    @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract Banner toEntity(BannerCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
@@ -39,13 +32,6 @@ public abstract class BannerMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "isDeleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     public abstract void updateEntity(BannerUpdateRequest request, @MappingTarget Banner banner);
 
     public PaginationResponse<BannerResponse> toPaginationResponse(Page<Banner> bannerPage) {

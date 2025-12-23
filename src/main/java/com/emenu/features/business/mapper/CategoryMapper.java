@@ -40,13 +40,11 @@ public abstract class CategoryMapper {
 
     @AfterMapping
     protected void setComputedFields(@MappingTarget CategoryResponse response, Category category) {
-        // ✅ FIXED: Actually count products in this category
         if (category.getId() != null) {
             try {
                 long productCount = productRepository.countByCategoryId(category.getId());
                 response.setTotalProducts(productCount);
             } catch (Exception e) {
-                // Fallback to 0 if there's an error
                 response.setTotalProducts(0L);
             }
         } else {

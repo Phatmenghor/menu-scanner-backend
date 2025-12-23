@@ -42,7 +42,6 @@ public abstract class BrandMapper {
 
     @AfterMapping
     protected void setCalculatedFields(@MappingTarget BrandResponse response, Brand brand) {
-        // ✅ ENHANCED: Use repository to count products instead of lazy loading
         if (brand.getId() != null) {
             try {
                 long totalProducts = productRepository.countByBrandId(brand.getId());
