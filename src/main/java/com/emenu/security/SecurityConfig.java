@@ -53,10 +53,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/users/admin-token").permitAll()
                         .requestMatchers("/api/v1/users/business-token").permitAll()
 
-                        // ===== TELEGRAM BOT ENDPOINTS =====
-                        .requestMatchers("/api/v1/telegram/bot/webhook").permitAll() // Telegram webhook
-                        .requestMatchers("/api/v1/telegram/bot/callback").permitAll() // Telegram callbacks
-
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
                         .requestMatchers("/swagger-config", "/api-docs/**").permitAll()
