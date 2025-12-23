@@ -11,7 +11,4 @@ import java.util.UUID;
 public class BusinessExchangeRateFilterRequest extends BaseFilterRequest {
     private UUID businessId;
     private Boolean isActive;
-    private Boolean hasCnyRate;
-    private Boolean hasThbRate;
-    private Boolean hasVndRate;
 }

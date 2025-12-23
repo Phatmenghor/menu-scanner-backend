@@ -27,9 +27,6 @@ public abstract class BusinessExchangeRateMapper {
     @Mapping(target = "formattedCnyRate", expression = "java(exchangeRate.getFormattedCnyRate())")
     @Mapping(target = "formattedThbRate", expression = "java(exchangeRate.getFormattedThbRate())")
     @Mapping(target = "formattedVndRate", expression = "java(exchangeRate.getFormattedVndRate())")
-    @Mapping(target = "hasCnyRate", expression = "java(exchangeRate.hasCnyRate())")
-    @Mapping(target = "hasThbRate", expression = "java(exchangeRate.hasThbRate())")
-    @Mapping(target = "hasVndRate", expression = "java(exchangeRate.hasVndRate())")
     public abstract BusinessExchangeRateResponse toResponse(BusinessExchangeRate exchangeRate);
 
     public abstract List<BusinessExchangeRateResponse> toResponseList(List<BusinessExchangeRate> exchangeRates);

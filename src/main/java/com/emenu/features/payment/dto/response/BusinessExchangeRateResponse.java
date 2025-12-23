@@ -20,16 +20,13 @@ public class BusinessExchangeRateResponse extends BaseAuditResponse {
     // Optional currencies
     private Double usdToCnyRate;
     private String formattedCnyRate;
-    private Boolean hasCnyRate;
-    
+
     private Double usdToThbRate;
     private String formattedThbRate;
-    private Boolean hasThbRate;
-    
+
     private Double usdToVndRate;
     private String formattedVndRate;
-    private Boolean hasVndRate;
-    
+
     private Boolean isActive;
     private String notes;
 }

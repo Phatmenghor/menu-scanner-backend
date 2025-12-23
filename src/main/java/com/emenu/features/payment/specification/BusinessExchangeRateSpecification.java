@@ -30,42 +30,6 @@ public class BusinessExchangeRateSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("isActive"), filter.getIsActive()));
             }
 
-            // Has CNY rate filter
-            if (filter.getHasCnyRate() != null) {
-                if (filter.getHasCnyRate()) {
-                    predicates.add(criteriaBuilder.isNotNull(root.get("usdToCnyRate")));
-                    predicates.add(criteriaBuilder.greaterThan(root.get("usdToCnyRate"), 0.0));
-                } else {
-                    Predicate isNull = criteriaBuilder.isNull(root.get("usdToCnyRate"));
-                    Predicate isZero = criteriaBuilder.lessThanOrEqualTo(root.get("usdToCnyRate"), 0.0);
-                    predicates.add(criteriaBuilder.or(isNull, isZero));
-                }
-            }
-
-            // Has THB rate filter
-            if (filter.getHasThbRate() != null) {
-                if (filter.getHasThbRate()) {
-                    predicates.add(criteriaBuilder.isNotNull(root.get("usdToThbRate")));
-                    predicates.add(criteriaBuilder.greaterThan(root.get("usdToThbRate"), 0.0));
-                } else {
-                    Predicate isNull = criteriaBuilder.isNull(root.get("usdToThbRate"));
-                    Predicate isZero = criteriaBuilder.lessThanOrEqualTo(root.get("usdToThbRate"), 0.0);
-                    predicates.add(criteriaBuilder.or(isNull, isZero));
-                }
-            }
-
-            // Has VND rate filter
-            if (filter.getHasVndRate() != null) {
-                if (filter.getHasVndRate()) {
-                    predicates.add(criteriaBuilder.isNotNull(root.get("usdToVndRate")));
-                    predicates.add(criteriaBuilder.greaterThan(root.get("usdToVndRate"), 0.0));
-                } else {
-                    Predicate isNull = criteriaBuilder.isNull(root.get("usdToVndRate"));
-                    Predicate isZero = criteriaBuilder.lessThanOrEqualTo(root.get("usdToVndRate"), 0.0);
-                    predicates.add(criteriaBuilder.or(isNull, isZero));
-                }
-            }
-
             // Global search filter (searches in business name and notes)
             if (StringUtils.hasText(filter.getSearch())) {
                 String searchPattern = "%" + filter.getSearch().toLowerCase() + "%";
