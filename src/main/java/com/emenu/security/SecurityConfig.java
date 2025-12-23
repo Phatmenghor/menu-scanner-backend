@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/images/**").permitAll()
 
                         .requestMatchers("/api/v1/users/admin-token").permitAll()
+                        .requestMatchers("/api/v1/users/business-token").permitAll()
 
                         // ===== TELEGRAM BOT ENDPOINTS =====
                         .requestMatchers("/api/v1/telegram/bot/webhook").permitAll() // Telegram webhook
