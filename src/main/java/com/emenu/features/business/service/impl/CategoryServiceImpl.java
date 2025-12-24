@@ -68,9 +68,8 @@ public class CategoryServiceImpl implements CategoryService {
 
         Specification<Category> spec = CategorySpecification.buildSpecification(filter);
 
-        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+                filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
         Page<Category> categoryPage = categoryRepository.findAll(spec, pageable);

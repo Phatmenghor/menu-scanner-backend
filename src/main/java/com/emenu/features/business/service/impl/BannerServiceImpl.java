@@ -62,9 +62,8 @@ public class BannerServiceImpl implements BannerService {
         
         Specification<Banner> spec = BannerSpecification.buildSpecification(filter);
         
-        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+                filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
         Page<Banner> bannerPage = bannerRepository.findAll(spec, pageable);

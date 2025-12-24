@@ -106,7 +106,7 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
         log.info("Getting favorites - User: {}", userId);
 
         Pageable pageable = PaginationUtils.createPageable(
-            filter.getPageNo() != null ? filter.getPageNo() - 1 : null,
+            filter.getPageNo(),
             filter.getPageSize(), 
             filter.getSortBy(), 
             filter.getSortDirection()
