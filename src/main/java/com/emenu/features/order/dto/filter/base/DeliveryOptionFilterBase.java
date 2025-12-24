@@ -14,5 +14,4 @@ public interface DeliveryOptionFilterBase {
     String getSortDirection();
     BigDecimal getMinPrice();
     BigDecimal getMaxPrice();
-    Boolean getIsDefault();
 }

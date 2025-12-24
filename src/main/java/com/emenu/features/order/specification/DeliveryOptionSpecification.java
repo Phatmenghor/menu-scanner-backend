@@ -43,11 +43,6 @@ public class DeliveryOptionSpecification {
                         root.get("price"), filter.getMaxPrice()));
             }
 
-            // Default option filter
-            if (filter.getIsDefault() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("isDefault"), filter.getIsDefault()));
-            }
-
             // Global search filter
             if (StringUtils.hasText(filter.getSearch())) {
                 String searchPattern = "%" + filter.getSearch().toLowerCase() + "%";

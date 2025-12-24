@@ -18,6 +18,5 @@ public class DeliveryOptionFilterRequest extends BaseFilterRequest implements De
     private List<Status> statuses;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
-    private Boolean isDefault;
 }
 
