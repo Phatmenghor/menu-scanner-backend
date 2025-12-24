@@ -116,10 +116,6 @@ public class ProductServiceImpl implements ProductService {
         Specification<Product> spec = ProductSpecifications.withFilter(filter);
         Page<Product> productPage = productRepository.findAll(spec, pageable);
 
-        if (productPage.getContent().isEmpty()) {
-            return paginationMapper.toPaginationResponse(productPage, Collections.emptyList());
-        }
-
         List<ProductListDto> dtoList = productMapper.toListDtos(productPage.getContent());
 
         return paginationMapper.toPaginationResponse(productPage, dtoList);
