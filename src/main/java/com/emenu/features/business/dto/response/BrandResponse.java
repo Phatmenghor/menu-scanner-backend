@@ -16,8 +16,4 @@ public class BrandResponse extends BaseAuditResponse {
     private String imageUrl;
     private String description;
     private Status status;
-    
-    // Statistics
-    private Long totalProducts; // Number of products using this brand
-    private Long activeProducts; // Number of active products using this brand
 }

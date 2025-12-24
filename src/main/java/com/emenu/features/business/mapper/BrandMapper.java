@@ -12,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class BrandMapper {
@@ -42,34 +40,7 @@ public abstract class BrandMapper {
     @Mapping(target = "products", ignore = true)
     public abstract void updateEntity(BrandUpdateRequest request, @MappingTarget Brand brand);
 
-    public List<BrandResponse> toResponseListWithCounts(List<Brand> brands) {
-        if (brands == null || brands.isEmpty()) {
-            return List.of();
-        }
-
-        // Get all brand IDs
-        List<UUID> brandIds = brands.stream()
-                .map(Brand::getId)
-                .toList();
-
-        Map<UUID, Long> totalProductCounts = productRepository.countByBrandIds(brandIds);
-        Map<UUID, Long> activeProductCounts = productRepository.countActiveByBrandIds(brandIds);
-
-        // Map to responses and set counts
-        List<BrandResponse> responses = toResponseList(brands);
-        responses.forEach(response -> {
-            Long totalCount = totalProductCounts.getOrDefault(response.getId(), 0L);
-            Long activeCount = activeProductCounts.getOrDefault(response.getId(), 0L);
-            response.setTotalProducts(totalCount);
-            response.setActiveProducts(activeCount);
-        });
-
-        return responses;
-    }
-
     public PaginationResponse<BrandResponse> toPaginationResponse(Page<Brand> brandPage) {
-        // Use optimized batch counting
-        List<BrandResponse> responses = toResponseListWithCounts(brandPage.getContent());
-        return paginationMapper.toPaginationResponse(brandPage, responses);
+        return paginationMapper.toPaginationResponse(brandPage, this::toResponseList);
     }
 }

@@ -15,7 +15,4 @@ public class CategoryResponse extends BaseAuditResponse {
     private String name;
     private String imageUrl;
     private Status status;
-
-    private Long activeProducts;
-    private Long totalProducts; // Number of products in this category
 }
