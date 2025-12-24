@@ -51,7 +51,6 @@ public class Product extends BaseUUIDEntity {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Lob
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
@@ -135,15 +134,15 @@ public class Product extends BaseUUIDEntity {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        
+
         if (promotionFromDate != null && now.isBefore(promotionFromDate)) {
             return false;
         }
-        
+
         if (promotionToDate != null && now.isAfter(promotionToDate)) {
             return false;
         }
-        
+
         return true;
     }
 
