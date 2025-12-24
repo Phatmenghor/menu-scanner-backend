@@ -1,6 +1,7 @@
 package com.emenu.features.product.dto.request;
 
 import com.emenu.enums.product.ProductStatus;
+import com.emenu.enums.product.PromotionType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -30,7 +31,7 @@ public class ProductCreateDto {
     
     private String mainImageUrl;
     
-    private String promotionType;
+    private PromotionType promotionType;
     private BigDecimal promotionValue;
     private LocalDateTime promotionFromDate;
     private LocalDateTime promotionToDate;
