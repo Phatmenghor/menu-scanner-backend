@@ -8,6 +8,5 @@ import java.util.UUID;
 public class ProductImageDto {
     private UUID id;
     private String imageUrl;
-    private Integer displayOrder;
     private LocalDateTime createdAt;
 }
