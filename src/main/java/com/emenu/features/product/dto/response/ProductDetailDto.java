@@ -13,7 +13,6 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class ProductDetailDto extends BaseAuditResponse {
-    private UUID id;
     private String name;
     private String description;
     private ProductStatus status;
@@ -24,15 +23,15 @@ public class ProductDetailDto extends BaseAuditResponse {
     private LocalDateTime promotionFromDate;
     private LocalDateTime promotionToDate;
 
+    private BigDecimal displayPrice;
     private BigDecimal displayOriginPrice;
     private String displayPromotionType;
     private BigDecimal displayPromotionValue;
     private LocalDateTime displayPromotionFromDate;
     private LocalDateTime displayPromotionToDate;
 
-    private BigDecimal displayPrice;
-    private Boolean hasPromotion;
     private Boolean hasSizes;
+    private Boolean hasPromotion;
     private String mainImageUrl;
     private Long viewCount;
     private Long favoriteCount;

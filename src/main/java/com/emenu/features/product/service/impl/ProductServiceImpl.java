@@ -30,7 +30,6 @@ import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -38,11 +37,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 @Transactional
 public class ProductServiceImpl implements ProductService {
 
@@ -60,15 +57,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<ProductListDto> getAllProducts(ProductFilterDto filter) {
-        log.info("Getting products - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
-
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
         if (currentUser.isPresent() && currentUser.get().isBusinessUser() && filter.getBusinessId() == null) {
             filter.setBusinessId(currentUser.get().getBusinessId());
         }
 
         Pageable pageable = PaginationUtils.createPageable(
-                filter.getPageNo(),
+                filter.getPageNo() != null ? filter.getPageNo() - 1 : null,
                 filter.getPageSize(),
                 filter.getSortBy(),
                 filter.getSortDirection()
@@ -81,73 +76,58 @@ public class ProductServiceImpl implements ProductService {
             return paginationMapper.toPaginationResponse(productPage, Collections.emptyList());
         }
 
-        List<ProductListDto> dtoList = processProductsOptimized(productPage.getContent(), currentUser.orElse(null));
+        List<ProductListDto> dtoList = productMapper.toListDtos(productPage.getContent());
+
+        if (currentUser.isPresent()) {
+            List<UUID> productIds = productPage.getContent().stream()
+                    .map(Product::getId)
+                    .toList();
+            
+            List<UUID> favoriteIds = favoriteQueryHelper.getFavoriteProductIds(
+                    currentUser.get().getId(), 
+                    productIds
+            );
+            Set<UUID> favoriteSet = new HashSet<>(favoriteIds);
+
+            dtoList.forEach(dto -> dto.setIsFavorited(favoriteSet.contains(dto.getId())));
+        } else {
+            dtoList.forEach(dto -> dto.setIsFavorited(false));
+        }
+
         return paginationMapper.toPaginationResponse(productPage, dtoList);
     }
 
-    private List<ProductListDto> processProductsOptimized(List<Product> products, User currentUser) {
-        List<UUID> productIds = products.stream().map(Product::getId).toList();
-        
-        CompletableFuture<Map<UUID, List<ProductSize>>> sizesFuture = CompletableFuture.supplyAsync(() -> 
-            productSizeRepository.findSizesByProductIdsGrouped(productIds));
-        
-        CompletableFuture<List<UUID>> favoritesFuture = CompletableFuture.supplyAsync(() -> 
-            currentUser != null ? favoriteQueryHelper.getFavoriteProductIds(currentUser.getId(), productIds) : Collections.emptyList());
 
-        List<ProductListDto> dtoList = productMapper.toListDtos(products);
-
-        try {
-            Map<UUID, List<ProductSize>> sizesMap = sizesFuture.get();
-            List<UUID> favoriteIds = favoritesFuture.get();
-            Set<UUID> favoriteSet = new HashSet<>(favoriteIds);
-
-            for (int i = 0; i < dtoList.size(); i++) {
-                ProductListDto dto = dtoList.get(i);
-                Product product = products.get(i);
-                
-                List<ProductSize> sizes = sizesMap.getOrDefault(dto.getId(), Collections.emptyList());
-                dto.setHasSizes(!sizes.isEmpty());
-                
-                setDisplayFields(dto, product, sizes);
-                dto.setIsFavorited(favoriteSet.contains(dto.getId()));
-            }
-
-        } catch (Exception e) {
-            log.error("Error processing products: {}", e.getMessage());
-            dtoList.forEach(dto -> {
-                dto.setHasSizes(false);
-                dto.setIsFavorited(false);
-            });
+    @Override
+    @Transactional(readOnly = true)
+    public PaginationResponse<ProductListDto> getAllProductsAdmin(ProductFilterDto filter) {
+        Optional<User> currentUser = securityUtils.getCurrentUserOptional();
+        if (currentUser.isPresent() && currentUser.get().isBusinessUser() && filter.getBusinessId() == null) {
+            filter.setBusinessId(currentUser.get().getBusinessId());
         }
 
-        return dtoList;
-    }
+        Pageable pageable = PaginationUtils.createPageable(
+                filter.getPageNo() != null ? filter.getPageNo() - 1 : null,
+                filter.getPageSize(),
+                filter.getSortBy(),
+                filter.getSortDirection()
+        );
 
-    private void setDisplayFields(ProductListDto dto, Product product, List<ProductSize> sizes) {
-        if (sizes.isEmpty()) {
-            dto.setDisplayOriginPrice(product.getPrice());
-            dto.setDisplayPromotionType(product.getPromotionType() != null ? product.getPromotionType().name() : null);
-            dto.setDisplayPromotionValue(product.getPromotionValue());
-            dto.setDisplayPromotionFromDate(product.getPromotionFromDate());
-            dto.setDisplayPromotionToDate(product.getPromotionToDate());
-            dto.setHasPromotion(product.isPromotionActive());
-        } else {
-            ProductSize firstSize = sizes.get(0);
-            
-            dto.setDisplayOriginPrice(firstSize.getPrice());
-            dto.setDisplayPromotionType(firstSize.getPromotionType() != null ? firstSize.getPromotionType().name() : null);
-            dto.setDisplayPromotionValue(firstSize.getPromotionValue());
-            dto.setDisplayPromotionFromDate(firstSize.getPromotionFromDate());
-            dto.setDisplayPromotionToDate(firstSize.getPromotionToDate());
-            dto.setHasPromotion(firstSize.isPromotionActive());
+        Specification<Product> spec = ProductSpecifications.withFilter(filter);
+        Page<Product> productPage = productRepository.findAll(spec, pageable);
+
+        if (productPage.getContent().isEmpty()) {
+            return paginationMapper.toPaginationResponse(productPage, Collections.emptyList());
         }
+
+        List<ProductListDto> dtoList = productMapper.toListDtos(productPage.getContent());
+
+        return paginationMapper.toPaginationResponse(productPage, dtoList);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductDetailDto getProductById(UUID id) {
-        log.info("Getting product: {}", id);
-
         Product product = productRepository.findByIdWithAllDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found: " + id));
 
@@ -169,18 +149,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDetailDto getProductByIdPublic(UUID id) {
-        log.info("Getting public product: {}", id);
-
         Product product = productRepository.findByIdWithAllDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product not found: " + id));
 
-        CompletableFuture.runAsync(() -> {
-            try {
-                productRepository.incrementViewCount(id);
-            } catch (Exception e) {
-                log.warn("Failed to increment view count for product {}: {}", id, e.getMessage());
-            }
-        });
+        productRepository.incrementViewCount(id);
 
         ProductDetailDto dto = productMapper.toDetailDto(product);
 
@@ -195,8 +167,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDetailDto createProduct(ProductCreateDto request) {
-        log.info("Creating product: {}", request.getName());
-
         User currentUser = securityUtils.getCurrentUser();
         validateUserBusinessAssociation(currentUser);
 
@@ -205,19 +175,26 @@ public class ProductServiceImpl implements ProductService {
         product.setViewCount(0L);
         product.setFavoriteCount(0L);
 
+        product.initializeDisplayFields();
+
         Product savedProduct = productRepository.save(product);
 
         handleProductImages(savedProduct, request.getImages());
-        handleProductSizes(savedProduct, request.getSizes());
+        
+        if (request.getSizes() != null && !request.getSizes().isEmpty()) {
+            handleProductSizes(savedProduct, request.getSizes());
+            
+            List<ProductSize> sizes = productSizeRepository.findByProductId(savedProduct.getId());
+            savedProduct.setSizes(sizes);
+            savedProduct.syncDisplayFieldsFromSizes();
+            savedProduct = productRepository.save(savedProduct);
+        }
 
-        log.info("Product created: {}", savedProduct.getId());
         return getProductById(savedProduct.getId());
     }
 
     @Override
     public ProductDetailDto updateProduct(UUID id, ProductUpdateDto request) {
-        log.info("Updating product: {}", id);
-
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Product not found: " + id));
 
@@ -225,19 +202,29 @@ public class ProductServiceImpl implements ProductService {
         validateBusinessOwnership(product, currentUser);
 
         productMapper.updateEntity(request, product);
+
+        if (!product.getHasSizes()) {
+            product.initializeDisplayFields();
+        }
+
         Product updatedProduct = productRepository.save(product);
 
         updateProductImages(updatedProduct, request.getImages());
-        updateProductSizes(updatedProduct, request.getSizes());
+        
+        boolean sizesChanged = updateProductSizes(updatedProduct, request.getSizes());
+        
+        if (sizesChanged) {
+            List<ProductSize> sizes = productSizeRepository.findByProductId(updatedProduct.getId());
+            updatedProduct.setSizes(sizes);
+            updatedProduct.syncDisplayFieldsFromSizes();
+            updatedProduct = productRepository.save(updatedProduct);
+        }
 
-        log.info("Product updated: {}", updatedProduct.getId());
         return getProductById(updatedProduct.getId());
     }
 
     @Override
     public ProductDetailDto deleteProduct(UUID id) {
-        log.info("Deleting product: {}", id);
-
         Product product = productRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Product not found: " + id));
 
@@ -247,7 +234,6 @@ public class ProductServiceImpl implements ProductService {
         product.softDelete();
         Product deletedProduct = productRepository.save(product);
 
-        log.info("Product deleted: {}", deletedProduct.getId());
         return productMapper.toDetailDto(deletedProduct);
     }
 
@@ -315,9 +301,10 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
-    private void updateProductSizes(Product product, List<ProductSizeUpdateDto> sizeDtos) {
-        if (sizeDtos == null || sizeDtos.isEmpty()) return;
+    private boolean updateProductSizes(Product product, List<ProductSizeUpdateDto> sizeDtos) {
+        if (sizeDtos == null || sizeDtos.isEmpty()) return false;
 
+        boolean changed = false;
         List<ProductSize> existingSizes = productSizeRepository.findByProductId(product.getId());
 
         List<UUID> idsToDelete = productSizeMapper.getIdsToDelete(sizeDtos);
@@ -328,24 +315,31 @@ public class ProductServiceImpl implements ProductService {
                         size.softDelete();
                         productSizeRepository.save(size);
                     });
+            changed = true;
         }
 
         List<ProductSizeUpdateDto> toUpdate = productSizeMapper.getExistingToUpdate(sizeDtos);
-        for (ProductSizeUpdateDto updateDto : toUpdate) {
-            existingSizes.stream()
-                    .filter(size -> size.getId().equals(updateDto.getId()))
-                    .findFirst()
-                    .ifPresent(existingSize -> {
-                        productSizeMapper.updateEntity(updateDto, existingSize);
-                        productSizeRepository.save(existingSize);
-                    });
+        if (!toUpdate.isEmpty()) {
+            for (ProductSizeUpdateDto updateDto : toUpdate) {
+                existingSizes.stream()
+                        .filter(size -> size.getId().equals(updateDto.getId()))
+                        .findFirst()
+                        .ifPresent(existingSize -> {
+                            productSizeMapper.updateEntity(updateDto, existingSize);
+                            productSizeRepository.save(existingSize);
+                        });
+            }
+            changed = true;
         }
 
         List<ProductSize> newSizes = productSizeMapper.toEntitiesFromUpdate(sizeDtos);
-        newSizes.forEach(size -> size.setProductId(product.getId()));
         if (!newSizes.isEmpty()) {
+            newSizes.forEach(size -> size.setProductId(product.getId()));
             productSizeRepository.saveAll(newSizes);
+            changed = true;
         }
+
+        return changed;
     }
 
     private void validateUserBusinessAssociation(User user) {

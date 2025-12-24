@@ -74,6 +74,31 @@ public class Product extends BaseUUIDEntity {
     @Column(name = "promotion_to_date")
     private LocalDateTime promotionToDate;
 
+    @Column(name = "display_price", precision = 10, scale = 2)
+    private BigDecimal displayPrice;
+
+    @Column(name = "display_origin_price", precision = 10, scale = 2)
+    private BigDecimal displayOriginPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "display_promotion_type")
+    private PromotionType displayPromotionType;
+
+    @Column(name = "display_promotion_value", precision = 10, scale = 2)
+    private BigDecimal displayPromotionValue;
+
+    @Column(name = "display_promotion_from_date")
+    private LocalDateTime displayPromotionFromDate;
+
+    @Column(name = "display_promotion_to_date")
+    private LocalDateTime displayPromotionToDate;
+
+    @Column(name = "has_sizes", nullable = false)
+    private Boolean hasSizes = false;
+
+    @Column(name = "has_active_promotion", nullable = false)
+    private Boolean hasActivePromotion = false;
+
     @Column(name = "view_count", nullable = false)
     private Long viewCount = 0L;
 
@@ -91,18 +116,57 @@ public class Product extends BaseUUIDEntity {
     @OrderBy("price ASC")
     private List<ProductSize> sizes = new ArrayList<>();
 
-    public boolean hasSizes() {
-        return sizes != null && !sizes.isEmpty();
+    public void syncDisplayFieldsFromSizes() {
+        if (sizes == null || sizes.isEmpty()) {
+            this.hasSizes = false;
+            this.displayPrice = getFinalPrice();
+            this.displayOriginPrice = this.price;
+            this.displayPromotionType = this.promotionType;
+            this.displayPromotionValue = this.promotionValue;
+            this.displayPromotionFromDate = this.promotionFromDate;
+            this.displayPromotionToDate = this.promotionToDate;
+            this.hasActivePromotion = isPromotionActive();
+        } else {
+            this.hasSizes = true;
+            
+            ProductSize displaySize = sizes.stream()
+                    .filter(size -> size != null && !size.getIsDeleted())
+                    .filter(ProductSize::isPromotionActive)
+                    .findFirst()
+                    .orElseGet(() -> sizes.stream()
+                            .filter(size -> size != null && !size.getIsDeleted())
+                            .min((s1, s2) -> s1.getPrice().compareTo(s2.getPrice()))
+                            .orElse(null));
+            
+            if (displaySize != null) {
+                this.displayOriginPrice = displaySize.getPrice();
+                this.displayPromotionType = displaySize.getPromotionType();
+                this.displayPromotionValue = displaySize.getPromotionValue();
+                this.displayPromotionFromDate = displaySize.getPromotionFromDate();
+                this.displayPromotionToDate = displaySize.getPromotionToDate();
+                this.displayPrice = displaySize.getFinalPrice();
+                this.hasActivePromotion = displaySize.isPromotionActive();
+            } else {
+                this.displayOriginPrice = this.price;
+                this.displayPromotionType = this.promotionType;
+                this.displayPromotionValue = this.promotionValue;
+                this.displayPromotionFromDate = this.promotionFromDate;
+                this.displayPromotionToDate = this.promotionToDate;
+                this.displayPrice = getFinalPrice();
+                this.hasActivePromotion = isPromotionActive();
+            }
+        }
     }
 
-    public BigDecimal getDisplayPrice() {
-        if (hasSizes()) {
-            return sizes.stream()
-                    .map(ProductSize::getFinalPrice)
-                    .min(BigDecimal::compareTo)
-                    .orElse(BigDecimal.ZERO);
-        }
-        return getFinalPrice();
+    public void initializeDisplayFields() {
+        this.hasSizes = false;
+        this.displayPrice = getFinalPrice();
+        this.displayOriginPrice = this.price;
+        this.displayPromotionType = this.promotionType;
+        this.displayPromotionValue = this.promotionValue;
+        this.displayPromotionFromDate = this.promotionFromDate;
+        this.displayPromotionToDate = this.promotionToDate;
+        this.hasActivePromotion = isPromotionActive();
     }
 
     public BigDecimal getFinalPrice() {
@@ -134,15 +198,15 @@ public class Product extends BaseUUIDEntity {
         }
 
         LocalDateTime now = LocalDateTime.now();
-
+        
         if (promotionFromDate != null && now.isBefore(promotionFromDate)) {
             return false;
         }
-
+        
         if (promotionToDate != null && now.isAfter(promotionToDate)) {
             return false;
         }
-
+        
         return true;
     }
 

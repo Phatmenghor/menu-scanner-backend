@@ -11,6 +11,7 @@ import java.util.UUID;
 
 public interface ProductService {
     ProductDetailDto createProduct(ProductCreateDto request);
+    PaginationResponse<ProductListDto> getAllProductsAdmin(ProductFilterDto filter);
     PaginationResponse<ProductListDto> getAllProducts(ProductFilterDto filter);
     ProductDetailDto getProductById(UUID id);
     ProductDetailDto updateProduct(UUID id, ProductUpdateDto request);
