@@ -9,9 +9,6 @@ CURRENT_TIME=$(date "+%Y-%m-%d %H:%M:%S")
 # Get current branch
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# Fetch & pull latest changes first
-git fetch origin
-git pull origin "$BRANCH"
 
 # Get changed files list
 CHANGES=$(git status --short | awk '{print $2}' | tr '\n' ' ')
