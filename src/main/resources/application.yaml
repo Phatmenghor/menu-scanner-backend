@@ -7,8 +7,8 @@ spring:
 
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://139.59.118.207:5432/e_menu_platform
-    username: admin_user
+    url: jdbc:postgresql://188.166.208.249:5432/e_menu_platform
+    username: postgres
     password: Hour1819
     driver-class-name: org.postgresql.Driver
     hikari:
@@ -40,7 +40,7 @@ spring:
 # Server Configuration
 server:
   port: 8080
-  url: "http://152.42.254.193:8080"
+  url: "http://188.166.208.249:8080"
   address: 0.0.0.0  # IMPORTANT: Listen on all interfaces
 
 # JWT telegram
