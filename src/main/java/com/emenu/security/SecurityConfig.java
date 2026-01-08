@@ -34,9 +34,6 @@ public class SecurityConfig {
     private final JwtAuthEntryPoint authEntryPoint;
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:4200}")
-    private String[] allowedOrigins;
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -70,24 +67,15 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-
-        // Enhanced CORS configuration for Telegram and mobile apps
-        configuration.setAllowedOriginPatterns(Arrays.asList(allowedOrigins));
-
-        // Add server-specific origins
-        configuration.addAllowedOriginPattern("http://152.42.254.193:*");
-        configuration.addAllowedOriginPattern("http://localhost:*");
-        configuration.addAllowedOriginPattern("https://localhost:*");
-
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition", "Content-Type"));
-        configuration.setMaxAge(3600L);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", new CorsConfiguration() {{
+            setAllowedOriginPatterns(List.of("*")); // matches all origins
+            setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+            setAllowedHeaders(List.of("*"));
+            setAllowCredentials(true); // allow cookies / auth headers
+            setExposedHeaders(List.of("Authorization", "Content-Disposition", "Content-Type"));
+            setMaxAge(3600L);
+        }});
         return source;
     }
 
