@@ -14,6 +14,8 @@ import com.emenu.features.hr.models.WorkSchedule;
 import com.emenu.features.hr.repository.AttendanceRepository;
 import com.emenu.features.hr.repository.WorkScheduleRepository;
 import com.emenu.features.hr.service.AttendanceService;
+import com.emenu.exception.custom.BusinessValidationException;
+import com.emenu.exception.custom.ResourceNotFoundException;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -124,59 +126,62 @@ public class AttendanceServiceImpl implements AttendanceService {
         
         // For 3 check-ins: START -> MIDDLE_OUT -> END
         if (requiredCheckIns == 3) {
-            if (currentCount == 1 && requestedType != com.emenu.features.attendance.enums.CheckInType.MIDDLE_OUT) {
+            if (currentCount == 1 && requestedType != CheckInType.MIDDLE_OUT) {
                 throw new BusinessValidationException("Next check-in should be MIDDLE_OUT");
             }
-            if (currentCount == 2 && requestedType != com.emenu.features.attendance.enums.CheckInType.END) {
+            if (currentCount == 2 && requestedType != CheckInType.END) {
                 throw new BusinessValidationException("Next check-in should be END");
             }
         }
         
         // For 4 check-ins: START -> MIDDLE_OUT -> MIDDLE_IN -> END
         if (requiredCheckIns == 4) {
-            if (currentCount == 1 && requestedType != com.emenu.features.attendance.enums.CheckInType.MIDDLE_OUT) {
+            if (currentCount == 1 && requestedType != CheckInType.MIDDLE_OUT) {
                 throw new BusinessValidationException("Next check-in should be MIDDLE_OUT");
             }
-            if (currentCount == 2 && requestedType != com.emenu.features.attendance.enums.CheckInType.MIDDLE_IN) {
+            if (currentCount == 2 && requestedType != CheckInType.MIDDLE_IN) {
                 throw new BusinessValidationException("Next check-in should be MIDDLE_IN");
             }
-            if (currentCount == 3 && requestedType != com.emenu.features.attendance.enums.CheckInType.END) {
+            if (currentCount == 3 && requestedType != CheckInType.END) {
                 throw new BusinessValidationException("Next check-in should be END");
             }
         }
     }
     
     private void calculateAttendanceMetrics(Attendance attendance, WorkSchedule schedule) {
-        LocalDateTime startTime = attendance.getCheckIns().stream()
-                .filter(c -> c.getCheckInType() == com.emenu.features.attendance.enums.CheckInType.START)
+        // Find START check-in time
+        Optional<LocalDateTime> startTimeOpt = attendance.getCheckIns().stream()
+                .filter(c -> c.getCheckInType() == CheckInType.START)
                 .findFirst()
-                .map(AttendanceCheckIn::getCheckInTime)
-                .orElse(null);
+                .map(AttendanceCheckIn::getCheckInTime);
         
-        LocalDateTime endTime = attendance.getCheckIns().stream()
-                .filter(c -> c.getCheckInType() == com.emenu.features.attendance.enums.CheckInType.END)
+        // Find END check-in time
+        Optional<LocalDateTime> endTimeOpt = attendance.getCheckIns().stream()
+                .filter(c -> c.getCheckInType() == CheckInType.END)
                 .findFirst()
-                .map(AttendanceCheckIn::getCheckInTime)
-                .orElse(null);
+                .map(AttendanceCheckIn::getCheckInTime);
         
-        if (startTime != null && endTime != null) {
+        if (startTimeOpt.isPresent() && endTimeOpt.isPresent()) {
+            LocalDateTime startTime = startTimeOpt.get();
+            LocalDateTime endTime = endTimeOpt.get();
+            
             // Calculate total work time minus breaks
             long totalMinutes = Duration.between(startTime, endTime).toMinutes();
             
             // Subtract break time if there are middle check-ins
             if (schedule.getRequiredCheckIns() >= 3) {
-                Optional<LocalDateTime> middleOut = attendance.getCheckIns().stream()
-                        .filter(c -> c.getCheckInType() == com.emenu.features.attendance.enums.CheckInType.MIDDLE_OUT)
+                Optional<LocalDateTime> middleOutOpt = attendance.getCheckIns().stream()
+                        .filter(c -> c.getCheckInType() == CheckInType.MIDDLE_OUT)
                         .findFirst()
                         .map(AttendanceCheckIn::getCheckInTime);
                 
-                Optional<LocalDateTime> middleIn = attendance.getCheckIns().stream()
-                        .filter(c -> c.getCheckInType() == com.emenu.features.attendance.enums.CheckInType.MIDDLE_IN)
+                Optional<LocalDateTime> middleInOpt = attendance.getCheckIns().stream()
+                        .filter(c -> c.getCheckInType() == CheckInType.MIDDLE_IN)
                         .findFirst()
                         .map(AttendanceCheckIn::getCheckInTime);
                 
-                if (middleOut.isPresent() && middleIn.isPresent()) {
-                    long breakMinutes = Duration.between(middleOut.get(), middleIn.get()).toMinutes();
+                if (middleOutOpt.isPresent() && middleInOpt.isPresent()) {
+                    long breakMinutes = Duration.between(middleOutOpt.get(), middleInOpt.get()).toMinutes();
                     totalMinutes -= breakMinutes;
                 }
             }
@@ -240,12 +245,13 @@ public class AttendanceServiceImpl implements AttendanceService {
         
         // Update status enum if provided
         if (request.getStatusEnumName() != null) {
+            final UUID businessId = attendance.getBusinessId();
+            final String statusEnumName = request.getStatusEnumName();
+            
             AttendanceStatusEnum statusEnum = statusEnumRepository
-                    .findByBusinessIdAndEnumNameAndIsDeletedFalse(
-                            attendance.getBusinessId(), 
-                            request.getStatusEnumName())
+                    .findByBusinessIdAndEnumNameAndIsDeletedFalse(businessId, statusEnumName)
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Status enum not found: " + request.getStatusEnumName()));
+                            "Status enum not found: " + statusEnumName));
             attendance.setStatusEnumId(statusEnum.getId());
         }
         
@@ -267,7 +273,8 @@ public class AttendanceServiceImpl implements AttendanceService {
     
     private AttendanceResponse enrichResponse(AttendanceResponse response) {
         if (response.getStatusEnumId() != null) {
-            statusEnumRepository.findByIdAndIsDeletedFalse(response.getStatusEnumId())
+            final UUID statusEnumId = response.getStatusEnumId();
+            statusEnumRepository.findByIdAndIsDeletedFalse(statusEnumId)
                     .ifPresent(statusEnum -> response.setStatusEnumName(statusEnum.getEnumName()));
         }
         return response;

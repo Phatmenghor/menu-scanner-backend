@@ -9,6 +9,7 @@ import com.emenu.features.hr.mapper.WorkScheduleMapper;
 import com.emenu.features.hr.models.WorkSchedule;
 import com.emenu.features.hr.repository.WorkScheduleRepository;
 import com.emenu.features.hr.service.WorkScheduleService;
+import com.emenu.exception.custom.ResourceNotFoundException;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -27,29 +28,31 @@ import java.util.UUID;
 @Slf4j
 @Transactional
 public class WorkScheduleServiceImpl implements WorkScheduleService {
-    
+
     private final WorkScheduleRepository repository;
     private final WorkScheduleTypeEnumRepository typeEnumRepository;
     private final WorkScheduleMapper mapper;
     private final PaginationMapper paginationMapper;
-    
+
     @Override
     public WorkScheduleResponse create(WorkScheduleCreateRequest request) {
         log.info("Creating work schedule for user: {}", request.getUserId());
-        
-        WorkSchedule schedule = mapper.toEntity(request);
-        
+
+        final WorkSchedule schedule = mapper.toEntity(request);
+
         // Resolve schedule type enum if provided
         if (request.getScheduleTypeEnumName() != null) {
-            typeEnumRepository.findByBusinessIdAndEnumNameAndIsDeletedFalse(
-                    request.getBusinessId(), request.getScheduleTypeEnumName())
+            final UUID businessId = request.getBusinessId();
+            final String typeEnumName = request.getScheduleTypeEnumName();
+
+            typeEnumRepository.findByBusinessIdAndEnumNameAndIsDeletedFalse(businessId, typeEnumName)
                     .ifPresent(typeEnum -> schedule.setScheduleTypeEnumId(typeEnum.getId()));
         }
-        
-        schedule = repository.save(schedule);
-        return enrichResponse(mapper.toResponse(schedule));
+
+        WorkSchedule savedSchedule = repository.save(schedule);
+        return enrichResponse(mapper.toResponse(savedSchedule));
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public WorkScheduleResponse getById(UUID id) {
@@ -57,17 +60,17 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Work schedule not found"));
         return enrichResponse(mapper.toResponse(schedule));
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<WorkScheduleResponse> getAll(WorkScheduleFilterRequest filter) {
         Pageable pageable = PaginationUtils.createPageable(
-                filter.getPageNo(), 
-                filter.getPageSize(), 
-                filter.getSortBy(), 
+                filter.getPageNo(),
+                filter.getPageSize(),
+                filter.getSortBy(),
                 filter.getSortDirection()
         );
-        
+
         Page<WorkSchedule> page = repository.findWithFilters(
                 filter.getBusinessId(),
                 filter.getUserId(),
@@ -75,14 +78,14 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
                 filter.getSearch(),
                 pageable
         );
-        
+
         return paginationMapper.toPaginationResponse(page,
                 schedules -> schedules.stream()
                         .map(mapper::toResponse)
                         .map(this::enrichResponse)
                         .toList());
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public List<WorkScheduleResponse> getByUserId(UUID userId) {
@@ -92,24 +95,26 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
                 .map(this::enrichResponse)
                 .toList();
     }
-    
+
     @Override
     public WorkScheduleResponse update(UUID id, WorkScheduleUpdateRequest request) {
-        WorkSchedule schedule = repository.findByIdAndIsDeletedFalse(id)
+        final WorkSchedule schedule = repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Work schedule not found"));
-        
+
         // Resolve schedule type enum if provided
         if (request.getScheduleTypeEnumName() != null) {
-            typeEnumRepository.findByBusinessIdAndEnumNameAndIsDeletedFalse(
-                    schedule.getBusinessId(), request.getScheduleTypeEnumName())
+            final UUID businessId = schedule.getBusinessId();
+            final String typeEnumName = request.getScheduleTypeEnumName();
+
+            typeEnumRepository.findByBusinessIdAndEnumNameAndIsDeletedFalse(businessId, typeEnumName)
                     .ifPresent(typeEnum -> schedule.setScheduleTypeEnumId(typeEnum.getId()));
         }
-        
+
         mapper.updateEntity(request, schedule);
-        schedule = repository.save(schedule);
-        return enrichResponse(mapper.toResponse(schedule));
+        WorkSchedule updatedSchedule = repository.save(schedule);
+        return enrichResponse(mapper.toResponse(updatedSchedule));
     }
-    
+
     @Override
     public void delete(UUID id) {
         WorkSchedule schedule = repository.findByIdAndIsDeletedFalse(id)
@@ -117,10 +122,11 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
         schedule.softDelete();
         repository.save(schedule);
     }
-    
+
     private WorkScheduleResponse enrichResponse(WorkScheduleResponse response) {
         if (response.getScheduleTypeEnumId() != null) {
-            typeEnumRepository.findByIdAndIsDeletedFalse(response.getScheduleTypeEnumId())
+            final UUID typeEnumId = response.getScheduleTypeEnumId();
+            typeEnumRepository.findByIdAndIsDeletedFalse(typeEnumId)
                     .ifPresent(typeEnum -> response.setScheduleTypeEnumName(typeEnum.getEnumName()));
         }
         return response;

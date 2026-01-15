@@ -40,8 +40,6 @@ spring:
 # Server Configuration
 server:
   port: 8080
-  url: "http://165.22.247.142:8080"
-  address: 0.0.0.0  # IMPORTANT: Listen on all interfaces
 
 # JWT telegram
 jwt:
@@ -57,45 +55,12 @@ springdoc:
     path: /v3/api-docs
     enabled: true
 
-# Actuator Configuration
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-      base-path: /actuator
-  endpoint:
-    health:
-      show-details: when-authorized
-
-# Cambodia-Specific Configuration
-cambodia:
-  timezone: "Asia/Phnom_Penh"
-  currency: "USD"
-  language: "km"
-  country: "KH"
-
 # ===== TELEGRAM CONFIGURATION (MINIMAL) =====
 telegram:
   bot:
     token: "8464259107:AAHdIC3EZb_3uID4vnhteY6PYtmO9WGDBjU"
     enabled: true
-    group-chat-id: "-1002784141362" # Group chat ID for all platform notifications
-    notifications:
-      # Platform-wide notifications (sent to group)
-      customer-registration: true
-      business-registration: true
-      telegram-linking: true
-      system-events: true
-
-      # Business-specific notifications (sent to business owners only)
-      order-notifications: true
-      subscription-alerts: true
-      payment-updates: true
-
-      # Personal notifications (sent to individual users)
-      welcome-messages: true
-      account-updates: true
+    group-chat-id: "-1002784141362"
 
 # Application Configuration
 app:
@@ -108,13 +73,6 @@ app:
     create-admin: true
     admin-email: "phatmenghor19@gmail.com"
     admin-password: "88889999"
-
-  # CORS Configuration
-  cors:
-    allowed-origins: "http://localhost:3000,http://localhost:4200,http://localhost:5173,http://152.42.219.13:8080,https://152.42.219.13:8080,http://152.42.219.13,https://152.42.219.13"
-    allowed-methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
-    allowed-headers: "*"
-    allow-credentials: true
 
   # Security Configuration
   security:
@@ -143,18 +101,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
-
----
-# Production Profile
-spring:
-  config:
-    activate:
-      on-profile: prod
-
-  jpa:
-    hibernate:
-      ddl-auto: validate # Don't auto-update schema in production
     show-sql: false
 
 # Logging Configuration
