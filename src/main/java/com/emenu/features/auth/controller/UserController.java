@@ -2,10 +2,8 @@ package com.emenu.features.auth.controller;
 
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
 import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
-import com.emenu.features.auth.dto.request.BusinessOwnerCreateRequest;
 import com.emenu.features.auth.dto.request.PasswordChangeRequest;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
-import com.emenu.features.auth.dto.response.BusinessOwnerCreateResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
 import com.emenu.features.auth.service.AuthService;
@@ -33,13 +31,13 @@ public class UserController {
     @PostMapping("admin-token")
     public ResponseEntity<String> getMyAdminToken() {
         log.info("Get my admin token");
-        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjE5QGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9QTEFURk9STV9PV05FUiIsImlhdCI6MTc2NDgyMzE1OSwiZXhwIjoxMDAwMDE3NjQ4MjMxNTl9.xZ9snFsEXidIw1A3z8L8PrVhvPeqHwbZSkvHOitIC9XIcd67ADMj8OlWmeygFOT3n8DFFXjnXnrgYhhnY8M0zg");
+        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjE5QGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9QTEFURk9STV9PV05FUiIsImlhdCI6MTc2ODQ4NTkyNywiZXhwIjoxMDAwMDE3Njg0ODU5Mjd9.mSq8tXMe0F3KgsvmECaK4HdbFlpNXOK6kfgfzNcVYw-Yne_UVVM4Qujyh4_-mqjqXuFoCEDnIvo7FvvXd-I8Aw");
     }
 
     @PostMapping("business-token")
     public ResponseEntity<String> getMyBusinessToken() {
         log.info("Get my business token");
-        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIwQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9CVVNJTkVTU19PV05FUiIsImlhdCI6MTc2NjQ2NDgyMiwiZXhwIjoxMDAwMDE3NjY0NjQ4MjJ9.tErHRgZy75QaV1jGar20V9O-MCZSzQ3THNR1_qu3HZxqWnoNphq5sjCEumnI7bBfLa8xIwHMy0Pg7La0btUVow");
+        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIwQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9CVVNJTkVTU19PV05FUiIsImlhdCI6MTc2ODQ4NjQ2MiwiZXhwIjoxMDAwMDE3Njg0ODY0NjJ9.qh1HRf5G0yQdOV4oVHSgNmD075iMRU_xYyNoy1gABXbPDE2MBlSpyPqi2bgAccRDuVIzUlYJh1EizD60pHGjKg");
     }
 
     @GetMapping("/profile")
