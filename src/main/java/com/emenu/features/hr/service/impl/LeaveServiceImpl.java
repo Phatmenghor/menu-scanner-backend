@@ -1,7 +1,5 @@
 package com.emenu.features.hr.service.impl;
 
-import com.emenu.features.enums.models.LeaveStatusEnum;
-import com.emenu.features.enums.repository.LeaveStatusEnumRepository;
 import com.emenu.features.hr.dto.filter.LeaveFilterRequest;
 import com.emenu.features.hr.dto.request.LeaveApprovalRequest;
 import com.emenu.features.hr.dto.request.LeaveCreateRequest;

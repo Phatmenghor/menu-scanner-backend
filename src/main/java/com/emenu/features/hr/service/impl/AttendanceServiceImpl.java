@@ -1,8 +1,6 @@
 package com.emenu.features.hr.service.impl;
 
 import com.emenu.enums.hr.CheckInType;
-import com.emenu.features.enums.models.AttendanceStatusEnum;
-import com.emenu.features.enums.repository.AttendanceStatusEnumRepository;
 import com.emenu.features.hr.dto.filter.AttendanceFilterRequest;
 import com.emenu.features.hr.dto.request.AttendanceCheckInRequest;
 import com.emenu.features.hr.dto.response.AttendanceResponse;
