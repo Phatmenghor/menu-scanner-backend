@@ -1,5 +1,6 @@
 package com.emenu.features.hr.dto.response;
 
+import com.emenu.enums.hr.LeaveStatusEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,8 +29,9 @@ public class LeaveResponse {
     
     private Double totalDays;
     private String reason;
-    private UUID statusEnumId;
-    private String statusEnumName;
+    
+    private LeaveStatusEnum status;
+    
     private UUID approvedBy;
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

@@ -1,10 +1,8 @@
 package com.emenu.features.hr.models;
 
+import com.emenu.enums.hr.LeaveStatusEnum;
 import com.emenu.shared.domain.BaseUUIDEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -15,7 +13,8 @@ import java.util.UUID;
 @Table(name = "leaves", indexes = {
     @Index(name = "idx_leave_user", columnList = "user_id"),
     @Index(name = "idx_leave_business", columnList = "business_id"),
-    @Index(name = "idx_leave_policy", columnList = "policy_id")
+    @Index(name = "idx_leave_policy", columnList = "policy_id"),
+    @Index(name = "idx_leave_status", columnList = "status")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -45,8 +44,10 @@ public class Leave extends BaseUUIDEntity {
     @Column(name = "reason", columnDefinition = "TEXT")
     private String reason;
     
-    @Column(name = "status_enum_id")
-    private UUID statusEnumId;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private LeaveStatusEnum status = LeaveStatusEnum.PENDING;
     
     @Column(name = "approved_by")
     private UUID approvedBy;

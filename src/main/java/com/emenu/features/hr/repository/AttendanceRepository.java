@@ -17,15 +17,13 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
     
     Optional<Attendance> findByIdAndIsDeletedFalse(UUID id);
     
-    Optional<Attendance> findByUserIdAndAttendanceDateAndIsDeletedFalse(
-        UUID userId, LocalDate date);
+    Optional<Attendance> findByUserIdAndAttendanceDateAndIsDeletedFalse(UUID userId, LocalDate date);
     
     @Query("SELECT a FROM Attendance a WHERE a.isDeleted = false " +
            "AND (:businessId IS NULL OR a.businessId = :businessId) " +
            "AND (:userId IS NULL OR a.userId = :userId) " +
            "AND (:startDate IS NULL OR a.attendanceDate >= :startDate) " +
            "AND (:endDate IS NULL OR a.attendanceDate <= :endDate) " +
-           "AND (:statusEnumId IS NULL OR a.statusEnumId = :statusEnumId) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "LOWER(a.remarks) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Attendance> findWithFilters(
@@ -33,7 +31,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
         @Param("userId") UUID userId,
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate,
-        @Param("statusEnumId") UUID statusEnumId,
         @Param("search") String search,
         Pageable pageable
     );

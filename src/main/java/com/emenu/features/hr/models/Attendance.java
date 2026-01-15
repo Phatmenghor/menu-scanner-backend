@@ -1,5 +1,6 @@
 package com.emenu.features.hr.models;
 
+import com.emenu.enums.hr.AttendanceStatusEnum;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -45,8 +46,10 @@ public class Attendance extends BaseUUIDEntity {
     @Column(name = "late_minutes")
     private Integer lateMinutes;
     
-    @Column(name = "status_enum_id")
-    private UUID statusEnumId;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private AttendanceStatusEnum status = AttendanceStatusEnum.ABSENT;
     
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;

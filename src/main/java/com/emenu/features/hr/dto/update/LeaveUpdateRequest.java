@@ -20,5 +20,4 @@ public class LeaveUpdateRequest {
     private LocalDate endDate;
     
     private String reason;
-    private String statusEnumName;
 }

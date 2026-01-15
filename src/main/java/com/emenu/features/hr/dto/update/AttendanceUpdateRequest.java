@@ -10,6 +10,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AttendanceUpdateRequest {
-    private String statusEnumName;
     private String remarks;
 }

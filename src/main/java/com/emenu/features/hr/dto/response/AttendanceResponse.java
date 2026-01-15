@@ -1,5 +1,6 @@
 package com.emenu.features.hr.dto.response;
 
+import com.emenu.enums.hr.AttendanceStatusEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,7 +28,7 @@ public class AttendanceResponse {
     
     private Integer totalWorkMinutes;
     private Integer lateMinutes;
-    private UUID statusEnumId;
-    private String statusEnumName;
+    
+    private AttendanceStatusEnum status;
     private String remarks;
 }

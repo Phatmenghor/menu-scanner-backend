@@ -21,7 +21,6 @@ public interface LeaveRepository extends JpaRepository<Leave, UUID> {
            "AND (:businessId IS NULL OR l.businessId = :businessId) " +
            "AND (:userId IS NULL OR l.userId = :userId) " +
            "AND (:policyId IS NULL OR l.policyId = :policyId) " +
-           "AND (:statusEnumId IS NULL OR l.statusEnumId = :statusEnumId) " +
            "AND (:startDate IS NULL OR l.startDate >= :startDate) " +
            "AND (:endDate IS NULL OR l.endDate <= :endDate) " +
            "AND (:search IS NULL OR :search = '' OR " +
@@ -30,7 +29,6 @@ public interface LeaveRepository extends JpaRepository<Leave, UUID> {
         @Param("businessId") UUID businessId,
         @Param("userId") UUID userId,
         @Param("policyId") UUID policyId,
-        @Param("statusEnumId") UUID statusEnumId,
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate,
         @Param("search") String search,

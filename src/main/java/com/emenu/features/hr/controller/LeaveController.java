@@ -29,8 +29,7 @@ public class LeaveController {
     private final SecurityUtils securityUtils;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<LeaveResponse>> create(
-            @Valid @RequestBody LeaveCreateRequest request) {
+    public ResponseEntity<ApiResponse<LeaveResponse>> create(@Valid @RequestBody LeaveCreateRequest request) {
         log.info("Creating leave request");
         UUID userId = securityUtils.getCurrentUserId();
         UUID businessId = securityUtils.getCurrentUserBusinessId();
@@ -64,13 +63,14 @@ public class LeaveController {
     }
 
     @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<LeaveResponse>> approve(
             @PathVariable UUID id,
             @Valid @RequestBody LeaveApprovalRequest request) {
-        log.info("Approving leave request: {}", id);
+        log.info("Processing leave request: {} with status: {}", id, request.getStatus());
         UUID approvedBy = securityUtils.getCurrentUserId();
         LeaveResponse response = service.approve(id, request, approvedBy);
-        return ResponseEntity.ok(ApiResponse.success("Leave request approved", response));
+        return ResponseEntity.ok(ApiResponse.success("Leave request processed", response));
     }
 
     @DeleteMapping("/{id}")

@@ -1,6 +1,7 @@
 package com.emenu.features.hr.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +12,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LeaveApprovalRequest {
-    @NotBlank(message = "Status enum name required")
-    private String statusEnumName;
+    @NotBlank(message = "Status required")
+    @Pattern(regexp = "APPROVED|REJECTED", message = "Status must be APPROVED or REJECTED")
+    private String status;
     
     private String approverNote;
 }
