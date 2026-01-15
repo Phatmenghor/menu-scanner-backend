@@ -7,7 +7,6 @@ import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class LeaveTypeEnumResponse extends BaseAuditResponse {
