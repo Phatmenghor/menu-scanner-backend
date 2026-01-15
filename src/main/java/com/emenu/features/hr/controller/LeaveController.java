@@ -29,7 +29,6 @@ public class LeaveController {
     private final SecurityUtils securityUtils;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<LeaveResponse>> create(
             @Valid @RequestBody LeaveCreateRequest request) {
         log.info("Creating leave request");
@@ -41,7 +40,6 @@ public class LeaveController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<LeaveResponse>> getById(@PathVariable UUID id) {
         log.info("Get leave request: {}", id);
         LeaveResponse response = service.getById(id);
@@ -49,7 +47,6 @@ public class LeaveController {
     }
 
     @PostMapping("/all")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<PaginationResponse<LeaveResponse>>> getAll(
             @Valid @RequestBody LeaveFilterRequest filter) {
         log.info("Get all leave requests");
@@ -58,7 +55,6 @@ public class LeaveController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<LeaveResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody LeaveUpdateRequest request) {
@@ -68,7 +64,6 @@ public class LeaveController {
     }
 
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<LeaveResponse>> approve(
             @PathVariable UUID id,
             @Valid @RequestBody LeaveApprovalRequest request) {
@@ -79,10 +74,9 @@ public class LeaveController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<LeaveResponse>> delete(@PathVariable UUID id) {
         log.info("Delete leave request: {}", id);
-        service.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Leave request deleted", null));
+        LeaveResponse response = service.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Leave request deleted", response));
     }
 }

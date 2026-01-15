@@ -15,5 +15,5 @@ public interface AttendancePolicyService {
     PaginationResponse<AttendancePolicyResponse> getAll(AttendancePolicyFilterRequest filter);
     List<AttendancePolicyResponse> getByBusinessId(UUID businessId);
     AttendancePolicyResponse update(UUID id, AttendancePolicyUpdateRequest request);
-    void delete(UUID id);
+    AttendancePolicyResponse delete(UUID id);
 }

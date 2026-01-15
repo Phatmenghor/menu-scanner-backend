@@ -37,28 +37,28 @@ import java.util.UUID;
 @Slf4j
 @Transactional
 public class AttendanceServiceImpl implements AttendanceService {
-    
+
     private final AttendanceRepository attendanceRepository;
     private final WorkScheduleRepository workScheduleRepository;
     private final AttendanceStatusEnumRepository statusEnumRepository;
     private final AttendanceMapper mapper;
     private final PaginationMapper paginationMapper;
-    
+
     @Override
     public AttendanceResponse checkIn(AttendanceCheckInRequest request, UUID userId, UUID businessId) {
         log.info("Processing check-in for user: {}, type: {}", userId, request.getCheckInType());
-        
+
         // Validate work schedule
         WorkSchedule schedule = workScheduleRepository.findByIdAndIsDeletedFalse(request.getWorkScheduleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Work schedule not found"));
-        
+
         // Validate schedule belongs to user
         if (!schedule.getUserId().equals(userId)) {
             throw new BusinessValidationException("Work schedule does not belong to user");
         }
-        
+
         LocalDate today = LocalDate.now();
-        
+
         // Get or create attendance for today
         Attendance attendance = attendanceRepository
                 .findByUserIdAndAttendanceDateAndIsDeletedFalse(userId, today)
@@ -71,20 +71,20 @@ public class AttendanceServiceImpl implements AttendanceService {
                             .build();
                     return attendanceRepository.save(newAttendance);
                 });
-        
+
         // Check if this type of check-in already exists
         Optional<AttendanceCheckIn> existingCheckIn = attendance.getCheckIns().stream()
                 .filter(c -> c.getCheckInType() == request.getCheckInType())
                 .findFirst();
-        
+
         if (existingCheckIn.isPresent()) {
             throw new BusinessValidationException(
                     "Already checked in for type: " + request.getCheckInType());
         }
-        
+
         // Validate check-in sequence
         validateCheckInSequence(attendance, request.getCheckInType(), schedule.getRequiredCheckIns());
-        
+
         // Create check-in record
         AttendanceCheckIn checkIn = AttendanceCheckIn.builder()
                 .checkInType(request.getCheckInType())
@@ -93,37 +93,37 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .longitude(request.getLongitude())
                 .remarks(request.getRemarks())
                 .build();
-        
+
         attendance.addCheckIn(checkIn);
-        
+
         // Calculate metrics if this is the END check-in
         if (request.getCheckInType() == CheckInType.END) {
             calculateAttendanceMetrics(attendance, schedule);
         }
-        
+
         attendance = attendanceRepository.save(attendance);
-        
+
         return enrichResponse(mapper.toResponse(attendance));
     }
-    
-    private void validateCheckInSequence(Attendance attendance, 
-            CheckInType requestedType,
+
+    private void validateCheckInSequence(Attendance attendance,
+                                         CheckInType requestedType,
                                          Integer requiredCheckIns) {
-        
+
         int currentCount = attendance.getCheckIns().size();
-        
+
         // START must be first
         if (currentCount == 0 && requestedType != CheckInType.START) {
             throw new BusinessValidationException("Must START check-in first");
         }
-        
+
         // For 2 check-ins: START -> END
         if (requiredCheckIns == 2) {
             if (currentCount == 1 && requestedType != CheckInType.END) {
                 throw new BusinessValidationException("Only START and END check-ins allowed");
             }
         }
-        
+
         // For 3 check-ins: START -> MIDDLE_OUT -> END
         if (requiredCheckIns == 3) {
             if (currentCount == 1 && requestedType != CheckInType.MIDDLE_OUT) {
@@ -133,7 +133,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 throw new BusinessValidationException("Next check-in should be END");
             }
         }
-        
+
         // For 4 check-ins: START -> MIDDLE_OUT -> MIDDLE_IN -> END
         if (requiredCheckIns == 4) {
             if (currentCount == 1 && requestedType != CheckInType.MIDDLE_OUT) {
@@ -147,53 +147,53 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
         }
     }
-    
+
     private void calculateAttendanceMetrics(Attendance attendance, WorkSchedule schedule) {
         // Find START check-in time
         Optional<LocalDateTime> startTimeOpt = attendance.getCheckIns().stream()
                 .filter(c -> c.getCheckInType() == CheckInType.START)
                 .findFirst()
                 .map(AttendanceCheckIn::getCheckInTime);
-        
+
         // Find END check-in time
         Optional<LocalDateTime> endTimeOpt = attendance.getCheckIns().stream()
                 .filter(c -> c.getCheckInType() == CheckInType.END)
                 .findFirst()
                 .map(AttendanceCheckIn::getCheckInTime);
-        
+
         if (startTimeOpt.isPresent() && endTimeOpt.isPresent()) {
             LocalDateTime startTime = startTimeOpt.get();
             LocalDateTime endTime = endTimeOpt.get();
-            
+
             // Calculate total work time minus breaks
             long totalMinutes = Duration.between(startTime, endTime).toMinutes();
-            
+
             // Subtract break time if there are middle check-ins
             if (schedule.getRequiredCheckIns() >= 3) {
                 Optional<LocalDateTime> middleOutOpt = attendance.getCheckIns().stream()
                         .filter(c -> c.getCheckInType() == CheckInType.MIDDLE_OUT)
                         .findFirst()
                         .map(AttendanceCheckIn::getCheckInTime);
-                
+
                 Optional<LocalDateTime> middleInOpt = attendance.getCheckIns().stream()
                         .filter(c -> c.getCheckInType() == CheckInType.MIDDLE_IN)
                         .findFirst()
                         .map(AttendanceCheckIn::getCheckInTime);
-                
+
                 if (middleOutOpt.isPresent() && middleInOpt.isPresent()) {
                     long breakMinutes = Duration.between(middleOutOpt.get(), middleInOpt.get()).toMinutes();
                     totalMinutes -= breakMinutes;
                 }
             }
-            
+
             attendance.setTotalWorkMinutes((int) totalMinutes);
-            
+
             // Calculate late minutes
             LocalDateTime expectedStart = LocalDateTime.of(
-                    attendance.getAttendanceDate(), 
+                    attendance.getAttendanceDate(),
                     schedule.getStartTime()
             );
-            
+
             if (startTime.isAfter(expectedStart)) {
                 long lateMinutes = Duration.between(expectedStart, startTime).toMinutes();
                 attendance.setLateMinutes((int) lateMinutes);
@@ -202,7 +202,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
         }
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public AttendanceResponse getById(UUID id) {
@@ -210,17 +210,17 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance not found"));
         return enrichResponse(mapper.toResponse(attendance));
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<AttendanceResponse> getAll(AttendanceFilterRequest filter) {
         Pageable pageable = PaginationUtils.createPageable(
-                filter.getPageNo(), 
-                filter.getPageSize(), 
-                filter.getSortBy(), 
+                filter.getPageNo(),
+                filter.getPageSize(),
+                filter.getSortBy(),
                 filter.getSortDirection()
         );
-        
+
         Page<Attendance> page = attendanceRepository.findWithFilters(
                 filter.getBusinessId(),
                 filter.getUserId(),
@@ -230,47 +230,48 @@ public class AttendanceServiceImpl implements AttendanceService {
                 filter.getSearch(),
                 pageable
         );
-        
+
         return paginationMapper.toPaginationResponse(page,
                 attendances -> attendances.stream()
                         .map(mapper::toResponse)
                         .map(this::enrichResponse)
                         .toList());
     }
-    
+
     @Override
     public AttendanceResponse update(UUID id, AttendanceUpdateRequest request) {
         Attendance attendance = attendanceRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance not found"));
-        
+
         // Update status enum if provided
         if (request.getStatusEnumName() != null) {
             final UUID businessId = attendance.getBusinessId();
             final String statusEnumName = request.getStatusEnumName();
-            
+
             AttendanceStatusEnum statusEnum = statusEnumRepository
                     .findByBusinessIdAndEnumNameAndIsDeletedFalse(businessId, statusEnumName)
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Status enum not found: " + statusEnumName));
             attendance.setStatusEnumId(statusEnum.getId());
         }
-        
+
         if (request.getRemarks() != null) {
             attendance.setRemarks(request.getRemarks());
         }
-        
+
         attendance = attendanceRepository.save(attendance);
         return enrichResponse(mapper.toResponse(attendance));
     }
-    
+
     @Override
-    public void delete(UUID id) {
+    public AttendanceResponse delete(UUID id) {
         Attendance attendance = attendanceRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance not found"));
         attendance.softDelete();
-        attendanceRepository.save(attendance);
+        attendance = attendanceRepository.save(attendance);
+        return enrichResponse(mapper.toResponse(attendance));
     }
-    
+
     private AttendanceResponse enrichResponse(AttendanceResponse response) {
         if (response.getStatusEnumId() != null) {
             final UUID statusEnumId = response.getStatusEnumId();

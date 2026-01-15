@@ -126,15 +126,16 @@ public class LeavePolicyServiceImpl implements LeavePolicyService {
     }
 
     @Override
-    public void delete(UUID id) {
+    public LeavePolicyResponse delete(UUID id) {
         log.info("Deleting leave policy: {}", id);
 
         LeavePolicy policy = repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave policy not found"));
 
         policy.softDelete();
-        repository.save(policy);
+        policy = repository.save(policy);
         log.info("Leave policy deleted: {}", id);
+        return enrichResponse(mapper.toResponse(policy));
     }
 
     private LeavePolicyResponse enrichResponse(LeavePolicyResponse response) {

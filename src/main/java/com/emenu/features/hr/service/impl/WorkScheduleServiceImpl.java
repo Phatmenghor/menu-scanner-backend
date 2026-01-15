@@ -116,11 +116,12 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
     }
 
     @Override
-    public void delete(UUID id) {
+    public WorkScheduleResponse delete(UUID id) {
         WorkSchedule schedule = repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Work schedule not found"));
         schedule.softDelete();
-        repository.save(schedule);
+        schedule = repository.save(schedule);
+        return enrichResponse(mapper.toResponse(schedule));
     }
 
     private WorkScheduleResponse enrichResponse(WorkScheduleResponse response) {

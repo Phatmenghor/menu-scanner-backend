@@ -27,7 +27,6 @@ public class WorkScheduleController {
     private final WorkScheduleService service;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<WorkScheduleResponse>> create(
             @Valid @RequestBody WorkScheduleCreateRequest request) {
         log.info("Creating work schedule: {}", request.getName());
@@ -37,7 +36,6 @@ public class WorkScheduleController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<WorkScheduleResponse>> getById(@PathVariable UUID id) {
         log.info("Get work schedule: {}", id);
         WorkScheduleResponse response = service.getById(id);
@@ -45,7 +43,6 @@ public class WorkScheduleController {
     }
 
     @PostMapping("/all")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<PaginationResponse<WorkScheduleResponse>>> getAll(
             @Valid @RequestBody WorkScheduleFilterRequest filter) {
         log.info("Get all work schedules");
@@ -54,7 +51,6 @@ public class WorkScheduleController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyRole('BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<List<WorkScheduleResponse>>> getByUserId(
             @PathVariable UUID userId) {
         log.info("Get work schedules for user: {}", userId);
@@ -63,7 +59,6 @@ public class WorkScheduleController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<WorkScheduleResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody WorkScheduleUpdateRequest request) {
@@ -73,10 +68,9 @@ public class WorkScheduleController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<WorkScheduleResponse>> delete(@PathVariable UUID id) {
         log.info("Delete work schedule: {}", id);
-        service.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Work schedule deleted", null));
+        WorkScheduleResponse response = service.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Work schedule deleted", response));
     }
 }

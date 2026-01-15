@@ -11,5 +11,5 @@ public interface LeaveBalanceService {
     List<LeaveBalanceResponse> getByUserIdAndYear(UUID userId, Integer year);
     LeaveBalanceResponse getByUserIdPolicyIdAndYear(UUID userId, UUID policyId, Integer year);
     LeaveBalanceResponse createOrUpdateBalance(UUID userId, UUID policyId, Integer year, Double allowance);
-    void resetYearlyBalance(UUID userId, UUID policyId, Integer year);
+    LeaveBalanceResponse resetYearlyBalance(UUID userId, UUID policyId, Integer year);
 }

@@ -24,7 +24,6 @@ public class LeaveBalanceController {
     private final SecurityUtils securityUtils;
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<LeaveBalanceResponse>> getById(@PathVariable UUID id) {
         log.info("Get leave balance: {}", id);
         LeaveBalanceResponse response = service.getById(id);
@@ -32,7 +31,6 @@ public class LeaveBalanceController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyRole('BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<List<LeaveBalanceResponse>>> getByUserId(
             @PathVariable UUID userId) {
         log.info("Get all leave balances for user: {}", userId);
@@ -41,7 +39,6 @@ public class LeaveBalanceController {
     }
 
     @GetMapping("/user/{userId}/year/{year}")
-    @PreAuthorize("hasAnyRole('BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<List<LeaveBalanceResponse>>> getByUserIdAndYear(
             @PathVariable UUID userId,
             @PathVariable Integer year) {
@@ -51,7 +48,6 @@ public class LeaveBalanceController {
     }
 
     @GetMapping("/user/{userId}/policy/{policyId}/year/{year}")
-    @PreAuthorize("hasAnyRole('BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<LeaveBalanceResponse>> getByUserIdPolicyIdAndYear(
             @PathVariable UUID userId,
             @PathVariable UUID policyId,
@@ -62,7 +58,6 @@ public class LeaveBalanceController {
     }
 
     @PostMapping("/user/{userId}/policy/{policyId}/year/{year}")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<LeaveBalanceResponse>> createOrUpdateBalance(
             @PathVariable UUID userId,
             @PathVariable UUID policyId,
@@ -76,14 +71,13 @@ public class LeaveBalanceController {
     }
 
     @PostMapping("/user/{userId}/policy/{policyId}/year/{year}/reset")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
-    public ResponseEntity<ApiResponse<Void>> resetYearlyBalance(
+    public ResponseEntity<ApiResponse<LeaveBalanceResponse>> resetYearlyBalance(
             @PathVariable UUID userId,
             @PathVariable UUID policyId,
             @PathVariable Integer year) {
         log.info("Resetting leave balance for user: {}, policy: {}, year: {}", userId, policyId, year);
-        service.resetYearlyBalance(userId, policyId, year);
-        return ResponseEntity.ok(ApiResponse.success("Leave balance reset", null));
+        LeaveBalanceResponse response = service.resetYearlyBalance(userId, policyId, year);
+        return ResponseEntity.ok(ApiResponse.success("Leave balance reset", response));
     }
 
     @GetMapping("/my-balances")
@@ -96,7 +90,6 @@ public class LeaveBalanceController {
     }
 
     @GetMapping("/my-balances/year/{year}")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<List<LeaveBalanceResponse>>> getMyBalancesForYear(
             @PathVariable Integer year) {
         log.info("Get current user's leave balances for year: {}", year);

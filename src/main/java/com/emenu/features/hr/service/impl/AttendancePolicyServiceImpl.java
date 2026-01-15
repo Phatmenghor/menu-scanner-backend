@@ -27,11 +27,11 @@ import java.util.UUID;
 @Slf4j
 @Transactional
 public class AttendancePolicyServiceImpl implements AttendancePolicyService {
-    
+
     private final AttendancePolicyRepository repository;
     private final AttendancePolicyMapper mapper;
     private final PaginationMapper paginationMapper;
-    
+
     @Override
     public AttendancePolicyResponse create(AttendancePolicyCreateRequest request) {
         log.info("Creating attendance policy: {}", request.getPolicyName());
@@ -39,7 +39,7 @@ public class AttendancePolicyServiceImpl implements AttendancePolicyService {
         policy = repository.save(policy);
         return mapper.toResponse(policy);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public AttendancePolicyResponse getById(UUID id) {
@@ -47,34 +47,34 @@ public class AttendancePolicyServiceImpl implements AttendancePolicyService {
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance policy not found"));
         return mapper.toResponse(policy);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<AttendancePolicyResponse> getAll(AttendancePolicyFilterRequest filter) {
         Pageable pageable = PaginationUtils.createPageable(
-                filter.getPageNo(), 
-                filter.getPageSize(), 
-                filter.getSortBy(), 
+                filter.getPageNo(),
+                filter.getPageSize(),
+                filter.getSortBy(),
                 filter.getSortDirection()
         );
-        
+
         Page<AttendancePolicy> page = repository.findWithFilters(
                 filter.getBusinessId(),
                 filter.getSearch(),
                 pageable
         );
-        
+
         return paginationMapper.toPaginationResponse(page,
                 policies -> policies.stream().map(mapper::toResponse).toList());
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public List<AttendancePolicyResponse> getByBusinessId(UUID businessId) {
         List<AttendancePolicy> policies = repository.findByBusinessIdAndIsDeletedFalse(businessId);
         return mapper.toResponseList(policies);
     }
-    
+
     @Override
     public AttendancePolicyResponse update(UUID id, AttendancePolicyUpdateRequest request) {
         AttendancePolicy policy = repository.findByIdAndIsDeletedFalse(id)
@@ -83,12 +83,13 @@ public class AttendancePolicyServiceImpl implements AttendancePolicyService {
         policy = repository.save(policy);
         return mapper.toResponse(policy);
     }
-    
+
     @Override
-    public void delete(UUID id) {
+    public AttendancePolicyResponse delete(UUID id) {
         AttendancePolicy policy = repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance policy not found"));
         policy.softDelete();
-        repository.save(policy);
+        policy = repository.save(policy);
+        return mapper.toResponse(policy);
     }
 }

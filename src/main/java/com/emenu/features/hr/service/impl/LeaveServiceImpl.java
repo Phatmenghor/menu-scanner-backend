@@ -198,11 +198,12 @@ public class LeaveServiceImpl implements LeaveService {
     }
 
     @Override
-    public void delete(UUID id) {
+    public LeaveResponse delete(UUID id) {
         Leave leave = repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave not found"));
         leave.softDelete();
-        repository.save(leave);
+        leave = repository.save(leave);
+        return enrichResponse(mapper.toResponse(leave));
     }
 
     private LeaveResponse enrichResponse(LeaveResponse response) {

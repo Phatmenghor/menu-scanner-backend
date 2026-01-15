@@ -13,5 +13,5 @@ public interface AttendanceService {
     AttendanceResponse getById(UUID id);
     PaginationResponse<AttendanceResponse> getAll(AttendanceFilterRequest filter);
     AttendanceResponse update(UUID id, AttendanceUpdateRequest request);
-    void delete(UUID id);
+    AttendanceResponse delete(UUID id);
 }

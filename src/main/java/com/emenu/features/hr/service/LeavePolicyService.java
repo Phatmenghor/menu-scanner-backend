@@ -15,5 +15,5 @@ public interface LeavePolicyService {
     PaginationResponse<LeavePolicyResponse> getAll(LeavePolicyFilterRequest filter);
     List<LeavePolicyResponse> getByBusinessId(UUID businessId);
     LeavePolicyResponse update(UUID id, LeavePolicyUpdateRequest request);
-    void delete(UUID id);
+    LeavePolicyResponse delete(UUID id);
 }

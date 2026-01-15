@@ -15,5 +15,5 @@ public interface WorkScheduleService {
     PaginationResponse<WorkScheduleResponse> getAll(WorkScheduleFilterRequest filter);
     List<WorkScheduleResponse> getByUserId(UUID userId);
     WorkScheduleResponse update(UUID id, WorkScheduleUpdateRequest request);
-    void delete(UUID id);
+    WorkScheduleResponse delete(UUID id);
 }

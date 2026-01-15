@@ -84,7 +84,7 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
     }
 
     @Override
-    public void resetYearlyBalance(UUID userId, UUID policyId, Integer year) {
+    public LeaveBalanceResponse resetYearlyBalance(UUID userId, UUID policyId, Integer year) {
         log.info("Resetting leave balance for user: {}, policy: {}, year: {}", userId, policyId, year);
 
         LeaveBalance balance = repository.findByUserIdAndPolicyIdAndYearAndIsDeletedFalse(userId, policyId, year)
@@ -95,7 +95,8 @@ public class LeaveBalanceServiceImpl implements LeaveBalanceService {
         balance.setRemainingDays(balance.getTotalAllowance());
         balance.setCarriedForwardDays(0.0);
 
-        repository.save(balance);
+        balance = repository.save(balance);
         log.info("Leave balance reset for user: {}", userId);
+        return mapper.toResponse(balance);
     }
 }

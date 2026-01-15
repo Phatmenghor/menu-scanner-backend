@@ -27,7 +27,6 @@ public class AttendancePolicyController {
     private final AttendancePolicyService service;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<AttendancePolicyResponse>> create(
             @Valid @RequestBody AttendancePolicyCreateRequest request) {
         log.info("Creating attendance policy: {}", request.getPolicyName());
@@ -37,7 +36,6 @@ public class AttendancePolicyController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<AttendancePolicyResponse>> getById(@PathVariable UUID id) {
         log.info("Get attendance policy: {}", id);
         AttendancePolicyResponse response = service.getById(id);
@@ -54,7 +52,6 @@ public class AttendancePolicyController {
     }
 
     @GetMapping("/business/{businessId}")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<List<AttendancePolicyResponse>>> getByBusinessId(
             @PathVariable UUID businessId) {
         log.info("Get attendance policies for business: {}", businessId);
@@ -63,7 +60,6 @@ public class AttendancePolicyController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<AttendancePolicyResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody AttendancePolicyUpdateRequest request) {
@@ -73,10 +69,9 @@ public class AttendancePolicyController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<AttendancePolicyResponse>> delete(@PathVariable UUID id) {
         log.info("Delete attendance policy: {}", id);
-        service.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Attendance policy deleted", null));
+        AttendancePolicyResponse response = service.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Attendance policy deleted", response));
     }
 }

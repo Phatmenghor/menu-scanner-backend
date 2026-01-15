@@ -28,7 +28,6 @@ public class AttendanceController {
     private final SecurityUtils securityUtils;
 
     @PostMapping("/check-in")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<AttendanceResponse>> checkIn(
             @Valid @RequestBody AttendanceCheckInRequest request) {
         log.info("Processing check-in request");
@@ -40,7 +39,6 @@ public class AttendanceController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_STAFF', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<AttendanceResponse>> getById(@PathVariable UUID id) {
         log.info("Get attendance record: {}", id);
         AttendanceResponse response = service.getById(id);
@@ -48,7 +46,6 @@ public class AttendanceController {
     }
 
     @PostMapping("/all")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<PaginationResponse<AttendanceResponse>>> getAll(
             @Valid @RequestBody AttendanceFilterRequest filter) {
         log.info("Get all attendance records");
@@ -57,7 +54,6 @@ public class AttendanceController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<AttendanceResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody AttendanceUpdateRequest request) {
@@ -67,10 +63,9 @@ public class AttendanceController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<AttendanceResponse>> delete(@PathVariable UUID id) {
         log.info("Delete attendance record: {}", id);
-        service.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Attendance record deleted", null));
+        AttendanceResponse response = service.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Attendance record deleted", response));
     }
 }
