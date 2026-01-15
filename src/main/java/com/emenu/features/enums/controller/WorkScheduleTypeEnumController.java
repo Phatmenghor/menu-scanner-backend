@@ -23,9 +23,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class WorkScheduleTypeEnumController {
-    
+
     private final WorkScheduleTypeEnumService service;
-    
+
     @PostMapping
     public ResponseEntity<ApiResponse<WorkScheduleTypeEnumResponse>> create(
             @Valid @RequestBody WorkScheduleTypeEnumCreateRequest request) {
@@ -34,14 +34,14 @@ public class WorkScheduleTypeEnumController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Work schedule type enum created", response));
     }
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<WorkScheduleTypeEnumResponse>> getById(@PathVariable UUID id) {
         log.info("Get work schedule type enum: {}", id);
         WorkScheduleTypeEnumResponse response = service.getById(id);
         return ResponseEntity.ok(ApiResponse.success("Work schedule type enum retrieved", response));
     }
-    
+
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<WorkScheduleTypeEnumResponse>>> getAll(
             @Valid @RequestBody ConfigEnumFilterRequest filter) {
@@ -49,7 +49,7 @@ public class WorkScheduleTypeEnumController {
         PaginationResponse<WorkScheduleTypeEnumResponse> response = service.getAll(filter);
         return ResponseEntity.ok(ApiResponse.success("Work schedule type enums retrieved", response));
     }
-    
+
     @GetMapping("/business/{businessId}")
     public ResponseEntity<ApiResponse<List<WorkScheduleTypeEnumResponse>>> getByBusinessId(
             @PathVariable UUID businessId) {
@@ -57,7 +57,7 @@ public class WorkScheduleTypeEnumController {
         List<WorkScheduleTypeEnumResponse> responses = service.getByBusinessId(businessId);
         return ResponseEntity.ok(ApiResponse.success("Work schedule type enums retrieved", responses));
     }
-    
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<WorkScheduleTypeEnumResponse>> update(
             @PathVariable UUID id,
@@ -66,11 +66,11 @@ public class WorkScheduleTypeEnumController {
         WorkScheduleTypeEnumResponse response = service.update(id, request);
         return ResponseEntity.ok(ApiResponse.success("Work schedule type enum updated", response));
     }
-    
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<WorkScheduleTypeEnumResponse>> delete(@PathVariable UUID id) {
         log.info("Delete work schedule type enum: {}", id);
-        service.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Work schedule type enum deleted", null));
+        WorkScheduleTypeEnumResponse response = service.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Work schedule type enum deleted", response));
     }
 }

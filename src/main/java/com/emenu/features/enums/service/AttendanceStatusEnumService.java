@@ -3,6 +3,7 @@ package com.emenu.features.enums.service;
 import com.emenu.features.enums.dto.filter.ConfigEnumFilterRequest;
 import com.emenu.features.enums.dto.request.AttendanceStatusEnumCreateRequest;
 import com.emenu.features.enums.dto.response.AttendanceStatusEnumResponse;
+import com.emenu.features.enums.dto.response.WorkScheduleTypeEnumResponse;
 import com.emenu.features.enums.dto.update.AttendanceStatusEnumUpdateRequest;
 import com.emenu.shared.dto.PaginationResponse;
 
@@ -15,5 +16,5 @@ public interface AttendanceStatusEnumService {
     PaginationResponse<AttendanceStatusEnumResponse> getAll(ConfigEnumFilterRequest filter);
     List<AttendanceStatusEnumResponse> getByBusinessId(UUID businessId);
     AttendanceStatusEnumResponse update(UUID id, AttendanceStatusEnumUpdateRequest request);
-    void delete(UUID id);
+    AttendanceStatusEnumResponse delete(UUID id);
 }

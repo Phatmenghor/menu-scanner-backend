@@ -28,31 +28,31 @@ import java.util.UUID;
 @Slf4j
 @Transactional
 public class LeaveTypeEnumServiceImpl implements LeaveTypeEnumService {
-    
+
     private final LeaveTypeEnumRepository repository;
     private final LeaveTypeEnumMapper mapper;
     private final PaginationMapper paginationMapper;
-    
+
     @Override
     public LeaveTypeEnumResponse create(LeaveTypeEnumCreateRequest request) {
         log.info("Creating leave type enum: {}", request.getEnumName());
-        
+
         // Check if enum already exists for this business
         boolean exists = repository.findByBusinessIdAndEnumNameAndIsDeletedFalse(
                 request.getBusinessId(), request.getEnumName()).isPresent();
-        
+
         if (exists) {
             throw new ValidationException(
                     "Enum name already exists for this business: " + request.getEnumName());
         }
-        
+
         final LeaveTypeEnum enumRecord = mapper.toEntity(request);
         LeaveTypeEnum savedEnum = repository.save(enumRecord);
         log.info("Leave type enum created: {}", savedEnum.getId());
-        
+
         return mapper.toResponse(savedEnum);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public LeaveTypeEnumResponse getById(UUID id) {
@@ -60,73 +60,74 @@ public class LeaveTypeEnumServiceImpl implements LeaveTypeEnumService {
                 .orElseThrow(() -> new ResourceNotFoundException("Leave type enum not found"));
         return mapper.toResponse(enumRecord);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<LeaveTypeEnumResponse> getAll(ConfigEnumFilterRequest filter) {
         Pageable pageable = PaginationUtils.createPageable(
-                filter.getPageNo(), 
-                filter.getPageSize(), 
-                filter.getSortBy(), 
+                filter.getPageNo(),
+                filter.getPageSize(),
+                filter.getSortBy(),
                 filter.getSortDirection()
         );
-        
+
         Page<LeaveTypeEnum> page = repository.findWithFilters(
                 filter.getBusinessId(),
                 filter.getSearch(),
                 pageable
         );
-        
+
         return paginationMapper.toPaginationResponse(page,
                 enums -> mapper.toResponseList(enums.stream().toList()));
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public List<LeaveTypeEnumResponse> getByBusinessId(UUID businessId) {
         List<LeaveTypeEnum> enums = repository.findByBusinessIdAndIsDeletedFalse(businessId);
         return mapper.toResponseList(enums);
     }
-    
+
     @Override
     public LeaveTypeEnumResponse update(UUID id, LeaveTypeEnumUpdateRequest request) {
         log.info("Updating leave type enum: {}", id);
-        
+
         final LeaveTypeEnum enumRecord = repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave type enum not found"));
-        
+
         if (request.getEnumName() != null) {
             // Check if new name already exists for this business
             final UUID businessId = enumRecord.getBusinessId();
             final String enumName = request.getEnumName();
-            
+
             boolean exists = repository.findByBusinessIdAndEnumNameAndIsDeletedFalse(
-                    businessId, enumName)
+                            businessId, enumName)
                     .filter(e -> !e.getId().equals(id))
                     .isPresent();
-            
+
             if (exists) {
                 throw new ValidationException(
                         "Enum name already exists for this business: " + enumName);
             }
         }
-        
+
         mapper.updateEntity(request, enumRecord);
         LeaveTypeEnum updatedEnum = repository.save(enumRecord);
         log.info("Leave type enum updated: {}", id);
-        
+
         return mapper.toResponse(updatedEnum);
     }
-    
+
     @Override
-    public void delete(UUID id) {
+    public LeaveTypeEnumResponse delete(UUID id) {
         log.info("Deleting leave type enum: {}", id);
-        
+
         LeaveTypeEnum enumRecord = repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave type enum not found"));
-        
+
         enumRecord.softDelete();
-        repository.save(enumRecord);
+        enumRecord = repository.save(enumRecord);
         log.info("Leave type enum deleted: {}", id);
+        return mapper.toResponse(enumRecord);
     }
 }

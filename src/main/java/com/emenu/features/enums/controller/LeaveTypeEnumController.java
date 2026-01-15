@@ -23,9 +23,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class LeaveTypeEnumController {
-    
+
     private final LeaveTypeEnumService service;
-    
+
     @PostMapping
     public ResponseEntity<ApiResponse<LeaveTypeEnumResponse>> create(
             @Valid @RequestBody LeaveTypeEnumCreateRequest request) {
@@ -34,14 +34,14 @@ public class LeaveTypeEnumController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Leave type enum created", response));
     }
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<LeaveTypeEnumResponse>> getById(@PathVariable UUID id) {
         log.info("Get leave type enum: {}", id);
         LeaveTypeEnumResponse response = service.getById(id);
         return ResponseEntity.ok(ApiResponse.success("Leave type enum retrieved", response));
     }
-    
+
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<LeaveTypeEnumResponse>>> getAll(
             @Valid @RequestBody ConfigEnumFilterRequest filter) {
@@ -49,7 +49,7 @@ public class LeaveTypeEnumController {
         PaginationResponse<LeaveTypeEnumResponse> response = service.getAll(filter);
         return ResponseEntity.ok(ApiResponse.success("Leave type enums retrieved", response));
     }
-    
+
     @GetMapping("/business/{businessId}")
     public ResponseEntity<ApiResponse<List<LeaveTypeEnumResponse>>> getByBusinessId(
             @PathVariable UUID businessId) {
@@ -57,7 +57,7 @@ public class LeaveTypeEnumController {
         List<LeaveTypeEnumResponse> responses = service.getByBusinessId(businessId);
         return ResponseEntity.ok(ApiResponse.success("Leave type enums retrieved", responses));
     }
-    
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<LeaveTypeEnumResponse>> update(
             @PathVariable UUID id,
@@ -66,11 +66,11 @@ public class LeaveTypeEnumController {
         LeaveTypeEnumResponse response = service.update(id, request);
         return ResponseEntity.ok(ApiResponse.success("Leave type enum updated", response));
     }
-    
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<LeaveTypeEnumResponse>> delete(@PathVariable UUID id) {
         log.info("Delete leave type enum: {}", id);
-        service.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Leave type enum deleted", null));
+        LeaveTypeEnumResponse response = service.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Leave type enum deleted", response));
     }
 }

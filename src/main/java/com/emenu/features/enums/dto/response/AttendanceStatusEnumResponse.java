@@ -1,18 +1,16 @@
 package com.emenu.features.enums.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.emenu.shared.dto.BaseAuditResponse;
+import lombok.*;
 
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AttendanceStatusEnumResponse {
-    private UUID id;
+public class AttendanceStatusEnumResponse extends BaseAuditResponse {
     private UUID businessId;
     private String enumName;
     private String description;

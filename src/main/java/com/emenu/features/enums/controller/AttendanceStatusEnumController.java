@@ -23,9 +23,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class AttendanceStatusEnumController {
-    
+
     private final AttendanceStatusEnumService service;
-    
+
     @PostMapping
     public ResponseEntity<ApiResponse<AttendanceStatusEnumResponse>> create(
             @Valid @RequestBody AttendanceStatusEnumCreateRequest request) {
@@ -34,14 +34,14 @@ public class AttendanceStatusEnumController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Attendance status enum created", response));
     }
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<AttendanceStatusEnumResponse>> getById(@PathVariable UUID id) {
         log.info("Get attendance status enum: {}", id);
         AttendanceStatusEnumResponse response = service.getById(id);
         return ResponseEntity.ok(ApiResponse.success("Attendance status enum retrieved", response));
     }
-    
+
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<AttendanceStatusEnumResponse>>> getAll(
             @Valid @RequestBody ConfigEnumFilterRequest filter) {
@@ -49,7 +49,7 @@ public class AttendanceStatusEnumController {
         PaginationResponse<AttendanceStatusEnumResponse> response = service.getAll(filter);
         return ResponseEntity.ok(ApiResponse.success("Attendance status enums retrieved", response));
     }
-    
+
     @GetMapping("/business/{businessId}")
     public ResponseEntity<ApiResponse<List<AttendanceStatusEnumResponse>>> getByBusinessId(
             @PathVariable UUID businessId) {
@@ -57,7 +57,7 @@ public class AttendanceStatusEnumController {
         List<AttendanceStatusEnumResponse> responses = service.getByBusinessId(businessId);
         return ResponseEntity.ok(ApiResponse.success("Attendance status enums retrieved", responses));
     }
-    
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<AttendanceStatusEnumResponse>> update(
             @PathVariable UUID id,
@@ -66,11 +66,11 @@ public class AttendanceStatusEnumController {
         AttendanceStatusEnumResponse response = service.update(id, request);
         return ResponseEntity.ok(ApiResponse.success("Attendance status enum updated", response));
     }
-    
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<AttendanceStatusEnumResponse>> delete(@PathVariable UUID id) {
         log.info("Delete attendance status enum: {}", id);
-        service.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Attendance status enum deleted", null));
+        AttendanceStatusEnumResponse response = service.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Attendance status enum deleted", response));
     }
 }

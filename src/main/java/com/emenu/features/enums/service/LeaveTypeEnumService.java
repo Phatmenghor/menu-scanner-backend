@@ -3,6 +3,7 @@ package com.emenu.features.enums.service;
 import com.emenu.features.enums.dto.filter.ConfigEnumFilterRequest;
 import com.emenu.features.enums.dto.request.LeaveTypeEnumCreateRequest;
 import com.emenu.features.enums.dto.response.LeaveTypeEnumResponse;
+import com.emenu.features.enums.dto.response.WorkScheduleTypeEnumResponse;
 import com.emenu.features.enums.dto.update.LeaveTypeEnumUpdateRequest;
 import com.emenu.shared.dto.PaginationResponse;
 
@@ -15,5 +16,5 @@ public interface LeaveTypeEnumService {
     PaginationResponse<LeaveTypeEnumResponse> getAll(ConfigEnumFilterRequest filter);
     List<LeaveTypeEnumResponse> getByBusinessId(UUID businessId);
     LeaveTypeEnumResponse update(UUID id, LeaveTypeEnumUpdateRequest request);
-    void delete(UUID id);
+    LeaveTypeEnumResponse delete(UUID id);
 }

@@ -15,5 +15,5 @@ public interface WorkScheduleTypeEnumService {
     PaginationResponse<WorkScheduleTypeEnumResponse> getAll(ConfigEnumFilterRequest filter);
     List<WorkScheduleTypeEnumResponse> getByBusinessId(UUID businessId);
     WorkScheduleTypeEnumResponse update(UUID id, WorkScheduleTypeEnumUpdateRequest request);
-    void delete(UUID id);
+    WorkScheduleTypeEnumResponse delete(UUID id);
 }
