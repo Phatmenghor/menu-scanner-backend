@@ -13,6 +13,7 @@ public interface WorkScheduleTypeEnumService {
     WorkScheduleTypeEnumResponse create(WorkScheduleTypeEnumCreateRequest request);
     WorkScheduleTypeEnumResponse getById(UUID id);
     PaginationResponse<WorkScheduleTypeEnumResponse> getAll(ConfigEnumFilterRequest filter);
+    List<WorkScheduleTypeEnumResponse> getAllList(ConfigEnumFilterRequest filter);
     List<WorkScheduleTypeEnumResponse> getByBusinessId(UUID businessId);
     WorkScheduleTypeEnumResponse update(UUID id, WorkScheduleTypeEnumUpdateRequest request);
     WorkScheduleTypeEnumResponse delete(UUID id);

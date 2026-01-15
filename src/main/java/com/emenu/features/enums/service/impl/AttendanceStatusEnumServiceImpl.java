@@ -83,6 +83,25 @@ public class AttendanceStatusEnumServiceImpl implements AttendanceStatusEnumServ
 
     @Override
     @Transactional(readOnly = true)
+    public List<AttendanceStatusEnumResponse> getAllList(ConfigEnumFilterRequest filter) {
+        Pageable pageable = PaginationUtils.createPageable(
+                filter.getPageNo(),
+                filter.getPageSize(),
+                filter.getSortBy(),
+                filter.getSortDirection()
+        );
+
+        Page<AttendanceStatusEnum> page = repository.findWithFilters(
+                filter.getBusinessId(),
+                filter.getSearch(),
+                pageable
+        );
+
+        return mapper.toResponseList(page.getContent());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<AttendanceStatusEnumResponse> getByBusinessId(UUID businessId) {
         List<AttendanceStatusEnum> enums = repository.findByBusinessIdAndIsDeletedFalse(businessId);
         return mapper.toResponseList(enums);

@@ -83,6 +83,25 @@ public class WorkScheduleTypeEnumServiceImpl implements WorkScheduleTypeEnumServ
 
     @Override
     @Transactional(readOnly = true)
+    public List<WorkScheduleTypeEnumResponse> getAllList(ConfigEnumFilterRequest filter) {
+        Pageable pageable = PaginationUtils.createPageable(
+                filter.getPageNo(),
+                filter.getPageSize(),
+                filter.getSortBy(),
+                filter.getSortDirection()
+        );
+
+        Page<WorkScheduleTypeEnum> page = repository.findWithFilters(
+                filter.getBusinessId(),
+                filter.getSearch(),
+                pageable
+        );
+
+        return mapper.toResponseList(page.getContent());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<WorkScheduleTypeEnumResponse> getByBusinessId(UUID businessId) {
         List<WorkScheduleTypeEnum> enums = repository.findByBusinessIdAndIsDeletedFalse(businessId);
         return mapper.toResponseList(enums);

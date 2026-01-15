@@ -6,12 +6,16 @@ import com.emenu.features.enums.dto.request.LeaveStatusEnumCreateRequest;
 import com.emenu.features.enums.dto.response.LeaveStatusEnumResponse;
 import com.emenu.features.enums.dto.response.WorkScheduleTypeEnumResponse;
 import com.emenu.features.enums.dto.update.LeaveStatusEnumUpdateRequest;
+import com.emenu.features.enums.models.LeaveStatusEnum;
 import com.emenu.features.enums.service.LeaveStatusEnumService;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.pagination.PaginationUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,6 +52,14 @@ public class LeaveStatusEnumController {
             @Valid @RequestBody ConfigEnumFilterRequest filter) {
         log.info("Get all leave status enums");
         PaginationResponse<LeaveStatusEnumResponse> response = service.getAll(filter);
+        return ResponseEntity.ok(ApiResponse.success("Leave status enums retrieved", response));
+    }
+
+    @PostMapping("/all-list")
+    public ResponseEntity<ApiResponse<List<LeaveStatusEnumResponse>>> getAllList(
+            @Valid @RequestBody ConfigEnumFilterRequest filter) {
+        log.info("Get all all leave status enums");
+        List<LeaveStatusEnumResponse> response = service.getAllList(filter);
         return ResponseEntity.ok(ApiResponse.success("Leave status enums retrieved", response));
     }
 

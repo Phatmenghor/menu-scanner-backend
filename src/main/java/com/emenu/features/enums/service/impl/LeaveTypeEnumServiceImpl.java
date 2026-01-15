@@ -83,6 +83,25 @@ public class LeaveTypeEnumServiceImpl implements LeaveTypeEnumService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<LeaveTypeEnumResponse> getAllList(ConfigEnumFilterRequest filter) {
+        Pageable pageable = PaginationUtils.createPageable(
+                filter.getPageNo(),
+                filter.getPageSize(),
+                filter.getSortBy(),
+                filter.getSortDirection()
+        );
+
+        Page<LeaveTypeEnum> page = repository.findWithFilters(
+                filter.getBusinessId(),
+                filter.getSearch(),
+                pageable
+        );
+
+        return mapper.toResponseList(page.getContent());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<LeaveTypeEnumResponse> getByBusinessId(UUID businessId) {
         List<LeaveTypeEnum> enums = repository.findByBusinessIdAndIsDeletedFalse(businessId);
         return mapper.toResponseList(enums);

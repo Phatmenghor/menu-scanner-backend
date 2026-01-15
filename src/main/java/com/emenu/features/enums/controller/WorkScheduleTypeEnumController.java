@@ -50,6 +50,14 @@ public class WorkScheduleTypeEnumController {
         return ResponseEntity.ok(ApiResponse.success("Work schedule type enums retrieved", response));
     }
 
+    @PostMapping("/all-list")
+    public ResponseEntity<ApiResponse<List<WorkScheduleTypeEnumResponse>>> getAllList(
+            @Valid @RequestBody ConfigEnumFilterRequest filter) {
+        log.info("Get all list work schedule type enums");
+        List<WorkScheduleTypeEnumResponse> response = service.getAllList(filter);
+        return ResponseEntity.ok(ApiResponse.success("Work schedule type enums retrieved", response));
+    }
+
     @GetMapping("/business/{businessId}")
     public ResponseEntity<ApiResponse<List<WorkScheduleTypeEnumResponse>>> getByBusinessId(
             @PathVariable UUID businessId) {

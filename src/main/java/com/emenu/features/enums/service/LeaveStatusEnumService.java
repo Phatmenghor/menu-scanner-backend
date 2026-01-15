@@ -14,6 +14,7 @@ public interface LeaveStatusEnumService {
     LeaveStatusEnumResponse create(LeaveStatusEnumCreateRequest request);
     LeaveStatusEnumResponse getById(UUID id);
     PaginationResponse<LeaveStatusEnumResponse> getAll(ConfigEnumFilterRequest filter);
+    List<LeaveStatusEnumResponse> getAllList(ConfigEnumFilterRequest filter);
     List<LeaveStatusEnumResponse> getByBusinessId(UUID businessId);
     LeaveStatusEnumResponse update(UUID id, LeaveStatusEnumUpdateRequest request);
     LeaveStatusEnumResponse delete(UUID id);

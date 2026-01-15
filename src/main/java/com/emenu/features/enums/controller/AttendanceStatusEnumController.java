@@ -50,6 +50,14 @@ public class AttendanceStatusEnumController {
         return ResponseEntity.ok(ApiResponse.success("Attendance status enums retrieved", response));
     }
 
+    @PostMapping("/all-list")
+    public ResponseEntity<ApiResponse<List<AttendanceStatusEnumResponse>>> getAllList(
+            @Valid @RequestBody ConfigEnumFilterRequest filter) {
+        log.info("Get all list attendance status enums");
+        List<AttendanceStatusEnumResponse> response = service.getAllList(filter);
+        return ResponseEntity.ok(ApiResponse.success("Attendance status enums retrieved", response));
+    }
+
     @GetMapping("/business/{businessId}")
     public ResponseEntity<ApiResponse<List<AttendanceStatusEnumResponse>>> getByBusinessId(
             @PathVariable UUID businessId) {

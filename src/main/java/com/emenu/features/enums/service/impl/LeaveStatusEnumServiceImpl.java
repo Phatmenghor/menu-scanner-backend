@@ -83,6 +83,25 @@ public class LeaveStatusEnumServiceImpl implements LeaveStatusEnumService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<LeaveStatusEnumResponse> getAllList(ConfigEnumFilterRequest filter) {
+        Pageable pageable = PaginationUtils.createPageable(
+                filter.getPageNo(),
+                filter.getPageSize(),
+                filter.getSortBy(),
+                filter.getSortDirection()
+        );
+
+        Page<LeaveStatusEnum> page = repository.findWithFilters(
+                filter.getBusinessId(),
+                filter.getSearch(),
+                pageable
+        );
+
+        return mapper.toResponseList(page.getContent());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<LeaveStatusEnumResponse> getByBusinessId(UUID businessId) {
         List<LeaveStatusEnum> enums = repository.findByBusinessIdAndIsDeletedFalse(businessId);
         return mapper.toResponseList(enums);

@@ -50,6 +50,14 @@ public class LeaveTypeEnumController {
         return ResponseEntity.ok(ApiResponse.success("Leave type enums retrieved", response));
     }
 
+    @PostMapping("/all-list")
+    public ResponseEntity<ApiResponse<List<LeaveTypeEnumResponse>>> getAllList(
+            @Valid @RequestBody ConfigEnumFilterRequest filter) {
+        log.info("Get all list leave type enums");
+        List<LeaveTypeEnumResponse> response = service.getAllList(filter);
+        return ResponseEntity.ok(ApiResponse.success("Leave type enums retrieved", response));
+    }
+
     @GetMapping("/business/{businessId}")
     public ResponseEntity<ApiResponse<List<LeaveTypeEnumResponse>>> getByBusinessId(
             @PathVariable UUID businessId) {

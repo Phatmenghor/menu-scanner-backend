@@ -14,6 +14,7 @@ public interface AttendanceStatusEnumService {
     AttendanceStatusEnumResponse create(AttendanceStatusEnumCreateRequest request);
     AttendanceStatusEnumResponse getById(UUID id);
     PaginationResponse<AttendanceStatusEnumResponse> getAll(ConfigEnumFilterRequest filter);
+    List<AttendanceStatusEnumResponse> getAllList(ConfigEnumFilterRequest filter);
     List<AttendanceStatusEnumResponse> getByBusinessId(UUID businessId);
     AttendanceStatusEnumResponse update(UUID id, AttendanceStatusEnumUpdateRequest request);
     AttendanceStatusEnumResponse delete(UUID id);
