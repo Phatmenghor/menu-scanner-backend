@@ -15,8 +15,7 @@ import java.util.UUID;
 @Table(name = "leaves", indexes = {
     @Index(name = "idx_leave_user", columnList = "user_id"),
     @Index(name = "idx_leave_business", columnList = "business_id"),
-    @Index(name = "idx_leave_status", columnList = "status"),
-    @Index(name = "idx_leave_type", columnList = "leave_type_enum_id")
+    @Index(name = "idx_leave_status", columnList = "status")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
