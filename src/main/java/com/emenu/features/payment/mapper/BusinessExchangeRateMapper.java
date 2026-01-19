@@ -12,32 +12,29 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class BusinessExchangeRateMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface BusinessExchangeRateMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "isActive", constant = "true")
-    public abstract BusinessExchangeRate toEntity(BusinessExchangeRateCreateRequest request);
+    BusinessExchangeRate toEntity(BusinessExchangeRateCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(target = "formattedKhrRate", expression = "java(exchangeRate.getFormattedKhrRate())")
     @Mapping(target = "formattedCnyRate", expression = "java(exchangeRate.getFormattedCnyRate())")
     @Mapping(target = "formattedThbRate", expression = "java(exchangeRate.getFormattedThbRate())")
     @Mapping(target = "formattedVndRate", expression = "java(exchangeRate.getFormattedVndRate())")
-    public abstract BusinessExchangeRateResponse toResponse(BusinessExchangeRate exchangeRate);
+    BusinessExchangeRateResponse toResponse(BusinessExchangeRate exchangeRate);
 
-    public abstract List<BusinessExchangeRateResponse> toResponseList(List<BusinessExchangeRate> exchangeRates);
+    List<BusinessExchangeRateResponse> toResponseList(List<BusinessExchangeRate> exchangeRates);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "isActive", ignore = true)
-    public abstract void updateEntity(BusinessExchangeRateUpdateRequest request, @MappingTarget BusinessExchangeRate exchangeRate);
+    void updateEntity(BusinessExchangeRateUpdateRequest request, @MappingTarget BusinessExchangeRate exchangeRate);
 
-    public PaginationResponse<BusinessExchangeRateResponse> toPaginationResponse(Page<BusinessExchangeRate> exchangeRatePage) {
+    default PaginationResponse<BusinessExchangeRateResponse> toPaginationResponse(Page<BusinessExchangeRate> exchangeRatePage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(exchangeRatePage, this::toResponseList);
     }
 }

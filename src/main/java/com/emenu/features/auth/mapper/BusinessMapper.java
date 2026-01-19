@@ -13,20 +13,17 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class BusinessMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface BusinessMapper {
 
     @Mapping(target = "hasActiveSubscription", expression = "java(business.hasActiveSubscription())")
-    public abstract BusinessResponse toResponse(Business business);
-    
-    public abstract Business toEntity(BusinessCreateRequest request);
+    BusinessResponse toResponse(Business business);
 
-    public abstract List<BusinessResponse> toResponseList(List<Business> businesses);
+    Business toEntity(BusinessCreateRequest request);
 
-    public PaginationResponse<BusinessResponse> toPaginationResponse(Page<Business> page) {
+    List<BusinessResponse> toResponseList(List<Business> businesses);
+
+    default PaginationResponse<BusinessResponse> toPaginationResponse(Page<Business> page, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(page, this::toResponseList);
     }
 }

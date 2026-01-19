@@ -11,19 +11,17 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class ProvinceMapper {
-    @Autowired
-    protected PaginationMapper paginationMapper;
-    
-    public abstract ProvinceResponse toResponse(Province province);
-    public abstract Province toEntity(ProvinceRequest request);
-    public abstract List<ProvinceResponse> toResponseList(List<Province> provinces);
-    
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface ProvinceMapper {
+
+    ProvinceResponse toResponse(Province province);
+    Province toEntity(ProvinceRequest request);
+    List<ProvinceResponse> toResponseList(List<Province> provinces);
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    public abstract void updateEntity(ProvinceRequest request, @MappingTarget Province province);
-    
-    public PaginationResponse<ProvinceResponse> toPaginationResponse(Page<Province> page) {
+    void updateEntity(ProvinceRequest request, @MappingTarget Province province);
+
+    default PaginationResponse<ProvinceResponse> toPaginationResponse(Page<Province> page, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(page, this::toResponseList);
     }
 }

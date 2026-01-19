@@ -35,6 +35,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     private final CustomerAddressRepository addressRepository;
     private final CustomerAddressMapper addressMapper;
     private final SecurityUtils securityUtils;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public CustomerAddressResponse createAddress(CustomerAddressCreateRequest request) {
@@ -66,7 +67,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
         );
 
         Page<CustomerAddress> addressPage = addressRepository.findAll(spec, pageable);
-        return addressMapper.toPaginationResponse(addressPage);
+        return addressMapper.toPaginationResponse(addressPage, paginationMapper);
     }
 
     @Override

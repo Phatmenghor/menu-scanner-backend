@@ -12,27 +12,23 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class SubscriptionPlanMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface SubscriptionPlanMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "subscriptions", ignore = true)
-    public abstract SubscriptionPlan toEntity(SubscriptionPlanCreateRequest request);
+    SubscriptionPlan toEntity(SubscriptionPlanCreateRequest request);
 
-    public abstract SubscriptionPlanResponse toResponse(SubscriptionPlan plan);
-    public abstract List<SubscriptionPlanResponse> toResponseList(List<SubscriptionPlan> plans);
+    SubscriptionPlanResponse toResponse(SubscriptionPlan plan);
+    List<SubscriptionPlanResponse> toResponseList(List<SubscriptionPlan> plans);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "subscriptions", ignore = true)
-    public abstract void updateEntity(SubscriptionPlanUpdateRequest request, @MappingTarget SubscriptionPlan plan);
+    void updateEntity(SubscriptionPlanUpdateRequest request, @MappingTarget SubscriptionPlan plan);
 
     @AfterMapping
-    protected void setCalculatedFields(@MappingTarget SubscriptionPlanResponse response, SubscriptionPlan plan) {
-        
+    default void setCalculatedFields(@MappingTarget SubscriptionPlanResponse response, SubscriptionPlan plan) {
         if (plan.getSubscriptions() != null) {
             response.setActiveSubscriptionsCount((long) plan.getSubscriptions().size());
         } else {
@@ -40,7 +36,7 @@ public abstract class SubscriptionPlanMapper {
         }
     }
 
-    public PaginationResponse<SubscriptionPlanResponse> toPaginationResponse(Page<SubscriptionPlan> planPage) {
+    default PaginationResponse<SubscriptionPlanResponse> toPaginationResponse(Page<SubscriptionPlan> planPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(planPage, this::toResponseList);
     }
 }

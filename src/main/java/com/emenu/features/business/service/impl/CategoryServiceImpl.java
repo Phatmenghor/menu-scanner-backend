@@ -36,6 +36,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
     private final SecurityUtils securityUtils;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public CategoryResponse createCategory(CategoryCreateRequest request) {
@@ -73,7 +74,7 @@ public class CategoryServiceImpl implements CategoryService {
         );
 
         Page<Category> categoryPage = categoryRepository.findAll(spec, pageable);
-        return categoryMapper.toPaginationResponse(categoryPage);
+        return categoryMapper.toPaginationResponse(categoryPage, paginationMapper);
     }
 
     @Override

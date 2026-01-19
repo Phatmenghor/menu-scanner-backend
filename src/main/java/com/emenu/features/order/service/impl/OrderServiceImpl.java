@@ -56,6 +56,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final SecurityUtils securityUtils;
     private final PaymentReferenceGenerator paymentReferenceGenerator;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
     
     private static final AtomicLong orderCounter = new AtomicLong(System.currentTimeMillis() % 10000);
 
@@ -194,7 +195,7 @@ public class OrderServiceImpl implements OrderService {
         );
         
         Page<Order> orderPage = orderRepository.findAll(spec, pageable);
-        return orderMapper.toPaginationResponse(orderPage);
+        return orderMapper.toPaginationResponse(orderPage, paginationMapper);
     }
 
     @Override

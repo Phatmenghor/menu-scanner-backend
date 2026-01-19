@@ -13,33 +13,26 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class CategoryMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
-
-    @Autowired
-    protected ProductRepository productRepository;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface CategoryMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
-    public abstract Category toEntity(CategoryCreateRequest request);
+    Category toEntity(CategoryCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
-    public abstract CategoryResponse toResponse(Category category);
+    CategoryResponse toResponse(Category category);
 
-    public abstract List<CategoryResponse> toResponseList(List<Category> categories);
+    List<CategoryResponse> toResponseList(List<Category> categories);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
-    public abstract void updateEntity(CategoryUpdateRequest request, @MappingTarget Category category);
+    void updateEntity(CategoryUpdateRequest request, @MappingTarget Category category);
 
-
-    public PaginationResponse<CategoryResponse> toPaginationResponse(Page<Category> categoryPage) {
+    default PaginationResponse<CategoryResponse> toPaginationResponse(Page<Category> categoryPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(categoryPage, this::toResponseList);
     }
 }

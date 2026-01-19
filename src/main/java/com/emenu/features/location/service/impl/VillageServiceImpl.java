@@ -29,6 +29,7 @@ public class VillageServiceImpl implements VillageService {
     private final VillageRepository villageRepository;
     private final VillageMapper villageMapper;
     private final CommuneRepository communeRepository;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     @Transactional
@@ -71,12 +72,12 @@ public class VillageServiceImpl implements VillageService {
         );
         
         Page<Village> villagePage = villageRepository.searchVillages(
-            request.getCommuneCode(), request.getDistrictCode(), 
+            request.getCommuneCode(), request.getDistrictCode(),
             request.getProvinceCode(), request.getSearch(), pageable
         );
-        
+
         // Map WITHIN transaction
-        return villageMapper.toPaginationResponse(villagePage);
+        return villageMapper.toPaginationResponse(villagePage, paginationMapper);
     }
 
     @Override

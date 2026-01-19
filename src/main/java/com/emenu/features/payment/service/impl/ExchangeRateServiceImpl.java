@@ -32,6 +32,7 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
 
     private final ExchangeRateRepository exchangeRateRepository;
     private final ExchangeRateMapper exchangeRateMapper;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public ExchangeRateResponse createExchangeRate(ExchangeRateCreateRequest request) {
@@ -59,7 +60,7 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         );
 
         Page<ExchangeRate> exchangeRatePage = exchangeRateRepository.findAll(spec, pageable);
-        return exchangeRateMapper.toPaginationResponse(exchangeRatePage);
+        return exchangeRateMapper.toPaginationResponse(exchangeRatePage, paginationMapper);
     }
 
     @Override

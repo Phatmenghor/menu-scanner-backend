@@ -13,26 +13,20 @@ import java.util.List;
 
 @Mapper(componentModel = "spring",
         unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        uses = {DistrictMapper.class})  // Use DistrictMapper for nested district
-public abstract class CommuneMapper {
-    @Autowired
-    protected PaginationMapper paginationMapper;
-    
-    @Autowired
-    protected DistrictMapper districtMapper;
-    
-    // Map commune with its district (district will include province automatically)
+        uses = {DistrictMapper.class, PaginationMapper.class})
+public interface CommuneMapper {
+
     @Mapping(target = "district", source = "district")
-    public abstract CommuneResponse toResponse(Commune commune);
-    
-    public abstract Commune toEntity(CommuneRequest request);
-    
-    public abstract List<CommuneResponse> toResponseList(List<Commune> communes);
-    
+    CommuneResponse toResponse(Commune commune);
+
+    Commune toEntity(CommuneRequest request);
+
+    List<CommuneResponse> toResponseList(List<Commune> communes);
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    public abstract void updateEntity(CommuneRequest request, @MappingTarget Commune commune);
-    
-    public PaginationResponse<CommuneResponse> toPaginationResponse(Page<Commune> page) {
+    void updateEntity(CommuneRequest request, @MappingTarget Commune commune);
+
+    default PaginationResponse<CommuneResponse> toPaginationResponse(Page<Commune> page, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(page, this::toResponseList);
     }
 }

@@ -13,12 +13,8 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-@Slf4j
-public abstract class SubscriptionMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface SubscriptionMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "business", ignore = true)
@@ -26,16 +22,16 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "payments", ignore = true)
     @Mapping(target = "startDate", ignore = true)
     @Mapping(target = "endDate", ignore = true)
-    public abstract Subscription toEntity(SubscriptionCreateRequest request);
+    Subscription toEntity(SubscriptionCreateRequest request);
 
     @Mapping(source = "businessId", target = "businessId")
     @Mapping(source = "planId", target = "planId")
     @Mapping(source = "startDate", target = "startDate")
     @Mapping(source = "endDate", target = "endDate")
     @Mapping(source = "autoRenew", target = "autoRenew")
-    public abstract SubscriptionResponse toResponse(Subscription subscription);
+    SubscriptionResponse toResponse(Subscription subscription);
 
-    public abstract List<SubscriptionResponse> toResponseList(List<Subscription> subscriptions);
+    List<SubscriptionResponse> toResponseList(List<Subscription> subscriptions);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
@@ -43,10 +39,10 @@ public abstract class SubscriptionMapper {
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "plan", ignore = true)
     @Mapping(target = "payments", ignore = true)
-    public abstract void updateEntity(SubscriptionUpdateRequest request, @MappingTarget Subscription subscription);
+    void updateEntity(SubscriptionUpdateRequest request, @MappingTarget Subscription subscription);
 
     @AfterMapping
-    protected void setCalculatedFields(@MappingTarget SubscriptionResponse response, Subscription subscription) {
+    default void setCalculatedFields(@MappingTarget SubscriptionResponse response, Subscription subscription) {
         response.setDaysRemaining(subscription.getDaysRemaining());
         response.setStatus(subscription.getStatus());
         if (subscription.getBusiness() != null) {
@@ -67,7 +63,7 @@ public abstract class SubscriptionMapper {
         response.setPaymentAmount(subscription.getPaymentAmount().doubleValue());
     }
 
-    public PaginationResponse<SubscriptionResponse> toPaginationResponse(Page<Subscription> subscriptionPage) {
+    default PaginationResponse<SubscriptionResponse> toPaginationResponse(Page<Subscription> subscriptionPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(subscriptionPage, this::toResponseList);
     }
 }

@@ -12,11 +12,8 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class BusinessOrderPaymentMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface BusinessOrderPaymentMapper {
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "order.orderNumber", target = "orderNumber")
@@ -25,21 +22,21 @@ public abstract class BusinessOrderPaymentMapper {
     @Mapping(target = "customerPhone", expression = "java(getCustomerPhone(payment))")
     @Mapping(target = "isGuestOrder", expression = "java(payment.getOrder() != null ? payment.getOrder().getIsGuestOrder() : false)")
     @Mapping(target = "isPosOrder", expression = "java(payment.getOrder() != null ? payment.getOrder().getIsPosOrder() : false)")
-    public abstract BusinessOrderPaymentResponse toResponse(BusinessOrderPayment payment);
+    BusinessOrderPaymentResponse toResponse(BusinessOrderPayment payment);
 
-    public abstract List<BusinessOrderPaymentResponse> toResponseList(List<BusinessOrderPayment> payments);
+    List<BusinessOrderPaymentResponse> toResponseList(List<BusinessOrderPayment> payments);
 
-    protected String getCustomerName(BusinessOrderPayment payment) {
+    default String getCustomerName(BusinessOrderPayment payment) {
         if (payment.getOrder() == null) return null;
         return payment.getOrder().getCustomerIdentifier();
     }
 
-    protected String getCustomerPhone(BusinessOrderPayment payment) {
+    default String getCustomerPhone(BusinessOrderPayment payment) {
         if (payment.getOrder() == null) return null;
         return payment.getOrder().getCustomerContact();
     }
 
-    public PaginationResponse<BusinessOrderPaymentResponse> toPaginationResponse(Page<BusinessOrderPayment> paymentPage) {
+    default PaginationResponse<BusinessOrderPaymentResponse> toPaginationResponse(Page<BusinessOrderPayment> paymentPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(paymentPage, this::toResponseList);
     }
 }

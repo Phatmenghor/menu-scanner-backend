@@ -41,6 +41,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationFactory notificationFactory;
     private final SecurityUtils securityUtils;
     private final UserRepository userRepository;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
     
     // ===== CREATE =====
     @Override
@@ -255,10 +256,10 @@ public class NotificationServiceImpl implements NotificationService {
             request.getSearch(),
             pageable
         );
-        
-        return notificationMapper.toPaginationResponse(notificationPage);
+
+        return notificationMapper.toPaginationResponse(notificationPage, paginationMapper);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<NotificationResponse> getAllNotifications(NotificationFilterRequest request) {
@@ -287,10 +288,10 @@ public class NotificationServiceImpl implements NotificationService {
             request.getSearch(),
             pageable
         );
-        
-        return notificationMapper.toPaginationResponse(notificationPage);
+
+        return notificationMapper.toPaginationResponse(notificationPage, paginationMapper);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public long getUnreadCount() {

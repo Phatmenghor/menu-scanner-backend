@@ -31,6 +31,7 @@ public class BusinessOrderPaymentServiceImpl implements BusinessOrderPaymentServ
     private final BusinessOrderPaymentRepository paymentRepository;
     private final BusinessOrderPaymentMapper paymentMapper;
     private final SecurityUtils securityUtils;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public PaginationResponse<BusinessOrderPaymentResponse> getAllPayments(BusinessOrderPaymentFilterRequest filter) {
@@ -48,7 +49,7 @@ public class BusinessOrderPaymentServiceImpl implements BusinessOrderPaymentServ
         );
 
         Page<BusinessOrderPayment> paymentPage = paymentRepository.findAll(spec, pageable);
-        return paymentMapper.toPaginationResponse(paymentPage);
+        return paymentMapper.toPaginationResponse(paymentPage, paginationMapper);
     }
 
     @Override

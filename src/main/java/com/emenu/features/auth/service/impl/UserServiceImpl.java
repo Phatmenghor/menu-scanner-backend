@@ -47,6 +47,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final SecurityUtils securityUtils;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
@@ -106,7 +107,7 @@ public class UserServiceImpl implements UserService {
                 pageable
         );
 
-        return userMapper.toPaginationResponse(userPage);
+        return userMapper.toPaginationResponse(userPage, paginationMapper);
     }
 
     @Override

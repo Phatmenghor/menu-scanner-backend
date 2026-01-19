@@ -13,23 +13,20 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class NotificationMapper {
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface NotificationMapper {
 
-    @Autowired
-    protected PaginationMapper paginationMapper;
+    NotificationResponse toResponse(Notification notification);
 
-    public abstract NotificationResponse toResponse(Notification notification);
-    
-    public abstract List<NotificationResponse> toResponseList(List<Notification> notifications);
-    
+    List<NotificationResponse> toResponseList(List<Notification> notifications);
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", constant = "SENT")
     @Mapping(target = "isRead", constant = "false")
     @Mapping(target = "isSeen", constant = "false")
-    public abstract Notification toEntity(NotificationRequest request);
+    Notification toEntity(NotificationRequest request);
 
-    public PaginationResponse<NotificationResponse> toPaginationResponse(Page<Notification> page) {
+    default PaginationResponse<NotificationResponse> toPaginationResponse(Page<Notification> page, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(page, this::toResponseList);
     }
 }

@@ -28,6 +28,7 @@ public class ProvinceServiceImpl implements ProvinceService {
 
     private final ProvinceRepository provinceRepository;
     private final ProvinceMapper provinceMapper;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public ProvinceResponse createProvince(ProvinceRequest request) {
@@ -57,8 +58,8 @@ public class ProvinceServiceImpl implements ProvinceService {
         Page<Province> provincePage = provinceRepository.searchProvinces(
             request.getSearch(), pageable
         );
-        
-        return provinceMapper.toPaginationResponse(provincePage);
+
+        return provinceMapper.toPaginationResponse(provincePage, paginationMapper);
     }
 
     @Override

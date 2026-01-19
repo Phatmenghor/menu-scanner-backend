@@ -33,6 +33,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
     private final SubscriptionPlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanMapper planMapper;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public SubscriptionPlanResponse createPlan(SubscriptionPlanCreateRequest request) {
@@ -69,7 +70,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
                 pageable
         );
 
-        return planMapper.toPaginationResponse(planPage);
+        return planMapper.toPaginationResponse(planPage, paginationMapper);
     }
 
     @Override

@@ -13,34 +13,28 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class BrandMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
-
-    @Autowired
-    protected ProductRepository productRepository;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface BrandMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "products", ignore = true)
-    public abstract Brand toEntity(BrandCreateRequest request);
+    Brand toEntity(BrandCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
-    public abstract BrandResponse toResponse(Brand brand);
+    BrandResponse toResponse(Brand brand);
 
-    public abstract List<BrandResponse> toResponseList(List<Brand> brands);
+    List<BrandResponse> toResponseList(List<Brand> brands);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
     @Mapping(target = "products", ignore = true)
-    public abstract void updateEntity(BrandUpdateRequest request, @MappingTarget Brand brand);
+    void updateEntity(BrandUpdateRequest request, @MappingTarget Brand brand);
 
-    public PaginationResponse<BrandResponse> toPaginationResponse(Page<Brand> brandPage) {
+    default PaginationResponse<BrandResponse> toPaginationResponse(Page<Brand> brandPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(brandPage, this::toResponseList);
     }
 }

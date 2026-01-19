@@ -15,11 +15,8 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class CustomerMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface CustomerMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "userType", constant = "CUSTOMER")
@@ -30,13 +27,14 @@ public abstract class CustomerMapper {
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "accountStatus", constant = "ACTIVE")
     @Mapping(target = "notes", ignore = true)
-    public abstract User toEntity(UserCreateRequest request);
+    User toEntity(UserCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "roles", target = "roles", qualifiedByName = "rolesToRoleEnums")
-    public abstract UserResponse toResponse(User user);
+    @Mapping(target = "fullName", expression = "java(user.getFullName())")
+    UserResponse toResponse(User user);
 
-    public abstract List<UserResponse> toResponseList(List<User> users);
+    List<UserResponse> toResponseList(List<User> users);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
@@ -49,7 +47,7 @@ public abstract class CustomerMapper {
     @Mapping(target = "position", ignore = true)
     @Mapping(target = "notes", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
-    public abstract void updateEntity(UserUpdateRequest request, @MappingTarget User user);
+    void updateEntity(UserUpdateRequest request, @MappingTarget User user);
 
     /**
      * Restricted update for current customer profile - only allows safe fields
@@ -65,10 +63,10 @@ public abstract class CustomerMapper {
     @Mapping(target = "position", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
     @Mapping(target = "notes", ignore = true)
-    public abstract void updateCurrentUserProfile(UserUpdateRequest request, @MappingTarget User user);
+    void updateCurrentUserProfile(UserUpdateRequest request, @MappingTarget User user);
 
     @Named("rolesToRoleEnums")
-    protected List<RoleEnum> rolesToRoleEnums(List<Role> roles) {
+    default List<RoleEnum> rolesToRoleEnums(List<Role> roles) {
         if (roles == null) {
             return null;
         }
@@ -77,13 +75,7 @@ public abstract class CustomerMapper {
                 .collect(Collectors.toList());
     }
 
-    @AfterMapping
-    protected void setFullName(@MappingTarget UserResponse response, User user) {
-        response.setFullName(user.getFullName());
-    }
-
-    // ✅ UNIVERSAL PAGINATION MAPPER USAGE
-    public PaginationResponse<UserResponse> toPaginationResponse(Page<User> customerPage) {
+    default PaginationResponse<UserResponse> toPaginationResponse(Page<User> customerPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(customerPage, this::toResponseList);
     }
 }

@@ -46,6 +46,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final ExchangeRateService exchangeRateService;
     private final PaymentMapper paymentMapper;
     private final PaymentReferenceGenerator referenceGenerator;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public PaymentResponse createPayment(PaymentCreateRequest request) {
@@ -82,7 +83,7 @@ public class PaymentServiceImpl implements PaymentService {
                 filter.getSearch(),
                 pageable
         );
-        return paymentMapper.toPaginationResponse(paymentPage);
+        return paymentMapper.toPaginationResponse(paymentPage, paginationMapper);
     }
 
     @Override

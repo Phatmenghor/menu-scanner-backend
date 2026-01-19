@@ -36,6 +36,7 @@ public class BannerServiceImpl implements BannerService {
     private final BannerRepository bannerRepository;
     private final BannerMapper bannerMapper;
     private final SecurityUtils securityUtils;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public BannerResponse createBanner(BannerCreateRequest request) {
@@ -67,7 +68,7 @@ public class BannerServiceImpl implements BannerService {
         );
 
         Page<Banner> bannerPage = bannerRepository.findAll(spec, pageable);
-        return bannerMapper.toPaginationResponse(bannerPage);
+        return bannerMapper.toPaginationResponse(bannerPage, paginationMapper);
     }
 
     @Override

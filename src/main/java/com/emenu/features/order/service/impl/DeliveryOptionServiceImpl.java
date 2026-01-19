@@ -39,6 +39,7 @@ public class DeliveryOptionServiceImpl implements DeliveryOptionService {
     private final DeliveryOptionRepository deliveryOptionRepository;
     private final DeliveryOptionMapper deliveryOptionMapper;
     private final SecurityUtils securityUtils;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public DeliveryOptionResponse createDeliveryOption(DeliveryOptionCreateRequest request) {
@@ -75,7 +76,7 @@ public class DeliveryOptionServiceImpl implements DeliveryOptionService {
         );
 
         Page<DeliveryOption> deliveryOptionPage = deliveryOptionRepository.findAll(spec, pageable);
-        return deliveryOptionMapper.toPaginationResponse(deliveryOptionPage);
+        return deliveryOptionMapper.toPaginationResponse(deliveryOptionPage, paginationMapper);
     }
 
     @Override

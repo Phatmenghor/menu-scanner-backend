@@ -18,16 +18,13 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class UserMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface UserMapper {
 
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "businessName", source = "business.name")
     @Mapping(target = "roles", source = "roles", qualifiedByName = "rolesToEnums")
-    public abstract UserResponse toResponse(User user);
+    UserResponse toResponse(User user);
 
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
@@ -35,16 +32,16 @@ public abstract class UserMapper {
     @Mapping(target = "businessName", source = "user.business.name")
     @Mapping(target = "accessToken", source = "token")
     @Mapping(target = "tokenType", constant = "Bearer")
-    public abstract LoginResponse toLoginResponse(User user, String token);
+    LoginResponse toLoginResponse(User user, String token);
 
-    public abstract List<UserResponse> toResponseList(List<User> users);
+    List<UserResponse> toResponseList(List<User> users);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "roles", ignore = true)  // ADD THIS LINE - Don't let MapStruct touch roles
-    @Mapping(target = "password", ignore = true)  // ADD THIS LINE - Don't let MapStruct touch password
-    public abstract void updateEntity(UserUpdateRequest request, @MappingTarget User user);
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    void updateEntity(UserUpdateRequest request, @MappingTarget User user);
 
-    public User toEntity(UserCreateRequest request) {
+    default User toEntity(UserCreateRequest request) {
         User user = new User();
         user.setUserIdentifier(request.getUserIdentifier());
         user.setEmail(request.getEmail());
@@ -61,7 +58,7 @@ public abstract class UserMapper {
         return user;
     }
 
-    public User toEntity(RegisterRequest request) {
+    default User toEntity(RegisterRequest request) {
         User user = new User();
         user.setUserIdentifier(request.getUserIdentifier());
         user.setEmail(request.getEmail());
@@ -76,18 +73,18 @@ public abstract class UserMapper {
     }
 
     @Named("rolesToEnums")
-    protected List<RoleEnum> rolesToEnums(List<Role> roles) {
+    default List<RoleEnum> rolesToEnums(List<Role> roles) {
         if (roles == null) return List.of();
         return roles.stream().map(Role::getName).collect(Collectors.toList());
     }
 
     @Named("rolesToStrings")
-    protected List<String> rolesToStrings(List<Role> roles) {
+    default List<String> rolesToStrings(List<Role> roles) {
         if (roles == null) return List.of();
         return roles.stream().map(role -> role.getName().name()).collect(Collectors.toList());
     }
 
-    public PaginationResponse<UserResponse> toPaginationResponse(Page<User> page) {
+    default PaginationResponse<UserResponse> toPaginationResponse(Page<User> page, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(page, this::toResponseList);
     }
 }

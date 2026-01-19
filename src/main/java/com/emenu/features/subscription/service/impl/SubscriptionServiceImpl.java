@@ -42,6 +42,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final PaymentRepository paymentRepository;
     private final SubscriptionMapper subscriptionMapper;
     private final SecurityUtils securityUtils;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public SubscriptionResponse createSubscription(SubscriptionCreateRequest request) {
@@ -94,8 +95,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 filter.getSearch(),
                 pageable
         );
-        
-        return subscriptionMapper.toPaginationResponse(subscriptionPage);
+
+        return subscriptionMapper.toPaginationResponse(subscriptionPage, paginationMapper);
     }
 
     @Override

@@ -12,25 +12,22 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class ExchangeRateMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface ExchangeRateMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "isActive", constant = "true")
-    public abstract ExchangeRate toEntity(ExchangeRateCreateRequest request);
+    ExchangeRate toEntity(ExchangeRateCreateRequest request);
 
-    public abstract ExchangeRateResponse toResponse(ExchangeRate exchangeRate);
+    ExchangeRateResponse toResponse(ExchangeRate exchangeRate);
 
-    public abstract List<ExchangeRateResponse> toResponseList(List<ExchangeRate> exchangeRates);
+    List<ExchangeRateResponse> toResponseList(List<ExchangeRate> exchangeRates);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    public abstract void updateEntity(ExchangeRateUpdateRequest request, @MappingTarget ExchangeRate exchangeRate);
+    void updateEntity(ExchangeRateUpdateRequest request, @MappingTarget ExchangeRate exchangeRate);
 
-    public PaginationResponse<ExchangeRateResponse> toPaginationResponse(Page<ExchangeRate> exchangeRatePage) {
+    default PaginationResponse<ExchangeRateResponse> toPaginationResponse(Page<ExchangeRate> exchangeRatePage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(exchangeRatePage, this::toResponseList);
     }
 }

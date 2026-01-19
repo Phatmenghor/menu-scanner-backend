@@ -12,29 +12,26 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class DeliveryOptionMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface DeliveryOptionMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
-    public abstract DeliveryOption toEntity(DeliveryOptionCreateRequest request);
+    DeliveryOption toEntity(DeliveryOptionCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
-    public abstract DeliveryOptionResponse toResponse(DeliveryOption deliveryOption);
+    DeliveryOptionResponse toResponse(DeliveryOption deliveryOption);
 
-    public abstract List<DeliveryOptionResponse> toResponseList(List<DeliveryOption> deliveryOptions);
+    List<DeliveryOptionResponse> toResponseList(List<DeliveryOption> deliveryOptions);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
-    public abstract void updateEntity(DeliveryOptionUpdateRequest request, @MappingTarget DeliveryOption deliveryOption);
+    void updateEntity(DeliveryOptionUpdateRequest request, @MappingTarget DeliveryOption deliveryOption);
 
-    public PaginationResponse<DeliveryOptionResponse> toPaginationResponse(Page<DeliveryOption> deliveryOptionPage) {
+    default PaginationResponse<DeliveryOptionResponse> toPaginationResponse(Page<DeliveryOption> deliveryOptionPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(deliveryOptionPage, this::toResponseList);
     }
 }

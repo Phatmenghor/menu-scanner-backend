@@ -39,6 +39,7 @@ public class BusinessExchangeRateServiceImpl implements BusinessExchangeRateServ
     private final BusinessRepository businessRepository;
     private final BusinessExchangeRateMapper exchangeRateMapper;
     private final SecurityUtils securityUtils;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public BusinessExchangeRateResponse createBusinessExchangeRate(BusinessExchangeRateCreateRequest request) {
@@ -79,7 +80,7 @@ public class BusinessExchangeRateServiceImpl implements BusinessExchangeRateServ
         );
 
         Page<BusinessExchangeRate> exchangeRatePage = exchangeRateRepository.findAll(spec, pageable);
-        return exchangeRateMapper.toPaginationResponse(exchangeRatePage);
+        return exchangeRateMapper.toPaginationResponse(exchangeRatePage, paginationMapper);
     }
 
     @Override

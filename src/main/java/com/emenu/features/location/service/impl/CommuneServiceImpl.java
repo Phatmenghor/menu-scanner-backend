@@ -29,6 +29,7 @@ public class CommuneServiceImpl implements CommuneService {
     private final CommuneRepository communeRepository;
     private final CommuneMapper communeMapper;
     private final DistrictRepository districtRepository;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     @Transactional
@@ -76,12 +77,12 @@ public class CommuneServiceImpl implements CommuneService {
         );
         
         Page<Commune> communePage = communeRepository.searchCommunes(
-            request.getDistrictCode(), request.getProvinceCode(), 
+            request.getDistrictCode(), request.getProvinceCode(),
             request.getSearch(), pageable
         );
-        
+
         // Map WITHIN transaction
-        return communeMapper.toPaginationResponse(communePage);
+        return communeMapper.toPaginationResponse(communePage, paginationMapper);
     }
 
     @Override

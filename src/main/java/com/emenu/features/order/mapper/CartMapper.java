@@ -13,18 +13,15 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class CartMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface CartMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "cartId", ignore = true)
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "productSize", ignore = true)
-    public abstract CartItem toEntity(CartItemRequest request);
+    CartItem toEntity(CartItemRequest request);
 
     @Mapping(source = "product.name", target = "productName")
     @Mapping(target = "sizeName", expression = "java(cartItem.getSizeName())")
@@ -34,26 +31,25 @@ public abstract class CartMapper {
     @Mapping(target = "totalPrice", expression = "java(cartItem.getTotalPrice())")
     @Mapping(target = "hasPromotion", expression = "java(cartItem.hasDiscount())")
     @Mapping(target = "isAvailable", expression = "java(cartItem.isAvailable())")
-    public abstract CartItemResponse toItemResponse(CartItem cartItem);
+    CartItemResponse toItemResponse(CartItem cartItem);
 
     @AfterMapping
-    protected void setPromotionDetails(@MappingTarget CartItemResponse response, CartItem cartItem) {
-        // Set promotion details from product or product size
+    default void setPromotionDetails(@MappingTarget CartItemResponse response, CartItem cartItem) {
         if (cartItem.getProductSize() != null && cartItem.getProductSize().isPromotionActive()) {
-            response.setPromotionType(cartItem.getProductSize().getPromotionType() != null ? 
+            response.setPromotionType(cartItem.getProductSize().getPromotionType() != null ?
                 cartItem.getProductSize().getPromotionType().name() : null);
             response.setPromotionValue(cartItem.getProductSize().getPromotionValue());
             response.setPromotionEndDate(cartItem.getProductSize().getPromotionToDate());
         } else if (cartItem.getProduct() != null && cartItem.getProduct().isPromotionActive()) {
-            response.setPromotionType(cartItem.getProduct().getPromotionType() != null ? 
+            response.setPromotionType(cartItem.getProduct().getPromotionType() != null ?
                 cartItem.getProduct().getPromotionType().name() : null);
             response.setPromotionValue(cartItem.getProduct().getPromotionValue());
             response.setPromotionEndDate(cartItem.getProduct().getPromotionToDate());
         }
     }
 
-    public abstract List<CartItemResponse> toItemResponseList(List<CartItem> cartItems);
-    public abstract List<CartResponse> toResponseList(List<Cart> carts);
+    List<CartItemResponse> toItemResponseList(List<CartItem> cartItems);
+    List<CartResponse> toResponseList(List<Cart> carts);
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(target = "totalItems", expression = "java(cart.getTotalItems())")
@@ -61,16 +57,16 @@ public abstract class CartMapper {
     @Mapping(target = "totalDiscount", expression = "java(cart.getTotalDiscount())")
     @Mapping(target = "finalTotal", expression = "java(cart.getSubtotal())")
     @Mapping(target = "unavailableItems", expression = "java(cart.getUnavailableItemsCount())")
-    public abstract CartResponse toResponse(Cart cart);
+    CartResponse toResponse(Cart cart);
 
     @AfterMapping
-    protected void setCartItems(@MappingTarget CartResponse response, Cart cart) {
+    default void setCartItems(@MappingTarget CartResponse response, Cart cart) {
         if (cart.getItems() != null) {
             response.setItems(toItemResponseList(cart.getItems()));
         }
     }
 
-    public PaginationResponse<CartResponse> toPaginationResponse(Page<Cart> cartPage) {
+    default PaginationResponse<CartResponse> toPaginationResponse(Page<Cart> cartPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(cartPage, this::toResponseList);
     }
 }

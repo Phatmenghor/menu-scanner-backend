@@ -16,11 +16,8 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class BusinessOwnerMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface BusinessOwnerMapper {
 
     /**
      * Map to create response (used when creating new business owner)
@@ -45,7 +42,7 @@ public abstract class BusinessOwnerMapper {
     @Mapping(target = "paymentStatus", source = "payment.status")
     @Mapping(target = "paymentMethod", source = "payment.paymentMethod")
     @Mapping(target = "createdAt", source = "owner.createdAt")
-    public abstract BusinessOwnerCreateResponse toCreateResponse(
+    BusinessOwnerCreateResponse toCreateResponse(
             User owner,
             Business business,
             Subscription subscription,
@@ -70,17 +67,17 @@ public abstract class BusinessOwnerMapper {
     @Mapping(target = "businessStatus", source = "business.status")
     @Mapping(target = "isSubscriptionActive", source = "business.isSubscriptionActive")
     @Mapping(target = "businessCreatedAt", source = "business.createdAt")
-    public abstract BusinessOwnerDetailResponse toDetailResponse(User owner);
+    BusinessOwnerDetailResponse toDetailResponse(User owner);
 
     /**
      * Map list to detail responses
      */
-    public abstract List<BusinessOwnerDetailResponse> toDetailResponseList(List<User> owners);
+    List<BusinessOwnerDetailResponse> toDetailResponseList(List<User> owners);
 
     /**
      * Pagination response
      */
-    public PaginationResponse<BusinessOwnerDetailResponse> toPaginationResponse(Page<User> page) {
+    default PaginationResponse<BusinessOwnerDetailResponse> toPaginationResponse(Page<User> page, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(page, this::toDetailResponseList);
     }
 }

@@ -36,6 +36,7 @@ public class BrandServiceImpl implements BrandService {
     private final BrandRepository brandRepository;
     private final BrandMapper brandMapper;
     private final SecurityUtils securityUtils;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public BrandResponse createBrand(BrandCreateRequest request) {
@@ -73,7 +74,7 @@ public class BrandServiceImpl implements BrandService {
         );
 
         Page<Brand> brandPage = brandRepository.findAll(spec, pageable);
-        return brandMapper.toPaginationResponse(brandPage);
+        return brandMapper.toPaginationResponse(brandPage, paginationMapper);
     }
 
     @Override

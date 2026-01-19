@@ -28,6 +28,7 @@ public class DistrictServiceImpl implements DistrictService {
     private final DistrictRepository districtRepository;
     private final DistrictMapper districtMapper;
     private final ProvinceRepository provinceRepository;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     @Transactional  // Keep transaction open during mapping
@@ -74,9 +75,9 @@ public class DistrictServiceImpl implements DistrictService {
         Page<District> districtPage = districtRepository.searchDistricts(
             request.getProvinceCode(), request.getSearch(), pageable
         );
-        
+
         // Map WITHIN transaction
-        return districtMapper.toPaginationResponse(districtPage);
+        return districtMapper.toPaginationResponse(districtPage, paginationMapper);
     }
 
     @Override

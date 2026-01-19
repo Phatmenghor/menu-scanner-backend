@@ -12,11 +12,8 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class PaymentMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface PaymentMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "business", ignore = true)
@@ -27,7 +24,7 @@ public abstract class PaymentMapper {
     @Mapping(target = "subscriptionId", ignore = true)
     @Mapping(target = "amountKhr", ignore = true)
     @Mapping(target = "referenceNumber", ignore = true)
-    public abstract Payment toEntity(PaymentCreateRequest request);
+    Payment toEntity(PaymentCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "plan.name", target = "planName")
@@ -35,9 +32,9 @@ public abstract class PaymentMapper {
     @Mapping(target = "subscriptionDisplayName", expression = "java(payment.getSubscriptionDisplayName())")
     @Mapping(target = "formattedAmount", expression = "java(payment.getFormattedAmount())")
     @Mapping(target = "formattedAmountKhr", expression = "java(payment.getFormattedAmountKhr())")
-    public abstract PaymentResponse toResponse(Payment payment);
+    PaymentResponse toResponse(Payment payment);
 
-    public abstract List<PaymentResponse> toResponseList(List<Payment> payments);
+    List<PaymentResponse> toResponseList(List<Payment> payments);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
@@ -48,9 +45,9 @@ public abstract class PaymentMapper {
     @Mapping(target = "planId", ignore = true)
     @Mapping(target = "subscriptionId", ignore = true)
     @Mapping(target = "amountKhr", ignore = true)
-    public abstract void updateEntity(PaymentUpdateRequest request, @MappingTarget Payment payment);
+    void updateEntity(PaymentUpdateRequest request, @MappingTarget Payment payment);
 
-    public PaginationResponse<PaymentResponse> toPaginationResponse(Page<Payment> paymentPage) {
+    default PaginationResponse<PaymentResponse> toPaginationResponse(Page<Payment> paymentPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(paymentPage, this::toResponseList);
     }
 }

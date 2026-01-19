@@ -12,29 +12,26 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class BannerMapper {
-
-    @Autowired
-    protected PaginationMapper paginationMapper;
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface BannerMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
-    public abstract Banner toEntity(BannerCreateRequest request);
+    Banner toEntity(BannerCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
-    public abstract BannerResponse toResponse(Banner banner);
+    BannerResponse toResponse(Banner banner);
 
-    public abstract List<BannerResponse> toResponseList(List<Banner> banners);
+    List<BannerResponse> toResponseList(List<Banner> banners);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "businessId", ignore = true)
     @Mapping(target = "business", ignore = true)
-    public abstract void updateEntity(BannerUpdateRequest request, @MappingTarget Banner banner);
+    void updateEntity(BannerUpdateRequest request, @MappingTarget Banner banner);
 
-    public PaginationResponse<BannerResponse> toPaginationResponse(Page<Banner> bannerPage) {
+    default PaginationResponse<BannerResponse> toPaginationResponse(Page<Banner> bannerPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(bannerPage, this::toResponseList);
     }
 }

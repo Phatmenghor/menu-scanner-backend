@@ -30,6 +30,7 @@ public class BusinessServiceImpl implements BusinessService {
 
     private final BusinessRepository businessRepository;
     private final BusinessMapper businessMapper;
+    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
     @Override
     public BusinessResponse createBusiness(BusinessCreateRequest request) {
@@ -67,8 +68,8 @@ public class BusinessServiceImpl implements BusinessService {
                 request.getSearch(),
                 pageable
         );
-        
-        return businessMapper.toPaginationResponse(businessPage);
+
+        return businessMapper.toPaginationResponse(businessPage, paginationMapper);
     }
 
     @Override
