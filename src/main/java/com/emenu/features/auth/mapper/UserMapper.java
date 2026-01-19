@@ -9,6 +9,7 @@ import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
+import com.emenu.features.hr.dto.response.UserBasicInfo;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;
@@ -25,6 +26,14 @@ public interface UserMapper {
     @Mapping(target = "businessName", source = "business.name")
     @Mapping(target = "roles", source = "roles", qualifiedByName = "rolesToEnums")
     UserResponse toResponse(User user);
+
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "firstName", source = "firstName")
+    @Mapping(target = "lastName", source = "lastName")
+    @Mapping(target = "email", source = "email")
+    @Mapping(target = "phoneNumber", source = "phoneNumber")
+    @Mapping(target = "profileImageUrl", source = "profileImageUrl")
+    UserBasicInfo toUserBasicInfo(User user);
 
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")

@@ -3,13 +3,13 @@ package com.emenu.features.hr.service.impl;
 import com.emenu.enums.hr.LeaveStatusEnum;
 import com.emenu.exception.custom.BusinessValidationException;
 import com.emenu.exception.custom.ResourceNotFoundException;
+import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.hr.dto.filter.LeaveFilterRequest;
 import com.emenu.features.hr.dto.request.LeaveApprovalRequest;
 import com.emenu.features.hr.dto.request.LeaveCreateRequest;
 import com.emenu.features.hr.dto.response.LeaveResponse;
 import com.emenu.features.hr.dto.update.LeaveUpdateRequest;
 import com.emenu.features.hr.mapper.LeaveMapper;
-import com.emenu.features.hr.mapper.UserBasicInfoMapper;
 import com.emenu.features.hr.models.Leave;
 import com.emenu.features.hr.repository.LeaveRepository;
 import com.emenu.features.hr.service.LeaveService;
@@ -36,7 +36,7 @@ public class LeaveServiceImpl implements LeaveService {
     private final LeaveRepository repository;
     private final LeaveMapper mapper;
     private final PaginationMapper paginationMapper;
-    private final UserBasicInfoMapper userMapper;
+    private final UserMapper userMapper;
 
     private LeaveResponse enrichWithUserInfo(LeaveResponse response, Leave leave) {
         if (leave.getUser() != null) {

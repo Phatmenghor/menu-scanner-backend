@@ -1,11 +1,11 @@
 package com.emenu.features.hr.service.impl;
 
+import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.enums.repository.WorkScheduleTypeEnumRepository;
 import com.emenu.features.hr.dto.filter.WorkScheduleFilterRequest;
 import com.emenu.features.hr.dto.request.WorkScheduleCreateRequest;
 import com.emenu.features.hr.dto.response.WorkScheduleResponse;
 import com.emenu.features.hr.dto.update.WorkScheduleUpdateRequest;
-import com.emenu.features.hr.mapper.UserBasicInfoMapper;
 import com.emenu.features.hr.mapper.WorkScheduleMapper;
 import com.emenu.features.hr.models.WorkSchedule;
 import com.emenu.features.hr.repository.WorkScheduleRepository;
@@ -34,7 +34,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
     private final WorkScheduleTypeEnumRepository typeEnumRepository;
     private final WorkScheduleMapper mapper;
     private final PaginationMapper paginationMapper;
-    private final UserBasicInfoMapper userMapper;
+    private final UserMapper userMapper;
 
     @Override
     public WorkScheduleResponse create(WorkScheduleCreateRequest request) {
