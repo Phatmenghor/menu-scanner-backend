@@ -124,14 +124,11 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
     }
 
     private WorkScheduleResponse enrichResponse(WorkScheduleResponse response, WorkSchedule schedule) {
-        if (response.getScheduleTypeEnumId() != null) {
-            final UUID typeEnumId = response.getScheduleTypeEnumId();
-            typeEnumRepository.findByIdAndIsDeletedFalse(typeEnumId)
-                    .ifPresent(typeEnum -> response.setScheduleTypeEnumName(typeEnum.getEnumName()));
-        }
-        if (schedule.getUser() != null) {
-            response.setUserInfo(userMapper.toUserBasicInfo(schedule.getUser()));
-        }
+        final UUID typeEnumId = response.getScheduleTypeEnumId();
+        typeEnumRepository.findByIdAndIsDeletedFalse(typeEnumId)
+                .ifPresent(typeEnum -> response.setScheduleTypeEnumName(typeEnum.getEnumName()));
+
+        response.setUserInfo(userMapper.toUserBasicInfo(schedule.getUser()));
         return response;
     }
 }
