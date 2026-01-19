@@ -17,9 +17,7 @@ import java.util.UUID;
 public class AttendanceCheckInResponse {
     private UUID id;
     private CheckInType checkInType;
-    
     private LocalDateTime checkInTime;
-    
     private Double latitude;
     private Double longitude;
     private String remarks;

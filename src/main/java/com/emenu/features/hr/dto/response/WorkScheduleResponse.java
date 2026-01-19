@@ -17,7 +17,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class WorkScheduleResponse {
     private UUID id;
-    private UUID userId;
     private UserBasicInfo userInfo;
     private UUID businessId;
     private String name;

@@ -18,7 +18,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class LeaveResponse {
     private UUID id;
-    private UUID userId;
     private UserBasicInfo userInfo;
     private UUID businessId;
     private String leaveTypeEnum;
