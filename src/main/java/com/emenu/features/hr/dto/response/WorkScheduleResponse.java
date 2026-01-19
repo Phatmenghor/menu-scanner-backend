@@ -1,5 +1,6 @@
 package com.emenu.features.hr.dto.response;
 
+import com.emenu.features.auth.dto.response.UserBasicInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

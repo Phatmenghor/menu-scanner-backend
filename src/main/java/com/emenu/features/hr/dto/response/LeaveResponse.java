@@ -1,6 +1,7 @@
 package com.emenu.features.hr.dto.response;
 
 import com.emenu.enums.hr.LeaveStatusEnum;
+import com.emenu.features.auth.dto.response.UserBasicInfo;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
