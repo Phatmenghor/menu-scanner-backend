@@ -21,7 +21,7 @@ public class LeaveResponse {
     private UUID userId;
     private UserBasicInfo userInfo;
     private UUID businessId;
-    private UUID leaveTypeEnumId;
+    private String leaveTypeEnum;
 
     private LocalDate startDate;
     private LocalDate endDate;

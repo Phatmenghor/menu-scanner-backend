@@ -21,7 +21,6 @@ public class WorkScheduleResponse {
     private UserBasicInfo userInfo;
     private UUID businessId;
     private String name;
-    private UUID scheduleTypeEnumId;
     private String scheduleTypeEnumName;
     private Set<DayOfWeek> workDays;
     private LocalTime startTime;
