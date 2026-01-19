@@ -4,12 +4,12 @@ import com.emenu.enums.hr.AttendanceStatusEnum;
 import com.emenu.enums.hr.CheckInType;
 import com.emenu.exception.custom.BusinessValidationException;
 import com.emenu.exception.custom.ResourceNotFoundException;
+import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.hr.dto.filter.AttendanceFilterRequest;
 import com.emenu.features.hr.dto.request.AttendanceCheckInRequest;
 import com.emenu.features.hr.dto.response.AttendanceResponse;
 import com.emenu.features.hr.dto.update.AttendanceUpdateRequest;
 import com.emenu.features.hr.mapper.AttendanceMapper;
-import com.emenu.features.hr.mapper.UserBasicInfoMapper;
 import com.emenu.features.hr.models.Attendance;
 import com.emenu.features.hr.models.AttendanceCheckIn;
 import com.emenu.features.hr.models.WorkSchedule;
@@ -42,7 +42,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final WorkScheduleRepository workScheduleRepository;
     private final AttendanceMapper mapper;
     private final PaginationMapper paginationMapper;
-    private final UserBasicInfoMapper userMapper;
+    private final UserMapper userMapper;
 
     private AttendanceResponse enrichWithUserInfo(AttendanceResponse response, Attendance attendance) {
         if (attendance.getUser() != null) {
