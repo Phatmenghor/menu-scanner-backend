@@ -10,10 +10,6 @@ import com.emenu.features.hr.dto.response.LeaveResponse;
 import com.emenu.features.hr.dto.update.LeaveUpdateRequest;
 import com.emenu.features.hr.mapper.LeaveMapper;
 import com.emenu.features.hr.models.Leave;
-import com.emenu.features.hr.models.LeaveBalance;
-import com.emenu.features.hr.models.LeavePolicy;
-import com.emenu.features.hr.repository.LeaveBalanceRepository;
-import com.emenu.features.hr.repository.LeavePolicyRepository;
 import com.emenu.features.hr.repository.LeaveRepository;
 import com.emenu.features.hr.service.LeaveService;
 import com.emenu.shared.dto.PaginationResponse;
@@ -26,7 +22,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
@@ -38,8 +33,6 @@ import java.util.UUID;
 public class LeaveServiceImpl implements LeaveService {
 
     private final LeaveRepository repository;
-    private final LeavePolicyRepository policyRepository;
-    private final LeaveBalanceRepository balanceRepository;
     private final LeaveMapper mapper;
     private final PaginationMapper paginationMapper;
 
@@ -47,25 +40,7 @@ public class LeaveServiceImpl implements LeaveService {
     public LeaveResponse create(LeaveCreateRequest request, UUID userId, UUID businessId) {
         log.info("Creating leave request for user: {}", userId);
 
-        LeavePolicy policy = policyRepository.findByIdAndIsDeletedFalse(request.getPolicyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Leave policy not found"));
-
         double totalDays = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate()) + 1;
-
-        if (policy.getMaxConsecutiveDays() != null && totalDays > policy.getMaxConsecutiveDays()) {
-            throw new BusinessValidationException(
-                    "Leave duration exceeds maximum consecutive days: " + policy.getMaxConsecutiveDays());
-        }
-
-        int year = request.getStartDate().getYear();
-        LeaveBalance balance = balanceRepository.findByUserIdAndPolicyIdAndYearAndIsDeletedFalse(
-                        userId, request.getPolicyId(), year)
-                .orElseThrow(() -> new BusinessValidationException("No leave balance found for this year"));
-
-        if (balance.getRemainingDays() < totalDays) {
-            throw new BusinessValidationException(
-                    "Insufficient leave balance. Remaining: " + balance.getRemainingDays() + " days");
-        }
 
         Leave leave = mapper.toEntity(request);
         leave.setUserId(userId);
@@ -145,19 +120,6 @@ public class LeaveServiceImpl implements LeaveService {
         leave.setApprovedBy(approvedBy);
         leave.setApprovedAt(ZonedDateTime.now());
         leave.setApproverNote(request.getApproverNote());
-
-        if (newStatus.isApproved()) {
-            int year = leave.getStartDate().getYear();
-            LeaveBalance balance = balanceRepository.findByUserIdAndPolicyIdAndYearAndIsDeletedFalse(
-                            leave.getUserId(), leave.getPolicyId(), year)
-                    .orElseThrow(() -> new BusinessValidationException("Leave balance not found"));
-
-            balance.setUsedDays(balance.getUsedDays() + leave.getTotalDays());
-            balance.setRemainingDays(balance.getTotalAllowance() - balance.getUsedDays());
-            balanceRepository.save(balance);
-            
-            log.info("Leave approved, balance updated for user: {}", leave.getUserId());
-        }
 
         Leave approvedLeave = repository.save(leave);
         return mapper.toResponse(approvedLeave);

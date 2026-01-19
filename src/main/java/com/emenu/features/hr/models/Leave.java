@@ -13,7 +13,6 @@ import java.util.UUID;
 @Table(name = "leaves", indexes = {
     @Index(name = "idx_leave_user", columnList = "user_id"),
     @Index(name = "idx_leave_business", columnList = "business_id"),
-    @Index(name = "idx_leave_policy", columnList = "policy_id"),
     @Index(name = "idx_leave_status", columnList = "status")
 })
 @Data
@@ -28,10 +27,7 @@ public class Leave extends BaseUUIDEntity {
     
     @Column(name = "business_id", nullable = false)
     private UUID businessId;
-    
-    @Column(name = "policy_id", nullable = false)
-    private UUID policyId;
-    
+
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
     
