@@ -20,7 +20,7 @@ public interface LeaveRepository extends JpaRepository<Leave, UUID> {
     @Query("SELECT l FROM Leave l WHERE l.isDeleted = false " +
            "AND (:businessId IS NULL OR l.businessId = :businessId) " +
            "AND (:userId IS NULL OR l.userId = :userId) " +
-           "AND (:policyId IS NULL OR l.policyId = :policyId) " +
+           "AND (:leaveTypeEnumId IS NULL OR l.leaveTypeEnumId = :leaveTypeEnumId) " +
            "AND (:startDate IS NULL OR l.startDate >= :startDate) " +
            "AND (:endDate IS NULL OR l.endDate <= :endDate) " +
            "AND (:search IS NULL OR :search = '' OR " +
@@ -28,7 +28,7 @@ public interface LeaveRepository extends JpaRepository<Leave, UUID> {
     Page<Leave> findWithFilters(
         @Param("businessId") UUID businessId,
         @Param("userId") UUID userId,
-        @Param("policyId") UUID policyId,
+        @Param("leaveTypeEnumId") UUID leaveTypeEnumId,
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate,
         @Param("search") String search,

@@ -74,7 +74,6 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
         Page<WorkSchedule> page = repository.findWithFilters(
                 filter.getBusinessId(),
                 filter.getUserId(),
-                filter.getPolicyId(),
                 filter.getSearch(),
                 pageable
         );

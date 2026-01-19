@@ -25,11 +25,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -47,6 +46,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     public AttendanceResponse checkIn(AttendanceCheckInRequest request, UUID userId, UUID businessId) {
         log.info("Processing check-in for user: {}, type: {}", userId, request.getCheckInType());
 
+        // Validate work schedule exists and belongs to user
         WorkSchedule schedule = workScheduleRepository.findByIdAndIsDeletedFalse(request.getWorkScheduleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Work schedule not found"));
 
@@ -55,30 +55,22 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         LocalDate today = LocalDate.now();
+        DayOfWeek dayOfWeek = today.getDayOfWeek();
 
-        Attendance attendance = attendanceRepository
-                .findByUserIdAndAttendanceDateAndIsDeletedFalse(userId, today)
-                .orElseGet(() -> {
-                    Attendance newAttendance = Attendance.builder()
-                            .userId(userId)
-                            .businessId(businessId)
-                            .workScheduleId(request.getWorkScheduleId())
-                            .attendanceDate(today)
-                            .status(AttendanceStatusEnum.ABSENT)
-                            .build();
-                    return attendanceRepository.save(newAttendance);
-                });
-
-        boolean checkInExists = attendance.getCheckIns().stream()
-                .anyMatch(c -> c.getCheckInType() == request.getCheckInType());
-
-        if (checkInExists) {
-            throw new BusinessValidationException(
-                    "Already checked in for type: " + request.getCheckInType());
+        // Check if today is a working day for the schedule
+        if (!schedule.getWorkDays().contains(dayOfWeek)) {
+            throw new BusinessValidationException("Today is not a working day according to your schedule");
         }
 
-        validateCheckInSequence(attendance, request.getCheckInType(), schedule.getRequiredCheckIns());
+        // Get or create attendance record for today
+        Attendance attendance = attendanceRepository
+                .findByUserIdAndAttendanceDateAndIsDeletedFalse(userId, today)
+                .orElseGet(() -> createNewAttendance(userId, businessId, request.getWorkScheduleId(), today));
 
+        // Validate check-in sequence
+        validateCheckInSequence(attendance, request.getCheckInType());
+
+        // Create check-in record
         AttendanceCheckIn checkIn = AttendanceCheckIn.builder()
                 .checkInType(request.getCheckInType())
                 .checkInTime(LocalDateTime.now())
@@ -89,94 +81,109 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         attendance.addCheckIn(checkIn);
 
+        // Calculate attendance status when checking out
         if (request.getCheckInType() == CheckInType.END) {
-            calculateAttendanceMetrics(attendance, schedule);
+            calculateAttendanceStatus(attendance, schedule);
+        } else {
+            // Update status to present on check-in
+            attendance.setStatus(AttendanceStatusEnum.PRESENT);
         }
 
         attendance = attendanceRepository.save(attendance);
-        log.info("Check-in successful for user: {}, status: {}", userId, attendance.getStatus());
+        log.info("Check-in successful for user: {}, type: {}, status: {}",
+                userId, request.getCheckInType(), attendance.getStatus());
 
         return mapper.toResponse(attendance);
     }
 
-    private void validateCheckInSequence(Attendance attendance, CheckInType requestedType, Integer requiredCheckIns) {
+    private Attendance createNewAttendance(UUID userId, UUID businessId, UUID workScheduleId, LocalDate date) {
+        Attendance newAttendance = Attendance.builder()
+                .userId(userId)
+                .businessId(businessId)
+                .workScheduleId(workScheduleId)
+                .attendanceDate(date)
+                .status(AttendanceStatusEnum.ABSENT)
+                .build();
+        return attendanceRepository.save(newAttendance);
+    }
+
+    private void validateCheckInSequence(Attendance attendance, CheckInType requestedType) {
         int currentCount = attendance.getCheckIns().size();
 
-        if (currentCount == 0 && requestedType != CheckInType.START) {
-            throw new BusinessValidationException("Must START check-in first");
+        // Check for duplicate check-in type
+        boolean checkInExists = attendance.getCheckIns().stream()
+                .anyMatch(c -> c.getCheckInType() == requestedType);
+
+        if (checkInExists) {
+            throw new BusinessValidationException(
+                    "Already checked in for type: " + requestedType);
         }
 
-        if (requiredCheckIns == 2) {
-            if (currentCount == 1 && requestedType != CheckInType.END) {
-                throw new BusinessValidationException("Only START and END check-ins allowed");
-            }
-        } else if (requiredCheckIns == 3) {
-            if (currentCount == 1 && requestedType != CheckInType.MIDDLE_OUT) {
-                throw new BusinessValidationException("Next check-in should be MIDDLE_OUT");
-            }
-            if (currentCount == 2 && requestedType != CheckInType.END) {
-                throw new BusinessValidationException("Next check-in should be END");
-            }
-        } else if (requiredCheckIns == 4) {
-            if (currentCount == 1 && requestedType != CheckInType.MIDDLE_OUT) {
-                throw new BusinessValidationException("Next check-in should be MIDDLE_OUT");
-            }
-            if (currentCount == 2 && requestedType != CheckInType.MIDDLE_IN) {
-                throw new BusinessValidationException("Next check-in should be MIDDLE_IN");
-            }
-            if (currentCount == 3 && requestedType != CheckInType.END) {
-                throw new BusinessValidationException("Next check-in should be END");
-            }
+        // Validate sequence: must start with START, then END
+        if (currentCount == 0 && requestedType != CheckInType.START) {
+            throw new BusinessValidationException("Must clock in (START) first");
+        }
+
+        if (currentCount == 1 && requestedType != CheckInType.END) {
+            throw new BusinessValidationException("Can only clock out (END) after clocking in");
+        }
+
+        if (currentCount >= 2) {
+            throw new BusinessValidationException("Already completed check-in for today");
         }
     }
 
-    private void calculateAttendanceMetrics(Attendance attendance, WorkSchedule schedule) {
-        Optional<LocalDateTime> startTimeOpt = attendance.getCheckIns().stream()
+    private void calculateAttendanceStatus(Attendance attendance, WorkSchedule schedule) {
+        AttendanceCheckIn startCheckIn = attendance.getCheckIns().stream()
                 .filter(c -> c.getCheckInType() == CheckInType.START)
                 .findFirst()
-                .map(AttendanceCheckIn::getCheckInTime);
+                .orElseThrow(() -> new BusinessValidationException("Start check-in not found"));
 
-        Optional<LocalDateTime> endTimeOpt = attendance.getCheckIns().stream()
+        AttendanceCheckIn endCheckIn = attendance.getCheckIns().stream()
                 .filter(c -> c.getCheckInType() == CheckInType.END)
                 .findFirst()
-                .map(AttendanceCheckIn::getCheckInTime);
+                .orElseThrow(() -> new BusinessValidationException("End check-in not found"));
 
-        if (startTimeOpt.isPresent() && endTimeOpt.isPresent()) {
-            LocalDateTime startTime = startTimeOpt.get();
-            LocalDateTime endTime = endTimeOpt.get();
+        LocalDateTime startTime = startCheckIn.getCheckInTime();
+        LocalDateTime endTime = endCheckIn.getCheckInTime();
+        LocalDateTime expectedStart = LocalDateTime.of(attendance.getAttendanceDate(), schedule.getStartTime());
 
-            long totalMinutes = Duration.between(startTime, endTime).toMinutes();
+        // Calculate if late
+        boolean isLate = startTime.isAfter(expectedStart);
 
-            if (schedule.getRequiredCheckIns() >= 3) {
-                Optional<LocalDateTime> middleOutOpt = attendance.getCheckIns().stream()
-                        .filter(c -> c.getCheckInType() == CheckInType.MIDDLE_OUT)
-                        .findFirst()
-                        .map(AttendanceCheckIn::getCheckInTime);
+        // Calculate total work duration
+        Duration workDuration = Duration.between(startTime, endTime);
+        long totalWorkMinutes = workDuration.toMinutes();
 
-                Optional<LocalDateTime> middleInOpt = attendance.getCheckIns().stream()
-                        .filter(c -> c.getCheckInType() == CheckInType.MIDDLE_IN)
-                        .findFirst()
-                        .map(AttendanceCheckIn::getCheckInTime);
-
-                if (middleOutOpt.isPresent() && middleInOpt.isPresent()) {
-                    long breakMinutes = Duration.between(middleOutOpt.get(), middleInOpt.get()).toMinutes();
-                    totalMinutes -= breakMinutes;
-                }
-            }
-
-            attendance.setTotalWorkMinutes((int) totalMinutes);
-
-            LocalDateTime expectedStart = LocalDateTime.of(attendance.getAttendanceDate(), schedule.getStartTime());
-
-            if (startTime.isAfter(expectedStart)) {
-                long lateMinutes = Duration.between(expectedStart, startTime).toMinutes();
-                attendance.setLateMinutes((int) lateMinutes);
-                attendance.setStatus(AttendanceStatusEnum.LATE);
-            } else {
-                attendance.setLateMinutes(0);
-                attendance.setStatus(AttendanceStatusEnum.PRESENT);
-            }
+        // Deduct break time if configured
+        if (schedule.getBreakStartTime() != null && schedule.getBreakEndTime() != null) {
+            Duration breakDuration = Duration.between(schedule.getBreakStartTime(), schedule.getBreakEndTime());
+            totalWorkMinutes -= breakDuration.toMinutes();
         }
+
+        // Calculate expected work hours
+        Duration expectedWorkDuration = Duration.between(schedule.getStartTime(), schedule.getEndTime());
+        long expectedWorkMinutes = expectedWorkDuration.toMinutes();
+
+        if (schedule.getBreakStartTime() != null && schedule.getBreakEndTime() != null) {
+            Duration breakDuration = Duration.between(schedule.getBreakStartTime(), schedule.getBreakEndTime());
+            expectedWorkMinutes -= breakDuration.toMinutes();
+        }
+
+        // Determine final status
+        // Consider half-day if worked less than 60% of expected hours
+        double workPercentage = (double) totalWorkMinutes / expectedWorkMinutes * 100;
+
+        if (isLate) {
+            attendance.setStatus(AttendanceStatusEnum.LATE);
+        } else if (workPercentage < 60) {
+            attendance.setStatus(AttendanceStatusEnum.HALF_DAY);
+        } else {
+            attendance.setStatus(AttendanceStatusEnum.PRESENT);
+        }
+
+        log.info("Calculated attendance status: {}, worked: {} minutes, expected: {} minutes, percentage: {}%",
+                attendance.getStatus(), totalWorkMinutes, expectedWorkMinutes, String.format("%.2f", workPercentage));
     }
 
     @Override

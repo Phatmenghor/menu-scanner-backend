@@ -11,5 +11,4 @@ import java.util.UUID;
 public class WorkScheduleFilterRequest extends BaseFilterRequest {
     private UUID businessId;
     private UUID userId;
-    private UUID policyId;
 }

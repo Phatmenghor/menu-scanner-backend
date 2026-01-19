@@ -22,7 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
@@ -74,7 +74,7 @@ public class LeaveServiceImpl implements LeaveService {
         Page<Leave> page = repository.findWithFilters(
                 filter.getBusinessId(),
                 filter.getUserId(),
-                filter.getPolicyId(),
+                filter.getLeaveTypeEnumId(),
                 filter.getStartDate(),
                 filter.getEndDate(),
                 filter.getSearch(),
@@ -106,7 +106,7 @@ public class LeaveServiceImpl implements LeaveService {
     }
 
     @Override
-    public LeaveResponse approve(UUID id, LeaveApprovalRequest request, UUID approvedBy) {
+    public LeaveResponse approve(UUID id, LeaveApprovalRequest request, UUID actionBy) {
         Leave leave = repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave not found"));
 
@@ -117,12 +117,13 @@ public class LeaveServiceImpl implements LeaveService {
         LeaveStatusEnum newStatus = LeaveStatusEnum.valueOf(request.getStatus().toUpperCase());
 
         leave.setStatus(newStatus);
-        leave.setApprovedBy(approvedBy);
-        leave.setApprovedAt(ZonedDateTime.now());
-        leave.setApproverNote(request.getApproverNote());
+        leave.setActionBy(actionBy);
+        leave.setActionAt(LocalDateTime.now());
+        leave.setActionNote(request.getActionNote());
 
-        Leave approvedLeave = repository.save(leave);
-        return mapper.toResponse(approvedLeave);
+        Leave processedLeave = repository.save(leave);
+        log.info("Leave {} {} by user: {}", id, newStatus, actionBy);
+        return mapper.toResponse(processedLeave);
     }
 
     @Override

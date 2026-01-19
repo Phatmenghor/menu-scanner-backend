@@ -68,8 +68,8 @@ public class LeaveController {
             @PathVariable UUID id,
             @Valid @RequestBody LeaveApprovalRequest request) {
         log.info("Processing leave request: {} with status: {}", id, request.getStatus());
-        UUID approvedBy = securityUtils.getCurrentUserId();
-        LeaveResponse response = service.approve(id, request, approvedBy);
+        UUID actionBy = securityUtils.getCurrentUserId();
+        LeaveResponse response = service.approve(id, request, actionBy);
         return ResponseEntity.ok(ApiResponse.success("Leave request processed", response));
     }
 

@@ -21,13 +21,11 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, UUID
     @Query("SELECT w FROM WorkSchedule w WHERE w.isDeleted = false " +
            "AND (:businessId IS NULL OR w.businessId = :businessId) " +
            "AND (:userId IS NULL OR w.userId = :userId) " +
-           "AND (:policyId IS NULL OR w.policyId = :policyId) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "LOWER(w.name) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<WorkSchedule> findWithFilters(
         @Param("businessId") UUID businessId,
         @Param("userId") UUID userId,
-        @Param("policyId") UUID policyId,
         @Param("search") String search,
         Pageable pageable
     );

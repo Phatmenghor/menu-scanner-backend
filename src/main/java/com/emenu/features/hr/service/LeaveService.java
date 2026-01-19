@@ -14,6 +14,6 @@ public interface LeaveService {
     LeaveResponse getById(UUID id);
     PaginationResponse<LeaveResponse> getAll(LeaveFilterRequest filter);
     LeaveResponse update(UUID id, LeaveUpdateRequest request);
-    LeaveResponse approve(UUID id, LeaveApprovalRequest request, UUID approvedBy);
+    LeaveResponse approve(UUID id, LeaveApprovalRequest request, UUID actionBy);
     LeaveResponse delete(UUID id);
 }

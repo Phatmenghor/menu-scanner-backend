@@ -15,6 +15,6 @@ public class LeaveApprovalRequest {
     @NotBlank(message = "Status required")
     @Pattern(regexp = "APPROVED|REJECTED", message = "Status must be APPROVED or REJECTED")
     private String status;
-    
-    private String approverNote;
+
+    private String actionNote;
 }

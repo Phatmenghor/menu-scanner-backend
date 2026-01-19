@@ -20,15 +20,12 @@ public class AttendanceResponse {
     private UUID userId;
     private UUID businessId;
     private UUID workScheduleId;
-    
+
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate attendanceDate;
-    
+
     private List<AttendanceCheckInResponse> checkIns;
-    
-    private Integer totalWorkMinutes;
-    private Integer lateMinutes;
-    
+
     private AttendanceStatusEnum status;
     private String remarks;
 }

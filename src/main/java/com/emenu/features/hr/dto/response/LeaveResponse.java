@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -19,23 +19,23 @@ public class LeaveResponse {
     private UUID id;
     private UUID userId;
     private UUID businessId;
-    private UUID policyId;
-    
+    private UUID leaveTypeEnumId;
+
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;
-    
+
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
-    
+
     private Double totalDays;
     private String reason;
-    
+
     private LeaveStatusEnum status;
-    
-    private UUID approvedBy;
-    
+
+    private UUID actionBy;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private ZonedDateTime approvedAt;
-    
-    private String approverNote;
+    private LocalDateTime actionAt;
+
+    private String actionNote;
 }

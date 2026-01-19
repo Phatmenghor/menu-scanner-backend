@@ -16,17 +16,17 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LeaveCreateRequest {
-    @NotNull(message = "Policy ID required")
-    private UUID policyId;
-    
+    @NotNull(message = "Leave type required")
+    private UUID leaveTypeEnumId;
+
     @NotNull(message = "Start date required")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;
-    
+
     @NotNull(message = "End date required")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
-    
+
     @NotBlank(message = "Reason required")
     private String reason;
 }

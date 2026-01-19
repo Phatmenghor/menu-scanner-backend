@@ -1,7 +1,5 @@
 package com.emenu.features.hr.dto.update;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,11 +19,6 @@ public class WorkScheduleUpdateRequest {
     private Set<DayOfWeek> workDays;
     private LocalTime startTime;
     private LocalTime endTime;
-    
-    @Min(value = 2, message = "Minimum 2 check-ins required")
-    @Max(value = 4, message = "Maximum 4 check-ins allowed")
-    private Integer requiredCheckIns;
-    
     private LocalTime breakStartTime;
     private LocalTime breakEndTime;
 }

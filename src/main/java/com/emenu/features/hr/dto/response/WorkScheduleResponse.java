@@ -18,14 +18,12 @@ public class WorkScheduleResponse {
     private UUID id;
     private UUID userId;
     private UUID businessId;
-    private UUID policyId;
     private String name;
     private UUID scheduleTypeEnumId;
     private String scheduleTypeEnumName;
     private Set<DayOfWeek> workDays;
     private LocalTime startTime;
     private LocalTime endTime;
-    private Integer requiredCheckIns;
     private LocalTime breakStartTime;
     private LocalTime breakEndTime;
 }
