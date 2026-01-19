@@ -1,5 +1,6 @@
 package com.emenu.features.hr.controller;
 
+import com.emenu.features.auth.models.User;
 import com.emenu.features.hr.dto.filter.AttendanceFilterRequest;
 import com.emenu.features.hr.dto.request.AttendanceCheckInRequest;
 import com.emenu.features.hr.dto.response.AttendanceResponse;
@@ -30,9 +31,8 @@ public class AttendanceController {
     public ResponseEntity<ApiResponse<AttendanceResponse>> checkIn(
             @Valid @RequestBody AttendanceCheckInRequest request) {
         log.info("Processing check-in request");
-        UUID userId = securityUtils.getCurrentUserId();
-        UUID businessId = securityUtils.getCurrentUserBusinessId();
-        AttendanceResponse response = service.checkIn(request, userId, businessId);
+        User currentUser = securityUtils.getCurrentUser();
+        AttendanceResponse response = service.checkIn(request, currentUser.getId(), currentUser.getBusinessId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Check-in recorded successfully", response));
     }

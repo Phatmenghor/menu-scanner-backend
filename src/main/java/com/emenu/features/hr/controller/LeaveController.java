@@ -1,5 +1,6 @@
 package com.emenu.features.hr.controller;
 
+import com.emenu.features.auth.models.User;
 import com.emenu.features.hr.dto.filter.LeaveFilterRequest;
 import com.emenu.features.hr.dto.request.LeaveApprovalRequest;
 import com.emenu.features.hr.dto.request.LeaveCreateRequest;
@@ -31,9 +32,8 @@ public class LeaveController {
     @PostMapping
     public ResponseEntity<ApiResponse<LeaveResponse>> create(@Valid @RequestBody LeaveCreateRequest request) {
         log.info("Creating leave request");
-        UUID userId = securityUtils.getCurrentUserId();
-        UUID businessId = securityUtils.getCurrentUserBusinessId();
-        LeaveResponse response = service.create(request, userId, businessId);
+        User currentUser = securityUtils.getCurrentUser();
+        LeaveResponse response = service.create(request, currentUser.getId(), currentUser.getBusinessId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Leave request created", response));
     }
