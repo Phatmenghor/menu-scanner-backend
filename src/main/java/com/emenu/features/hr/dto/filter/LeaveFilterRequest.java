@@ -12,7 +12,7 @@ import java.util.UUID;
 public class LeaveFilterRequest extends BaseFilterRequest {
     private UUID businessId;
     private UUID userId;
-    private UUID leaveTypeEnumId;
+    private String leaveTypeEnum;
     private LocalDate startDate;
     private LocalDate endDate;
 }

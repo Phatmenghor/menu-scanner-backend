@@ -40,8 +40,8 @@ public class WorkSchedule extends BaseUUIDEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "schedule_type_enum_id")
-    private UUID scheduleTypeEnumId;
+    @Column(name = "schedule_type_enum")
+    private String scheduleTypeEnum;
 
     @ElementCollection
     @CollectionTable(name = "schedule_work_days", joinColumns = @JoinColumn(name = "schedule_id"))

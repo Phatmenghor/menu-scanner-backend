@@ -14,5 +14,5 @@ public class AttendanceFilterRequest extends BaseFilterRequest {
     private UUID userId;
     private LocalDate startDate;
     private LocalDate endDate;
-    private UUID statusEnumId;
+    private String statusEnum;
 }

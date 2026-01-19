@@ -44,13 +44,6 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final PaginationMapper paginationMapper;
     private final UserMapper userMapper;
 
-    private AttendanceResponse enrichWithUserInfo(AttendanceResponse response, Attendance attendance) {
-        if (attendance.getUser() != null) {
-            response.setUserInfo(userMapper.toUserBasicInfo(attendance.getUser()));
-        }
-        return response;
-    }
-
     @Override
     public AttendanceResponse checkIn(AttendanceCheckInRequest request, UUID userId, UUID businessId) {
         log.info("Processing check-in for user: {}, type: {}", userId, request.getCheckInType());
@@ -248,5 +241,12 @@ public class AttendanceServiceImpl implements AttendanceService {
         attendance.softDelete();
         attendance = attendanceRepository.save(attendance);
         return enrichWithUserInfo(mapper.toResponse(attendance), attendance);
+    }
+
+    private AttendanceResponse enrichWithUserInfo(AttendanceResponse response, Attendance attendance) {
+        if (attendance.getUser() != null) {
+            response.setUserInfo(userMapper.toUserBasicInfo(attendance.getUser()));
+        }
+        return response;
     }
 }

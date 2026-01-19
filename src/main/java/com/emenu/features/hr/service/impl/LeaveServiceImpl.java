@@ -38,16 +38,6 @@ public class LeaveServiceImpl implements LeaveService {
     private final PaginationMapper paginationMapper;
     private final UserMapper userMapper;
 
-    private LeaveResponse enrichWithUserInfo(LeaveResponse response, Leave leave) {
-        if (leave.getUser() != null) {
-            response.setUserInfo(userMapper.toUserBasicInfo(leave.getUser()));
-        }
-        if (leave.getActionUser() != null) {
-            response.setActionUserInfo(userMapper.toUserBasicInfo(leave.getActionUser()));
-        }
-        return response;
-    }
-
     @Override
     public LeaveResponse create(LeaveCreateRequest request, UUID userId, UUID businessId) {
         log.info("Creating leave request for user: {}", userId);
@@ -86,7 +76,7 @@ public class LeaveServiceImpl implements LeaveService {
         Page<Leave> page = repository.findWithFilters(
                 filter.getBusinessId(),
                 filter.getUserId(),
-                filter.getLeaveTypeEnumId(),
+                filter.getLeaveTypeEnum(),
                 filter.getStartDate(),
                 filter.getEndDate(),
                 filter.getSearch(),
@@ -147,5 +137,15 @@ public class LeaveServiceImpl implements LeaveService {
         leave.softDelete();
         leave = repository.save(leave);
         return enrichWithUserInfo(mapper.toResponse(leave), leave);
+    }
+
+    private LeaveResponse enrichWithUserInfo(LeaveResponse response, Leave leave) {
+        if (leave.getUser() != null) {
+            response.setUserInfo(userMapper.toUserBasicInfo(leave.getUser()));
+        }
+        if (leave.getActionUser() != null) {
+            response.setActionUserInfo(userMapper.toUserBasicInfo(leave.getActionUser()));
+        }
+        return response;
     }
 }

@@ -42,14 +42,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
 
         final WorkSchedule schedule = mapper.toEntity(request);
 
-        // Resolve schedule type enum if provided
-        if (request.getScheduleTypeEnumName() != null) {
-            final UUID businessId = request.getBusinessId();
-            final String typeEnumName = request.getScheduleTypeEnumName();
-
-            typeEnumRepository.findByBusinessIdAndEnumNameAndIsDeletedFalse(businessId, typeEnumName)
-                    .ifPresent(typeEnum -> schedule.setScheduleTypeEnumId(typeEnum.getId()));
-        }
+        schedule.setScheduleTypeEnum(request.getScheduleTypeEnumName());
 
         WorkSchedule savedSchedule = repository.save(schedule);
         return enrichResponse(mapper.toResponse(savedSchedule), savedSchedule);
@@ -100,14 +93,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
         final WorkSchedule schedule = repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Work schedule not found"));
 
-        // Resolve schedule type enum if provided
-        if (request.getScheduleTypeEnumName() != null) {
-            final UUID businessId = schedule.getBusinessId();
-            final String typeEnumName = request.getScheduleTypeEnumName();
-
-            typeEnumRepository.findByBusinessIdAndEnumNameAndIsDeletedFalse(businessId, typeEnumName)
-                    .ifPresent(typeEnum -> schedule.setScheduleTypeEnumId(typeEnum.getId()));
-        }
+        schedule.setScheduleTypeEnum(request.getScheduleTypeEnumName());
 
         mapper.updateEntity(request, schedule);
         WorkSchedule updatedSchedule = repository.save(schedule);
@@ -124,10 +110,6 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
     }
 
     private WorkScheduleResponse enrichResponse(WorkScheduleResponse response, WorkSchedule schedule) {
-        final UUID typeEnumId = response.getScheduleTypeEnumId();
-        typeEnumRepository.findByIdAndIsDeletedFalse(typeEnumId)
-                .ifPresent(typeEnum -> response.setScheduleTypeEnumName(typeEnum.getEnumName()));
-
         response.setUserInfo(userMapper.toUserBasicInfo(schedule.getUser()));
         return response;
     }

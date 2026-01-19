@@ -38,8 +38,8 @@ public class Leave extends BaseUUIDEntity {
     @JoinColumn(name = "business_id", insertable = false, updatable = false)
     private Business business;
 
-    @Column(name = "leave_type_enum_id")
-    private UUID leaveTypeEnumId;
+    @Column(name = "leave_type_enum")
+    private UUID leaveTypeEnum;
 
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
