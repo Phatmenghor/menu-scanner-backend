@@ -41,36 +41,20 @@ public interface UserMapper {
     @Mapping(target = "password", ignore = true)
     void updateEntity(UserUpdateRequest request, @MappingTarget User user);
 
-    default User toEntity(UserCreateRequest request) {
-        User user = new User();
-        user.setUserIdentifier(request.getUserIdentifier());
-        user.setEmail(request.getEmail());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setProfileImageUrl(request.getProfileImageUrl());
-        user.setPosition(request.getPosition());
-        user.setAddress(request.getAddress());
-        user.setNotes(request.getNotes());
-        user.setUserType(request.getUserType());
-        user.setAccountStatus(request.getAccountStatus());
-        user.setBusinessId(request.getBusinessId());
-        return user;
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "business", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    User toEntity(UserCreateRequest request);
 
-    default User toEntity(RegisterRequest request) {
-        User user = new User();
-        user.setUserIdentifier(request.getUserIdentifier());
-        user.setEmail(request.getEmail());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setProfileImageUrl(request.getProfileImageUrl());
-        user.setAddress(request.getAddress());
-        user.setUserType(request.getUserType());
-        user.setAccountStatus(request.getAccountStatus());
-        return user;
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "business", ignore = true)
+    @Mapping(target = "businessId", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "position", ignore = true)
+    @Mapping(target = "notes", ignore = true)
+    User toEntity(RegisterRequest request);
 
     @Named("rolesToEnums")
     default List<RoleEnum> rolesToEnums(List<Role> roles) {
