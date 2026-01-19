@@ -20,11 +20,9 @@ public class LeaveCreateRequest {
     private UUID leaveTypeEnumId;
 
     @NotNull(message = "Start date required")
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;
 
     @NotNull(message = "End date required")
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
 
     @NotBlank(message = "Reason required")

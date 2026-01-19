@@ -23,10 +23,7 @@ public class LeaveResponse {
     private UUID businessId;
     private UUID leaveTypeEnumId;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;
-
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
 
     private Double totalDays;

@@ -18,7 +18,6 @@ public class AttendanceCheckInResponse {
     private UUID id;
     private CheckInType checkInType;
     
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime checkInTime;
     
     private Double latitude;

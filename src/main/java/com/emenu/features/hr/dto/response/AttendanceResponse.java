@@ -23,7 +23,6 @@ public class AttendanceResponse {
     private UUID businessId;
     private UUID workScheduleId;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate attendanceDate;
 
     private List<AttendanceCheckInResponse> checkIns;

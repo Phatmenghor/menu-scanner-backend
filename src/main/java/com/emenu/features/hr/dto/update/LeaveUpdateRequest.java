@@ -13,11 +13,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LeaveUpdateRequest {
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;
-    
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
-    
     private String reason;
 }
