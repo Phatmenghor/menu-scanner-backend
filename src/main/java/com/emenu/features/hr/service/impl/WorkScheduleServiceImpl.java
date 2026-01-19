@@ -5,6 +5,7 @@ import com.emenu.features.hr.dto.filter.WorkScheduleFilterRequest;
 import com.emenu.features.hr.dto.request.WorkScheduleCreateRequest;
 import com.emenu.features.hr.dto.response.WorkScheduleResponse;
 import com.emenu.features.hr.dto.update.WorkScheduleUpdateRequest;
+import com.emenu.features.hr.mapper.UserBasicInfoMapper;
 import com.emenu.features.hr.mapper.WorkScheduleMapper;
 import com.emenu.features.hr.models.WorkSchedule;
 import com.emenu.features.hr.repository.WorkScheduleRepository;
@@ -33,6 +34,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
     private final WorkScheduleTypeEnumRepository typeEnumRepository;
     private final WorkScheduleMapper mapper;
     private final PaginationMapper paginationMapper;
+    private final UserBasicInfoMapper userMapper;
 
     @Override
     public WorkScheduleResponse create(WorkScheduleCreateRequest request) {
@@ -50,7 +52,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
         }
 
         WorkSchedule savedSchedule = repository.save(schedule);
-        return enrichResponse(mapper.toResponse(savedSchedule));
+        return enrichResponse(mapper.toResponse(savedSchedule), savedSchedule);
     }
 
     @Override
@@ -58,7 +60,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
     public WorkScheduleResponse getById(UUID id) {
         WorkSchedule schedule = repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Work schedule not found"));
-        return enrichResponse(mapper.toResponse(schedule));
+        return enrichResponse(mapper.toResponse(schedule), schedule);
     }
 
     @Override
@@ -80,8 +82,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
 
         return paginationMapper.toPaginationResponse(page,
                 schedules -> schedules.stream()
-                        .map(mapper::toResponse)
-                        .map(this::enrichResponse)
+                        .map(s -> enrichResponse(mapper.toResponse(s), s))
                         .toList());
     }
 
@@ -90,8 +91,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
     public List<WorkScheduleResponse> getByUserId(UUID userId) {
         List<WorkSchedule> schedules = repository.findByUserIdAndIsDeletedFalse(userId);
         return schedules.stream()
-                .map(mapper::toResponse)
-                .map(this::enrichResponse)
+                .map(s -> enrichResponse(mapper.toResponse(s), s))
                 .toList();
     }
 
@@ -111,7 +111,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
 
         mapper.updateEntity(request, schedule);
         WorkSchedule updatedSchedule = repository.save(schedule);
-        return enrichResponse(mapper.toResponse(updatedSchedule));
+        return enrichResponse(mapper.toResponse(updatedSchedule), updatedSchedule);
     }
 
     @Override
@@ -120,14 +120,17 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Work schedule not found"));
         schedule.softDelete();
         schedule = repository.save(schedule);
-        return enrichResponse(mapper.toResponse(schedule));
+        return enrichResponse(mapper.toResponse(schedule), schedule);
     }
 
-    private WorkScheduleResponse enrichResponse(WorkScheduleResponse response) {
+    private WorkScheduleResponse enrichResponse(WorkScheduleResponse response, WorkSchedule schedule) {
         if (response.getScheduleTypeEnumId() != null) {
             final UUID typeEnumId = response.getScheduleTypeEnumId();
             typeEnumRepository.findByIdAndIsDeletedFalse(typeEnumId)
                     .ifPresent(typeEnum -> response.setScheduleTypeEnumName(typeEnum.getEnumName()));
+        }
+        if (schedule.getUser() != null) {
+            response.setUserInfo(userMapper.toUserBasicInfo(schedule.getUser()));
         }
         return response;
     }

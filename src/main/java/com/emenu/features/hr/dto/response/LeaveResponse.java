@@ -18,6 +18,7 @@ import java.util.UUID;
 public class LeaveResponse {
     private UUID id;
     private UUID userId;
+    private UserBasicInfo userInfo;
     private UUID businessId;
     private UUID leaveTypeEnumId;
 
@@ -33,6 +34,7 @@ public class LeaveResponse {
     private LeaveStatusEnum status;
 
     private UUID actionBy;
+    private UserBasicInfo actionUserInfo;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime actionAt;
