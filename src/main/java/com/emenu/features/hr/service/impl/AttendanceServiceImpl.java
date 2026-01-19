@@ -9,6 +9,7 @@ import com.emenu.features.hr.dto.request.AttendanceCheckInRequest;
 import com.emenu.features.hr.dto.response.AttendanceResponse;
 import com.emenu.features.hr.dto.update.AttendanceUpdateRequest;
 import com.emenu.features.hr.mapper.AttendanceMapper;
+import com.emenu.features.hr.mapper.UserBasicInfoMapper;
 import com.emenu.features.hr.models.Attendance;
 import com.emenu.features.hr.models.AttendanceCheckIn;
 import com.emenu.features.hr.models.WorkSchedule;
@@ -41,6 +42,14 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final WorkScheduleRepository workScheduleRepository;
     private final AttendanceMapper mapper;
     private final PaginationMapper paginationMapper;
+    private final UserBasicInfoMapper userMapper;
+
+    private AttendanceResponse enrichWithUserInfo(AttendanceResponse response, Attendance attendance) {
+        if (attendance.getUser() != null) {
+            response.setUserInfo(userMapper.toUserBasicInfo(attendance.getUser()));
+        }
+        return response;
+    }
 
     @Override
     public AttendanceResponse checkIn(AttendanceCheckInRequest request, UUID userId, UUID businessId) {
@@ -93,7 +102,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         log.info("Check-in successful for user: {}, type: {}, status: {}",
                 userId, request.getCheckInType(), attendance.getStatus());
 
-        return mapper.toResponse(attendance);
+        return enrichWithUserInfo(mapper.toResponse(attendance), attendance);
     }
 
     private Attendance createNewAttendance(UUID userId, UUID businessId, UUID workScheduleId, LocalDate date) {
@@ -191,7 +200,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     public AttendanceResponse getById(UUID id) {
         Attendance attendance = attendanceRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance not found"));
-        return mapper.toResponse(attendance);
+        return enrichWithUserInfo(mapper.toResponse(attendance), attendance);
     }
 
     @Override
@@ -214,7 +223,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         );
 
         return paginationMapper.toPaginationResponse(page,
-                attendances -> attendances.stream().map(mapper::toResponse).toList());
+                attendances -> attendances.stream()
+                        .map(att -> enrichWithUserInfo(mapper.toResponse(att), att))
+                        .toList());
     }
 
     @Override
@@ -227,7 +238,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         attendance = attendanceRepository.save(attendance);
-        return mapper.toResponse(attendance);
+        return enrichWithUserInfo(mapper.toResponse(attendance), attendance);
     }
 
     @Override
@@ -236,6 +247,6 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance not found"));
         attendance.softDelete();
         attendance = attendanceRepository.save(attendance);
-        return mapper.toResponse(attendance);
+        return enrichWithUserInfo(mapper.toResponse(attendance), attendance);
     }
 }

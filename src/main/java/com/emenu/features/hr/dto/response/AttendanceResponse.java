@@ -18,6 +18,7 @@ import java.util.UUID;
 public class AttendanceResponse {
     private UUID id;
     private UUID userId;
+    private UserBasicInfo userInfo;
     private UUID businessId;
     private UUID workScheduleId;
 
