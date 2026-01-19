@@ -44,7 +44,7 @@ server:
 # JWT telegram
 jwt:
   secret: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
-  expiration: 99999999999999999 # Extended for development
+  expiration: 99999999999999999
 
 # API Documentation
 springdoc:
@@ -66,7 +66,7 @@ telegram:
 app:
   name: "Cambodia E-Menu Platform"
   version: "1.0.0"
-  description: "Restaurant Management Platform for Cambodia with Telegram Integration"
+  description: "Restaurant Management Platform for Cambodia"
 
   # Data Initialization
   init:
