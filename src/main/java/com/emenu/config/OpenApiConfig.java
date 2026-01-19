@@ -66,15 +66,18 @@ public class OpenApiConfig {
             if (openApi.getComponents() != null && openApi.getComponents().getSchemas() != null) {
                 openApi.getComponents().getSchemas().forEach((schemaName, schema) -> {
                     if (schema.getProperties() != null) {
-                        schema.getProperties().forEach((propertyName, propertySchema) -> {
+                        schema.getProperties().forEach((propertyName, propertySchemaObj) -> {
                             // Replace LocalTime object schema with string schema
-                            if (isLocalTimeSchema(propertySchema)) {
-                                Schema<String> stringSchema = new Schema<>();
-                                stringSchema.setType("string");
-                                stringSchema.setPattern("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$");
-                                stringSchema.setExample("09:00");
-                                stringSchema.setDescription("Time in HH:mm format");
-                                schema.getProperties().put(propertyName, stringSchema);
+                            if (propertySchemaObj instanceof Schema) {
+                                Schema<?> propertySchema = (Schema<?>) propertySchemaObj;
+                                if (isLocalTimeSchema(propertySchema)) {
+                                    Schema<String> stringSchema = new Schema<>();
+                                    stringSchema.setType("string");
+                                    stringSchema.setPattern("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$");
+                                    stringSchema.setExample("09:00");
+                                    stringSchema.setDescription("Time in HH:mm format");
+                                    schema.getProperties().put(propertyName, stringSchema);
+                                }
                             }
                         });
                     }
@@ -84,7 +87,7 @@ public class OpenApiConfig {
     }
 
     private boolean isLocalTimeSchema(Schema<?> schema) {
-        if (schema.getProperties() != null) {
+        if (schema != null && schema.getProperties() != null) {
             // Check if it has the typical LocalTime structure
             return schema.getProperties().containsKey("hour") &&
                     schema.getProperties().containsKey("minute") &&
