@@ -16,10 +16,10 @@ public interface WorkScheduleMapper {
     
     List<WorkScheduleResponse> toResponseList(List<WorkSchedule> workSchedules);
     
-    @Mapping(target = "scheduleTypeEnumId", ignore = true)
+    @Mapping(target = "scheduleTypeEnum", ignore = true)
     WorkSchedule toEntity(WorkScheduleCreateRequest request);
     
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "scheduleTypeEnumId", ignore = true)
+    @Mapping(target = "scheduleTypeEnum", ignore = true)
     void updateEntity(WorkScheduleUpdateRequest request, @MappingTarget WorkSchedule workSchedule);
 }
