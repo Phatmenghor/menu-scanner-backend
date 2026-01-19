@@ -11,11 +11,9 @@ import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class WorkScheduleResponse extends BaseAuditResponse {
-    private UUID id;
     private UserBasicInfo userInfo;
     private UUID businessId;
     private String name;
