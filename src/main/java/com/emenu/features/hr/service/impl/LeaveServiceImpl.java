@@ -118,15 +118,13 @@ public class LeaveServiceImpl implements LeaveService {
             throw new BusinessValidationException("Leave is not pending approval");
         }
 
-        LeaveStatusEnum newStatus = LeaveStatusEnum.valueOf(request.getStatus().toUpperCase());
-
-        leave.setStatus(newStatus);
+        leave.setStatus(request.getStatus());
         leave.setActionBy(actionBy);
         leave.setActionAt(LocalDateTime.now());
         leave.setActionNote(request.getActionNote());
 
         Leave processedLeave = repository.save(leave);
-        log.info("Leave {} {} by user: {}", id, newStatus, actionBy);
+        log.info("Leave {} {} by user: {}", id, request.getStatus(), actionBy);
         return enrichWithUserInfo(mapper.toResponse(processedLeave), processedLeave);
     }
 

@@ -1,21 +1,20 @@
 package com.emenu.features.hr.dto.response;
 
 import com.emenu.features.auth.dto.response.UserBasicInfo;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.emenu.shared.dto.BaseAuditResponse;
+import lombok.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.Set;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkScheduleResponse {
+public class WorkScheduleResponse extends BaseAuditResponse {
     private UUID id;
     private UserBasicInfo userInfo;
     private UUID businessId;
