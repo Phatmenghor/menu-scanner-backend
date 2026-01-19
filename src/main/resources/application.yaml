@@ -79,30 +79,6 @@ app:
     token-cleanup:
       enabled: true
 
----
-# Development Profile
-spring:
-  config:
-    activate:
-      on-profile: dev
-
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${EMAIL_USERNAME:your-email@gmail.com}
-    password: ${EMAIL_PASSWORD:your-app-password}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-
 # Logging Configuration
 logging:
   level:
