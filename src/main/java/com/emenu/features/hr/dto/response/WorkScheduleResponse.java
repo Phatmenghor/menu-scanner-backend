@@ -17,7 +17,7 @@ public class WorkScheduleResponse extends BaseAuditResponse {
     private UserBasicInfo userInfo;
     private UUID businessId;
     private String name;
-    private String scheduleTypeEnumName;
+    private String scheduleTypeEnum;
     private Set<DayOfWeek> workDays;
     private LocalTime startTime;
     private LocalTime endTime;
