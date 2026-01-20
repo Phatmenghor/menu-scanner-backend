@@ -11,7 +11,6 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface WorkScheduleMapper {
     
-    @Mapping(target = "scheduleTypeEnum", ignore = true)
     WorkScheduleResponse toResponse(WorkSchedule workSchedule);
     
     List<WorkScheduleResponse> toResponseList(List<WorkSchedule> workSchedules);
