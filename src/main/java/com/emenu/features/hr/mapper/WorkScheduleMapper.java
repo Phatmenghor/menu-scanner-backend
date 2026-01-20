@@ -18,6 +18,5 @@ public interface WorkScheduleMapper {
     WorkSchedule toEntity(WorkScheduleCreateRequest request);
     
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "scheduleTypeEnum", ignore = true)
     void updateEntity(WorkScheduleUpdateRequest request, @MappingTarget WorkSchedule workSchedule);
 }
