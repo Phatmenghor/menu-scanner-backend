@@ -6,10 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Data
 @Builder
@@ -17,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class LeaveCreateRequest {
     @NotNull(message = "Leave type required")
-    private UUID leaveTypeEnumId;
+    private String leaveTypeEnum;
 
     @NotNull(message = "Start date required")
     private LocalDate startDate;

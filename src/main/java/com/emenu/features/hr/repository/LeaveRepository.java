@@ -1,5 +1,6 @@
 package com.emenu.features.hr.repository;
 
+import com.emenu.enums.hr.LeaveStatusEnum;
 import com.emenu.features.hr.models.Leave;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ public interface LeaveRepository extends JpaRepository<Leave, UUID> {
            "AND (:businessId IS NULL OR l.businessId = :businessId) " +
            "AND (:userId IS NULL OR l.userId = :userId) " +
            "AND (:leaveTypeEnum IS NULL OR l.leaveTypeEnum = :leaveTypeEnum) " +
+           "AND (:status IS NULL OR l.status = :status) " +
            "AND (:startDate IS NULL OR l.startDate >= :startDate) " +
            "AND (:endDate IS NULL OR l.endDate <= :endDate) " +
            "AND (:search IS NULL OR :search = '' OR " +
@@ -29,6 +31,7 @@ public interface LeaveRepository extends JpaRepository<Leave, UUID> {
         @Param("businessId") UUID businessId,
         @Param("userId") UUID userId,
         @Param("leaveTypeEnum") String leaveTypeEnum,
+        @Param("status") LeaveStatusEnum status,
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate,
         @Param("search") String search,
