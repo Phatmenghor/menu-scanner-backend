@@ -1,5 +1,6 @@
 package com.emenu.features.hr.dto.filter;
 
+import com.emenu.enums.hr.LeaveStatusEnum;
 import com.emenu.shared.dto.BaseFilterRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -13,6 +14,7 @@ public class LeaveFilterRequest extends BaseFilterRequest {
     private UUID businessId;
     private UUID userId;
     private String leaveTypeEnum;
+    private LeaveStatusEnum status;
     private LocalDate startDate;
     private LocalDate endDate;
 }

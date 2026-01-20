@@ -77,6 +77,7 @@ public class LeaveServiceImpl implements LeaveService {
                 filter.getBusinessId(),
                 filter.getUserId(),
                 filter.getLeaveTypeEnum(),
+                filter.getStatus(),
                 filter.getStartDate(),
                 filter.getEndDate(),
                 filter.getSearch(),
