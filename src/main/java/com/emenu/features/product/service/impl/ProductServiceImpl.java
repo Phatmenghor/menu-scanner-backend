@@ -21,6 +21,7 @@ import com.emenu.features.product.models.ProductSize;
 import com.emenu.features.product.repository.ProductImageRepository;
 import com.emenu.features.product.repository.ProductRepository;
 import com.emenu.features.product.repository.ProductSizeRepository;
+import com.emenu.features.order.utils.CartQueryHelper;
 import com.emenu.features.product.service.ProductService;
 import com.emenu.features.product.specification.ProductSpecifications;
 import com.emenu.features.product.utils.ProductFavoriteQueryHelper;
@@ -53,6 +54,7 @@ public class ProductServiceImpl implements ProductService {
     private final SecurityUtils securityUtils;
     private final ProductUtils productUtils;
     private final ProductFavoriteQueryHelper favoriteQueryHelper;
+    private final CartQueryHelper cartQueryHelper;
 
     @Override
     @Transactional(readOnly = true)
@@ -82,16 +84,30 @@ public class ProductServiceImpl implements ProductService {
             List<UUID> productIds = productPage.getContent().stream()
                     .map(Product::getId)
                     .toList();
-            
+
+            // Get favorite products
             List<UUID> favoriteIds = favoriteQueryHelper.getFavoriteProductIds(
-                    currentUser.get().getId(), 
+                    currentUser.get().getId(),
                     productIds
             );
             Set<UUID> favoriteSet = new HashSet<>(favoriteIds);
 
-            dtoList.forEach(dto -> dto.setIsFavorited(favoriteSet.contains(dto.getId())));
+            // Get cart quantities for products
+            Map<UUID, Integer> cartQuantities = cartQueryHelper.getProductQuantitiesInCart(
+                    currentUser.get().getId(),
+                    filter.getBusinessId(),
+                    productIds
+            );
+
+            dtoList.forEach(dto -> {
+                dto.setIsFavorited(favoriteSet.contains(dto.getId()));
+                dto.setQuantityInCart(cartQuantities.getOrDefault(dto.getId(), 0));
+            });
         } else {
-            dtoList.forEach(dto -> dto.setIsFavorited(false));
+            dtoList.forEach(dto -> {
+                dto.setIsFavorited(false);
+                dto.setQuantityInCart(0);
+            });
         }
 
         return paginationMapper.toPaginationResponse(productPage, dtoList);
@@ -137,6 +153,16 @@ public class ProductServiceImpl implements ProductService {
         if (currentUser.isPresent()) {
             boolean isFavorited = favoriteQueryHelper.isFavorited(currentUser.get().getId(), product.getId());
             dto.setIsFavorited(isFavorited);
+
+            // Get cart quantity for this product
+            Map<UUID, Integer> cartQuantities = cartQueryHelper.getProductQuantitiesInCart(
+                    currentUser.get().getId(),
+                    product.getBusinessId(),
+                    List.of(product.getId())
+            );
+            dto.setQuantityInCart(cartQuantities.getOrDefault(product.getId(), 0));
+        } else {
+            dto.setQuantityInCart(0);
         }
 
         return dto;
@@ -156,6 +182,16 @@ public class ProductServiceImpl implements ProductService {
         if (currentUser.isPresent()) {
             boolean isFavorited = favoriteQueryHelper.isFavorited(currentUser.get().getId(), product.getId());
             dto.setIsFavorited(isFavorited);
+
+            // Get cart quantity for this product
+            Map<UUID, Integer> cartQuantities = cartQueryHelper.getProductQuantitiesInCart(
+                    currentUser.get().getId(),
+                    product.getBusinessId(),
+                    List.of(product.getId())
+            );
+            dto.setQuantityInCart(cartQuantities.getOrDefault(product.getId(), 0));
+        } else {
+            dto.setQuantityInCart(0);
         }
 
         return dto;

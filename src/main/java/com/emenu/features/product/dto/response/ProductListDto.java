@@ -29,7 +29,9 @@ public class ProductListDto extends BaseAuditResponse {
     private Long viewCount;
     private Long favoriteCount;
     private Boolean isFavorited;
-    
+
+    private Integer quantityInCart;
+
     private UUID businessId;
     private UUID categoryId;
     private UUID brandId;

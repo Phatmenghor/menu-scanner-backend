@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -44,4 +45,23 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
 
     @Query("SELECT COUNT(ci) FROM CartItem ci WHERE ci.createdAt < :cutoffDate")
     long countOldCartItems(@Param("cutoffDate") LocalDateTime cutoffDate);
+
+    /**
+     * Get total quantities for products in user's cart for a specific business.
+     * Returns a map of productId to total quantity across all cart items for that product.
+     */
+    @Query("""
+            SELECT ci.productId as productId, SUM(ci.quantity) as totalQuantity
+            FROM CartItem ci
+            JOIN Cart c ON ci.cartId = c.id
+            WHERE c.userId = :userId
+            AND c.businessId = :businessId
+            AND ci.productId IN :productIds
+            AND ci.isDeleted = false
+            AND c.isDeleted = false
+            GROUP BY ci.productId
+            """)
+    List<Map<String, Object>> getProductQuantitiesInCart(@Param("userId") UUID userId,
+                                                          @Param("businessId") UUID businessId,
+                                                          @Param("productIds") List<UUID> productIds);
 }
