@@ -1,7 +1,7 @@
-package com.emenu.features.customer.specification;
+package com.emenu.features.location.specification;
 
-import com.emenu.features.customer.dto.filter.CustomerAddressFilterRequest;
-import com.emenu.features.customer.models.CustomerAddress;
+import com.emenu.features.location.dto.filter.CustomerAddressFilterRequest;
+import com.emenu.features.location.models.CustomerAddress;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;

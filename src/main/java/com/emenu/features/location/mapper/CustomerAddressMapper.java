@@ -1,9 +1,9 @@
-package com.emenu.features.customer.mapper;
+package com.emenu.features.location.mapper;
 
-import com.emenu.features.customer.dto.request.CustomerAddressCreateRequest;
-import com.emenu.features.customer.dto.response.CustomerAddressResponse;
-import com.emenu.features.customer.dto.update.CustomerAddressUpdateRequest;
-import com.emenu.features.customer.models.CustomerAddress;
+import com.emenu.features.location.dto.request.CustomerAddressCreateRequest;
+import com.emenu.features.location.dto.response.CustomerAddressResponse;
+import com.emenu.features.location.dto.update.CustomerAddressUpdateRequest;
+import com.emenu.features.location.models.CustomerAddress;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;

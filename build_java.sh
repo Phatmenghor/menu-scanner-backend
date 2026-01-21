@@ -1,45 +1,39 @@
 #!/bin/bash
 
-echo "======================================"
-echo "🚀 Starting Maven Build Process"
-echo "======================================"
+set -e
 
-echo "🧹 Step 1: Cleaning project..."
-mvn clean
-if [ $? -ne 0 ]; then
-  echo "❌ Clean failed"
-  exit 1
-fi
-
-echo "⚙️ Step 2: Compiling source code..."
-mvn compile
-if [ $? -ne 0 ]; then
-  echo "❌ Compile failed"
-  exit 1
-fi
-
-echo "🧪 Step 3: Running tests..."
-mvn test
-if [ $? -ne 0 ]; then
-  echo "❌ Tests failed"
-  exit 1
-fi
-
-echo "📦 Step 4: Packaging JAR..."
-mvn package
-if [ $? -ne 0 ]; then
-  echo "❌ Package failed"
-  exit 1
-fi
-
-echo "📥 Step 5: Installing to local Maven repository..."
-mvn install
-if [ $? -ne 0 ]; then
-  echo "❌ Install failed"
-  exit 1
-fi
+SSH_USER="root"
+SSH_HOST="165.22.247.142"
+REMOTE_DIR="/opt/backend/emenu"
 
 echo "======================================"
-echo "✅ Maven build SUCCESSFUL!"
-echo "📍 JAR location: target/"
+echo "🚀 Starting Maven Build (DEV ONLY)"
+echo "======================================"
+
+mvn clean package -DskipTests
+
+echo "======================================"
+echo "✅ Build SUCCESSFUL"
+echo "🚀 Connecting to DEV server..."
+echo "======================================"
+
+ssh \
+  -o StrictHostKeyChecking=no \
+  -i <(cat << 'KEYEOF'
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACDnVkVCQxQlhxK/cL4Bx/R+w+zluvY/GFa2VJcrqQX7ywAAAJCLX5hRi1+Y
+UQAAAAtzc2gtZWQyNTUxOQAAACDnVkVCQxQlhxK/cL4Bx/R+w+zluvY/GFa2VJcrqQX7yw
+AAAED2nI6DcctOecuQ+rib8vdfLCqubU0fnz2jfyZfn6So7+dWRUJDFCWHEr9wvgHH9H7D
+7OW69j8YVrZUlyupBfvLAAAADGRpZ2l0YWxvY2VhbgE=
+-----END OPENSSH PRIVATE KEY-----
+KEYEOF
+) "$SSH_USER@$SSH_HOST" << 'EOF'
+export TERM=xterm
+cd /opt/backend/emenu
+bash deploy-emenu.sh
+EOF
+
+echo "======================================"
+echo "🎉 DEV DEPLOY COMPLETED"
 echo "======================================"

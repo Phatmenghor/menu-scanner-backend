@@ -1,6 +1,6 @@
 package com.emenu.features.order.mapper;
 
-import com.emenu.features.customer.mapper.CustomerAddressMapper;
+import com.emenu.features.location.mapper.CustomerAddressMapper;
 import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.models.Order;
 import com.emenu.shared.dto.PaginationResponse;
@@ -8,7 +8,6 @@ import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
 import java.util.List;

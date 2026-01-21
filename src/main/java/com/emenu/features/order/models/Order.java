@@ -4,7 +4,7 @@ import com.emenu.enums.order.OrderStatus;
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.User;
-import com.emenu.features.customer.models.CustomerAddress;
+import com.emenu.features.location.models.CustomerAddress;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

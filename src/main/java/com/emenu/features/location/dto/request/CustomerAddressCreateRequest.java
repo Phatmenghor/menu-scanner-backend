@@ -1,4 +1,4 @@
-package com.emenu.features.customer.dto.request;
+package com.emenu.features.location.dto.request;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;

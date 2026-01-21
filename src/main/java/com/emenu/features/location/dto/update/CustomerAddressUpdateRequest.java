@@ -1,4 +1,4 @@
-package com.emenu.features.customer.dto.update;
+package com.emenu.features.location.dto.update;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;

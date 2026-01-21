@@ -1,4 +1,4 @@
-package com.emenu.features.customer.models;
+package com.emenu.features.location.models;
 
 import com.emenu.features.auth.models.User;
 import com.emenu.shared.domain.BaseUUIDEntity;

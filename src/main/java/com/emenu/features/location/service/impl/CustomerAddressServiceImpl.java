@@ -1,17 +1,17 @@
-package com.emenu.features.customer.service.impl;
+package com.emenu.features.location.service.impl;
 
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
-import com.emenu.features.customer.dto.filter.CustomerAddressFilterRequest;
-import com.emenu.features.customer.dto.request.CustomerAddressCreateRequest;
-import com.emenu.features.customer.dto.response.CustomerAddressResponse;
-import com.emenu.features.customer.dto.update.CustomerAddressUpdateRequest;
-import com.emenu.features.customer.mapper.CustomerAddressMapper;
-import com.emenu.features.customer.models.CustomerAddress;
-import com.emenu.features.customer.repository.CustomerAddressRepository;
-import com.emenu.features.customer.service.CustomerAddressService;
-import com.emenu.features.customer.specification.CustomerAddressSpecification;
+import com.emenu.features.location.dto.filter.CustomerAddressFilterRequest;
+import com.emenu.features.location.dto.request.CustomerAddressCreateRequest;
+import com.emenu.features.location.dto.response.CustomerAddressResponse;
+import com.emenu.features.location.dto.update.CustomerAddressUpdateRequest;
+import com.emenu.features.location.mapper.CustomerAddressMapper;
+import com.emenu.features.location.models.CustomerAddress;
+import com.emenu.features.location.repository.CustomerAddressRepository;
+import com.emenu.features.location.service.CustomerAddressService;
+import com.emenu.features.location.specification.CustomerAddressSpecification;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;

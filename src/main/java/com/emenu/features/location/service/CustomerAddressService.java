@@ -1,9 +1,9 @@
-package com.emenu.features.customer.service;
+package com.emenu.features.location.service;
 
-import com.emenu.features.customer.dto.filter.CustomerAddressFilterRequest;
-import com.emenu.features.customer.dto.request.CustomerAddressCreateRequest;
-import com.emenu.features.customer.dto.response.CustomerAddressResponse;
-import com.emenu.features.customer.dto.update.CustomerAddressUpdateRequest;
+import com.emenu.features.location.dto.filter.CustomerAddressFilterRequest;
+import com.emenu.features.location.dto.request.CustomerAddressCreateRequest;
+import com.emenu.features.location.dto.response.CustomerAddressResponse;
+import com.emenu.features.location.dto.update.CustomerAddressUpdateRequest;
 import com.emenu.shared.dto.PaginationResponse;
 
 import java.util.List;

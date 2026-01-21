@@ -1,11 +1,11 @@
-package com.emenu.features.customer.controller;
+package com.emenu.features.location.controller;
 
 import com.emenu.features.auth.models.User;
-import com.emenu.features.customer.dto.filter.CustomerAddressFilterRequest;
-import com.emenu.features.customer.dto.request.CustomerAddressCreateRequest;
-import com.emenu.features.customer.dto.response.CustomerAddressResponse;
-import com.emenu.features.customer.dto.update.CustomerAddressUpdateRequest;
-import com.emenu.features.customer.service.CustomerAddressService;
+import com.emenu.features.location.dto.filter.CustomerAddressFilterRequest;
+import com.emenu.features.location.dto.request.CustomerAddressCreateRequest;
+import com.emenu.features.location.dto.response.CustomerAddressResponse;
+import com.emenu.features.location.dto.update.CustomerAddressUpdateRequest;
+import com.emenu.features.location.service.CustomerAddressService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;

@@ -1,4 +1,4 @@
-package com.emenu.features.customer.dto.response;
+package com.emenu.features.location.dto.response;
 
 import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
