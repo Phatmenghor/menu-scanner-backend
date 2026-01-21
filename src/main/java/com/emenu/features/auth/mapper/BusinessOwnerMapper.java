@@ -4,14 +4,13 @@ import com.emenu.features.auth.dto.response.BusinessOwnerCreateResponse;
 import com.emenu.features.auth.dto.response.BusinessOwnerDetailResponse;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.User;
-import com.emenu.features.payment.models.Payment;
+import com.emenu.features.order.models.Payment;
 import com.emenu.features.subscription.models.Subscription;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
 import java.util.List;

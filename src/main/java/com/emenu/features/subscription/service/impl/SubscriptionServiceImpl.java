@@ -2,8 +2,8 @@ package com.emenu.features.subscription.service.impl;
 
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.repository.BusinessRepository;
-import com.emenu.features.payment.models.Payment;
-import com.emenu.features.payment.repository.PaymentRepository;
+import com.emenu.features.order.models.Payment;
+import com.emenu.features.order.repository.PaymentRepository;
 import com.emenu.features.subscription.dto.filter.SubscriptionFilterRequest;
 import com.emenu.features.subscription.dto.request.SubscriptionCancelRequest;
 import com.emenu.features.subscription.dto.request.SubscriptionCreateRequest;

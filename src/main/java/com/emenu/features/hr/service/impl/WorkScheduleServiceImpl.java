@@ -1,7 +1,7 @@
 package com.emenu.features.hr.service.impl;
 
 import com.emenu.features.auth.mapper.UserMapper;
-import com.emenu.features.enums.repository.WorkScheduleTypeEnumRepository;
+import com.emenu.features.setting.repository.WorkScheduleTypeEnumRepository;
 import com.emenu.features.hr.dto.filter.WorkScheduleFilterRequest;
 import com.emenu.features.hr.dto.request.WorkScheduleCreateRequest;
 import com.emenu.features.hr.dto.response.WorkScheduleResponse;

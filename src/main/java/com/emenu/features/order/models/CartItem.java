@@ -1,7 +1,7 @@
 package com.emenu.features.order.models;
 
-import com.emenu.features.product.models.Product;
-import com.emenu.features.product.models.ProductSize;
+import com.emenu.features.main.models.Product;
+import com.emenu.features.main.models.ProductSize;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
