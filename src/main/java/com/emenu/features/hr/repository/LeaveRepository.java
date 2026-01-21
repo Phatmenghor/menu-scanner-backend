@@ -10,31 +10,32 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface LeaveRepository extends JpaRepository<Leave, UUID> {
-    
+
     Optional<Leave> findByIdAndIsDeletedFalse(UUID id);
-    
+
     @Query("SELECT l FROM Leave l WHERE l.isDeleted = false " +
-           "AND (:businessId IS NULL OR l.businessId = :businessId) " +
-           "AND (:userId IS NULL OR l.userId = :userId) " +
-           "AND (:leaveTypeEnum IS NULL OR l.leaveTypeEnum = :leaveTypeEnum) " +
-           "AND (:status IS NULL OR l.status = :status) " +
-           "AND (:startDate IS NULL OR l.startDate >= :startDate) " +
-           "AND (:endDate IS NULL OR l.endDate <= :endDate) " +
-           "AND (:search IS NULL OR :search = '' OR " +
-           "LOWER(l.reason) LIKE LOWER(CONCAT('%', :search, '%')))")
+            "AND (:businessId IS NULL OR l.businessId = :businessId) " +
+            "AND (:userId IS NULL OR l.userId = :userId) " +
+            "AND (:leaveTypeEnum IS NULL OR l.leaveTypeEnum = :leaveTypeEnum) " +
+            "AND (:status IS NULL OR l.status IN :status) " +
+            "AND (:startDate IS NULL OR l.startDate >= :startDate) " +
+            "AND (:endDate IS NULL OR l.endDate <= :endDate) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "LOWER(l.reason) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Leave> findWithFilters(
-        @Param("businessId") UUID businessId,
-        @Param("userId") UUID userId,
-        @Param("leaveTypeEnum") String leaveTypeEnum,
-        @Param("status") LeaveStatusEnum status,
-        @Param("startDate") LocalDate startDate,
-        @Param("endDate") LocalDate endDate,
-        @Param("search") String search,
-        Pageable pageable
+            @Param("businessId") UUID businessId,
+            @Param("userId") UUID userId,
+            @Param("leaveTypeEnum") String leaveTypeEnum,
+            @Param("status") List<LeaveStatusEnum> status,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("search") String search,
+            Pageable pageable
     );
 }

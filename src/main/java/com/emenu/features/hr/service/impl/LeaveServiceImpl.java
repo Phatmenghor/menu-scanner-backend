@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -73,11 +74,15 @@ public class LeaveServiceImpl implements LeaveService {
                 filter.getSortDirection()
         );
 
+        // Convert empty lists to null to skip filtering
+        List<LeaveStatusEnum> leaveStatusEnums = (filter.getStatuses() != null && !filter.getStatuses().isEmpty())
+                ? filter.getStatuses() : null;
+
         Page<Leave> page = repository.findWithFilters(
                 filter.getBusinessId(),
                 filter.getUserId(),
                 filter.getLeaveTypeEnum(),
-                filter.getStatus(),
+                leaveStatusEnums,
                 filter.getStartDate(),
                 filter.getEndDate(),
                 filter.getSearch(),
