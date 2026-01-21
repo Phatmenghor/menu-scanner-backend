@@ -23,6 +23,6 @@ public class LeaveCreateRequest {
     @NotNull(message = "End date required")
     private LocalDate endDate;
 
-    @NotBlank(message = "Reason required")
+    @NotNull(message = "Reason required")
     private String reason;
 }
