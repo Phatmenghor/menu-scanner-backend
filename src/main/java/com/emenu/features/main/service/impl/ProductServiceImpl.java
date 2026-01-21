@@ -21,11 +21,11 @@ import com.emenu.features.main.models.ProductSize;
 import com.emenu.features.main.repository.ProductImageRepository;
 import com.emenu.features.main.repository.ProductRepository;
 import com.emenu.features.main.repository.ProductSizeRepository;
-import com.emenu.features.order.utils.CartQueryHelper;
 import com.emenu.features.main.service.ProductService;
 import com.emenu.features.main.specification.ProductSpecifications;
 import com.emenu.features.main.utils.ProductFavoriteQueryHelper;
 import com.emenu.features.main.utils.ProductUtils;
+import com.emenu.features.order.utils.CartQueryHelper;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
@@ -111,6 +111,60 @@ public class ProductServiceImpl implements ProductService {
         }
 
         return paginationMapper.toPaginationResponse(productPage, dtoList);
+    }
+
+    @Override
+    public List<ProductListDto> getAllDataProducts(ProductFilterDto filter) {
+        Optional<User> currentUser = securityUtils.getCurrentUserOptional();
+
+        if (currentUser.isPresent() && currentUser.get().isBusinessUser() && filter.getBusinessId() == null) {
+            filter.setBusinessId(currentUser.get().getBusinessId());
+        }
+
+        Specification<Product> spec = ProductSpecifications.withFilter(filter);
+
+        List<Product> products = productRepository.findAll(
+                spec,
+                PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection())
+        );
+
+        List<ProductListDto> dtoList = productMapper.toListDtos(products);
+
+        if (products.isEmpty()) {
+            return dtoList;
+        }
+
+        if (currentUser.isPresent()) {
+            List<UUID> productIds = products.stream()
+                    .map(Product::getId)
+                    .toList();
+
+            // Get favorite products
+            List<UUID> favoriteIds = favoriteQueryHelper.getFavoriteProductIds(
+                    currentUser.get().getId(),
+                    productIds
+            );
+            Set<UUID> favoriteSet = new HashSet<>(favoriteIds);
+
+            // Get cart quantities for products
+            Map<UUID, Integer> cartQuantities = cartQueryHelper.getProductQuantitiesInCart(
+                    currentUser.get().getId(),
+                    filter.getBusinessId(),
+                    productIds
+            );
+
+            dtoList.forEach(dto -> {
+                dto.setIsFavorited(favoriteSet.contains(dto.getId()));
+                dto.setQuantityInCart(cartQuantities.getOrDefault(dto.getId(), 0));
+            });
+        } else {
+            dtoList.forEach(dto -> {
+                dto.setIsFavorited(false);
+                dto.setQuantityInCart(0);
+            });
+        }
+
+        return dtoList;
     }
 
 

@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -23,16 +24,28 @@ public class PublicProductController {
     private final ProductService productService;
 
     @PostMapping("/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> searchPublicProducts(
+    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getAllPublicProducts(
             @Valid @RequestBody ProductFilterDto filter) {
         
-        log.info("Public search - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
-        
+        log.info("Public get all - Page: {}, Size: {}", filter.getPageNo(), filter.getPageSize());
         PaginationResponse<ProductListDto> products = productService.getAllProducts(filter);
         
         return ResponseEntity.ok(ApiResponse.success(
             String.format("Found %d products", products.getTotalElements()),
             products
+        ));
+    }
+
+    @PostMapping("/all-data")
+    public ResponseEntity<ApiResponse<List<ProductListDto>>> getAllDataPublicProducts(
+            @Valid @RequestBody ProductFilterDto filter) {
+
+        log.info("Public get all data is fetching");
+        List<ProductListDto> products = productService.getAllDataProducts(filter);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "All products retrieved successfully",
+                products
         ));
     }
 

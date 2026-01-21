@@ -4,7 +4,6 @@ import com.emenu.features.main.dto.filter.CategoryAllFilterRequest;
 import com.emenu.features.main.dto.filter.CategoryFilterRequest;
 import com.emenu.features.main.dto.response.CategoryResponse;
 import com.emenu.features.main.service.CategoryService;
-import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
@@ -24,7 +23,6 @@ import java.util.List;
 @Slf4j
 public class PublicCategoryController {
     private final CategoryService categoryService;
-    private final SecurityUtils securityUtils;
 
     /**
      * Get all categories with filtering (uses current user's business from token)

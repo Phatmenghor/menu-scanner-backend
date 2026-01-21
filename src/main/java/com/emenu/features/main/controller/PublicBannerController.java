@@ -23,7 +23,7 @@ public class PublicBannerController {
     private final BannerService bannerService;
 
     /**
-     * Get all banners with filtering
+     * Get all public banners with filtering
      */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<List<BannerResponse>>> getMyBusinessAllBanners(@Valid @RequestBody BannerAllFilterRequest filter) {

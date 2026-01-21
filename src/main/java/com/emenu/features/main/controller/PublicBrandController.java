@@ -1,10 +1,9 @@
 package com.emenu.features.main.controller;
 
-import com.emenu.features.main.dto.filter.BrandFilterRequest;
 import com.emenu.features.main.dto.filter.BrandAllFilterRequest;
+import com.emenu.features.main.dto.filter.BrandFilterRequest;
 import com.emenu.features.main.dto.response.BrandResponse;
 import com.emenu.features.main.service.BrandService;
-import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.validation.Valid;
@@ -24,7 +23,6 @@ import java.util.List;
 @Slf4j
 public class PublicBrandController {
     private final BrandService brandService;
-    private final SecurityUtils securityUtils;
 
     /**
      * Get my business brands
