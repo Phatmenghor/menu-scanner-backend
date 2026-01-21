@@ -63,7 +63,6 @@ public class LeaveController {
     }
 
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('BUSINESS_MANAGER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<LeaveResponse>> approve(
             @PathVariable UUID id,
             @Valid @RequestBody LeaveApprovalRequest request) {
