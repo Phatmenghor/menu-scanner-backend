@@ -252,6 +252,18 @@ public class CartServiceImpl implements CartService {
             return;
         }
 
+        // Collect unavailable items to delete from database
+        var unavailableItems = cart.getItems().stream()
+                .filter(item -> !isCartItemAvailable(item))
+                .toList();
+
+        if (!unavailableItems.isEmpty()) {
+            // Hard delete unavailable items from database
+            cartItemRepository.deleteAll(unavailableItems);
+            log.info("Deleted {} unavailable cart items from database for cart: {}",
+                    unavailableItems.size(), cart.getId());
+        }
+
         // Filter items to only include available ones for response
         cart.getItems().removeIf(item -> !isCartItemAvailable(item));
     }
