@@ -11,8 +11,20 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA Specification builder for CustomerAddress entity filtering.
+ * Provides dynamic query construction based on filter criteria including user ID, status,
+ * and comprehensive address field searching.
+ */
 public class CustomerAddressSpecification {
 
+    /**
+     * Builds a JPA Specification for filtering customer addresses based on the provided criteria.
+     * Supports filtering by user ID, status, and global search across address fields and user details.
+     *
+     * @param filter the filter criteria containing user ID, status, and search parameters
+     * @return a Specification for querying CustomerAddress entities
+     */
     public static Specification<CustomerAddress> buildSpecification(CustomerAddressFilterRequest filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();

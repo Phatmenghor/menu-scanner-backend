@@ -11,8 +11,20 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA Specification builder for Brand entity filtering.
+ * Provides dynamic query construction based on filter criteria including business ID, status,
+ * and global search across brand and business details.
+ */
 public class BrandSpecification {
 
+    /**
+     * Builds a JPA Specification for filtering brands based on the provided criteria.
+     * Supports filtering by business ID, status, and global search across brand name, description, and business name.
+     *
+     * @param filter the filter criteria containing business ID, status, and search parameters
+     * @return a Specification for querying Brand entities
+     */
     public static Specification<Brand> buildSpecification(BrandFilterBase filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();

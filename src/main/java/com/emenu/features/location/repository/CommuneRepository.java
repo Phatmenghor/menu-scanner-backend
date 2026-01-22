@@ -16,30 +16,51 @@ import java.util.UUID;
 @Repository
 public interface CommuneRepository extends JpaRepository<Commune, UUID> {
 
+    /**
+     * Checks if a non-deleted commune exists with the given commune code
+     */
     boolean existsByCommuneCodeAndIsDeletedFalse(String communeCode);
 
+    /**
+     * Finds a non-deleted commune by ID with district and province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"district", "district.province"})
     @Query("SELECT c FROM Commune c WHERE c.id = :id AND c.isDeleted = false")
     Optional<Commune> findByIdAndIsDeletedFalse(@Param("id") UUID id);
 
+    /**
+     * Finds a non-deleted commune by commune code with district and province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"district", "district.province"})
     @Query("SELECT c FROM Commune c WHERE c.communeCode = :code AND c.isDeleted = false")
     Optional<Commune> findByCommuneCodeAndIsDeletedFalse(@Param("code") String communeCode);
 
+    /**
+     * Finds a non-deleted commune by English name with district and province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"district", "district.province"})
     @Query("SELECT c FROM Commune c WHERE c.communeEn = :nameEn AND c.isDeleted = false")
     Optional<Commune> findByCommuneEnAndIsDeletedFalse(@Param("nameEn") String communeEn);
 
+    /**
+     * Finds a non-deleted commune by Khmer name with district and province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"district", "district.province"})
     @Query("SELECT c FROM Commune c WHERE c.communeKh = :nameKh AND c.isDeleted = false")
     Optional<Commune> findByCommuneKhAndIsDeletedFalse(@Param("nameKh") String communeKh);
 
+    /**
+     * Finds all non-deleted communes by district code with district and province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"district", "district.province"})
     @Query("SELECT c FROM Commune c " +
             "WHERE c.districtCode = :districtCode AND c.isDeleted = false " +
             "ORDER BY c.communeCode")
     List<Commune> findAllByDistrictCodeAndIsDeletedFalse(@Param("districtCode") String districtCode);
 
+    /**
+     * Searches communes with filters for district, province, and text search across multiple fields
+     */
     @EntityGraph(attributePaths = {"district", "district.province"})
     @Query("SELECT c FROM Commune c " +
             "JOIN c.district d " +

@@ -24,6 +24,9 @@ public class CommuneController {
 
     private final CommuneService communeService;
 
+    /**
+     * Retrieves all communes with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<CommuneResponse>>> getAllCommunes(
             @Valid @RequestBody CommuneFilterRequest request) {
@@ -32,6 +35,9 @@ public class CommuneController {
         return ResponseEntity.ok(ApiResponse.success("Communes retrieved", response));
     }
 
+    /**
+     * Retrieves a commune by its ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CommuneResponse>> getCommuneById(@PathVariable UUID id) {
         log.info("Get commune by id: {}", id);
@@ -39,6 +45,9 @@ public class CommuneController {
         return ResponseEntity.ok(ApiResponse.success("Commune retrieved", response));
     }
 
+    /**
+     * Retrieves a commune by its code
+     */
     @GetMapping("/code/{code}")
     public ResponseEntity<ApiResponse<CommuneResponse>> getCommuneByCode(@PathVariable String code) {
         log.info("Get commune by code: {}", code);
@@ -46,6 +55,9 @@ public class CommuneController {
         return ResponseEntity.ok(ApiResponse.success("Commune retrieved", response));
     }
 
+    /**
+     * Retrieves a commune by its English name
+     */
     @GetMapping("/name-en/{nameEn}")
     public ResponseEntity<ApiResponse<CommuneResponse>> getCommuneByNameEn(@PathVariable String nameEn) {
         log.info("Get commune by EN name: {}", nameEn);
@@ -53,6 +65,9 @@ public class CommuneController {
         return ResponseEntity.ok(ApiResponse.success("Commune retrieved", response));
     }
 
+    /**
+     * Retrieves a commune by its Khmer name
+     */
     @GetMapping("/name-kh/{nameKh}")
     public ResponseEntity<ApiResponse<CommuneResponse>> getCommuneByNameKh(@PathVariable String nameKh) {
         log.info("Get commune by KH name: {}", nameKh);
@@ -60,6 +75,9 @@ public class CommuneController {
         return ResponseEntity.ok(ApiResponse.success("Commune retrieved", response));
     }
 
+    /**
+     * Creates a new commune
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<CommuneResponse>> createCommune(
             @Valid @RequestBody CommuneRequest request) {
@@ -69,6 +87,9 @@ public class CommuneController {
                 .body(ApiResponse.success("Commune created", response));
     }
 
+    /**
+     * Updates an existing commune
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CommuneResponse>> updateCommune(
             @PathVariable UUID id,
@@ -78,6 +99,9 @@ public class CommuneController {
         return ResponseEntity.ok(ApiResponse.success("Commune updated", response));
     }
 
+    /**
+     * Deletes a commune by its ID
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteCommune(@PathVariable UUID id) {
         log.info("Delete commune: {}", id);

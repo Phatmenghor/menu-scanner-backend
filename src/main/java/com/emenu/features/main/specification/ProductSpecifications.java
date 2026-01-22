@@ -9,8 +9,20 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA Specification builder for Product entity filtering.
+ * Provides dynamic query construction based on comprehensive filter criteria including business ID,
+ * category, brand, price range, promotion status, and global search.
+ */
 public class ProductSpecifications {
 
+    /**
+     * Builds a JPA Specification for filtering products based on the provided criteria.
+     * Supports filtering by business ID, status, category, brand, price range, promotion status, and product name search.
+     *
+     * @param filter the filter criteria containing various product filtering parameters
+     * @return a Specification for querying Product entities
+     */
     public static Specification<Product> withFilter(ProductFilterDto filter) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -53,6 +65,15 @@ public class ProductSpecifications {
         };
     }
 
+    /**
+     * Adds promotion filtering predicate to the query based on whether products should have active promotions.
+     * Validates promotion existence, values, and date ranges to ensure promotions are currently active.
+     *
+     * @param root the product entity root
+     * @param cb the criteria builder
+     * @param predicates the list of predicates to add the promotion filter to
+     * @param hasPromotion true to filter products with active promotions, false to filter products without promotions
+     */
     private static void addPromotionPredicate(Root<Product> root, CriteriaBuilder cb,
                                               List<Predicate> predicates, Boolean hasPromotion) {
         if (hasPromotion) {

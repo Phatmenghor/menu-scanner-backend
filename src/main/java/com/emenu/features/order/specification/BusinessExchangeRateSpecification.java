@@ -11,8 +11,20 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA Specification builder for BusinessExchangeRate entity filtering.
+ * Provides dynamic query construction for business-specific exchange rates with support for
+ * filtering by business ID, active status, and global search across business and rate details.
+ */
 public class BusinessExchangeRateSpecification {
 
+    /**
+     * Builds a JPA Specification for filtering business exchange rates based on the provided criteria.
+     * Supports filtering by business ID, active status, and global search across business name and notes.
+     *
+     * @param filter the filter criteria containing business ID, active status, and search parameters
+     * @return a Specification for querying BusinessExchangeRate entities
+     */
     public static Specification<BusinessExchangeRate> buildSpecification(BusinessExchangeRateFilterRequest filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -49,7 +61,13 @@ public class BusinessExchangeRateSpecification {
         };
     }
 
-    // Common specifications for quick queries
+    /**
+     * Creates a Specification to filter exchange rates by business ID.
+     * Only returns non-deleted rates for the specified business.
+     *
+     * @param businessId the UUID of the business to filter by
+     * @return a Specification for querying BusinessExchangeRate entities by business
+     */
     public static Specification<BusinessExchangeRate> byBusiness(java.util.UUID businessId) {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
@@ -58,6 +76,12 @@ public class BusinessExchangeRateSpecification {
             );
     }
 
+    /**
+     * Creates a Specification to filter for active exchange rates only.
+     * Returns non-deleted rates that are marked as active.
+     *
+     * @return a Specification for querying active BusinessExchangeRate entities
+     */
     public static Specification<BusinessExchangeRate> activeRates() {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
@@ -66,6 +90,12 @@ public class BusinessExchangeRateSpecification {
             );
     }
 
+    /**
+     * Creates a Specification to filter exchange rates that support multiple currencies.
+     * Returns non-deleted rates that have at least one valid currency conversion rate (CNY, THB, or VND).
+     *
+     * @return a Specification for querying BusinessExchangeRate entities with multiple currencies
+     */
     public static Specification<BusinessExchangeRate> withMultipleCurrencies() {
         return (root, query, criteriaBuilder) -> {
             Predicate hasCny = criteriaBuilder.and(

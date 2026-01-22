@@ -13,7 +13,10 @@ import java.util.UUID;
 
 @Repository
 public interface CartRepository extends JpaRepository<Cart, UUID>, JpaSpecificationExecutor<Cart> {
-    
+
+    /**
+     * Finds a non-deleted cart by user ID and business ID with items, products, sizes, and business eagerly fetched
+     */
     @Query("SELECT c FROM Cart c " +
            "LEFT JOIN FETCH c.items ci " +
            "LEFT JOIN FETCH ci.product p " +
@@ -21,9 +24,15 @@ public interface CartRepository extends JpaRepository<Cart, UUID>, JpaSpecificat
            "LEFT JOIN FETCH c.business " +
            "WHERE c.userId = :userId AND c.businessId = :businessId AND c.isDeleted = false")
     Optional<Cart> findByUserIdAndBusinessIdWithItems(@Param("userId") UUID userId, @Param("businessId") UUID businessId);
-    
+
+    /**
+     * Finds a non-deleted cart by user ID and business ID
+     */
     Optional<Cart> findByUserIdAndBusinessIdAndIsDeletedFalse(UUID userId, UUID businessId);
 
+    /**
+     * Counts total quantity of active products in a user's cart for a specific business
+     */
     @Query("SELECT COALESCE(SUM(ci.quantity), 0) FROM Cart c " +
             "JOIN c.items ci " +
             "JOIN ci.product p " +

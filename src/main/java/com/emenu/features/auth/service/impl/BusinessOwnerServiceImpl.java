@@ -60,6 +60,9 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
     private final BusinessOwnerMapper mapper;
     private final BusinessOwnerDetailEnricher enricher;
 
+    /**
+     * Creates a new business owner with associated business, owner user, subscription, and optional payment
+     */
     @Override
     public BusinessOwnerCreateResponse createBusinessOwner(BusinessOwnerCreateRequest request) {
         log.info("Creating business owner: {}", request.getBusinessName());
@@ -96,6 +99,9 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         return response;
     }
 
+    /**
+     * Retrieves all business owners with filtering and pagination support
+     */
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<BusinessOwnerDetailResponse> getAllBusinessOwners(BusinessOwnerFilterRequest filter) {
@@ -159,6 +165,9 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
                 .build();
     }
 
+    /**
+     * Retrieves detailed information for a specific business owner
+     */
     @Override
     @Transactional(readOnly = true)
     public BusinessOwnerDetailResponse getBusinessOwnerDetail(UUID ownerId) {
@@ -170,6 +179,9 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         return buildEnrichedDetailResponse(owner);
     }
 
+    /**
+     * Renews the subscription for a business owner with optional plan change and payment
+     */
     @Override
     public BusinessOwnerDetailResponse renewSubscription(UUID ownerId, BusinessOwnerSubscriptionRenewRequest request) {
         log.info("Renewing subscription for business owner: {}", ownerId);
@@ -197,6 +209,9 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         return buildEnrichedDetailResponse(owner);
     }
 
+    /**
+     * Changes the subscription plan for a business owner
+     */
     @Override
     public BusinessOwnerDetailResponse changePlan(UUID ownerId, BusinessOwnerChangePlanRequest request) {
         log.info("Changing plan for business owner: {}", ownerId);
@@ -224,6 +239,9 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         return buildEnrichedDetailResponse(owner);
     }
 
+    /**
+     * Cancels the subscription for a business owner with optional refund
+     */
     @Override
     public BusinessOwnerDetailResponse cancelSubscription(UUID ownerId, BusinessOwnerSubscriptionCancelRequest request) {
         log.info("Cancelling subscription for business owner: {}", ownerId);
@@ -259,6 +277,9 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         return buildEnrichedDetailResponse(owner);
     }
 
+    /**
+     * Soft deletes a business owner and all associated data
+     */
     @Override
     public BusinessOwnerDetailResponse deleteBusinessOwner(UUID ownerId) {
         log.info("Deleting business owner: {}", ownerId);

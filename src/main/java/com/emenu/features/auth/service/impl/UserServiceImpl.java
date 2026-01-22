@@ -46,6 +46,9 @@ public class UserServiceImpl implements UserService {
     private final SecurityUtils securityUtils;
     private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
+    /**
+     * Creates a new user with roles and business association
+     */
     @Override
     public UserResponse createUser(UserCreateRequest request) {
         log.info("Creating user: {}", request.getUserIdentifier());
@@ -75,6 +78,9 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(savedUser);
     }
 
+    /**
+     * Retrieves all users with filtering and pagination support
+     */
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<UserResponse> getAllUsers(UserFilterRequest request) {
@@ -107,6 +113,9 @@ public class UserServiceImpl implements UserService {
         return userMapper.toPaginationResponse(userPage, paginationMapper);
     }
 
+    /**
+     * Retrieves a user by ID
+     */
     @Override
     @Transactional(readOnly = true)
     public UserResponse getUserById(UUID userId) {
@@ -115,6 +124,9 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(user);
     }
 
+    /**
+     * Updates an existing user
+     */
     @Override
     public UserResponse updateUser(UUID userId, UserUpdateRequest request) {
         log.info("Updating user: {}", userId);
@@ -145,6 +157,9 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(updatedUser);
     }
 
+    /**
+     * Soft deletes a user
+     */
     @Override
     public UserResponse deleteUser(UUID userId) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
@@ -162,6 +177,9 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(user);
     }
 
+    /**
+     * Retrieves the currently authenticated user's information
+     */
     @Override
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser() {
@@ -169,6 +187,9 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(currentUser);
     }
 
+    /**
+     * Updates the currently authenticated user's information
+     */
     @Override
     public UserResponse updateCurrentUser(UserUpdateRequest request) {
         User currentUser = securityUtils.getCurrentUser();

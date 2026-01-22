@@ -26,6 +26,9 @@ public class WorkScheduleController {
 
     private final WorkScheduleService service;
 
+    /**
+     * Creates a new work schedule
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<WorkScheduleResponse>> create(
             @Valid @RequestBody WorkScheduleCreateRequest request) {
@@ -35,6 +38,9 @@ public class WorkScheduleController {
                 .body(ApiResponse.success("Work schedule created", response));
     }
 
+    /**
+     * Retrieves a work schedule by its ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<WorkScheduleResponse>> getById(@PathVariable UUID id) {
         log.info("Get work schedule: {}", id);
@@ -42,6 +48,9 @@ public class WorkScheduleController {
         return ResponseEntity.ok(ApiResponse.success("Work schedule retrieved", response));
     }
 
+    /**
+     * Retrieves all work schedules with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<WorkScheduleResponse>>> getAll(
             @Valid @RequestBody WorkScheduleFilterRequest filter) {
@@ -50,6 +59,9 @@ public class WorkScheduleController {
         return ResponseEntity.ok(ApiResponse.success("Work schedules retrieved", response));
     }
 
+    /**
+     * Retrieves all work schedules for a specific user
+     */
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<List<WorkScheduleResponse>>> getByUserId(
             @PathVariable UUID userId) {
@@ -58,6 +70,9 @@ public class WorkScheduleController {
         return ResponseEntity.ok(ApiResponse.success("Work schedules retrieved", responses));
     }
 
+    /**
+     * Updates a work schedule
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<WorkScheduleResponse>> update(
             @PathVariable UUID id,
@@ -67,6 +82,9 @@ public class WorkScheduleController {
         return ResponseEntity.ok(ApiResponse.success("Work schedule updated", response));
     }
 
+    /**
+     * Deletes a work schedule
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<WorkScheduleResponse>> delete(@PathVariable UUID id) {
         log.info("Delete work schedule: {}", id);

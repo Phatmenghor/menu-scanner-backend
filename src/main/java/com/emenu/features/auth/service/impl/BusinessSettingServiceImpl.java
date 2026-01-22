@@ -30,6 +30,9 @@ public class BusinessSettingServiceImpl implements BusinessSettingService {
     private final BusinessSettingMapper businessSettingMapper;
     private final SecurityUtils securityUtils;
 
+    /**
+     * Creates a new business setting for the specified business
+     */
     @Override
     public BusinessSettingResponse createBusinessSetting(BusinessSettingCreateRequest request) {
         log.info("Creating business setting for business: {}", request.getBusinessId());
@@ -48,6 +51,9 @@ public class BusinessSettingServiceImpl implements BusinessSettingService {
         return businessSettingMapper.toResponse(savedSetting);
     }
 
+    /**
+     * Retrieves business settings for a specific business
+     */
     @Override
     @Transactional(readOnly = true)
     public BusinessSettingResponse getBusinessSettingByBusinessId(UUID businessId) {
@@ -56,6 +62,9 @@ public class BusinessSettingServiceImpl implements BusinessSettingService {
         return businessSettingMapper.toResponse(businessSetting);
     }
 
+    /**
+     * Updates business settings for a specific business
+     */
     @Override
     public BusinessSettingResponse updateBusinessSetting(UUID businessId, BusinessSettingUpdateRequest request) {
         log.info("Updating business setting for: {}", businessId);
@@ -70,6 +79,9 @@ public class BusinessSettingServiceImpl implements BusinessSettingService {
         return businessSettingMapper.toResponse(updatedSetting);
     }
 
+    /**
+     * Soft deletes business settings for a specific business
+     */
     @Override
     public void deleteBusinessSetting(UUID businessId) {
         BusinessSetting businessSetting = businessSettingRepository.findByBusinessIdAndIsDeletedFalse(businessId)
@@ -80,6 +92,9 @@ public class BusinessSettingServiceImpl implements BusinessSettingService {
         log.info("Business setting deleted for: {}", businessId);
     }
 
+    /**
+     * Retrieves business settings for the currently authenticated user's business
+     */
     @Override
     @Transactional(readOnly = true)
     public BusinessSettingResponse getCurrentBusinessSetting() {

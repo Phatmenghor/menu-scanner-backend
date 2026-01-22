@@ -14,11 +14,20 @@ import java.util.UUID;
 
 @Repository
 public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
-    
+
+    /**
+     * Finds a non-deleted attendance record by ID
+     */
     Optional<Attendance> findByIdAndIsDeletedFalse(UUID id);
-    
+
+    /**
+     * Finds a non-deleted attendance record by user ID and attendance date
+     */
     Optional<Attendance> findByUserIdAndAttendanceDateAndIsDeletedFalse(UUID userId, LocalDate date);
-    
+
+    /**
+     * Searches attendance records with filters for business, user, date range, and text search
+     */
     @Query("SELECT a FROM Attendance a WHERE a.isDeleted = false " +
            "AND (:businessId IS NULL OR a.businessId = :businessId) " +
            "AND (:userId IS NULL OR a.userId = :userId) " +

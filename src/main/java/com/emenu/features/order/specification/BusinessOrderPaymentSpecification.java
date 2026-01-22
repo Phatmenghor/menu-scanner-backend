@@ -12,8 +12,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * JPA Specification builder for BusinessOrderPayment entity filtering.
+ * Provides comprehensive query construction for order payments with support for filtering by
+ * business ID, payment status, payment method, customer details, order type, and date ranges.
+ */
 public class BusinessOrderPaymentSpecification {
 
+    /**
+     * Builds a JPA Specification for filtering business order payments based on the provided criteria.
+     * Supports filtering by business ID, payment statuses, payment methods, customer details, order types,
+     * date ranges, and global search across payment references, business names, order numbers, and customer information.
+     *
+     * @param filter the filter criteria containing various payment filtering parameters
+     * @return a Specification for querying BusinessOrderPayment entities
+     */
     public static Specification<BusinessOrderPayment> buildSpecification(BusinessOrderPaymentFilterRequest filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -111,7 +124,13 @@ public class BusinessOrderPaymentSpecification {
         };
     }
 
-    // Common specifications for quick queries
+    /**
+     * Creates a Specification to filter payments by business ID.
+     * Only returns non-deleted payments for the specified business.
+     *
+     * @param businessId the UUID of the business to filter by
+     * @return a Specification for querying BusinessOrderPayment entities by business
+     */
     public static Specification<BusinessOrderPayment> byBusiness(UUID businessId) {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
@@ -120,6 +139,12 @@ public class BusinessOrderPaymentSpecification {
             );
     }
 
+    /**
+     * Creates a Specification to filter for completed payments only.
+     * Returns non-deleted payments with a status of COMPLETED.
+     *
+     * @return a Specification for querying completed BusinessOrderPayment entities
+     */
     public static Specification<BusinessOrderPayment> completedPayments() {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
@@ -128,6 +153,12 @@ public class BusinessOrderPaymentSpecification {
             );
     }
 
+    /**
+     * Creates a Specification to filter for POS (Point of Sale) payments only.
+     * Returns non-deleted payments associated with orders marked as POS orders.
+     *
+     * @return a Specification for querying POS BusinessOrderPayment entities
+     */
     public static Specification<BusinessOrderPayment> posPayments() {
         return (root, query, criteriaBuilder) -> {
             Join<Object, Object> orderJoin = root.join("order", JoinType.LEFT);
@@ -138,6 +169,12 @@ public class BusinessOrderPaymentSpecification {
         };
     }
 
+    /**
+     * Creates a Specification to filter for guest payments only.
+     * Returns non-deleted payments associated with orders placed by guest users.
+     *
+     * @return a Specification for querying guest BusinessOrderPayment entities
+     */
     public static Specification<BusinessOrderPayment> guestPayments() {
         return (root, query, criteriaBuilder) -> {
             Join<Object, Object> orderJoin = root.join("order", JoinType.LEFT);

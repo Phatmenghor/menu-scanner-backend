@@ -18,12 +18,24 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
 
+    /**
+     * Finds a non-deleted user by user identifier
+     */
     Optional<User> findByUserIdentifierAndIsDeletedFalse(String userIdentifier);
 
+    /**
+     * Checks if a non-deleted user exists with the given user identifier
+     */
     boolean existsByUserIdentifierAndIsDeletedFalse(String userIdentifier);
 
+    /**
+     * Finds a non-deleted user by ID
+     */
     Optional<User> findByIdAndIsDeletedFalse(UUID id);
 
+    /**
+     * Searches users with filters for business, user types, account statuses, roles, and text search
+     */
     @Query("SELECT DISTINCT u FROM User u " +
             "LEFT JOIN u.roles r " +
             "WHERE u.isDeleted = false " +
@@ -45,24 +57,35 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             Pageable pageable
     );
 
+    /**
+     * Counts non-deleted users by business ID
+     */
     @Query("SELECT COUNT(u) FROM User u WHERE u.businessId = :businessId AND u.isDeleted = false")
     long countByBusinessId(@Param("businessId") UUID businessId);
 
-    // Find all users by business
+    /**
+     * Finds all non-deleted users by business ID
+     */
     @Query("SELECT u FROM User u WHERE u.businessId = :businessId AND u.isDeleted = false")
     List<User> findAllByBusinessIdAndIsDeletedFalse(@Param("businessId") UUID businessId);
 
-    // Find users by role
+    /**
+     * Finds non-deleted users by role
+     */
     @Query("SELECT DISTINCT u FROM User u " +
             "LEFT JOIN u.roles r " +
             "WHERE r.name = :role AND u.isDeleted = false")
     List<User> findByRoleAndIsDeletedFalse(@Param("role") RoleEnum role);
 
-    // Find all platform users (all roles except CUSTOMER and BUSINESS roles)
+    /**
+     * Finds all non-deleted platform users (all roles except CUSTOMER and BUSINESS roles)
+     */
     @Query("SELECT u FROM User u WHERE u.userType = 'PLATFORM_USER' AND u.isDeleted = false")
     List<User> findAllPlatformUsers();
 
-    // Find all active users (for ALL_USERS notifications)
+    /**
+     * Finds all active users (for ALL_USERS notifications)
+     */
     @Query("SELECT u FROM User u WHERE u.accountStatus = 'ACTIVE' AND u.isDeleted = false")
     List<User> findAllActiveUsers();
 

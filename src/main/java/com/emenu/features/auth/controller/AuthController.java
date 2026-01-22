@@ -23,6 +23,9 @@ public class AuthController {
 
     private final AuthService authService;
 
+    /**
+     * Authenticates a user with their credentials
+     */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
         log.info("Login request: {}", request.getUserIdentifier());
@@ -30,6 +33,9 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
+    /**
+     * Registers a new customer account
+     */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(@Valid @RequestBody RegisterRequest request) {
         log.info("Customer registration: {}", request.getUserIdentifier());

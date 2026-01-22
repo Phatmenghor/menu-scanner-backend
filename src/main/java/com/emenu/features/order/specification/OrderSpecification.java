@@ -12,8 +12,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * JPA Specification builder for Order entity filtering.
+ * Provides comprehensive query construction for orders with support for filtering by
+ * business ID, order status, payment details, order type, customer information, and date ranges.
+ */
 public class OrderSpecification {
 
+    /**
+     * Builds a JPA Specification for filtering orders based on the provided criteria.
+     * Supports filtering by business ID, multiple statuses, payment method, payment status, order types,
+     * customer phone, date ranges, and global search across order numbers, customer details, and business names.
+     *
+     * @param filter the filter criteria containing various order filtering parameters
+     * @return a Specification for querying Order entities
+     */
     public static Specification<Order> buildSpecification(OrderFilterRequest filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -114,7 +127,13 @@ public class OrderSpecification {
         };
     }
 
-    // Common specifications for quick queries
+    /**
+     * Creates a Specification to filter orders by business ID.
+     * Only returns non-deleted orders for the specified business.
+     *
+     * @param businessId the UUID of the business to filter by
+     * @return a Specification for querying Order entities by business
+     */
     public static Specification<Order> byBusiness(UUID businessId) {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
@@ -123,6 +142,12 @@ public class OrderSpecification {
             );
     }
 
+    /**
+     * Creates a Specification to filter for POS (Point of Sale) orders only.
+     * Returns non-deleted orders that are marked as POS orders.
+     *
+     * @return a Specification for querying POS Order entities
+     */
     public static Specification<Order> posOrders() {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
@@ -131,6 +156,12 @@ public class OrderSpecification {
             );
     }
 
+    /**
+     * Creates a Specification to filter for guest orders only.
+     * Returns non-deleted orders placed by guest users without authentication.
+     *
+     * @return a Specification for querying guest Order entities
+     */
     public static Specification<Order> guestOrders() {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
@@ -139,6 +170,12 @@ public class OrderSpecification {
             );
     }
 
+    /**
+     * Creates a Specification to filter for paid orders only.
+     * Returns non-deleted orders that have been fully paid.
+     *
+     * @return a Specification for querying paid Order entities
+     */
     public static Specification<Order> paidOrders() {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
@@ -147,6 +184,12 @@ public class OrderSpecification {
             );
     }
 
+    /**
+     * Creates a Specification to filter for unpaid orders only.
+     * Returns non-deleted orders that have not been paid yet.
+     *
+     * @return a Specification for querying unpaid Order entities
+     */
     public static Specification<Order> unpaidOrders() {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(

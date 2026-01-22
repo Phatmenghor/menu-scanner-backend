@@ -13,8 +13,21 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA Specification builder for DeliveryOption entity filtering.
+ * Provides dynamic query construction for delivery options with support for filtering by
+ * business ID, status, price range, and global search across delivery details.
+ */
 public class DeliveryOptionSpecification {
 
+    /**
+     * Builds a JPA Specification for filtering delivery options based on the provided criteria.
+     * Supports filtering by business ID, multiple statuses, price range, and global search across
+     * delivery option name, description, and business name.
+     *
+     * @param filter the filter criteria containing business ID, statuses, price range, and search parameters
+     * @return a Specification for querying DeliveryOption entities
+     */
     public static Specification<DeliveryOption> buildSpecification(DeliveryOptionFilterBase filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();

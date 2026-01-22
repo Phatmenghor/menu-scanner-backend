@@ -24,6 +24,9 @@ public class ProvinceController {
 
     private final ProvinceService provinceService;
 
+    /**
+     * Retrieves all provinces with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<ProvinceResponse>>> getAllProvinces(
             @Valid @RequestBody ProvinceFilterRequest request) {
@@ -32,6 +35,9 @@ public class ProvinceController {
         return ResponseEntity.ok(ApiResponse.success("Provinces retrieved", response));
     }
 
+    /**
+     * Retrieves a province by its ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProvinceResponse>> getProvinceById(@PathVariable UUID id) {
         log.info("Get province by id: {}", id);
@@ -39,6 +45,9 @@ public class ProvinceController {
         return ResponseEntity.ok(ApiResponse.success("Province retrieved", response));
     }
 
+    /**
+     * Retrieves a province by its code
+     */
     @GetMapping("/code/{code}")
     public ResponseEntity<ApiResponse<ProvinceResponse>> getProvinceByCode(@PathVariable String code) {
         log.info("Get province by code: {}", code);
@@ -46,6 +55,9 @@ public class ProvinceController {
         return ResponseEntity.ok(ApiResponse.success("Province retrieved", response));
     }
 
+    /**
+     * Retrieves a province by its English name
+     */
     @GetMapping("/name-en/{nameEn}")
     public ResponseEntity<ApiResponse<ProvinceResponse>> getProvinceByNameEn(@PathVariable String nameEn) {
         log.info("Get province by EN name: {}", nameEn);
@@ -53,6 +65,9 @@ public class ProvinceController {
         return ResponseEntity.ok(ApiResponse.success("Province retrieved", response));
     }
 
+    /**
+     * Retrieves a province by its Khmer name
+     */
     @GetMapping("/name-kh/{nameKh}")
     public ResponseEntity<ApiResponse<ProvinceResponse>> getProvinceByNameKh(@PathVariable String nameKh) {
         log.info("Get province by KH name: {}", nameKh);
@@ -60,6 +75,9 @@ public class ProvinceController {
         return ResponseEntity.ok(ApiResponse.success("Province retrieved", response));
     }
 
+    /**
+     * Creates a new province
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<ProvinceResponse>> createProvince(
             @Valid @RequestBody ProvinceRequest request) {
@@ -69,6 +87,9 @@ public class ProvinceController {
                 .body(ApiResponse.success("Province created", response));
     }
 
+    /**
+     * Updates an existing province
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProvinceResponse>> updateProvince(
             @PathVariable UUID id,
@@ -78,6 +99,9 @@ public class ProvinceController {
         return ResponseEntity.ok(ApiResponse.success("Province updated", response));
     }
 
+    /**
+     * Deletes a province by its ID
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteProvince(@PathVariable UUID id) {
         log.info("Delete province: {}", id);

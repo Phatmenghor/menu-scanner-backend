@@ -39,6 +39,9 @@ public class LeaveServiceImpl implements LeaveService {
     private final PaginationMapper paginationMapper;
     private final UserMapper userMapper;
 
+    /**
+     * Creates a new leave request for an employee
+     */
     @Override
     public LeaveResponse create(LeaveCreateRequest request, UUID userId, UUID businessId) {
         log.info("Creating leave request for user: {}", userId);
@@ -56,6 +59,9 @@ public class LeaveServiceImpl implements LeaveService {
         return enrichWithUserInfo(mapper.toResponse(savedLeave), savedLeave);
     }
 
+    /**
+     * Retrieves a leave request by ID
+     */
     @Override
     @Transactional(readOnly = true)
     public LeaveResponse getById(UUID id) {
@@ -64,6 +70,9 @@ public class LeaveServiceImpl implements LeaveService {
         return enrichWithUserInfo(mapper.toResponse(leave), leave);
     }
 
+    /**
+     * Retrieves all leave requests with filtering and pagination support
+     */
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<LeaveResponse> getAll(LeaveFilterRequest filter) {
@@ -95,6 +104,9 @@ public class LeaveServiceImpl implements LeaveService {
                         .toList());
     }
 
+    /**
+     * Updates a pending leave request
+     */
     @Override
     public LeaveResponse update(UUID id, LeaveUpdateRequest request) {
         Leave leave = repository.findByIdAndIsDeletedFalse(id)
@@ -115,6 +127,9 @@ public class LeaveServiceImpl implements LeaveService {
         return enrichWithUserInfo(mapper.toResponse(updatedLeave), updatedLeave);
     }
 
+    /**
+     * Approves or rejects a leave request
+     */
     @Override
     public LeaveResponse approve(UUID id, LeaveApprovalRequest request, UUID actionBy) {
         Leave leave = repository.findByIdAndIsDeletedFalse(id)
@@ -134,6 +149,9 @@ public class LeaveServiceImpl implements LeaveService {
         return enrichWithUserInfo(mapper.toResponse(processedLeave), processedLeave);
     }
 
+    /**
+     * Soft deletes a leave request
+     */
     @Override
     public LeaveResponse delete(UUID id) {
         Leave leave = repository.findByIdAndIsDeletedFalse(id)

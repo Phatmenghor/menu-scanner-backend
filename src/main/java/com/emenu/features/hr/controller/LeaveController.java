@@ -29,6 +29,9 @@ public class LeaveController {
     private final LeaveService service;
     private final SecurityUtils securityUtils;
 
+    /**
+     * Creates a new leave request
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<LeaveResponse>> create(@Valid @RequestBody LeaveCreateRequest request) {
         log.info("Creating leave request");
@@ -38,6 +41,9 @@ public class LeaveController {
                 .body(ApiResponse.success("Leave request created", response));
     }
 
+    /**
+     * Retrieves a leave request by its ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<LeaveResponse>> getById(@PathVariable UUID id) {
         log.info("Get leave request: {}", id);
@@ -45,6 +51,9 @@ public class LeaveController {
         return ResponseEntity.ok(ApiResponse.success("Leave request retrieved", response));
     }
 
+    /**
+     * Retrieves all leave requests with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<LeaveResponse>>> getAll(
             @Valid @RequestBody LeaveFilterRequest filter) {
@@ -53,6 +62,9 @@ public class LeaveController {
         return ResponseEntity.ok(ApiResponse.success("Leave requests retrieved", response));
     }
 
+    /**
+     * Updates a leave request
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<LeaveResponse>> update(
             @PathVariable UUID id,
@@ -62,6 +74,9 @@ public class LeaveController {
         return ResponseEntity.ok(ApiResponse.success("Leave request updated", response));
     }
 
+    /**
+     * Approves or rejects a leave request
+     */
     @PostMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<LeaveResponse>> approve(
             @PathVariable UUID id,
@@ -72,6 +87,9 @@ public class LeaveController {
         return ResponseEntity.ok(ApiResponse.success("Leave request processed", response));
     }
 
+    /**
+     * Deletes a leave request
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<LeaveResponse>> delete(@PathVariable UUID id) {
         log.info("Delete leave request: {}", id);

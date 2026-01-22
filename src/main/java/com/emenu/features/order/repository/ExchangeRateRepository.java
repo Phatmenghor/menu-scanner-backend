@@ -11,15 +11,21 @@ import java.util.UUID;
 
 @Repository
 public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, UUID>, JpaSpecificationExecutor<ExchangeRate> {
-    
-    // Basic CRUD operations
+
+    /**
+     * Finds a non-deleted exchange rate by ID
+     */
     Optional<ExchangeRate> findByIdAndIsDeletedFalse(UUID id);
-    
-    // Get current active rate (only one should be active at a time)
+
+    /**
+     * Finds the current active exchange rate (only one should be active at a time)
+     */
     @Query("SELECT er FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
     Optional<ExchangeRate> findActiveRate();
-    
-    // Count active rates
+
+    /**
+     * Counts active exchange rates
+     */
     @Query("SELECT COUNT(er) FROM ExchangeRate er WHERE er.isActive = true AND er.isDeleted = false")
     long countActiveRates();
 }

@@ -32,6 +32,9 @@ public class BusinessServiceImpl implements BusinessService {
     private final BusinessMapper businessMapper;
     private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
+    /**
+     * Creates a new business
+     */
     @Override
     public BusinessResponse createBusiness(BusinessCreateRequest request) {
         log.info("Creating business: {}", request.getName());
@@ -47,6 +50,9 @@ public class BusinessServiceImpl implements BusinessService {
         return businessMapper.toResponse(savedBusiness);
     }
 
+    /**
+     * Retrieves all businesses with filtering and pagination support
+     */
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<BusinessResponse> getAllBusinesses(BusinessFilterRequest request) {
@@ -72,6 +78,9 @@ public class BusinessServiceImpl implements BusinessService {
         return businessMapper.toPaginationResponse(businessPage, paginationMapper);
     }
 
+    /**
+     * Retrieves a business by ID
+     */
     @Override
     @Transactional(readOnly = true)
     public BusinessResponse getBusinessById(UUID businessId) {
@@ -80,6 +89,9 @@ public class BusinessServiceImpl implements BusinessService {
         return businessMapper.toResponse(business);
     }
 
+    /**
+     * Updates an existing business
+     */
     @Override
     public BusinessResponse updateBusiness(UUID businessId, BusinessCreateRequest request) {
         log.info("Updating business: {}", businessId);
@@ -99,6 +111,9 @@ public class BusinessServiceImpl implements BusinessService {
         return businessMapper.toResponse(updatedBusiness);
     }
 
+    /**
+     * Soft deletes a business
+     */
     @Override
     public void deleteBusiness(UUID businessId) {
         Business business = businessRepository.findByIdAndIsDeletedFalse(businessId)

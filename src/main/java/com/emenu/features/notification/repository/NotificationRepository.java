@@ -22,26 +22,54 @@ import java.util.UUID;
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
     // ===== INDIVIDUAL QUERIES =====
+
+    /**
+     * Finds a non-deleted notification by ID and user ID
+     */
     Optional<Notification> findByIdAndUserIdAndIsDeletedFalse(UUID id, UUID userId);
+
+    /**
+     * Finds a non-deleted notification by ID
+     */
     Optional<Notification> findByIdAndIsDeletedFalse(UUID id);
 
+    /**
+     * Finds all non-deleted notifications for a user, ordered by creation date descending
+     */
     @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.isDeleted = false ORDER BY n.createdAt DESC")
     Page<Notification> findByUserId(@Param("userId") UUID userId, Pageable pageable);
 
+    /**
+     * Finds all unread non-deleted notifications for a user, ordered by creation date descending
+     */
     @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.isRead = false AND n.isDeleted = false ORDER BY n.createdAt DESC")
     Page<Notification> findUnreadByUserId(@Param("userId") UUID userId, Pageable pageable);
 
+    /**
+     * Counts unread non-deleted notifications for a user
+     */
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.isRead = false AND n.isDeleted = false")
     long countUnreadByUserId(@Param("userId") UUID userId);
 
     // ===== SEEN STATUS QUERIES (For Badge Count) =====
+
+    /**
+     * Counts unseen non-deleted notifications for a user (for badge count)
+     */
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.isSeen = false AND n.isDeleted = false")
     long countUnseenByUserId(@Param("userId") UUID userId);
 
+    /**
+     * Finds all unseen non-deleted notifications for a user, ordered by creation date descending
+     */
     @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.isSeen = false AND n.isDeleted = false ORDER BY n.createdAt DESC")
     Page<Notification> findUnseenByUserId(@Param("userId") UUID userId, Pageable pageable);
 
     // ===== COMPREHENSIVE FILTER QUERY =====
+
+    /**
+     * Searches notifications with filters for user, business, message type, priority, read status, recipient type, and text search
+     */
     @Query("SELECT n FROM Notification n WHERE n.isDeleted = false " +
            "AND (:userId IS NULL OR n.userId = :userId) " +
            "AND (:businessId IS NULL OR n.businessId = :businessId) " +
@@ -64,9 +92,16 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     );
 
     // ===== GROUP QUERIES =====
+
+    /**
+     * Finds all non-deleted notifications in a group, ordered by creation date descending
+     */
     @Query("SELECT n FROM Notification n WHERE n.groupId = :groupId AND n.isDeleted = false ORDER BY n.createdAt DESC")
     List<Notification> findByGroupId(@Param("groupId") UUID groupId);
 
+    /**
+     * Finds non-deleted notifications by business ID and recipient type, ordered by creation date descending
+     */
     @Query("SELECT n FROM Notification n WHERE n.businessId = :businessId AND n.recipientType = :recipientType AND n.isDeleted = false ORDER BY n.createdAt DESC")
     Page<Notification> findByBusinessIdAndRecipientTypeAndIsDeletedFalse(
         @Param("businessId") UUID businessId,
@@ -74,6 +109,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         Pageable pageable
     );
 
+    /**
+     * Finds non-deleted notifications by recipient type, ordered by creation date descending
+     */
     @Query("SELECT n FROM Notification n WHERE n.recipientType = :recipientType AND n.isDeleted = false ORDER BY n.createdAt DESC")
     Page<Notification> findByRecipientTypeAndIsDeletedFalse(
         @Param("recipientType") NotificationRecipientType recipientType,
@@ -81,6 +119,10 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     );
 
     // ===== SPECIFIC FILTER QUERIES =====
+
+    /**
+     * Finds non-deleted notifications by user ID and message type, ordered by creation date descending
+     */
     @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.messageType = :type AND n.isDeleted = false ORDER BY n.createdAt DESC")
     Page<Notification> findByUserIdAndType(
         @Param("userId") UUID userId,
@@ -88,6 +130,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         Pageable pageable
     );
 
+    /**
+     * Finds non-deleted notifications by user ID and priority, ordered by creation date descending
+     */
     @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.priority = :priority AND n.isDeleted = false ORDER BY n.createdAt DESC")
     Page<Notification> findByUserIdAndPriority(
         @Param("userId") UUID userId,
@@ -96,6 +141,10 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     );
 
     // ===== UPDATE OPERATIONS =====
+
+    /**
+     * Marks all unread notifications for a user as read
+     */
     @Modifying
     @Query("UPDATE Notification n SET n.isRead = true, n.readAt = :readAt, n.status = :status WHERE n.userId = :userId AND n.isRead = false")
     int markAllAsReadForUser(
@@ -104,6 +153,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         @Param("status") MessageStatus status
     );
 
+    /**
+     * Marks all unseen notifications for a user as seen
+     */
     @Modifying
     @Query("UPDATE Notification n SET n.isSeen = true, n.seenAt = :seenAt WHERE n.userId = :userId AND n.isSeen = false")
     int markAllAsSeenForUser(
@@ -111,6 +163,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
         @Param("seenAt") LocalDateTime seenAt
     );
 
+    /**
+     * Marks all unread notifications in a group as read
+     */
     @Modifying
     @Query("UPDATE Notification n SET n.isRead = true, n.readAt = :readAt, n.status = :status WHERE n.groupId = :groupId AND n.isRead = false")
     int markGroupAsRead(
@@ -120,28 +175,48 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     );
 
     // ===== DELETE OPERATIONS =====
+
+    /**
+     * Soft deletes old read notifications that were read before the specified date
+     */
     @Modifying
     @Query("UPDATE Notification n SET n.isDeleted = true WHERE n.isRead = true AND n.readAt < :beforeDate")
     int softDeleteOldReadNotifications(@Param("beforeDate") LocalDateTime beforeDate);
 
+    /**
+     * Soft deletes all notifications in a group
+     */
     @Modifying
     @Query("UPDATE Notification n SET n.isDeleted = true WHERE n.groupId = :groupId")
     int softDeleteGroupNotifications(@Param("groupId") UUID groupId);
-    
+
+    /**
+     * Soft deletes all non-deleted notifications for a user
+     */
     @Modifying
     @Query("UPDATE Notification n SET n.isDeleted = true WHERE n.userId = :userId AND n.isDeleted = false")
     int softDeleteAllUserNotifications(@Param("userId") UUID userId);
 
     // ===== STATISTICS =====
+
+    /**
+     * Counts unread non-deleted notifications for a user by priority
+     */
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.priority = :priority AND n.isRead = false AND n.isDeleted = false")
     long countUnreadByUserIdAndPriority(
         @Param("userId") UUID userId,
         @Param("priority") NotificationPriority priority
     );
 
+    /**
+     * Counts non-deleted group notifications for a user
+     */
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.groupId IS NOT NULL AND n.isDeleted = false")
     long countGroupNotificationsByUserId(@Param("userId") UUID userId);
 
+    /**
+     * Counts unread non-deleted notifications for a business
+     */
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.businessId = :businessId AND n.isRead = false AND n.isDeleted = false")
     long countUnreadByBusinessId(@Param("businessId") UUID businessId);
 }

@@ -14,17 +14,32 @@ import java.util.UUID;
 
 @Repository
 public interface CustomerAddressRepository extends JpaRepository<CustomerAddress, UUID>, JpaSpecificationExecutor<CustomerAddress> {
-    
+
+    /**
+     * Finds all non-deleted addresses for a user, ordered by default status and creation date
+     */
     List<CustomerAddress> findByUserIdAndIsDeletedFalseOrderByIsDefaultDescCreatedAtDesc(UUID userId);
-    
+
+    /**
+     * Finds the default non-deleted address for a user
+     */
     Optional<CustomerAddress> findByUserIdAndIsDefaultTrueAndIsDeletedFalse(UUID userId);
-    
+
+    /**
+     * Clears the default flag for all non-deleted addresses belonging to a user
+     */
     @Modifying
     @Query("UPDATE CustomerAddress ca SET ca.isDefault = false WHERE ca.userId = :userId AND ca.isDeleted = false")
     void clearDefaultForUser(@Param("userId") UUID userId);
-    
+
+    /**
+     * Finds a non-deleted customer address by ID
+     */
     Optional<CustomerAddress> findByIdAndIsDeletedFalse(UUID id);
-    
+
+    /**
+     * Finds a non-deleted customer address by ID with user details eagerly fetched
+     */
     @Query("SELECT ca FROM CustomerAddress ca " +
            "LEFT JOIN FETCH ca.user " +
            "WHERE ca.id = :id AND ca.isDeleted = false")

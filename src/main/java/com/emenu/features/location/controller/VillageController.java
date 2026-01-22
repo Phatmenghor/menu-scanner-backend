@@ -24,6 +24,9 @@ public class VillageController {
 
     private final VillageService villageService;
 
+    /**
+     * Retrieves all villages with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<VillageResponse>>> getAllVillages(
             @Valid @RequestBody VillageFilterRequest request) {
@@ -32,6 +35,9 @@ public class VillageController {
         return ResponseEntity.ok(ApiResponse.success("Villages retrieved", response));
     }
 
+    /**
+     * Retrieves a village by its ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<VillageResponse>> getVillageById(@PathVariable UUID id) {
         log.info("Get village by id: {}", id);
@@ -39,6 +45,9 @@ public class VillageController {
         return ResponseEntity.ok(ApiResponse.success("Village retrieved", response));
     }
 
+    /**
+     * Retrieves a village by its code
+     */
     @GetMapping("/code/{code}")
     public ResponseEntity<ApiResponse<VillageResponse>> getVillageByCode(@PathVariable String code) {
         log.info("Get village by code: {}", code);
@@ -46,6 +55,9 @@ public class VillageController {
         return ResponseEntity.ok(ApiResponse.success("Village retrieved", response));
     }
 
+    /**
+     * Retrieves a village by its English name
+     */
     @GetMapping("/name-en/{nameEn}")
     public ResponseEntity<ApiResponse<VillageResponse>> getVillageByNameEn(@PathVariable String nameEn) {
         log.info("Get village by EN name: {}", nameEn);
@@ -53,6 +65,9 @@ public class VillageController {
         return ResponseEntity.ok(ApiResponse.success("Village retrieved", response));
     }
 
+    /**
+     * Retrieves a village by its Khmer name
+     */
     @GetMapping("/name-kh/{nameKh}")
     public ResponseEntity<ApiResponse<VillageResponse>> getVillageByNameKh(@PathVariable String nameKh) {
         log.info("Get village by KH name: {}", nameKh);
@@ -60,6 +75,9 @@ public class VillageController {
         return ResponseEntity.ok(ApiResponse.success("Village retrieved", response));
     }
 
+    /**
+     * Creates a new village
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<VillageResponse>> createVillage(
             @Valid @RequestBody VillageRequest request) {
@@ -69,6 +87,9 @@ public class VillageController {
                 .body(ApiResponse.success("Village created", response));
     }
 
+    /**
+     * Updates an existing village
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<VillageResponse>> updateVillage(
             @PathVariable UUID id,
@@ -78,6 +99,9 @@ public class VillageController {
         return ResponseEntity.ok(ApiResponse.success("Village updated", response));
     }
 
+    /**
+     * Deletes a village by its ID
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteVillage(@PathVariable UUID id) {
         log.info("Delete village: {}", id);

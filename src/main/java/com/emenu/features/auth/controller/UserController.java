@@ -28,18 +28,27 @@ public class UserController {
     private final UserService userService;
     private final AuthService authService;
 
+    /**
+     * Retrieves a test admin token for development purposes
+     */
     @PostMapping("admin-token")
     public ResponseEntity<String> getMyAdminToken() {
         log.info("Get my admin token");
         return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjE5QGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9QTEFURk9STV9PV05FUiIsImlhdCI6MTc2ODQ4NTkyNywiZXhwIjoxMDAwMDE3Njg0ODU5Mjd9.mSq8tXMe0F3KgsvmECaK4HdbFlpNXOK6kfgfzNcVYw-Yne_UVVM4Qujyh4_-mqjqXuFoCEDnIvo7FvvXd-I8Aw");
     }
 
+    /**
+     * Retrieves a test business owner token for development purposes
+     */
     @PostMapping("business-token")
     public ResponseEntity<String> getMyBusinessToken() {
         log.info("Get my business token");
         return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIwQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9CVVNJTkVTU19PV05FUiIsImlhdCI6MTc2ODQ4NjQ2MiwiZXhwIjoxMDAwMDE3Njg0ODY0NjJ9.qh1HRf5G0yQdOV4oVHSgNmD075iMRU_xYyNoy1gABXbPDE2MBlSpyPqi2bgAccRDuVIzUlYJh1EizD60pHGjKg");
     }
 
+    /**
+     * Retrieves the current authenticated user's profile
+     */
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
         log.info("Get current user profile");
@@ -47,6 +56,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User profile retrieved", response));
     }
 
+    /**
+     * Updates the current authenticated user's profile
+     */
     @PutMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> updateCurrentUser(
             @Valid @RequestBody UserUpdateRequest request) {
@@ -55,6 +67,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Profile updated", response));
     }
 
+    /**
+     * Retrieves all users with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<UserResponse>>> getAllUsers(
             @Valid @RequestBody UserFilterRequest request) {
@@ -63,6 +78,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Users retrieved", response));
     }
 
+    /**
+     * Retrieves a user by their ID
+     */
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID userId) {
         log.info("Get user: {}", userId);
@@ -70,6 +88,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User retrieved", response));
     }
 
+    /**
+     * Creates a new user
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> createUser(
             @Valid @RequestBody UserCreateRequest request) {
@@ -79,6 +100,9 @@ public class UserController {
                 .body(ApiResponse.success("User created", response));
     }
 
+    /**
+     * Updates an existing user
+     */
     @PutMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable UUID userId,
@@ -88,6 +112,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User updated", response));
     }
 
+    /**
+     * Deletes a user by their ID
+     */
     @DeleteMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserResponse>> deleteUser(@PathVariable UUID userId) {
         log.info("Delete user: {}", userId);
@@ -95,7 +122,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User deleted", response));
     }
 
-
+    /**
+     * Allows an admin to reset a user's password
+     */
     @PostMapping("/admin/reset-password")
     public ResponseEntity<ApiResponse<UserResponse>> adminResetPassword(
             @Valid @RequestBody AdminPasswordResetRequest request) {
@@ -104,6 +133,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Password reset successful", response));
     }
 
+    /**
+     * Allows a user to change their own password
+     */
     @PostMapping("/change-password")
     public ResponseEntity<ApiResponse<UserResponse>> changePassword(
             @Valid @RequestBody PasswordChangeRequest request) {
@@ -112,7 +144,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully", response));
     }
 
-
+    /**
+     * Logs out the current user by invalidating their token
+     */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.replace("Bearer ", "");

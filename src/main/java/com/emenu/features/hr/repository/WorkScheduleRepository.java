@@ -14,10 +14,20 @@ import java.util.UUID;
 
 @Repository
 public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, UUID> {
-    
+
+    /**
+     * Finds a non-deleted work schedule by ID
+     */
     Optional<WorkSchedule> findByIdAndIsDeletedFalse(UUID id);
+
+    /**
+     * Finds all non-deleted work schedules for a given user
+     */
     List<WorkSchedule> findByUserIdAndIsDeletedFalse(UUID userId);
-    
+
+    /**
+     * Searches work schedules with filters for business, user, and text search
+     */
     @Query("SELECT w FROM WorkSchedule w WHERE w.isDeleted = false " +
            "AND (:businessId IS NULL OR w.businessId = :businessId) " +
            "AND (:userId IS NULL OR w.userId = :userId) " +

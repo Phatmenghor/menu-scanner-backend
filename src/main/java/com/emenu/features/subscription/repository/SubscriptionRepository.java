@@ -17,15 +17,27 @@ import java.util.UUID;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
 
+    /**
+     * Finds a non-deleted subscription by ID with business and plan details eagerly fetched
+     */
     @Query("SELECT s FROM Subscription s LEFT JOIN FETCH s.business b LEFT JOIN FETCH s.plan p WHERE s.id = :id AND s.isDeleted = false")
     Optional<Subscription> findByIdAndIsDeletedFalse(@Param("id") UUID id);
 
+    /**
+     * Finds the current active subscription for a business (end date is in the future)
+     */
     @Query("SELECT s FROM Subscription s LEFT JOIN FETCH s.business b LEFT JOIN FETCH s.plan p WHERE s.businessId = :businessId AND s.endDate > :now AND s.isDeleted = false ORDER BY s.endDate DESC")
     Optional<Subscription> findCurrentActiveByBusinessId(@Param("businessId") UUID businessId, @Param("now") LocalDateTime now);
 
+    /**
+     * Counts non-deleted subscriptions by subscription plan
+     */
     @Query("SELECT COUNT(s) FROM Subscription s WHERE s.planId = :planId AND s.isDeleted = false")
     long countByPlan(@Param("planId") UUID planId);
 
+    /**
+     * Searches subscriptions with filters for business, plan, auto-renew, date range, status, and text search
+     */
     @Query("""
                 SELECT s FROM Subscription s
                 LEFT JOIN s.business b
@@ -66,6 +78,9 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
             Pageable pageable
     );
 
+    /**
+     * Finds a subscription by ID with business and plan details eagerly fetched (includes deleted subscriptions)
+     */
     @Query("SELECT s FROM Subscription s LEFT JOIN FETCH s.business b LEFT JOIN FETCH s.plan p WHERE s.id = :id")
     Optional<Subscription> findByIdWithRelationships(@Param("id") UUID id);
 

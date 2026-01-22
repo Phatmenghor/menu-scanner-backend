@@ -25,6 +25,9 @@ public class BusinessOwnerController {
 
     private final BusinessOwnerService businessOwnerService;
 
+    /**
+     * Creates a new business owner with associated business, settings, and subscription
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<BusinessOwnerCreateResponse>> createBusinessOwner(
             @Valid @RequestBody BusinessOwnerCreateRequest request) {
@@ -39,6 +42,9 @@ public class BusinessOwnerController {
                 ));
     }
 
+    /**
+     * Retrieves all business owners with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<BusinessOwnerDetailResponse>>> getAllBusinessOwners(
             @Valid @RequestBody BusinessOwnerFilterRequest request) {
@@ -53,6 +59,9 @@ public class BusinessOwnerController {
         ));
     }
 
+    /**
+     * Retrieves detailed information for a specific business owner
+     */
     @GetMapping("/{ownerId}")
     public ResponseEntity<ApiResponse<BusinessOwnerDetailResponse>> getBusinessOwnerDetail(
             @PathVariable UUID ownerId) {
@@ -66,6 +75,9 @@ public class BusinessOwnerController {
         ));
     }
 
+    /**
+     * Renews a business owner's subscription with optional plan change
+     */
     @PostMapping("/{ownerId}/renew")
     public ResponseEntity<ApiResponse<BusinessOwnerDetailResponse>> renewSubscription(
             @PathVariable UUID ownerId,
@@ -81,6 +93,9 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(ApiResponse.success(message, response));
     }
 
+    /**
+     * Changes the subscription plan for a business owner
+     */
     @PutMapping("/{ownerId}/change-plan")
     public ResponseEntity<ApiResponse<BusinessOwnerDetailResponse>> changePlan(
             @PathVariable UUID ownerId,
@@ -92,6 +107,9 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(ApiResponse.success("Subscription plan changed successfully", response));
     }
 
+    /**
+     * Cancels a business owner's subscription with optional refund processing
+     */
     @PostMapping("/{ownerId}/cancel")
     public ResponseEntity<ApiResponse<BusinessOwnerDetailResponse>> cancelSubscription(
             @PathVariable UUID ownerId,
@@ -107,6 +125,9 @@ public class BusinessOwnerController {
         return ResponseEntity.ok(ApiResponse.success(message, response));
     }
 
+    /**
+     * Deletes a business owner and all associated data
+     */
     @DeleteMapping("/{ownerId}")
     public ResponseEntity<ApiResponse<BusinessOwnerDetailResponse>> deleteBusinessOwner(
             @PathVariable UUID ownerId) {

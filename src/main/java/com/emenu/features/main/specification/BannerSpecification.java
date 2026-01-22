@@ -11,8 +11,20 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA Specification builder for Banner entity filtering.
+ * Provides dynamic query construction based on filter criteria including business ID, status,
+ * and global search across business details.
+ */
 public class BannerSpecification {
 
+    /**
+     * Builds a JPA Specification for filtering banners based on the provided criteria.
+     * Supports filtering by business ID, status, and global search across business name.
+     *
+     * @param filter the filter criteria containing business ID, status, and search parameters
+     * @return a Specification for querying Banner entities
+     */
     public static Specification<Banner> buildSpecification(BannerFilterBase filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();

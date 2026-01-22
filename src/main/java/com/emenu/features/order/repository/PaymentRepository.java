@@ -18,8 +18,14 @@ import java.util.UUID;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
+    /**
+     * Finds a non-deleted payment by ID
+     */
     Optional<Payment> findByIdAndIsDeletedFalse(UUID id);
 
+    /**
+     * Finds a payment by ID with business, plan, and subscription details eagerly fetched
+     */
     @Query("""
                 SELECT p FROM Payment p
                 LEFT JOIN FETCH p.business
@@ -29,6 +35,9 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
             """)
     Optional<Payment> findByIdWithRelationships(@Param("id") UUID id);
 
+    /**
+     * Searches payments with filters for business, plan, payment methods, statuses, date range, and text search
+     */
     @Query("""
                 SELECT p FROM Payment p
                 LEFT JOIN p.business b
@@ -40,7 +49,7 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
                 AND (:statuses IS NULL OR p.status IN :statuses)
                 AND (:createdFrom IS NULL OR CAST(p.createdAt AS date) >= :createdFrom)
                 AND (:createdTo IS NULL OR CAST(p.createdAt AS date) <= :createdTo)
-                AND (:search IS NULL OR :search = '' OR 
+                AND (:search IS NULL OR :search = '' OR
                      LOWER(p.referenceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR
                      LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')) OR
                      LOWER(pl.name) LIKE LOWER(CONCAT('%', :search, '%')))
@@ -58,18 +67,18 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     );
 
     /**
-     * Find all payments by subscription ID
+     * Finds all non-deleted payments by subscription ID
      */
     @Query("SELECT p FROM Payment p WHERE p.subscriptionId = :subscriptionId AND p.isDeleted = false")
     List<Payment> findBySubscriptionIdAndIsDeletedFalse(@Param("subscriptionId") UUID subscriptionId);
 
     /**
-     * Find payments by subscription and status
+     * Finds non-deleted payments by subscription ID and status
      */
     @Query("""
-                SELECT p FROM Payment p 
-                WHERE p.subscriptionId = :subscriptionId 
-                AND p.status = :status 
+                SELECT p FROM Payment p
+                WHERE p.subscriptionId = :subscriptionId
+                AND p.status = :status
                 AND p.isDeleted = false
             """)
     List<Payment> findBySubscriptionIdAndStatusAndIsDeletedFalse(

@@ -36,6 +36,9 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
     private final PaginationMapper paginationMapper;
     private final UserMapper userMapper;
 
+    /**
+     * Creates a new work schedule for an employee
+     */
     @Override
     public WorkScheduleResponse create(WorkScheduleCreateRequest request) {
         log.info("Creating work schedule for user: {}", request.getUserId());
@@ -48,6 +51,9 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
         return enrichResponse(mapper.toResponse(savedSchedule), savedSchedule);
     }
 
+    /**
+     * Retrieves a work schedule by ID
+     */
     @Override
     @Transactional(readOnly = true)
     public WorkScheduleResponse getById(UUID id) {
@@ -56,6 +62,9 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
         return enrichResponse(mapper.toResponse(schedule), schedule);
     }
 
+    /**
+     * Retrieves all work schedules with filtering and pagination support
+     */
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<WorkScheduleResponse> getAll(WorkScheduleFilterRequest filter) {
@@ -79,6 +88,9 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
                         .toList());
     }
 
+    /**
+     * Retrieves all work schedules for a specific user
+     */
     @Override
     @Transactional(readOnly = true)
     public List<WorkScheduleResponse> getByUserId(UUID userId) {
@@ -88,6 +100,9 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
                 .toList();
     }
 
+    /**
+     * Updates an existing work schedule
+     */
     @Override
     public WorkScheduleResponse update(UUID id, WorkScheduleUpdateRequest request) {
         final WorkSchedule schedule = repository.findByIdAndIsDeletedFalse(id)
@@ -100,6 +115,9 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
         return enrichResponse(mapper.toResponse(updatedSchedule), updatedSchedule);
     }
 
+    /**
+     * Soft deletes a work schedule
+     */
     @Override
     public WorkScheduleResponse delete(UUID id) {
         WorkSchedule schedule = repository.findByIdAndIsDeletedFalse(id)

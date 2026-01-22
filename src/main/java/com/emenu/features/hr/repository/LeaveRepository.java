@@ -17,8 +17,14 @@ import java.util.UUID;
 @Repository
 public interface LeaveRepository extends JpaRepository<Leave, UUID> {
 
+    /**
+     * Finds a non-deleted leave record by ID
+     */
     Optional<Leave> findByIdAndIsDeletedFalse(UUID id);
 
+    /**
+     * Searches leave records with filters for business, user, leave type, status, date range, and text search
+     */
     @Query("SELECT l FROM Leave l WHERE l.isDeleted = false " +
             "AND (:businessId IS NULL OR l.businessId = :businessId) " +
             "AND (:userId IS NULL OR l.userId = :userId) " +

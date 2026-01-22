@@ -33,6 +33,7 @@ public class CustomerAddressController {
      */
     @PostMapping
     public ResponseEntity<ApiResponse<CustomerAddressResponse>> createAddress(@Valid @RequestBody CustomerAddressCreateRequest request) {
+        log.info("Creating new address");
         CustomerAddressResponse address = addressService.createAddress(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Address created successfully", address));
@@ -65,6 +66,7 @@ public class CustomerAddressController {
      */
     @GetMapping
     public ResponseEntity<ApiResponse<List<CustomerAddressResponse>>> getMyAddresses() {
+        log.info("Getting my addresses list");
         List<CustomerAddressResponse> addresses = addressService.getMyAddressesList();
         return ResponseEntity.ok(ApiResponse.success("Addresses retrieved successfully", addresses));
     }
@@ -74,6 +76,7 @@ public class CustomerAddressController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CustomerAddressResponse>> getAddressById(@PathVariable UUID id) {
+        log.info("Get address by id: {}", id);
         CustomerAddressResponse address = addressService.getAddressById(id);
         return ResponseEntity.ok(ApiResponse.success("Address retrieved successfully", address));
     }
@@ -84,6 +87,7 @@ public class CustomerAddressController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CustomerAddressResponse>> updateAddress(
             @PathVariable UUID id, @Valid @RequestBody CustomerAddressUpdateRequest request) {
+        log.info("Update address: {}", id);
         CustomerAddressResponse address = addressService.updateAddress(id, request);
         return ResponseEntity.ok(ApiResponse.success("Address updated successfully", address));
     }
@@ -93,6 +97,7 @@ public class CustomerAddressController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<CustomerAddressResponse>> deleteAddress(@PathVariable UUID id) {
+        log.info("Delete address: {}", id);
         CustomerAddressResponse address = addressService.deleteAddress(id);
         return ResponseEntity.ok(ApiResponse.success("Address deleted successfully", address));
     }
@@ -102,6 +107,7 @@ public class CustomerAddressController {
      */
     @PutMapping("/{id}/set-default")
     public ResponseEntity<ApiResponse<CustomerAddressResponse>> setDefaultAddress(@PathVariable UUID id) {
+        log.info("Set default address: {}", id);
         CustomerAddressResponse address = addressService.setDefaultAddress(id);
         return ResponseEntity.ok(ApiResponse.success("Default address set successfully", address));
     }
@@ -111,6 +117,7 @@ public class CustomerAddressController {
      */
     @GetMapping("/default")
     public ResponseEntity<ApiResponse<CustomerAddressResponse>> getDefaultAddress() {
+        log.info("Get default address");
         CustomerAddressResponse address = addressService.getDefaultAddress();
         return ResponseEntity.ok(ApiResponse.success("Default address retrieved successfully", address));
     }

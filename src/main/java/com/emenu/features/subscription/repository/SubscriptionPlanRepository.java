@@ -16,16 +16,25 @@ import java.util.UUID;
 @Repository
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, UUID> {
 
+    /**
+     * Finds a non-deleted subscription plan by ID
+     */
     Optional<SubscriptionPlan> findByIdAndIsDeletedFalse(UUID id);
 
+    /**
+     * Checks if a non-deleted subscription plan exists with the given name
+     */
     boolean existsByNameAndIsDeletedFalse(String name);
 
+    /**
+     * Searches subscription plans with filters for statuses and text search across name and description
+     */
     @Query("""
         SELECT sp FROM SubscriptionPlan sp
         WHERE sp.isDeleted = false
         AND (:statuses IS NULL OR sp.status IN :statuses)
-        AND (:search IS NULL OR :search = '' OR 
-             LOWER(sp.name) LIKE LOWER(CONCAT('%', :search, '%')) OR 
+        AND (:search IS NULL OR :search = '' OR
+             LOWER(sp.name) LIKE LOWER(CONCAT('%', :search, '%')) OR
              LOWER(sp.description) LIKE LOWER(CONCAT('%', :search, '%')))
         """)
     Page<SubscriptionPlan> findAllWithFilters(

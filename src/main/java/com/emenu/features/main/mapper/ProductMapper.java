@@ -6,11 +6,15 @@ import com.emenu.features.main.dto.response.ProductDetailDto;
 import com.emenu.features.main.dto.response.ProductListDto;
 import com.emenu.features.main.dto.update.ProductUpdateDto;
 import com.emenu.features.main.models.Product;
+import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;
+import org.springframework.data.domain.Page;
+
 import java.util.List;
 
 @Mapper(componentModel = "spring",
-        uses = {ProductImageMapper.class, ProductSizeMapper.class},
+        uses = {ProductImageMapper.class, ProductSizeMapper.class, PaginationMapper.class},
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProductMapper {
 
@@ -71,5 +75,12 @@ public interface ProductMapper {
     @Named("promotionTypeToString")
     default String promotionTypeToString(PromotionType promotionType) {
         return promotionType != null ? promotionType.name() : null;
+    }
+
+    /**
+     * Convert paginated products to pagination response
+     */
+    default PaginationResponse<ProductListDto> toPaginationResponse(Page<Product> page, PaginationMapper paginationMapper) {
+        return paginationMapper.toPaginationResponse(page, this::toListDtos);
     }
 }

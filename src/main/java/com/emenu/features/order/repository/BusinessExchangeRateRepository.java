@@ -14,36 +14,52 @@ import java.util.UUID;
 
 @Repository
 public interface BusinessExchangeRateRepository extends JpaRepository<BusinessExchangeRate, UUID>, JpaSpecificationExecutor<BusinessExchangeRate> {
-    
-    // Basic CRUD operations
+
+    /**
+     * Finds a non-deleted business exchange rate by ID
+     */
     Optional<BusinessExchangeRate> findByIdAndIsDeletedFalse(UUID id);
-    
-    // Get active rate for a business
+
+    /**
+     * Finds the active exchange rate for a business
+     */
     @Query("SELECT ber FROM BusinessExchangeRate ber WHERE ber.businessId = :businessId AND ber.isActive = true AND ber.isDeleted = false")
     Optional<BusinessExchangeRate> findActiveRateByBusinessId(@Param("businessId") UUID businessId);
-    
-    // Get all rates for a business
+
+    /**
+     * Finds all non-deleted exchange rates for a business, ordered by creation date descending
+     */
     @Query("SELECT ber FROM BusinessExchangeRate ber WHERE ber.businessId = :businessId AND ber.isDeleted = false ORDER BY ber.createdAt DESC")
     List<BusinessExchangeRate> findAllByBusinessId(@Param("businessId") UUID businessId);
-    
-    // Check if business has any exchange rate
+
+    /**
+     * Checks if a business has any non-deleted exchange rate
+     */
     @Query("SELECT COUNT(ber) > 0 FROM BusinessExchangeRate ber WHERE ber.businessId = :businessId AND ber.isDeleted = false")
     boolean existsByBusinessId(@Param("businessId") UUID businessId);
-    
-    // Check if business has active rate
+
+    /**
+     * Checks if a business has an active exchange rate
+     */
     @Query("SELECT COUNT(ber) > 0 FROM BusinessExchangeRate ber WHERE ber.businessId = :businessId AND ber.isActive = true AND ber.isDeleted = false")
     boolean hasActiveRate(@Param("businessId") UUID businessId);
-    
-    // Deactivate all rates for a business (used when setting a new active rate)
+
+    /**
+     * Deactivates all active exchange rates for a business
+     */
     @Modifying
     @Query("UPDATE BusinessExchangeRate ber SET ber.isActive = false WHERE ber.businessId = :businessId AND ber.isActive = true AND ber.isDeleted = false")
     int deactivateAllRatesForBusiness(@Param("businessId") UUID businessId);
-    
-    // Count active rates for a business
+
+    /**
+     * Counts active exchange rates for a business
+     */
     @Query("SELECT COUNT(ber) FROM BusinessExchangeRate ber WHERE ber.businessId = :businessId AND ber.isActive = true AND ber.isDeleted = false")
     long countActiveRates(@Param("businessId") UUID businessId);
-    
-    // Get all active rates across all businesses
+
+    /**
+     * Finds all active exchange rates across all businesses, ordered by creation date descending
+     */
     @Query("SELECT ber FROM BusinessExchangeRate ber WHERE ber.isActive = true AND ber.isDeleted = false ORDER BY ber.createdAt DESC")
     List<BusinessExchangeRate> findAllActiveRates();
 }

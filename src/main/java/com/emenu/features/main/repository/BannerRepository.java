@@ -12,8 +12,15 @@ import java.util.UUID;
 
 @Repository
 public interface BannerRepository extends JpaRepository<Banner, UUID>, JpaSpecificationExecutor<Banner> {
+
+    /**
+     * Finds a non-deleted banner by ID
+     */
     Optional<Banner> findByIdAndIsDeletedFalse(UUID id);
-    
+
+    /**
+     * Finds a non-deleted banner by ID with business details eagerly fetched
+     */
     @Query("SELECT b FROM Banner b " +
            "LEFT JOIN FETCH b.business " +
            "WHERE b.id = :id AND b.isDeleted = false")

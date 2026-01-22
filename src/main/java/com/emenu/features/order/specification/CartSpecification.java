@@ -11,8 +11,20 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA Specification builder for Cart entity filtering.
+ * Provides dynamic query construction for shopping carts with support for filtering by
+ * user ID, business ID, and global search across user and business details.
+ */
 public class CartSpecification {
 
+    /**
+     * Builds a JPA Specification for filtering shopping carts based on the provided criteria.
+     * Supports filtering by user ID, business ID, and global search across business name, user name, and user identifier.
+     *
+     * @param filter the filter criteria containing user ID, business ID, and search parameters
+     * @return a Specification for querying Cart entities
+     */
     public static Specification<Cart> buildSpecification(CartFilterRequest filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();

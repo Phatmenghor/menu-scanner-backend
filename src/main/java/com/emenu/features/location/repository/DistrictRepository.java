@@ -16,30 +16,51 @@ import java.util.UUID;
 @Repository
 public interface DistrictRepository extends JpaRepository<District, UUID> {
 
+    /**
+     * Checks if a non-deleted district exists with the given district code
+     */
     boolean existsByDistrictCodeAndIsDeletedFalse(String districtCode);
 
+    /**
+     * Finds a non-deleted district by ID with province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"province"})
     @Query("SELECT d FROM District d WHERE d.id = :id AND d.isDeleted = false")
     Optional<District> findByIdAndIsDeletedFalse(@Param("id") UUID id);
 
+    /**
+     * Finds a non-deleted district by district code with province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"province"})
     @Query("SELECT d FROM District d WHERE d.districtCode = :code AND d.isDeleted = false")
     Optional<District> findByDistrictCodeAndIsDeletedFalse(@Param("code") String districtCode);
 
+    /**
+     * Finds a non-deleted district by English name with province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"province"})
     @Query("SELECT d FROM District d WHERE d.districtEn = :nameEn AND d.isDeleted = false")
     Optional<District> findByDistrictEnAndIsDeletedFalse(@Param("nameEn") String districtEn);
 
+    /**
+     * Finds a non-deleted district by Khmer name with province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"province"})
     @Query("SELECT d FROM District d WHERE d.districtKh = :nameKh AND d.isDeleted = false")
     Optional<District> findByDistrictKhAndIsDeletedFalse(@Param("nameKh") String districtKh);
 
+    /**
+     * Finds all non-deleted districts by province code with province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"province"})
     @Query("SELECT d FROM District d " +
             "WHERE d.provinceCode = :provinceCode AND d.isDeleted = false " +
             "ORDER BY d.districtCode")
     List<District> findAllByProvinceCodeAndIsDeletedFalse(@Param("provinceCode") String provinceCode);
 
+    /**
+     * Searches districts with filters for province and text search across multiple fields
+     */
     @EntityGraph(attributePaths = {"province"})
     @Query("SELECT d FROM District d " +
             "WHERE d.isDeleted = false " +

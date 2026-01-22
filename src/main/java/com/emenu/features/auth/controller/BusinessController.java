@@ -23,6 +23,9 @@ public class BusinessController {
 
     private final BusinessService businessService;
 
+    /**
+     * Retrieves all businesses with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<BusinessResponse>>> getAllBusinesses(
             @Valid @RequestBody BusinessFilterRequest request) {
@@ -31,6 +34,9 @@ public class BusinessController {
         return ResponseEntity.ok(ApiResponse.success("Businesses retrieved", response));
     }
 
+    /**
+     * Retrieves a business by its ID
+     */
     @GetMapping("/{businessId}")
     public ResponseEntity<ApiResponse<BusinessResponse>> getBusinessById(@PathVariable UUID businessId) {
         log.info("Get business: {}", businessId);
@@ -38,6 +44,9 @@ public class BusinessController {
         return ResponseEntity.ok(ApiResponse.success("Business retrieved", response));
     }
 
+    /**
+     * Creates a new business
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<BusinessResponse>> createBusiness(
             @Valid @RequestBody BusinessCreateRequest request) {
@@ -47,6 +56,9 @@ public class BusinessController {
                 .body(ApiResponse.success("Business created", response));
     }
 
+    /**
+     * Updates an existing business
+     */
     @PutMapping("/{businessId}")
     public ResponseEntity<ApiResponse<BusinessResponse>> updateBusiness(
             @PathVariable UUID businessId,
@@ -56,6 +68,9 @@ public class BusinessController {
         return ResponseEntity.ok(ApiResponse.success("Business updated", response));
     }
 
+    /**
+     * Deletes a business by its ID
+     */
     @DeleteMapping("/{businessId}")
     public ResponseEntity<ApiResponse<Void>> deleteBusiness(@PathVariable UUID businessId) {
         log.info("Delete business: {}", businessId);

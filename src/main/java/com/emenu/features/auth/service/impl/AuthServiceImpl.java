@@ -44,6 +44,9 @@ public class AuthServiceImpl implements AuthService {
     private final SecurityUtils securityUtils;
     private final TokenBlacklistService tokenBlacklistService;
 
+    /**
+     * Authenticates a user and generates a JWT token
+     */
     @Override
     public LoginResponse login(LoginRequest request) {
         log.info("Login attempt: {}", request.getUserIdentifier());
@@ -70,6 +73,9 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    /**
+     * Registers a new customer user
+     */
     @Override
     public UserResponse registerCustomer(RegisterRequest request) {
         log.info("Customer registration: {}", request.getUserIdentifier());
@@ -92,6 +98,9 @@ public class AuthServiceImpl implements AuthService {
         return userMapper.toResponse(savedUser);
     }
 
+    /**
+     * Logs out a user by blacklisting their JWT token
+     */
     @Override
     public void logout(String authorizationHeader) {
         log.info("Processing logout");
@@ -107,6 +116,9 @@ public class AuthServiceImpl implements AuthService {
         log.info("Logout successful: {}", userIdentifier);
     }
 
+    /**
+     * Changes the password for the currently authenticated user
+     */
     @Override
     public UserResponse changePassword(PasswordChangeRequest request) {
         User currentUser = securityUtils.getCurrentUser();
@@ -128,6 +140,9 @@ public class AuthServiceImpl implements AuthService {
         return userMapper.toResponse(savedUser);
     }
 
+    /**
+     * Resets a user's password (admin function)
+     */
     @Override
     public UserResponse adminResetPassword(AdminPasswordResetRequest request) {
         log.info("Admin password reset: {}", request.getUserId());

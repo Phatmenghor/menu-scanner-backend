@@ -14,12 +14,26 @@ import java.util.UUID;
 
 @Repository
 public interface WorkScheduleTypeEnumRepository extends JpaRepository<WorkScheduleTypeEnum, UUID> {
-    
+
+    /**
+     * Finds a non-deleted work schedule type enum by ID
+     */
     Optional<WorkScheduleTypeEnum> findByIdAndIsDeletedFalse(UUID id);
+
+    /**
+     * Finds all non-deleted work schedule type enums for a business
+     */
     List<WorkScheduleTypeEnum> findByBusinessIdAndIsDeletedFalse(UUID businessId);
+
+    /**
+     * Finds a non-deleted work schedule type enum by business ID and enum name
+     */
     Optional<WorkScheduleTypeEnum> findByBusinessIdAndEnumNameAndIsDeletedFalse(
         UUID businessId, String enumName);
-    
+
+    /**
+     * Searches work schedule type enums with filters for business and text search on enum name
+     */
     @Query("SELECT e FROM WorkScheduleTypeEnum e WHERE e.isDeleted = false " +
            "AND (:businessId IS NULL OR e.businessId = :businessId) " +
            "AND (:search IS NULL OR :search = '' OR " +

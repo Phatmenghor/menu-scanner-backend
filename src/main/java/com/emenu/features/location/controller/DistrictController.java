@@ -24,6 +24,9 @@ public class DistrictController {
 
     private final DistrictService districtService;
 
+    /**
+     * Retrieves all districts with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<DistrictResponse>>> getAllDistricts(
             @Valid @RequestBody DistrictFilterRequest request) {
@@ -32,6 +35,9 @@ public class DistrictController {
         return ResponseEntity.ok(ApiResponse.success("Districts retrieved", response));
     }
 
+    /**
+     * Retrieves a district by its ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<DistrictResponse>> getDistrictById(@PathVariable UUID id) {
         log.info("Get district by id: {}", id);
@@ -39,6 +45,9 @@ public class DistrictController {
         return ResponseEntity.ok(ApiResponse.success("District retrieved", response));
     }
 
+    /**
+     * Retrieves a district by its code
+     */
     @GetMapping("/code/{code}")
     public ResponseEntity<ApiResponse<DistrictResponse>> getDistrictByCode(@PathVariable String code) {
         log.info("Get district by code: {}", code);
@@ -46,6 +55,9 @@ public class DistrictController {
         return ResponseEntity.ok(ApiResponse.success("District retrieved", response));
     }
 
+    /**
+     * Retrieves a district by its English name
+     */
     @GetMapping("/name-en/{nameEn}")
     public ResponseEntity<ApiResponse<DistrictResponse>> getDistrictByNameEn(@PathVariable String nameEn) {
         log.info("Get district by EN name: {}", nameEn);
@@ -53,6 +65,9 @@ public class DistrictController {
         return ResponseEntity.ok(ApiResponse.success("District retrieved", response));
     }
 
+    /**
+     * Retrieves a district by its Khmer name
+     */
     @GetMapping("/name-kh/{nameKh}")
     public ResponseEntity<ApiResponse<DistrictResponse>> getDistrictByNameKh(@PathVariable String nameKh) {
         log.info("Get district by KH name: {}", nameKh);
@@ -60,6 +75,9 @@ public class DistrictController {
         return ResponseEntity.ok(ApiResponse.success("District retrieved", response));
     }
 
+    /**
+     * Creates a new district
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<DistrictResponse>> createDistrict(
             @Valid @RequestBody DistrictRequest request) {
@@ -69,6 +87,9 @@ public class DistrictController {
                 .body(ApiResponse.success("District created", response));
     }
 
+    /**
+     * Updates an existing district
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<DistrictResponse>> updateDistrict(
             @PathVariable UUID id,
@@ -78,6 +99,9 @@ public class DistrictController {
         return ResponseEntity.ok(ApiResponse.success("District updated", response));
     }
 
+    /**
+     * Deletes a district by its ID
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteDistrict(@PathVariable UUID id) {
         log.info("Delete district: {}", id);

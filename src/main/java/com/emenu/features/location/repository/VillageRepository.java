@@ -16,30 +16,51 @@ import java.util.UUID;
 @Repository
 public interface VillageRepository extends JpaRepository<Village, UUID> {
 
+    /**
+     * Checks if a non-deleted village exists with the given village code
+     */
     boolean existsByVillageCodeAndIsDeletedFalse(String villageCode);
 
+    /**
+     * Finds a non-deleted village by ID with commune, district, and province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"commune", "commune.district", "commune.district.province"})
     @Query("SELECT v FROM Village v WHERE v.id = :id AND v.isDeleted = false")
     Optional<Village> findByIdAndIsDeletedFalse(@Param("id") UUID id);
 
+    /**
+     * Finds a non-deleted village by village code with commune, district, and province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"commune", "commune.district", "commune.district.province"})
     @Query("SELECT v FROM Village v WHERE v.villageCode = :code AND v.isDeleted = false")
     Optional<Village> findByVillageCodeAndIsDeletedFalse(@Param("code") String villageCode);
 
+    /**
+     * Finds a non-deleted village by English name with commune, district, and province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"commune", "commune.district", "commune.district.province"})
     @Query("SELECT v FROM Village v WHERE v.villageEn = :nameEn AND v.isDeleted = false")
     Optional<Village> findByVillageEnAndIsDeletedFalse(@Param("nameEn") String villageEn);
 
+    /**
+     * Finds a non-deleted village by Khmer name with commune, district, and province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"commune", "commune.district", "commune.district.province"})
     @Query("SELECT v FROM Village v WHERE v.villageKh = :nameKh AND v.isDeleted = false")
     Optional<Village> findByVillageKhAndIsDeletedFalse(@Param("nameKh") String villageKh);
 
+    /**
+     * Finds all non-deleted villages by commune code with commune, district, and province eagerly fetched
+     */
     @EntityGraph(attributePaths = {"commune", "commune.district", "commune.district.province"})
     @Query("SELECT v FROM Village v " +
             "WHERE v.communeCode = :communeCode AND v.isDeleted = false " +
             "ORDER BY v.villageCode")
     List<Village> findAllByCommuneCodeAndIsDeletedFalse(@Param("communeCode") String communeCode);
 
+    /**
+     * Searches villages with filters for commune, district, province, and text search across multiple fields
+     */
     @EntityGraph(attributePaths = {"commune", "commune.district", "commune.district.province"})
     @Query("SELECT v FROM Village v " +
             "JOIN v.commune c " +

@@ -9,8 +9,20 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JPA Specification builder for ExchangeRate entity filtering.
+ * Provides dynamic query construction for system-wide exchange rates with support for
+ * filtering by active status and global search across rate notes.
+ */
 public class ExchangeRateSpecification {
 
+    /**
+     * Builds a JPA Specification for filtering exchange rates based on the provided criteria.
+     * Supports filtering by active status and global search across notes.
+     *
+     * @param filter the filter criteria containing active status and search parameters
+     * @return a Specification for querying ExchangeRate entities
+     */
     public static Specification<ExchangeRate> buildSpecification(ExchangeRateFilterRequest filter) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -37,7 +49,12 @@ public class ExchangeRateSpecification {
         };
     }
 
-    // Common specifications for quick queries
+    /**
+     * Creates a Specification to filter for active exchange rates only.
+     * Returns non-deleted rates that are marked as active.
+     *
+     * @return a Specification for querying active ExchangeRate entities
+     */
     public static Specification<ExchangeRate> activeRates() {
         return (root, query, criteriaBuilder) -> 
             criteriaBuilder.and(
@@ -46,6 +63,12 @@ public class ExchangeRateSpecification {
             );
     }
 
+    /**
+     * Creates a Specification to retrieve exchange rate history.
+     * Returns all non-deleted rates ordered by creation date in descending order (newest first).
+     *
+     * @return a Specification for querying historical ExchangeRate entities
+     */
     public static Specification<ExchangeRate> historyRates() {
         return (root, query, criteriaBuilder) -> {
             query.orderBy(criteriaBuilder.desc(root.get("createdAt")));

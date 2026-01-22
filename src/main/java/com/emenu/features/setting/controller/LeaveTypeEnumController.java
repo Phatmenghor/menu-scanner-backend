@@ -26,6 +26,9 @@ public class LeaveTypeEnumController {
 
     private final LeaveTypeEnumService service;
 
+    /**
+     * Creates a new leave type enum
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<LeaveTypeEnumResponse>> create(
             @Valid @RequestBody LeaveTypeEnumCreateRequest request) {
@@ -35,6 +38,9 @@ public class LeaveTypeEnumController {
                 .body(ApiResponse.success("Leave type enum created", response));
     }
 
+    /**
+     * Retrieves a leave type enum by its ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<LeaveTypeEnumResponse>> getById(@PathVariable UUID id) {
         log.info("Get leave type enum: {}", id);
@@ -42,6 +48,9 @@ public class LeaveTypeEnumController {
         return ResponseEntity.ok(ApiResponse.success("Leave type enum retrieved", response));
     }
 
+    /**
+     * Retrieves all leave type enums with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<LeaveTypeEnumResponse>>> getAll(
             @Valid @RequestBody ConfigEnumFilterRequest filter) {
@@ -50,6 +59,9 @@ public class LeaveTypeEnumController {
         return ResponseEntity.ok(ApiResponse.success("Leave type enums retrieved", response));
     }
 
+    /**
+     * Retrieves all leave type enums as a simple list
+     */
     @PostMapping("/all-list")
     public ResponseEntity<ApiResponse<List<LeaveTypeEnumResponse>>> getAllList(
             @Valid @RequestBody ConfigEnumFilterRequest filter) {
@@ -58,6 +70,9 @@ public class LeaveTypeEnumController {
         return ResponseEntity.ok(ApiResponse.success("Leave type enums retrieved", response));
     }
 
+    /**
+     * Retrieves leave type enums for a specific business
+     */
     @GetMapping("/business/{businessId}")
     public ResponseEntity<ApiResponse<List<LeaveTypeEnumResponse>>> getByBusinessId(
             @PathVariable UUID businessId) {
@@ -66,6 +81,9 @@ public class LeaveTypeEnumController {
         return ResponseEntity.ok(ApiResponse.success("Leave type enums retrieved", responses));
     }
 
+    /**
+     * Updates a leave type enum
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<LeaveTypeEnumResponse>> update(
             @PathVariable UUID id,
@@ -75,6 +93,9 @@ public class LeaveTypeEnumController {
         return ResponseEntity.ok(ApiResponse.success("Leave type enum updated", response));
     }
 
+    /**
+     * Deletes a leave type enum
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<LeaveTypeEnumResponse>> delete(@PathVariable UUID id) {
         log.info("Delete leave type enum: {}", id);

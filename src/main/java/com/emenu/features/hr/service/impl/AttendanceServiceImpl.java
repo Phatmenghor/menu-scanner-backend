@@ -44,6 +44,9 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final PaginationMapper paginationMapper;
     private final UserMapper userMapper;
 
+    /**
+     * Processes employee check-in/check-out and calculates attendance status
+     */
     @Override
     public AttendanceResponse checkIn(AttendanceCheckInRequest request, UUID userId, UUID businessId) {
         log.info("Processing check-in for user: {}, type: {}", userId, request.getCheckInType());
@@ -188,6 +191,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                 attendance.getStatus(), totalWorkMinutes, expectedWorkMinutes, String.format("%.2f", workPercentage));
     }
 
+    /**
+     * Retrieves attendance record by ID
+     */
     @Override
     @Transactional(readOnly = true)
     public AttendanceResponse getById(UUID id) {
@@ -196,6 +202,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         return enrichWithUserInfo(mapper.toResponse(attendance), attendance);
     }
 
+    /**
+     * Retrieves all attendance records with filtering and pagination support
+     */
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<AttendanceResponse> getAll(AttendanceFilterRequest filter) {
@@ -221,6 +230,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                         .toList());
     }
 
+    /**
+     * Updates an attendance record
+     */
     @Override
     public AttendanceResponse update(UUID id, AttendanceUpdateRequest request) {
         Attendance attendance = attendanceRepository.findByIdAndIsDeletedFalse(id)
@@ -234,6 +246,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         return enrichWithUserInfo(mapper.toResponse(attendance), attendance);
     }
 
+    /**
+     * Soft deletes an attendance record
+     */
     @Override
     public AttendanceResponse delete(UUID id) {
         Attendance attendance = attendanceRepository.findByIdAndIsDeletedFalse(id)

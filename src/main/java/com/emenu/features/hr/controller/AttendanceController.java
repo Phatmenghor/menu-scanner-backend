@@ -27,6 +27,9 @@ public class AttendanceController {
     private final AttendanceService service;
     private final SecurityUtils securityUtils;
 
+    /**
+     * Records an employee check-in for attendance tracking
+     */
     @PostMapping("/check-in")
     public ResponseEntity<ApiResponse<AttendanceResponse>> checkIn(
             @Valid @RequestBody AttendanceCheckInRequest request) {
@@ -37,6 +40,9 @@ public class AttendanceController {
                 .body(ApiResponse.success("Check-in recorded successfully", response));
     }
 
+    /**
+     * Retrieves an attendance record by its ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<AttendanceResponse>> getById(@PathVariable UUID id) {
         log.info("Get attendance record: {}", id);
@@ -44,6 +50,9 @@ public class AttendanceController {
         return ResponseEntity.ok(ApiResponse.success("Attendance record retrieved", response));
     }
 
+    /**
+     * Retrieves all attendance records with pagination and filtering
+     */
     @PostMapping("/all")
     public ResponseEntity<ApiResponse<PaginationResponse<AttendanceResponse>>> getAll(
             @Valid @RequestBody AttendanceFilterRequest filter) {
@@ -52,6 +61,9 @@ public class AttendanceController {
         return ResponseEntity.ok(ApiResponse.success("Attendance records retrieved", response));
     }
 
+    /**
+     * Updates an attendance record
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<AttendanceResponse>> update(
             @PathVariable UUID id,
@@ -61,6 +73,9 @@ public class AttendanceController {
         return ResponseEntity.ok(ApiResponse.success("Attendance record updated", response));
     }
 
+    /**
+     * Deletes an attendance record
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<AttendanceResponse>> delete(@PathVariable UUID id) {
         log.info("Delete attendance record: {}", id);
