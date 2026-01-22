@@ -10,7 +10,7 @@ echo "🚀 Starting Maven Build (DEV ONLY)"
 echo "======================================"
 
 # Optional Maven build
-mvn clean package -DskipTests
+#mvn clean package -DskipTests
 
 # Write private key to a temp file
 KEY_FILE=$(mktemp)
