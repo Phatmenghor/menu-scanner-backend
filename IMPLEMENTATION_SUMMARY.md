@@ -62,23 +62,59 @@ jwt:
 
 ### 3. Dynamic Username Uniqueness by User Type ✅
 
-**Purpose**: Allow the same username to exist for different user types while maintaining appropriate uniqueness constraints.
+**Purpose**: Allow the same username to exist across multiple user types and businesses simultaneously.
 
 **Uniqueness Rules**:
-- **PLATFORM_USER**: Username globally unique among platform users
-- **CUSTOMER**: Username globally unique among customers
-- **BUSINESS_USER**: Username unique within the specific business (not globally)
+The SAME username can exist as:
+- ✅ **ONE CUSTOMER** (globally unique among customers)
+- ✅ **ONE PLATFORM_USER** (globally unique among platform users)
+- ✅ **MULTIPLE BUSINESS_USERs** (unique per business - can exist in many businesses)
 
-**Example Scenarios**:
+But NOT duplicate within the same type/business:
+- ❌ Two customers with the same username
+- ❌ Two platform users with the same username
+- ❌ Two users with the same username in the same business
+
+**Real-World Example**:
 ```
-✅ Valid:
-  - "john" as CUSTOMER
-  - "john" as BUSINESS_USER in Business A
-  - "john" as BUSINESS_USER in Business B
+Username "john" can exist as:
+✅ Customer "john" (ID: customer-1)
+✅ Platform user "john" (ID: platform-1)
+✅ Business user "john" in Restaurant A (ID: business-user-1)
+✅ Business user "john" in Restaurant B (ID: business-user-2)
+✅ Business user "john" in Restaurant C (ID: business-user-3)
 
-❌ Invalid:
-  - "john" as CUSTOMER (already exists)
-  - "john" as BUSINESS_USER in Business A (already exists in same business)
+But CANNOT exist as:
+❌ Two customers named "john"
+❌ Two platform users named "john"
+❌ Two business users named "john" in the same restaurant
+```
+
+**Login Context Requirement**:
+Because the same username can exist in multiple contexts, **userType is REQUIRED** in login requests:
+
+```json
+// Customer login
+{
+  "userIdentifier": "john",
+  "password": "password123",
+  "userType": "CUSTOMER"
+}
+
+// Platform user login
+{
+  "userIdentifier": "john",
+  "password": "password123",
+  "userType": "PLATFORM_USER"
+}
+
+// Business user login (requires businessId)
+{
+  "userIdentifier": "john",
+  "password": "password123",
+  "userType": "BUSINESS_USER",
+  "businessId": "uuid-of-restaurant-a"
+}
 ```
 
 **Database Changes**:
@@ -165,8 +201,33 @@ ALTER TABLE users ADD CONSTRAINT uk_business_user_identifier
 
 ### Updated Endpoints
 
-**1. POST `/api/v1/auth/login`**
-- **Request**: Unchanged (userIdentifier + password)
+**1. POST `/api/v1/auth/login`** ⚠️ **BREAKING CHANGE**
+- **Request**: Now REQUIRES `userType` to disambiguate user context
+
+```json
+// Customer login
+{
+  "userIdentifier": "john",
+  "password": "password123",
+  "userType": "CUSTOMER"  // REQUIRED
+}
+
+// Platform user login
+{
+  "userIdentifier": "admin",
+  "password": "password123",
+  "userType": "PLATFORM_USER"  // REQUIRED
+}
+
+// Business user login (requires businessId)
+{
+  "userIdentifier": "john",
+  "password": "password123",
+  "userType": "BUSINESS_USER",  // REQUIRED
+  "businessId": "uuid-of-restaurant-a"  // REQUIRED for BUSINESS_USER
+}
+```
+
 - **Response**: Enhanced with refresh token and subscription info
 ```json
 {
@@ -174,9 +235,10 @@ ALTER TABLE users ADD CONSTRAINT uk_business_user_identifier
   "refreshToken": "eyJhbGc...",
   "tokenType": "Bearer",
   "userId": "uuid",
-  "userIdentifier": "john_doe",
-  "businessStatus": "ACTIVE",
-  "isSubscriptionActive": true
+  "userIdentifier": "john",
+  "userType": "CUSTOMER",
+  "businessStatus": "ACTIVE",  // For business users
+  "isSubscriptionActive": true  // For business users
 }
 ```
 
@@ -213,10 +275,10 @@ ALTER TABLE users ADD CONSTRAINT uk_business_user_identifier
 
 ### 1. Refresh Token Flow
 ```bash
-# Login
+# Login (with userType)
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"userIdentifier": "test", "password": "pass"}'
+  -d '{"userIdentifier": "test", "password": "pass", "userType": "CUSTOMER"}'
 
 # Use refresh token after 10 minutes (access token expired)
 curl -X POST http://localhost:8080/api/v1/auth/refresh \
@@ -235,10 +297,20 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 
 ### 3. Dynamic Username Uniqueness
 ```bash
-# Register customer "john"
-curl -X POST http://localhost:8080/api/v1/auth/register \
+# Login as customer "john"
+curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"userIdentifier": "john", ...}'
+  -d '{"userIdentifier": "john", "password": "pass", "userType": "CUSTOMER"}'
+
+# Login as business user "john" in Restaurant A
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"userIdentifier": "john", "password": "pass", "userType": "BUSINESS_USER", "businessId": "restaurant-a-uuid"}'
+
+# Login as business user "john" in Restaurant B (different from Restaurant A)
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"userIdentifier": "john", "password": "pass", "userType": "BUSINESS_USER", "businessId": "restaurant-b-uuid"}'
 
 # Try to register another customer "john"
 # Expected: "Username 'john' is already taken for customer"
@@ -258,18 +330,59 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 
 ## Migration Notes
 
+### ⚠️ IMPORTANT: Database Migration Required
+
+**For Existing PostgreSQL Databases:**
+
+1. **Backup your database first:**
+   ```bash
+   pg_dump -U postgres -d e_menu_platform > backup_$(date +%Y%m%d_%H%M%S).sql
+   ```
+
+2. **Run the migration script:**
+   ```bash
+   psql -U postgres -d e_menu_platform -f database/migrations/V1__dynamic_username_uniqueness.sql
+   ```
+
+3. **Check for duplicate usernames:**
+   - The migration script will report if you have duplicate usernames
+   - If duplicates exist, resolve them using:
+     ```bash
+     psql -U postgres -d e_menu_platform -f database/migrations/V2__cleanup_duplicate_usernames.sql
+     ```
+
+4. **Verify migration success:**
+   - Unique constraints created: `uk_platform_user_identifier`, `uk_business_user_identifier`
+   - refresh_tokens table created
+   - No duplicate usernames remain
+
+📖 **See `DATABASE_MIGRATION_GUIDE.md` for detailed migration instructions.**
+
 ### For Existing Data
-1. Run database migration to:
-   - Create `refresh_tokens` table
-   - Update `users` table constraints
+1. Database migration creates:
+   - `refresh_tokens` table with indexes
+   - New unique constraints for dynamic username uniqueness
+   - Composite indexes for performance
 2. Existing sessions will continue with old long-lived tokens
-3. New logins will use the new token system
+3. New logins will use the new token system (10min access + 30day refresh)
 4. Force re-login for all users by blacklisting all existing tokens (optional)
 
+### ⚠️ Breaking Changes for Frontend
+- **Login endpoint now REQUIRES `userType` field**
+- Old login requests without `userType` will fail
+- Update all login forms to send `userType`:
+  - Customer login: `userType: "CUSTOMER"`
+  - Business login: `userType: "BUSINESS_USER"` + `businessId`
+  - Platform login: `userType: "PLATFORM_USER"`
+
 ### Backward Compatibility
-- Login endpoint still returns `accessToken` (now 10 min instead of ~infinite)
-- Old clients without refresh token support will need to re-login every 10 minutes
-- Recommend updating all clients to use refresh token flow
+- ❌ Login endpoint is NOT backward compatible (requires `userType`)
+- ✅ Registration endpoint unchanged
+- ✅ Refresh token endpoint new (optional for existing clients)
+- ⚠️ Access tokens now expire in 10 minutes (was ~infinite)
+- 📝 Old clients must be updated to:
+  1. Send `userType` in login requests
+  2. Use refresh token flow to avoid frequent re-logins
 
 ## Configuration Options
 
@@ -297,6 +410,9 @@ jwt:
 - `src/main/java/com/emenu/features/auth/service/UserValidationService.java`
 - `src/main/java/com/emenu/features/auth/dto/request/RefreshTokenRequest.java`
 - `src/main/java/com/emenu/features/auth/dto/response/RefreshTokenResponse.java`
+- `database/migrations/V1__dynamic_username_uniqueness.sql` (PostgreSQL migration)
+- `database/migrations/V2__cleanup_duplicate_usernames.sql` (Duplicate cleanup helper)
+- `DATABASE_MIGRATION_GUIDE.md` (Migration instructions)
 - `IMPLEMENTATION_SUMMARY.md` (this file)
 
 ### Modified Files

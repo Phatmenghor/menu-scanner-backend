@@ -58,19 +58,24 @@ public class AuthServiceImpl implements AuthService {
     private final UserValidationService userValidationService;
 
     /**
-     * Authenticates a user and generates a JWT token
+     * Authenticates a user and generates a JWT token with context-aware user lookup
      */
     @Override
     public LoginResponse login(LoginRequest request) {
-        log.info("Login attempt: {}", request.getUserIdentifier());
+        log.info("Login attempt: {} (userType: {}, businessId: {})",
+                request.getUserIdentifier(), request.getUserType(), request.getBusinessId());
 
         try {
+            // Find user with context-aware lookup
+            User user = findUserWithContext(request);
+
+            // Validate context matches (if provided)
+            validateLoginContext(request, user);
+
+            // Authenticate with Spring Security
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUserIdentifier(), request.getPassword())
             );
-
-            User user = userRepository.findByUserIdentifierAndIsDeletedFalse(request.getUserIdentifier())
-                    .orElseThrow(() -> new ValidationException("User not found"));
 
             // Validate account status
             securityUtils.validateAccountStatus(user);
@@ -114,7 +119,8 @@ public class AuthServiceImpl implements AuthService {
                 }
             }
 
-            log.info("Login successful: {}", user.getUserIdentifier());
+            log.info("Login successful: {} (type: {}, businessId: {})",
+                    user.getUserIdentifier(), user.getUserType(), user.getBusinessId());
             return response;
 
         } catch (ValidationException e) {
@@ -123,6 +129,69 @@ public class AuthServiceImpl implements AuthService {
         } catch (Exception e) {
             log.warn("Login failed: {} - Error: {}", request.getUserIdentifier(), e.getMessage());
             throw new ValidationException("Invalid credentials");
+        }
+    }
+
+    /**
+     * Find user with context-aware lookup based on userType and businessId.
+     * UserType is REQUIRED to disambiguate which user account to authenticate.
+     */
+    private User findUserWithContext(LoginRequest request) {
+        String userIdentifier = request.getUserIdentifier();
+        UserType userType = request.getUserType();
+        UUID businessId = request.getBusinessId();
+
+        // Validate userType is provided (should be caught by @NotNull, but double-check)
+        if (userType == null) {
+            throw new ValidationException(
+                    "User type is required. Please specify whether you are logging in as CUSTOMER, PLATFORM_USER, or BUSINESS_USER."
+            );
+        }
+
+        // Case 1: BUSINESS_USER - requires businessId
+        if (userType == UserType.BUSINESS_USER) {
+            if (businessId == null) {
+                throw new ValidationException(
+                        "Business ID is required for business user login. Please provide businessId in your login request."
+                );
+            }
+
+            log.debug("Looking up business user: {} in business: {}", userIdentifier, businessId);
+            return userRepository.findByUserIdentifierAndBusinessIdAndIsDeletedFalse(userIdentifier, businessId)
+                    .orElseThrow(() -> new ValidationException(
+                            "User '" + userIdentifier + "' not found in the specified business"
+                    ));
+        }
+
+        // Case 2: CUSTOMER or PLATFORM_USER - global uniqueness per type
+        log.debug("Looking up {} user: {}", userType, userIdentifier);
+        return userRepository.findByUserIdentifierAndUserTypeAndIsDeletedFalse(userIdentifier, userType)
+                .orElseThrow(() -> new ValidationException(
+                        "User '" + userIdentifier + "' not found as " + userType.name().toLowerCase().replace("_", " ")
+                ));
+    }
+
+    /**
+     * Validate that the found user matches the requested context.
+     * This is a safety check - the findUserWithContext method should already ensure correct user.
+     */
+    private void validateLoginContext(LoginRequest request, User user) {
+        // Validate userType matches
+        if (!request.getUserType().equals(user.getUserType())) {
+            throw new ValidationException(
+                    "User type mismatch. Expected: " + request.getUserType() +
+                            ", Found: " + user.getUserType()
+            );
+        }
+
+        // Validate businessId for business users
+        if (request.getUserType() == UserType.BUSINESS_USER) {
+            if (user.getBusinessId() == null) {
+                throw new ValidationException("User is not associated with any business");
+            }
+            if (!request.getBusinessId().equals(user.getBusinessId())) {
+                throw new ValidationException("User does not belong to the specified business");
+            }
         }
     }
 
