@@ -34,7 +34,7 @@ public class UserController {
     @PostMapping("admin-token")
     public ResponseEntity<String> getMyAdminToken() {
         log.info("Get my admin token");
-        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjE5QGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9QTEFURk9STV9PV05FUiIsImlhdCI6MTc2ODQ4NTkyNywiZXhwIjoxMDAwMDE3Njg0ODU5Mjd9.mSq8tXMe0F3KgsvmECaK4HdbFlpNXOK6kfgfzNcVYw-Yne_UVVM4Qujyh4_-mqjqXuFoCEDnIvo7FvvXd-I8Aw");
+        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjE5QGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9QTEFURk9STV9PV05FUiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NjkxNDIzNzksImV4cCI6MTc3MDI1MzQ5MH0.DDIFoUmOSCsiymW-565oReXGU5_VIRL6Soiige94oL39PKLb3ZhdDdxyoxAtwinq2qHAo_LzLzEyenJqjz21qA");
     }
 
     /**
@@ -43,7 +43,7 @@ public class UserController {
     @PostMapping("business-token")
     public ResponseEntity<String> getMyBusinessToken() {
         log.info("Get my business token");
-        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIwQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9CVVNJTkVTU19PV05FUiIsImlhdCI6MTc2ODQ4NjQ2MiwiZXhwIjoxMDAwMDE3Njg0ODY0NjJ9.qh1HRf5G0yQdOV4oVHSgNmD075iMRU_xYyNoy1gABXbPDE2MBlSpyPqi2bgAccRDuVIzUlYJh1EizD60pHGjKg");
+        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIwQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9CVVNJTkVTU19PV05FUiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NjkxNDIyNDgsImV4cCI6MTc3MDI1MzM1OX0.GLh9iFm0PQKj-1IniNDC1HuaGrMGW9cVUKNoL3PiTEBD8jvNLEYozR75EkDrr3NkR98g-2z6wdKgzYUshSAu-w");
     }
 
     /**

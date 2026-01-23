@@ -23,10 +23,10 @@ public class JWTGenerator {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration:86400000}") // Default 24 hours in milliseconds
+    @Value("${jwt.expiration}")
     private long jwtExpiration;
 
-    @Value("${jwt.refresh-token-expiration:2592000000}") // Default 30 days in milliseconds
+    @Value("${jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
 
     private SecretKey getSigningKey() {
