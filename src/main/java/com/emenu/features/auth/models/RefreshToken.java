@@ -100,7 +100,7 @@ public class RefreshToken extends BaseUUIDEntity {
      * @return true if valid, false otherwise
      */
     public boolean isValid() {
-        return !isExpired() && !isRevoked && !isDeleted;
+        return !isExpired() && !isRevoked && !Boolean.TRUE.equals(getIsDeleted());
     }
 
     /**
