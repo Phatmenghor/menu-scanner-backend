@@ -26,11 +26,20 @@ public class JWTGenerator {
     @Value("${jwt.expiration:86400000}") // Default 24 hours in milliseconds
     private long jwtExpiration;
 
+    @Value("${jwt.refresh-token-expiration:2592000000}") // Default 30 days in milliseconds
+    private long refreshTokenExpiration;
+
     private SecretKey getSigningKey() {
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    /**
+     * Generate access token from Authentication object
+     *
+     * @param authentication the authentication object
+     * @return JWT access token
+     */
     public String generateAccessToken(Authentication authentication) {
         String username = authentication.getName();
         Date currentDate = new Date();
@@ -43,10 +52,62 @@ public class JWTGenerator {
         return Jwts.builder()
                 .setSubject(username)
                 .claim("roles", roles)
+                .claim("type", "access")
                 .setIssuedAt(currentDate)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
+    }
+
+    /**
+     * Generate access token from username and roles (used during token refresh)
+     *
+     * @param username the username
+     * @param roles list of roles
+     * @return JWT access token
+     */
+    public String generateAccessTokenFromUsername(String username, List<String> roles) {
+        Date currentDate = new Date();
+        Date expiryDate = new Date(currentDate.getTime() + jwtExpiration);
+
+        String rolesString = String.join(",", roles);
+
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("roles", rolesString)
+                .claim("type", "access")
+                .setIssuedAt(currentDate)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    /**
+     * Generate refresh token for a user
+     *
+     * @param username the username
+     * @return JWT refresh token
+     */
+    public String generateRefreshToken(String username) {
+        Date currentDate = new Date();
+        Date expiryDate = new Date(currentDate.getTime() + refreshTokenExpiration);
+
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("type", "refresh")
+                .setIssuedAt(currentDate)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    /**
+     * Get refresh token expiration date
+     *
+     * @return expiration date
+     */
+    public Date getRefreshTokenExpiryDate() {
+        return new Date(System.currentTimeMillis() + refreshTokenExpiration);
     }
 
     public String getUsernameFromJWT(String token) {

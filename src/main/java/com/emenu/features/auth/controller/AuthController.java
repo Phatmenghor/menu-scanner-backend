@@ -3,8 +3,10 @@ package com.emenu.features.auth.controller;
 import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
 import com.emenu.features.auth.dto.request.LoginRequest;
 import com.emenu.features.auth.dto.request.PasswordChangeRequest;
+import com.emenu.features.auth.dto.request.RefreshTokenRequest;
 import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
+import com.emenu.features.auth.dto.response.RefreshTokenResponse;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.service.AuthService;
 import com.emenu.shared.dto.ApiResponse;
@@ -42,6 +44,16 @@ public class AuthController {
         UserResponse response = authService.registerCustomer(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Customer registration successful", response));
+    }
+
+    /**
+     * Refresh access token using refresh token
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<RefreshTokenResponse>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        log.info("Refresh token request");
+        RefreshTokenResponse response = authService.refreshToken(request);
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", response));
     }
 
 }

@@ -25,8 +25,49 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     /**
      * Checks if a non-deleted user exists with the given user identifier
+     * @deprecated Use dynamic uniqueness methods instead (existsByUserIdentifierAndUserTypeAndIsDeletedFalse or existsByUserIdentifierAndBusinessIdAndIsDeletedFalse)
      */
+    @Deprecated
     boolean existsByUserIdentifierAndIsDeletedFalse(String userIdentifier);
+
+    /**
+     * Checks if a non-deleted user exists with the given user identifier and user type
+     * Used for PLATFORM_USER and CUSTOMER types (global uniqueness per type)
+     */
+    @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.userIdentifier = :userIdentifier AND u.userType = :userType AND u.isDeleted = false")
+    boolean existsByUserIdentifierAndUserTypeAndIsDeletedFalse(
+            @Param("userIdentifier") String userIdentifier,
+            @Param("userType") UserType userType
+    );
+
+    /**
+     * Checks if a non-deleted business user exists with the given user identifier within a specific business
+     * Used for BUSINESS_USER type (unique per business)
+     */
+    @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.userIdentifier = :userIdentifier AND u.businessId = :businessId AND u.isDeleted = false")
+    boolean existsByUserIdentifierAndBusinessIdAndIsDeletedFalse(
+            @Param("userIdentifier") String userIdentifier,
+            @Param("businessId") UUID businessId
+    );
+
+    /**
+     * Finds a non-deleted user by user identifier and user type
+     * Used for PLATFORM_USER and CUSTOMER types
+     */
+    @Query("SELECT u FROM User u WHERE u.userIdentifier = :userIdentifier AND u.userType = :userType AND u.isDeleted = false")
+    Optional<User> findByUserIdentifierAndUserTypeAndIsDeletedFalse(
+            @Param("userIdentifier") String userIdentifier,
+            @Param("userType") UserType userType
+    );
+
+    /**
+     * Finds a non-deleted business user by user identifier within a specific business
+     */
+    @Query("SELECT u FROM User u WHERE u.userIdentifier = :userIdentifier AND u.businessId = :businessId AND u.isDeleted = false")
+    Optional<User> findByUserIdentifierAndBusinessIdAndIsDeletedFalse(
+            @Param("userIdentifier") String userIdentifier,
+            @Param("businessId") UUID businessId
+    );
 
     /**
      * Finds a non-deleted user by ID

@@ -41,10 +41,13 @@ spring:
 server:
   port: 8080
 
-# JWT telegram
+# JWT Configuration
 jwt:
   secret: da2bd42bef8f9f957d647ed13571d35b59c7055fb723eacdb05154878da17d77d3180385fc232cab38bded0fc7dbda0d439cc275e91164ade266d64d50633bc7
-  expiration: 99999999999999999
+  # Access token expiration: 10 minutes (600000 milliseconds)
+  expiration: 600000
+  # Refresh token expiration: 1 month (2592000000 milliseconds = 30 days)
+  refresh-token-expiration: 2592000000
 
 # API Documentation
 springdoc:

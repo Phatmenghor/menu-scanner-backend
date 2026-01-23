@@ -22,6 +22,7 @@ import com.emenu.features.auth.repository.BusinessOwnerRepository;
 import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.service.BusinessOwnerService;
+import com.emenu.features.auth.service.UserValidationService;
 import com.emenu.features.auth.service.helper.BusinessOwnerDetailEnricher;
 import com.emenu.features.order.models.Payment;
 import com.emenu.features.order.repository.PaymentRepository;
@@ -59,6 +60,7 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
     private final PasswordEncoder passwordEncoder;
     private final BusinessOwnerMapper mapper;
     private final BusinessOwnerDetailEnricher enricher;
+    private final UserValidationService userValidationService;
 
     /**
      * Creates a new business owner with associated business, owner user, subscription, and optional payment
@@ -322,6 +324,11 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         if (!planRepository.existsById(request.getPlanId())) {
             throw new NotFoundException("Plan not found: " + request.getPlanId());
         }
+
+        // Note: Username validation for business users cannot be done here because the business
+        // doesn't exist yet. The username must be unique within the business, but we don't have
+        // the businessId at this point. This validation will be handled at the database level
+        // through unique constraints and will result in a database exception if violated.
     }
 
     private Business createBusiness(BusinessOwnerCreateRequest request) {

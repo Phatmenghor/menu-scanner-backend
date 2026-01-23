@@ -10,9 +10,10 @@ import java.util.UUID;
 public class LoginResponse {
 
     private String accessToken;
+    private String refreshToken;
     private String tokenType = "Bearer";
     private UUID userId;
-    
+
     private String userIdentifier;
     private String email;
     private String fullName;
@@ -21,4 +22,6 @@ public class LoginResponse {
     private List<String> roles;
     private UUID businessId;
     private String businessName;
+    private String businessStatus;
+    private Boolean isSubscriptionActive;
 }

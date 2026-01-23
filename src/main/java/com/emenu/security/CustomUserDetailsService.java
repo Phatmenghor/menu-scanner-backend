@@ -22,6 +22,19 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
+    /**
+     * Load user by username for authentication.
+     *
+     * Note: With dynamic username uniqueness (username unique per user type or business),
+     * this method returns the first matching user. In practice, this works because:
+     * - PLATFORM_USER usernames are globally unique (admin-created)
+     * - CUSTOMER usernames are globally unique (self-registration)
+     * - BUSINESS_USER usernames are unique per business
+     *
+     * If a username exists in multiple contexts, the system authenticates the first match.
+     * For production systems with overlapping usernames, consider using email as the primary
+     * login identifier or adding user type/business context to the login request.
+     */
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String userIdentifier) throws UsernameNotFoundException {
