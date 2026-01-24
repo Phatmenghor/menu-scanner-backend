@@ -1,4 +1,4 @@
-package com.emenu.features.auth.service.provider;
+package com.emenu.features.auth.service.social.provider;
 
 public record SocialUserInfo(
         String id,

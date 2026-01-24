@@ -1,7 +1,6 @@
 package com.emenu.features.auth.dto.update;
 
 import com.emenu.enums.user.AccountStatus;
-import com.emenu.enums.user.RoleEnum;
 import lombok.Data;
 
 import java.util.List;
@@ -15,7 +14,7 @@ public class UserUpdateRequest {
     private String profileImageUrl;
     private AccountStatus accountStatus;
     private UUID businessId;
-    private List<RoleEnum> roles;
+    private List<String> roles;
     private String position;
     private String address;
     private String notes;

@@ -1,4 +1,4 @@
-package com.emenu.features.auth.service.provider;
+package com.emenu.features.auth.service.social.provider;
 
 import com.emenu.exception.custom.ValidationException;
 import com.fasterxml.jackson.databind.JsonNode;

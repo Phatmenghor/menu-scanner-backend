@@ -1,7 +1,6 @@
 package com.emenu.features.auth.repository;
 
 import com.emenu.enums.user.AccountStatus;
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.models.User;
 import org.springframework.data.domain.Page;
@@ -93,7 +92,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             @Param("businessId") UUID businessId,
             @Param("userTypes") List<UserType> userTypes,
             @Param("accountStatuses") List<AccountStatus> accountStatuses,
-            @Param("roles") List<RoleEnum> roles,
+            @Param("roles") List<String> roles,
             @Param("search") String search,
             Pageable pageable
     );
@@ -116,7 +115,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT DISTINCT u FROM User u " +
             "LEFT JOIN u.roles r " +
             "WHERE r.name = :role AND u.isDeleted = false")
-    List<User> findByRoleAndIsDeletedFalse(@Param("role") RoleEnum role);
+    List<User> findByRoleAndIsDeletedFalse(@Param("role") String role);
 
     /**
      * Finds all non-deleted platform users (all roles except CUSTOMER and BUSINESS roles)

@@ -1,7 +1,6 @@
 package com.emenu.features.auth.dto.filter;
 
 import com.emenu.enums.user.AccountStatus;
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.shared.dto.BaseFilterRequest;
 import lombok.Data;
@@ -16,5 +15,5 @@ public class UserFilterRequest extends BaseFilterRequest {
     private UUID businessId;
     private List<AccountStatus> accountStatuses;  // Changed to List
     private List<UserType> userTypes;             // Changed to List
-    private List<RoleEnum> roles;
+    private List<String> roles;
 }

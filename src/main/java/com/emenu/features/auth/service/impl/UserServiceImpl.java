@@ -1,7 +1,6 @@
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.enums.user.AccountStatus;
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.UserFilterRequest;
@@ -98,7 +97,7 @@ public class UserServiceImpl implements UserService {
                 ? request.getUserTypes() : null;
         List<AccountStatus> accountStatuses = (request.getAccountStatuses() != null && !request.getAccountStatuses().isEmpty())
                 ? request.getAccountStatuses() : null;
-        List<RoleEnum> roles = (request.getRoles() != null && !request.getRoles().isEmpty())
+        List<String> roles = (request.getRoles() != null && !request.getRoles().isEmpty())
                 ? request.getRoles() : null;
 
         Page<User> userPage = userRepository.searchUsers(

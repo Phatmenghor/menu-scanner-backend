@@ -2,7 +2,6 @@ package com.emenu.features.notification.service.impl;
 
 import com.emenu.enums.notification.MessageStatus;
 import com.emenu.enums.notification.NotificationRecipientType;
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.UserRepository;
@@ -145,7 +144,7 @@ public class NotificationServiceImpl implements NotificationService {
     
     // ===== CREATE SYSTEM OWNER GROUP =====
     private List<Notification> createSystemOwnerNotifications(NotificationRequest request, UUID groupId) {
-        List<User> systemOwners = userRepository.findByRoleAndIsDeletedFalse(RoleEnum.PLATFORM_OWNER);
+        List<User> systemOwners = userRepository.findByRoleAndIsDeletedFalse("PLATFORM_OWNER");
         
         if (systemOwners.isEmpty()) {
             log.warn("No system owners found");
@@ -191,7 +190,7 @@ public class NotificationServiceImpl implements NotificationService {
     
     // ===== SYSTEM COPY =====
     private void sendSystemCopies(Notification original, UUID groupId) {
-        List<User> systemOwners = userRepository.findByRoleAndIsDeletedFalse(RoleEnum.PLATFORM_OWNER);
+        List<User> systemOwners = userRepository.findByRoleAndIsDeletedFalse("PLATFORM_OWNER");
         
         List<Notification> systemCopies = systemOwners.stream()
                 .map(owner -> notificationFactory.createSystemCopy(

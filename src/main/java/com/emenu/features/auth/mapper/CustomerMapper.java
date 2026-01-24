@@ -1,6 +1,5 @@
 package com.emenu.features.auth.mapper;
 
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
 import com.emenu.features.auth.dto.response.UserResponse;
 import com.emenu.features.auth.dto.update.UserUpdateRequest;
@@ -66,7 +65,7 @@ public interface CustomerMapper {
     void updateCurrentUserProfile(UserUpdateRequest request, @MappingTarget User user);
 
     @Named("rolesToRoleEnums")
-    default List<RoleEnum> rolesToRoleEnums(List<Role> roles) {
+    default List<String> rolesToRoleEnums(List<Role> roles) {
         if (roles == null) {
             return null;
         }

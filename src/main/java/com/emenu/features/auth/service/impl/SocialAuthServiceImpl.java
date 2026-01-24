@@ -17,7 +17,7 @@ import com.emenu.features.auth.service.social.provider.GoogleAuthProvider;
 import com.emenu.features.auth.service.social.provider.SocialUserInfo;
 import com.emenu.features.auth.service.social.provider.TelegramAuthProvider;
 import com.emenu.security.jwt.JWTGenerator;
-import com.emenu.security.utils.SecurityUtils;
+import com.emenu.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;

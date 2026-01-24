@@ -1,6 +1,5 @@
 package com.emenu.features.auth.mapper;
 
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.features.auth.dto.request.RegisterRequest;
 import com.emenu.features.auth.dto.request.UserCreateRequest;
 import com.emenu.features.auth.dto.response.LoginResponse;
@@ -64,7 +63,7 @@ public interface UserMapper {
     User toEntity(RegisterRequest request);
 
     @Named("rolesToEnums")
-    default List<RoleEnum> rolesToEnums(List<Role> roles) {
+    default List<String> rolesToEnums(List<Role> roles) {
         if (roles == null) return List.of();
         return roles.stream().map(Role::getName).collect(Collectors.toList());
     }
@@ -72,7 +71,7 @@ public interface UserMapper {
     @Named("rolesToStrings")
     default List<String> rolesToStrings(List<Role> roles) {
         if (roles == null) return List.of();
-        return roles.stream().map(role -> role.getName().name()).collect(Collectors.toList());
+        return roles.stream().map(Role::getName).collect(Collectors.toList());
     }
 
     default PaginationResponse<UserResponse> toPaginationResponse(Page<User> page, PaginationMapper paginationMapper) {
