@@ -15,12 +15,4 @@ public enum RoleEnum {
         this.displayName = displayName;
         this.description = description;
     }
-
-    public RoleScope getScope() {
-        return switch (this) {
-            case PLATFORM_OWNER -> RoleScope.PLATFORM;
-            case BUSINESS_OWNER -> RoleScope.BUSINESS;
-            case CUSTOMER -> RoleScope.CUSTOMER;
-        };
-    }
 }

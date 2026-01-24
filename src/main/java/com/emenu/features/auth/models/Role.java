@@ -1,7 +1,6 @@
 package com.emenu.features.auth.models;
 
 import com.emenu.enums.user.RoleEnum;
-import com.emenu.enums.user.RoleScope;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -17,7 +16,6 @@ import java.util.UUID;
         @Index(name = "idx_role_deleted", columnList = "is_deleted"),
         @Index(name = "idx_role_name", columnList = "name, is_deleted"),
         @Index(name = "idx_role_code", columnList = "code"),
-        @Index(name = "idx_role_scope", columnList = "scope, is_deleted"),
         @Index(name = "idx_role_business", columnList = "business_id, is_deleted")
 }, uniqueConstraints = {
         @UniqueConstraint(name = "uk_role_code_business", columnNames = {"code", "business_id"})
@@ -29,7 +27,7 @@ import java.util.UUID;
 public class Role extends BaseUUIDEntity {
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private RoleEnum name;
 
     @Column(name = "code", nullable = false, length = 100)
@@ -41,10 +39,6 @@ public class Role extends BaseUUIDEntity {
     @Column(name = "description", length = 500)
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "scope", nullable = false)
-    private RoleScope scope;
-
     @Column(name = "business_id")
     private UUID businessId;
 
@@ -54,32 +48,24 @@ public class Role extends BaseUUIDEntity {
     @ManyToMany(mappedBy = "roles")
     private List<User> users;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "role_permissions",
-            joinColumns = @JoinColumn(name = "role_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission_id")
-    )
-    private List<Permission> permissions;
-
     public Role(RoleEnum name) {
         this.name = name;
         this.code = name.name();
         this.displayName = name.getDisplayName();
         this.description = name.getDescription();
-        this.scope = name.getScope();
+        this.businessId = null;
         this.isSystem = true;
     }
 
     public boolean isPlatformRole() {
-        return RoleScope.PLATFORM.equals(scope);
+        return businessId == null && RoleEnum.PLATFORM_OWNER.equals(name);
     }
 
     public boolean isBusinessRole() {
-        return RoleScope.BUSINESS.equals(scope);
+        return businessId != null || RoleEnum.BUSINESS_OWNER.equals(name);
     }
 
     public boolean isCustomerRole() {
-        return RoleScope.CUSTOMER.equals(scope);
+        return RoleEnum.CUSTOMER.equals(name);
     }
 }
