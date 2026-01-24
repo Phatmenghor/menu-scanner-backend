@@ -165,8 +165,8 @@ public class SocialAuthServiceImpl implements SocialAuthService {
         String userIdentifier = generateUserIdentifier(userInfo, userType);
         
         RoleEnum defaultRole = switch (userType) {
-            case PLATFORM_USER -> RoleEnum.PLATFORM_STAFF;
-            case BUSINESS_USER -> RoleEnum.BUSINESS_STAFF;
+            case PLATFORM_USER -> RoleEnum.PLATFORM_OWNER;
+            case BUSINESS_USER -> RoleEnum.BUSINESS_OWNER;
             case CUSTOMER -> RoleEnum.CUSTOMER;
         };
 

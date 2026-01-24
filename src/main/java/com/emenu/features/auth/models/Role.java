@@ -65,18 +65,10 @@ public class Role extends BaseUUIDEntity {
     public Role(RoleEnum name) {
         this.name = name;
         this.code = name.name();
-        this.displayName = name.getDescription();
+        this.displayName = name.getDisplayName();
         this.description = name.getDescription();
-        this.scope = determineScope(name);
+        this.scope = name.getScope();
         this.isSystem = true;
-    }
-
-    private RoleScope determineScope(RoleEnum roleEnum) {
-        return switch (roleEnum) {
-            case PLATFORM_OWNER, PLATFORM_ADMIN, PLATFORM_STAFF -> RoleScope.PLATFORM;
-            case BUSINESS_OWNER, BUSINESS_ADMIN, BUSINESS_STAFF -> RoleScope.BUSINESS;
-            case CUSTOMER -> RoleScope.CUSTOMER;
-        };
     }
 
     public boolean isPlatformRole() {

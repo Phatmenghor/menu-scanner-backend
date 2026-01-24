@@ -74,7 +74,7 @@ public class NotificationController {
      * Retrieves all notifications with pagination (admin only)
      */
     @PostMapping("/all")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'PLATFORM_ADMIN')")
+    @PreAuthorize("hasRole('PLATFORM_OWNER')")
     public ResponseEntity<ApiResponse<PaginationResponse<NotificationResponse>>> getAllNotifications(
             @Valid @RequestBody NotificationFilterRequest request) {
         log.info("Get all notifications");

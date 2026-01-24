@@ -29,13 +29,13 @@ ALTER TABLE roles ADD COLUMN IF NOT EXISTS business_id UUID;
 ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_system BOOLEAN NOT NULL DEFAULT false;
 
 -- Update existing system roles with codes and scope
-UPDATE roles SET code = name::text, display_name = description, scope = 'PLATFORM', is_system = true 
-WHERE name IN ('PLATFORM_OWNER', 'PLATFORM_ADMIN', 'PLATFORM_STAFF');
+UPDATE roles SET code = name::text, display_name = description, scope = 'PLATFORM', is_system = true
+WHERE name = 'PLATFORM_OWNER';
 
-UPDATE roles SET code = name::text, display_name = description, scope = 'BUSINESS', is_system = true 
-WHERE name IN ('BUSINESS_OWNER', 'BUSINESS_ADMIN', 'BUSINESS_STAFF');
+UPDATE roles SET code = name::text, display_name = description, scope = 'BUSINESS', is_system = true
+WHERE name = 'BUSINESS_OWNER';
 
-UPDATE roles SET code = name::text, display_name = description, scope = 'CUSTOMER', is_system = true 
+UPDATE roles SET code = name::text, display_name = description, scope = 'CUSTOMER', is_system = true
 WHERE name = 'CUSTOMER';
 
 -- Make code NOT NULL after populating existing data
