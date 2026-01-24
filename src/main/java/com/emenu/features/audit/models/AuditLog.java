@@ -1,4 +1,4 @@
-package com.emenu.shared.audit;
+package com.emenu.features.audit.models;
 
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
@@ -15,7 +15,9 @@ import java.util.UUID;
         @Index(name = "idx_audit_endpoint", columnList = "endpoint"),
         @Index(name = "idx_audit_ip", columnList = "ip_address"),
         @Index(name = "idx_audit_created", columnList = "created_at"),
-        @Index(name = "idx_audit_status", columnList = "status_code")
+        @Index(name = "idx_audit_status", columnList = "status_code"),
+        @Index(name = "idx_audit_user_type", columnList = "user_type"),
+        @Index(name = "idx_audit_http_method", columnList = "http_method")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -55,4 +57,13 @@ public class AuditLog extends BaseUUIDEntity {
 
     @Column(name = "session_id", length = 100)
     private String sessionId;
+
+    @Column(name = "request_params", length = 2000)
+    private String requestParams;
+
+    @Column(name = "request_body", columnDefinition = "TEXT")
+    private String requestBody;
+
+    @Column(name = "response_body", columnDefinition = "TEXT")
+    private String responseBody;
 }

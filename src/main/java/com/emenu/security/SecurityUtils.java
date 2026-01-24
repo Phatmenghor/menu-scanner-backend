@@ -107,4 +107,14 @@ public class SecurityUtils {
     public UUID getCurrentUserId() {
         return getCurrentUser().getId();
     }
+
+    public com.emenu.enums.user.UserType getCurrentUserType() {
+        try {
+            User currentUser = getCurrentUser();
+            return currentUser.getUserType();
+        } catch (Exception e) {
+            log.debug("Error getting user type: {}", e.getMessage());
+            return null;
+        }
+    }
 }
