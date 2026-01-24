@@ -10,13 +10,12 @@ import com.emenu.features.auth.repository.UserSessionRepository;
 import com.emenu.features.auth.service.UserSessionService;
 import com.emenu.shared.constants.SecurityConstants;
 import com.emenu.shared.utils.ClientIpUtils;
+import com.emenu.shared.utils.UserAgentParser;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ua_parser.Client;
-import ua_parser.Parser;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,7 +29,6 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     private final UserSessionRepository sessionRepository;
     private final UserRepository userRepository;
-    private final Parser uaParser = new Parser();
 
     @Override
     @Transactional
@@ -39,7 +37,7 @@ public class UserSessionServiceImpl implements UserSessionService {
         String deviceId = request.getHeader(SecurityConstants.HEADER_DEVICE_ID);
         String deviceName = request.getHeader(SecurityConstants.HEADER_DEVICE_NAME);
 
-        Client client = uaParser.parse(userAgent);
+        UserAgentParser.ParsedUserAgent parsedUA = UserAgentParser.parse(userAgent);
 
         UserSession session = new UserSession();
         session.setUserId(user.getId());
@@ -48,8 +46,8 @@ public class UserSessionServiceImpl implements UserSessionService {
         session.setDeviceName(deviceName);
         session.setDeviceType(detectDeviceType(userAgent));
         session.setUserAgent(userAgent);
-        session.setBrowser(client.userAgent.family + " " + client.userAgent.major);
-        session.setOperatingSystem(client.os.family);
+        session.setBrowser(parsedUA.getBrowserWithVersion());
+        session.setOperatingSystem(parsedUA.getOs());
         session.setIpAddress(ClientIpUtils.getClientIp(request));
         session.setStatus(SecurityConstants.SESSION_STATUS_ACTIVE);
         session.setLoginAt(LocalDateTime.now());
