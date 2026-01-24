@@ -26,7 +26,7 @@ public class TelegramAuthProvider {
 
     public SocialUserInfo getUserInfo(String authData) {
         try {
-            JsonNode data = objectMapper.readTree(authData);
+            JsonNode data = objectMapper.readTree(austhData);
             
             String id = data.get("id").asText();
             String username = data.has("username") ? data.get("username").asText() : null;
