@@ -74,8 +74,8 @@ public class SocialAuthServiceImpl implements SocialAuthService {
                 .userType(user.getUserType().name())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .socialId(userInfo.id())
-                .socialUsername(userInfo.username())
+                .socialId(userInfo.getId())
+                .socialUsername(userInfo.getUsername())
                 .syncedAt(java.time.LocalDateTime.now())
                 .operationType(user.getCreatedAt().isAfter(java.time.LocalDateTime.now().minusSeconds(5)) ? "register" : "login")
                 .isNewUser(user.getCreatedAt().isAfter(java.time.LocalDateTime.now().minusSeconds(5)))
@@ -143,8 +143,8 @@ public class SocialAuthServiceImpl implements SocialAuthService {
     }
 
     private User findOrCreateByTelegram(SocialUserInfo userInfo, UserType userType, UUID businessId) {
-        Long telegramId = Long.parseLong(userInfo.id());
-        
+        Long telegramId = Long.parseLong(userInfo.getId());
+
         return userRepository.findByTelegramIdAndIsDeletedFalse(telegramId)
                 .orElseGet(() -> createNewUser(userInfo, userType, businessId));
     }
@@ -152,10 +152,10 @@ public class SocialAuthServiceImpl implements SocialAuthService {
     private User findOrCreateByGoogle(SocialUserInfo userInfo, UserType userType, UUID businessId) {
         if (userType == UserType.BUSINESS_USER && businessId != null) {
             return userRepository.findByGoogleIdAndUserTypeAndBusinessIdAndIsDeletedFalse(
-                    userInfo.id(), userType, businessId
+                    userInfo.getId(), userType, businessId
             ).orElseGet(() -> createNewUser(userInfo, userType, businessId));
         } else {
-            return userRepository.findByGoogleIdAndUserTypeAndIsDeletedFalse(userInfo.id(), userType)
+            return userRepository.findByGoogleIdAndUserTypeAndIsDeletedFalse(userInfo.getId(), userType)
                     .orElseGet(() -> createNewUser(userInfo, userType, businessId));
         }
     }
@@ -174,10 +174,10 @@ public class SocialAuthServiceImpl implements SocialAuthService {
 
         User user = new User();
         user.setUserIdentifier(userIdentifier);
-        user.setEmail(userInfo.email());
+        user.setEmail(userInfo.getEmail());
         user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-        user.setFirstName(userInfo.firstName());
-        user.setLastName(userInfo.lastName());
+        user.setFirstName(userInfo.getFirstName());
+        user.setLastName(userInfo.getLastName());
         user.setUserType(userType);
         user.setAccountStatus(AccountStatus.ACTIVE);
         user.setBusinessId(businessId);
@@ -189,19 +189,19 @@ public class SocialAuthServiceImpl implements SocialAuthService {
     private void syncSocialData(User user, SocialAuthProvider provider, SocialUserInfo userInfo) {
         switch (provider) {
             case TELEGRAM -> user.syncTelegram(
-                    Long.parseLong(userInfo.id()),
-                    userInfo.username(),
-                    userInfo.firstName(),
-                    userInfo.lastName()
+                    Long.parseLong(userInfo.getId()),
+                    userInfo.getUsername(),
+                    userInfo.getFirstName(),
+                    userInfo.getLastName()
             );
-            case GOOGLE -> user.syncGoogle(userInfo.id(), userInfo.email());
+            case GOOGLE -> user.syncGoogle(userInfo.getId(), userInfo.getEmail());
         }
     }
 
     private String generateUserIdentifier(SocialUserInfo userInfo, UserType userType) {
-        String base = userInfo.username() != null ? userInfo.username() :
-                      userInfo.email() != null ? userInfo.email().split("@")[0] :
-                      "user" + userInfo.id().substring(0, 8);
+        String base = userInfo.getUsername() != null ? userInfo.getUsername() :
+                      userInfo.getEmail() != null ? userInfo.getEmail().split("@")[0] :
+                      "user" + userInfo.getId().substring(0, 8);
 
         String identifier = base.toLowerCase().replaceAll("[^a-z0-9_]", "");
         
