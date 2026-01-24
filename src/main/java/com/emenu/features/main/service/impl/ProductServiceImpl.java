@@ -22,7 +22,6 @@ import com.emenu.features.main.repository.ProductImageRepository;
 import com.emenu.features.main.repository.ProductRepository;
 import com.emenu.features.main.repository.ProductSizeRepository;
 import com.emenu.features.main.service.ProductService;
-import com.emenu.features.main.specification.ProductSpecifications;
 import com.emenu.features.main.utils.ProductFavoriteQueryHelper;
 import com.emenu.features.main.utils.ProductUtils;
 import com.emenu.features.order.utils.CartQueryHelper;
@@ -33,7 +32,6 @@ import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

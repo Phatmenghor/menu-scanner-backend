@@ -16,7 +16,6 @@ import com.emenu.features.order.models.OrderItem;
 import com.emenu.features.order.repository.CartRepository;
 import com.emenu.features.order.repository.OrderRepository;
 import com.emenu.features.order.service.OrderService;
-import com.emenu.features.order.specification.OrderSpecification;
 import com.emenu.features.order.models.BusinessOrderPayment;
 import com.emenu.features.order.repository.BusinessOrderPaymentRepository;
 import com.emenu.features.main.models.Product;
@@ -31,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

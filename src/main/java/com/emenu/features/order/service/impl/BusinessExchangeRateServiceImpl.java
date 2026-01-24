@@ -13,7 +13,6 @@ import com.emenu.features.order.mapper.BusinessExchangeRateMapper;
 import com.emenu.features.order.models.BusinessExchangeRate;
 import com.emenu.features.order.repository.BusinessExchangeRateRepository;
 import com.emenu.features.order.service.BusinessExchangeRateService;
-import com.emenu.features.order.specification.BusinessExchangeRateSpecification;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -21,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

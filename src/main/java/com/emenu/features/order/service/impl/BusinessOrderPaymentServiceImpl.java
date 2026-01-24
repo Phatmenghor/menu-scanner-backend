@@ -8,7 +8,6 @@ import com.emenu.features.order.mapper.BusinessOrderPaymentMapper;
 import com.emenu.features.order.models.BusinessOrderPayment;
 import com.emenu.features.order.repository.BusinessOrderPaymentRepository;
 import com.emenu.features.order.service.BusinessOrderPaymentService;
-import com.emenu.features.order.specification.BusinessOrderPaymentSpecification;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -16,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

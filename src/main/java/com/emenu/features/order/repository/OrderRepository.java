@@ -3,7 +3,6 @@ package com.emenu.features.order.repository;
 import com.emenu.enums.order.OrderStatus;
 import com.emenu.features.order.models.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecificationExecutor<Order> {
+public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     /**
      * Finds a non-deleted order by ID with items, products, sizes, delivery details, business, and customer eagerly fetched

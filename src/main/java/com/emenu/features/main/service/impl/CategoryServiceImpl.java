@@ -12,7 +12,6 @@ import com.emenu.features.main.mapper.CategoryMapper;
 import com.emenu.features.main.models.Category;
 import com.emenu.features.main.repository.CategoryRepository;
 import com.emenu.features.main.service.CategoryService;
-import com.emenu.features.main.specification.CategorySpecification;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -20,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,24 +64,28 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<CategoryResponse> getAllCategories(CategoryFilterRequest filter) {
-
-        Specification<Category> spec = CategorySpecification.buildSpecification(filter);
-
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        Page<Category> categoryPage = categoryRepository.findAll(spec, pageable);
+        Page<Category> categoryPage = categoryRepository.findAllWithFilters(
+                filter.getBusinessId(),
+                filter.getStatus(),
+                filter.getSearch(),
+                pageable
+        );
         return categoryMapper.toPaginationResponse(categoryPage, paginationMapper);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CategoryResponse> getAllItemCategories(CategoryAllFilterRequest filter) {
-
-        Specification<Category> spec = CategorySpecification.buildSpecification(filter);
-
-        List<Category> categories = categoryRepository.findAll(spec, PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection()));
+        List<Category> categories = categoryRepository.findAllWithFilters(
+                filter.getBusinessId(),
+                filter.getStatus(),
+                filter.getSearch(),
+                PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection())
+        );
         return categoryMapper.toResponseList(categories);
     }
 

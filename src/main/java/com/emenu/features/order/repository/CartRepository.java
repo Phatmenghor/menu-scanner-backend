@@ -2,7 +2,6 @@ package com.emenu.features.order.repository;
 
 import com.emenu.features.order.models.Cart;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -12,7 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface CartRepository extends JpaRepository<Cart, UUID>, JpaSpecificationExecutor<Cart> {
+public interface CartRepository extends JpaRepository<Cart, UUID> {
 
     /**
      * Finds a non-deleted cart by user ID and business ID with items, products, sizes, and business eagerly fetched

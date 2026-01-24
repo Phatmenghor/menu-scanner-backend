@@ -2,7 +2,6 @@ package com.emenu.features.location.repository;
 
 import com.emenu.features.location.models.CustomerAddress;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface CustomerAddressRepository extends JpaRepository<CustomerAddress, UUID>, JpaSpecificationExecutor<CustomerAddress> {
+public interface CustomerAddressRepository extends JpaRepository<CustomerAddress, UUID> {
 
     /**
      * Finds all non-deleted addresses for a user, ordered by default status and creation date

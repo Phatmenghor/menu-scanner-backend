@@ -11,7 +11,6 @@ import com.emenu.features.location.mapper.CustomerAddressMapper;
 import com.emenu.features.location.models.CustomerAddress;
 import com.emenu.features.location.repository.CustomerAddressRepository;
 import com.emenu.features.location.service.CustomerAddressService;
-import com.emenu.features.location.specification.CustomerAddressSpecification;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -19,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

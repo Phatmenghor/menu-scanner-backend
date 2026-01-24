@@ -12,7 +12,6 @@ import com.emenu.features.main.mapper.BrandMapper;
 import com.emenu.features.main.models.Brand;
 import com.emenu.features.main.repository.BrandRepository;
 import com.emenu.features.main.service.BrandService;
-import com.emenu.features.main.specification.BrandSpecification;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -20,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,24 +64,28 @@ public class BrandServiceImpl implements BrandService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<BrandResponse> getAllBrands(BrandFilterRequest filter) {
-
-        Specification<Brand> spec = BrandSpecification.buildSpecification(filter);
-
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        Page<Brand> brandPage = brandRepository.findAll(spec, pageable);
+        Page<Brand> brandPage = brandRepository.findAllWithFilters(
+                filter.getBusinessId(),
+                filter.getStatus(),
+                filter.getSearch(),
+                pageable
+        );
         return brandMapper.toPaginationResponse(brandPage, paginationMapper);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<BrandResponse> getAllListBrands(BrandAllFilterRequest filter) {
-
-        Specification<Brand> spec = BrandSpecification.buildSpecification(filter);
-
-        List<Brand> brandList = brandRepository.findAll(spec, PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection()));
+        List<Brand> brandList = brandRepository.findAllWithFilters(
+                filter.getBusinessId(),
+                filter.getStatus(),
+                filter.getSearch(),
+                PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection())
+        );
         return brandMapper.toResponseList(brandList);
     }
 

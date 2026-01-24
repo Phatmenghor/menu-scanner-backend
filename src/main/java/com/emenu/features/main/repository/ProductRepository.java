@@ -4,7 +4,6 @@ import com.emenu.features.main.models.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
+public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     /**
      * Find product by ID with all related details (category, brand, business, sizes)
