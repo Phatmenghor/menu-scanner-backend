@@ -1,8 +1,8 @@
-package com.emenu.features.social.service;
+package com.emenu.features.auth.service;
 
-import com.emenu.features.social.dto.request.SocialAuthRequest;
-import com.emenu.features.social.dto.response.SocialAuthResponse;
-import com.emenu.features.social.dto.response.SocialSyncResponse;
+import com.emenu.features.auth.dto.request.SocialAuthRequest;
+import com.emenu.features.auth.dto.response.SocialAuthResponse;
+import com.emenu.features.auth.dto.response.SocialSyncResponse;
 
 /**
  * Main service for social authentication operations

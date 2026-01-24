@@ -1,4 +1,4 @@
-package com.emenu.features.social.dto.request;
+package com.emenu.features.auth.dto.request;
 
 import com.emenu.enums.user.UserType;
 import jakarta.validation.constraints.NotBlank;

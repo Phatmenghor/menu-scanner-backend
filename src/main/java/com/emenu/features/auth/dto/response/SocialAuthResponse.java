@@ -1,4 +1,4 @@
-package com.emenu.features.social.dto.response;
+package com.emenu.features.auth.dto.response;
 
 import com.emenu.enums.social.SocialAuthProvider;
 import lombok.AllArgsConstructor;
