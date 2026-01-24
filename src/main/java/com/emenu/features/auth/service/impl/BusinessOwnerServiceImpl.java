@@ -6,7 +6,6 @@ import com.emenu.enums.payment.PaymentType;
 import com.emenu.enums.sub_scription.SubscriptionStatus;
 import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.BusinessStatus;
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
@@ -340,7 +339,7 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
     }
 
     private User createOwnerUser(BusinessOwnerCreateRequest request, UUID businessId) {
-        Role ownerRole = roleRepository.findByName(RoleEnum.BUSINESS_OWNER)
+        Role ownerRole = roleRepository.findByNameAndIsDeletedFalse("BUSINESS_OWNER")
                 .orElseThrow(() -> new NotFoundException("Business owner role not found"));
 
         User owner = new User();

@@ -1,7 +1,6 @@
 package com.emenu.config;
 
 import com.emenu.enums.user.AccountStatus;
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
@@ -90,32 +89,29 @@ public class DataInitializationService {
         try {
             log.info("🔄 Ensuring system roles exist...");
 
-            // Get all existing roles from database in one query
-            List<RoleEnum> existingRoles = roleRepository.findAll()
-                    .stream()
-                    .map(Role::getName)
-                    .toList();
+            String[] systemRoles = {"PLATFORM_OWNER", "BUSINESS_OWNER", "CUSTOMER"};
+            int createdCount = 0;
 
-            // Get all enum values
-            List<RoleEnum> allEnumRoles = Arrays.asList(RoleEnum.values());
-
-            // Find missing roles
-            List<RoleEnum> missingRoles = allEnumRoles.stream()
-                    .filter(roleEnum -> !existingRoles.contains(roleEnum))
-                    .toList();
-
-            if (missingRoles.isEmpty()) {
-                log.info("✅ All {} system roles already exist: {}", allEnumRoles.size(), existingRoles);
-                return existingRoles.size();
-            } else {
-                log.info("🔧 Found {} missing roles out of {}: {}", missingRoles.size(), allEnumRoles.size(), missingRoles);
-                log.info("📋 Existing roles in database: {}", existingRoles);
-                
-                int createdCount = createMissingRoles(missingRoles);
-                log.info("✅ Successfully created {} missing roles", createdCount);
-                
-                return existingRoles.size() + createdCount;
+            for (String roleName : systemRoles) {
+                if (!roleRepository.existsByNameAndIsDeletedFalse(roleName)) {
+                    Role role = new Role();
+                    role.setName(roleName);
+                    role.setDisplayName(roleName.replace("_", " "));
+                    role.setDescription("System role: " + roleName);
+                    role.setBusinessId(null);
+                    roleRepository.save(role);
+                    createdCount++;
+                    log.info("✅ Created system role: {}", roleName);
+                }
             }
+
+            if (createdCount > 0) {
+                log.info("✅ Created {} system roles", createdCount);
+            } else {
+                log.info("✅ All system roles already exist");
+            }
+
+            return systemRoles.length;
 
         } catch (Exception e) {
             log.error("❌ Error during roles verification: {}", e.getMessage(), e);
@@ -123,19 +119,22 @@ public class DataInitializationService {
         }
     }
 
-    private int createMissingRoles(List<RoleEnum> missingRoles) {
+    @SuppressWarnings("unused")
+    private int createMissingRoles_DEPRECATED(List<String> missingRoles) {
         int createdCount = 0;
-        
-        for (RoleEnum roleEnum : missingRoles) {
+
+        for (String roleName : missingRoles) {
             try {
-                // ✅ ENHANCED: Check if role was created by another thread
-                if (roleRepository.existsByName(roleEnum)) {
-                    log.debug("Role {} already exists (created by another process)", roleEnum.name());
+                if (roleRepository.existsByNameAndIsDeletedFalse(roleName)) {
+                    log.debug("Role {} already exists (created by another process)", roleName);
                     continue;
                 }
 
-                Role role = new Role(roleEnum);
-                role = roleRepository.save(role);
+                Role role = new Role();
+                role.setName(roleName);
+                role.setDisplayName(roleName.replace("_", " "));
+                role.setDescription("System role: " + roleName);
+                roleRepository.save(role);
                 createdCount++;
                 
                 log.info("✅ Successfully created role: {} with ID: {}", roleEnum.name(), role.getId());
@@ -188,7 +187,7 @@ public class DataInitializationService {
                 admin.setPosition("Platform Owner");
                 admin.setAccountStatus(AccountStatus.ACTIVE);
 
-                Role platformOwnerRole = roleRepository.findByName(RoleEnum.PLATFORM_OWNER)
+                Role platformOwnerRole = roleRepository.findByNameAndIsDeletedFalse("PLATFORM_OWNER")
                         .orElseThrow(() -> new RuntimeException("Platform owner role not found"));
                 admin.setRoles(List.of(platformOwnerRole));
 
@@ -221,7 +220,7 @@ public class DataInitializationService {
                 businessOwner.setPosition("Owner");
                 businessOwner.setAddress("123 Demo Street");
 
-                Role businessOwnerRole = roleRepository.findByName(RoleEnum.BUSINESS_OWNER)
+                Role businessOwnerRole = roleRepository.findByNameAndIsDeletedFalse("BUSINESS_OWNER")
                         .orElseThrow(() -> new RuntimeException("Business owner role not found"));
                 businessOwner.setRoles(List.of(businessOwnerRole));
 
@@ -252,7 +251,7 @@ public class DataInitializationService {
                 customer.setAccountStatus(AccountStatus.ACTIVE);
                 customer.setPhoneNumber("+1987654321");
 
-                Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
+                Role customerRole = roleRepository.findByNameAndIsDeletedFalse("CUSTOMER")
                         .orElseThrow(() -> new RuntimeException("Customer role not found"));
                 customer.setRoles(List.of(customerRole));
 
@@ -274,9 +273,9 @@ public class DataInitializationService {
             log.info("🔄 Creating test accounts with different statuses...");
 
             int created = 0;
-            created += createTestUser("inactive-user", "Test", "Inactive", AccountStatus.INACTIVE, RoleEnum.CUSTOMER);
-            created += createTestUser("locked-user", "Test", "Locked", AccountStatus.LOCKED, RoleEnum.CUSTOMER);
-            created += createTestUser("suspended-user", "Test", "Suspended", AccountStatus.SUSPENDED, RoleEnum.BUSINESS_OWNER);
+            created += createTestUser("inactive-user", "Test", "Inactive", AccountStatus.INACTIVE, "CUSTOMER");
+            created += createTestUser("locked-user", "Test", "Locked", AccountStatus.LOCKED, "CUSTOMER");
+            created += createTestUser("suspended-user", "Test", "Suspended", AccountStatus.SUSPENDED, "BUSINESS_OWNER");
 
             return created;
             
@@ -287,7 +286,7 @@ public class DataInitializationService {
     }
 
     private int createTestUser(String userIdentifier, String firstName, String lastName,
-                              AccountStatus status, RoleEnum roleEnum) {
+                              AccountStatus status, String roleName) {
         try {
             if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(userIdentifier)) {
                 User user = new User();
@@ -296,12 +295,12 @@ public class DataInitializationService {
                 user.setPassword(passwordEncoder.encode("88889999"));
                 user.setFirstName(firstName);
                 user.setLastName(lastName);
-                user.setUserType(roleEnum.isCustomerRole() ? UserType.CUSTOMER :
-                        roleEnum.isBusinessRole() ? UserType.BUSINESS_USER : UserType.PLATFORM_USER);
+                user.setUserType("CUSTOMER".equals(roleName) ? UserType.CUSTOMER :
+                        roleName.startsWith("BUSINESS_") ? UserType.BUSINESS_USER : UserType.PLATFORM_USER);
                 user.setAccountStatus(status);
 
-                Role role = roleRepository.findByName(roleEnum)
-                        .orElseThrow(() -> new RuntimeException("Role not found: " + roleEnum));
+                Role role = roleRepository.findByNameAndIsDeletedFalse(roleName)
+                        .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
                 user.setRoles(List.of(role));
 
                 user = userRepository.save(user);

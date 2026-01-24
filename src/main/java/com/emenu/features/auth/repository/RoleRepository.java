@@ -1,6 +1,5 @@
 package com.emenu.features.auth.repository;
 
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.features.auth.models.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -12,21 +11,19 @@ import java.util.UUID;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, UUID> {
 
-    Optional<Role> findByName(RoleEnum name);
+    Optional<Role> findByNameAndIsDeletedFalse(String name);
 
-    List<Role> findByNameIn(List<RoleEnum> names);
+    List<Role> findByNameInAndIsDeletedFalse(List<String> names);
 
-    boolean existsByName(RoleEnum roleEnum);
+    boolean existsByNameAndIsDeletedFalse(String name);
 
-    Optional<Role> findByCodeAndBusinessIdAndIsDeletedFalse(String code, UUID businessId);
+    Optional<Role> findByNameAndBusinessIdAndIsDeletedFalse(String name, UUID businessId);
 
-    Optional<Role> findByCodeAndBusinessIdIsNullAndIsDeletedFalse(String code);
+    Optional<Role> findByNameAndBusinessIdIsNullAndIsDeletedFalse(String name);
 
     List<Role> findByBusinessIdAndIsDeletedFalse(UUID businessId);
 
     List<Role> findByBusinessIdIsNullAndIsDeletedFalse();
 
-    List<Role> findByIsSystemAndIsDeletedFalse(Boolean isSystem);
-
-    boolean existsByCodeAndBusinessIdAndIsDeletedFalse(String code, UUID businessId);
+    boolean existsByNameAndBusinessIdAndIsDeletedFalse(String name, UUID businessId);
 }

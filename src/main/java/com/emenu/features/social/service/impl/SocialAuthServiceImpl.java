@@ -2,7 +2,6 @@ package com.emenu.features.social.service.impl;
 
 import com.emenu.enums.social.SocialAuthProvider;
 import com.emenu.enums.user.AccountStatus;
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.Role;
@@ -163,14 +162,14 @@ public class SocialAuthServiceImpl implements SocialAuthService {
 
     private User createNewUser(SocialUserInfo userInfo, UserType userType, UUID businessId) {
         String userIdentifier = generateUserIdentifier(userInfo, userType);
-        
-        RoleEnum defaultRole = switch (userType) {
-            case PLATFORM_USER -> RoleEnum.PLATFORM_OWNER;
-            case BUSINESS_USER -> RoleEnum.BUSINESS_OWNER;
-            case CUSTOMER -> RoleEnum.CUSTOMER;
+
+        String defaultRole = switch (userType) {
+            case PLATFORM_USER -> "PLATFORM_OWNER";
+            case BUSINESS_USER -> "BUSINESS_OWNER";
+            case CUSTOMER -> "CUSTOMER";
         };
 
-        Role role = roleRepository.findByName(defaultRole)
+        Role role = roleRepository.findByNameAndIsDeletedFalse(defaultRole)
                 .orElseThrow(() -> new ValidationException("Default role not found: " + defaultRole));
 
         User user = new User();

@@ -1,6 +1,5 @@
 package com.emenu.features.auth.service.impl;
 
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.request.AdminPasswordResetRequest;
@@ -214,7 +213,7 @@ public class AuthServiceImpl implements AuthService {
         user.setUserType(UserType.CUSTOMER);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        Role customerRole = roleRepository.findByName(RoleEnum.CUSTOMER)
+        Role customerRole = roleRepository.findByNameAndIsDeletedFalse("CUSTOMER")
                 .orElseThrow(() -> new ValidationException("Customer role not found"));
         user.setRoles(List.of(customerRole));
 

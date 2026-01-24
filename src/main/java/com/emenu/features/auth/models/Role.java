@@ -1,6 +1,5 @@
 package com.emenu.features.auth.models;
 
-import com.emenu.enums.user.RoleEnum;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -15,10 +14,9 @@ import java.util.UUID;
 @Table(name = "roles", indexes = {
         @Index(name = "idx_role_deleted", columnList = "is_deleted"),
         @Index(name = "idx_role_name", columnList = "name, is_deleted"),
-        @Index(name = "idx_role_code", columnList = "code"),
         @Index(name = "idx_role_business", columnList = "business_id, is_deleted")
 }, uniqueConstraints = {
-        @UniqueConstraint(name = "uk_role_code_business", columnNames = {"code", "business_id"})
+        @UniqueConstraint(name = "uk_role_name_business", columnNames = {"name", "business_id"})
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -26,12 +24,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Role extends BaseUUIDEntity {
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "name")
-    private RoleEnum name;
-
-    @Column(name = "code", nullable = false, length = 100)
-    private String code;
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
 
     @Column(name = "display_name", length = 200)
     private String displayName;
@@ -42,30 +36,30 @@ public class Role extends BaseUUIDEntity {
     @Column(name = "business_id")
     private UUID businessId;
 
-    @Column(name = "is_system", nullable = false)
-    private Boolean isSystem = false;
-
     @ManyToMany(mappedBy = "roles")
     private List<User> users;
 
-    public Role(RoleEnum name) {
-        this.name = name;
-        this.code = name.name();
-        this.displayName = name.getDisplayName();
-        this.description = name.getDescription();
-        this.businessId = null;
-        this.isSystem = true;
+    public boolean isPlatformOwner() {
+        return "PLATFORM_OWNER".equals(name);
+    }
+
+    public boolean isBusinessOwner() {
+        return "BUSINESS_OWNER".equals(name);
+    }
+
+    public boolean isCustomer() {
+        return "CUSTOMER".equals(name);
     }
 
     public boolean isPlatformRole() {
-        return businessId == null && RoleEnum.PLATFORM_OWNER.equals(name);
+        return businessId == null && (name != null && name.startsWith("PLATFORM_"));
     }
 
     public boolean isBusinessRole() {
-        return businessId != null || RoleEnum.BUSINESS_OWNER.equals(name);
+        return businessId != null || (name != null && name.startsWith("BUSINESS_"));
     }
 
     public boolean isCustomerRole() {
-        return RoleEnum.CUSTOMER.equals(name);
+        return name != null && name.startsWith("CUSTOMER");
     }
 }
