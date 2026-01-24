@@ -1,7 +1,6 @@
 package com.emenu.features.main.dto.filter;
 
 import com.emenu.enums.common.Status;
-import com.emenu.features.main.dto.filter.base.CategoryFilterBase;
 import com.emenu.shared.dto.BaseAllFilterRequest;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -11,7 +10,7 @@ import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class CategoryAllFilterRequest extends BaseAllFilterRequest implements CategoryFilterBase {
+public class CategoryAllFilterRequest extends BaseAllFilterRequest {
     @NotNull(message = "Business ID cannot be null")
     private UUID businessId;
     private Status status;
