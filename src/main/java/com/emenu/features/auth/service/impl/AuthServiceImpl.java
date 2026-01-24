@@ -405,7 +405,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Get user roles
         List<String> roles = user.getRoles().stream()
-                .map(role -> role.getName().name())
+                .map(Role::getName)
                 .toList();
 
         // Generate new access token

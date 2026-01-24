@@ -65,7 +65,7 @@ public class UserServiceImpl implements UserService {
             user.setBusinessId(business.getId());
         }
 
-        List<Role> roles = roleRepository.findByNameIn(request.getRoles());
+        List<Role> roles = roleRepository.findByNameInAndIsDeletedFalse(request.getRoles());
         if (roles.size() != request.getRoles().size()) {
             throw new ValidationException("One or more roles not found");
         }
@@ -140,7 +140,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (request.getRoles() != null && !request.getRoles().isEmpty()) {
-            List<Role> roles = roleRepository.findByNameIn(request.getRoles());
+            List<Role> roles = roleRepository.findByNameInAndIsDeletedFalse(request.getRoles());
             if (roles.size() != request.getRoles().size()) {
                 throw new ValidationException("One or more roles not found");
             }

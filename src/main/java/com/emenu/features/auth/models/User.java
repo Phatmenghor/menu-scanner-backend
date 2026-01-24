@@ -108,6 +108,16 @@ public class User extends BaseUUIDEntity {
     @Column(name = "google_synced_at")
     private java.time.LocalDateTime googleSyncedAt;
 
+    // Session tracking fields
+    @Column(name = "last_login_at")
+    private java.time.LocalDateTime lastLoginAt;
+
+    @Column(name = "last_active_at")
+    private java.time.LocalDateTime lastActiveAt;
+
+    @Column(name = "active_sessions_count")
+    private Integer activeSessionsCount = 0;
+
     public String getFullName() {
         if (firstName != null && lastName != null) {
             return firstName + " " + lastName;

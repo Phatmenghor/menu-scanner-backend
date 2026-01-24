@@ -137,16 +137,16 @@ public class DataInitializationService {
                 roleRepository.save(role);
                 createdCount++;
                 
-                log.info("✅ Successfully created role: {} with ID: {}", roleEnum.name(), role.getId());
+                log.info("✅ Successfully created role: {} with ID: {}", roleName, role.getId());
                 
             } catch (Exception e) {
                 // ✅ ENHANCED: Handle potential constraint violations gracefully
                 if (e.getMessage() != null && e.getMessage().contains("constraint")) {
-                    log.warn("⚠️ Role {} likely already exists (constraint violation), continuing...", roleEnum.name());
+                    log.warn("⚠️ Role {} likely already exists (constraint violation), continuing...", roleName);
                     continue;
                 } else {
-                    log.error("❌ Error creating role {}: {}", roleEnum.name(), e.getMessage());
-                    throw new RuntimeException("Failed to create role: " + roleEnum.name(), e);
+                    log.error("❌ Error creating role {}: {}", roleName, e.getMessage());
+                    throw new RuntimeException("Failed to create role: " + roleName, e);
                 }
             }
         }

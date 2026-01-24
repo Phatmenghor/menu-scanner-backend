@@ -55,7 +55,7 @@ public class SocialAuthServiceImpl implements SocialAuthService {
         userRepository.save(user);
 
         List<String> roles = user.getRoles().stream()
-                .map(role -> role.getName().name())
+                .map(Role::getName)
                 .toList();
 
         String accessToken = jwtGenerator.generateAccessTokenFromUsername(user.getUserIdentifier(), roles);

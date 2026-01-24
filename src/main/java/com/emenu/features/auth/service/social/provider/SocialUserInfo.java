@@ -1,9 +1,18 @@
 package com.emenu.features.auth.service.social.provider;
 
-public record SocialUserInfo(
-        String id,
-        String username,
-        String email,
-        String firstName,
-        String lastName
-) {}
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class SocialUserInfo {
+    private String id;
+    private String username;
+    private String email;
+    private String firstName;
+    private String lastName;
+}

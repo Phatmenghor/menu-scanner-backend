@@ -26,7 +26,7 @@ public class TelegramAuthProvider {
 
     public SocialUserInfo getUserInfo(String authData) {
         try {
-            JsonNode data = objectMapper.readTree(austhData);
+            JsonNode data = objectMapper.readTree(authData);
             
             String id = data.get("id").asText();
             String username = data.has("username") ? data.get("username").asText() : null;
@@ -38,7 +38,13 @@ public class TelegramAuthProvider {
                 verifyTelegramAuth(data, hash);
             }
 
-            return new SocialUserInfo(id, username, null, firstName, lastName);
+            return SocialUserInfo.builder()
+                    .id(id)
+                    .username(username)
+                    .email(null)
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .build();
         } catch (Exception e) {
             log.error("Failed to parse Telegram auth data", e);
             throw new ValidationException("Invalid Telegram authentication data");

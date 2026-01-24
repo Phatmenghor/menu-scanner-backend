@@ -8,13 +8,17 @@ import com.emenu.features.audit.dto.response.AuditStatsResponseDTO;
 import com.emenu.features.audit.models.AuditLog;
 import com.emenu.features.audit.repository.AuditLogRepository;
 import com.emenu.security.SecurityUtils;
+import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.utils.ClientIpUtils;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -30,6 +34,23 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
     private final SecurityUtils securityUtils;
+    private final PaginationMapper paginationMapper;
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaginationResponse<AuditLogResponseDTO> searchAuditLogs(AuditLogFilterDTO filter) {
+        Sort sort = Sort.by(Sort.Direction.fromString(filter.getSortDirection()), filter.getSortBy());
+        Pageable pageable = PageRequest.of(filter.getPageNo() - 1, filter.getPageSize(), sort);
+
+        Specification<AuditLog> spec = buildSpecification(filter);
+        Page<AuditLog> page = auditLogRepository.findAll(spec, pageable);
+
+        List<AuditLogResponseDTO> content = page.getContent().stream()
+                .map(this::toResponseDTO)
+                .toList();
+
+        return paginationMapper.toPaginationResponse(page, content);
+    }
 
     @Override
     @Async

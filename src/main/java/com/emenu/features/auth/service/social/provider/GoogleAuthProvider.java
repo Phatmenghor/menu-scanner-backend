@@ -39,8 +39,14 @@ public class GoogleAuthProvider {
             String email = data.has("email") ? data.get("email").asText() : null;
             String givenName = data.has("given_name") ? data.get("given_name").asText() : null;
             String familyName = data.has("family_name") ? data.get("family_name").asText() : null;
-            
-            return new SocialUserInfo(id, email, email, givenName, familyName);
+
+            return SocialUserInfo.builder()
+                    .id(id)
+                    .username(email)
+                    .email(email)
+                    .firstName(givenName)
+                    .lastName(familyName)
+                    .build();
         } catch (Exception e) {
             log.error("Failed to fetch Google user info", e);
             throw new ValidationException("Invalid Google access token");
