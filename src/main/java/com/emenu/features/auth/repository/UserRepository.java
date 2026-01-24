@@ -135,4 +135,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.email = :email AND u.isDeleted = false")
     boolean existsByEmailAndIsDeletedFalse(@Param("email") String email);
+
+    Optional<User> findByTelegramIdAndIsDeletedFalse(Long telegramId);
+
+    Optional<User> findByGoogleIdAndUserTypeAndIsDeletedFalse(String googleId, UserType userType);
+
+    Optional<User> findByGoogleIdAndUserTypeAndBusinessIdAndIsDeletedFalse(String googleId, UserType userType, UUID businessId);
 }

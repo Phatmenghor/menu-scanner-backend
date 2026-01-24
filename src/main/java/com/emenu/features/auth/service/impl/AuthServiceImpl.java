@@ -356,13 +356,34 @@ public class AuthServiceImpl implements AuthService {
     public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
         log.info("Processing refresh token request");
 
-        // Verify refresh token
-        RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken())
+        String refreshTokenString = request.getRefreshToken();
+
+        // Verify refresh token JWT structure first
+        if (!jwtGenerator.validateToken(refreshTokenString)) {
+            throw new ValidationException("Invalid refresh token");
+        }
+
+        // Extract user context from refresh token JWT
+        String userIdentifier = jwtGenerator.getUsernameFromJWT(refreshTokenString);
+        String userTypeStr = jwtGenerator.getUserTypeFromJWT(refreshTokenString);
+        String businessIdStr = jwtGenerator.getBusinessIdFromJWT(refreshTokenString);
+
+        log.info("Refresh token context: userIdentifier={}, userType={}, businessId={}",
+                userIdentifier, userTypeStr, businessIdStr);
+
+        // Verify refresh token exists in database and is valid
+        RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(refreshTokenString)
                 .orElseThrow(() -> new ValidationException("Invalid or expired refresh token"));
 
-        // Get user
-        User user = userRepository.findByIdAndIsDeletedFalse(refreshToken.getUserId())
-                .orElseThrow(() -> new ValidationException("User not found"));
+        // Find user using context from refresh token JWT
+        User user = findUserByRefreshTokenContext(userIdentifier, userTypeStr, businessIdStr);
+
+        // Validate that the found user matches the refresh token's userId
+        if (!user.getId().equals(refreshToken.getUserId())) {
+            log.error("Security: User ID mismatch! Token userId={}, Found userId={}",
+                    refreshToken.getUserId(), user.getId());
+            throw new ValidationException("Invalid refresh token");
+        }
 
         // Validate account status
         securityUtils.validateAccountStatus(user);
@@ -391,16 +412,54 @@ public class AuthServiceImpl implements AuthService {
         // Generate new access token
         String newAccessToken = jwtGenerator.generateAccessTokenFromUsername(user.getUserIdentifier(), roles);
 
-        // Optionally, generate a new refresh token (rotate refresh tokens for better security)
+        // Generate a new refresh token (rotate refresh tokens for better security)
         String ipAddress = getClientIpAddress();
         String deviceInfo = getDeviceInfo();
         RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user, ipAddress, deviceInfo);
 
         // Revoke old refresh token
-        refreshTokenService.revokeRefreshToken(request.getRefreshToken(), "TOKEN_REFRESH");
+        refreshTokenService.revokeRefreshToken(refreshTokenString, "TOKEN_REFRESH");
 
-        log.info("Token refresh successful: {}", user.getUserIdentifier());
+        log.info("Token refresh successful: {} (type: {}, businessId: {})",
+                user.getUserIdentifier(), user.getUserType(), user.getBusinessId());
 
         return new RefreshTokenResponse(newAccessToken, newRefreshToken.getToken());
+    }
+
+    /**
+     * Find user by refresh token context (userIdentifier, userType, businessId)
+     */
+    private User findUserByRefreshTokenContext(String userIdentifier, String userTypeStr, String businessIdStr) {
+        if (userTypeStr == null) {
+            throw new ValidationException("Invalid refresh token: missing user type");
+        }
+
+        UserType userType;
+        try {
+            userType = UserType.valueOf(userTypeStr);
+        } catch (IllegalArgumentException e) {
+            throw new ValidationException("Invalid refresh token: invalid user type");
+        }
+
+        // For BUSINESS_USER, businessId is required
+        if (userType == UserType.BUSINESS_USER) {
+            if (businessIdStr == null) {
+                throw new ValidationException("Invalid refresh token: missing business ID for business user");
+            }
+
+            UUID businessId;
+            try {
+                businessId = UUID.fromString(businessIdStr);
+            } catch (IllegalArgumentException e) {
+                throw new ValidationException("Invalid refresh token: invalid business ID format");
+            }
+
+            return userRepository.findByUserIdentifierAndBusinessIdAndIsDeletedFalse(userIdentifier, businessId)
+                    .orElseThrow(() -> new ValidationException("User not found for refresh token context"));
+        }
+
+        // For CUSTOMER and PLATFORM_USER
+        return userRepository.findByUserIdentifierAndUserTypeAndIsDeletedFalse(userIdentifier, userType)
+                .orElseThrow(() -> new ValidationException("User not found for refresh token context"));
     }
 }

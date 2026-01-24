@@ -23,7 +23,6 @@ import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.service.BusinessOwnerService;
 import com.emenu.features.auth.service.UserValidationService;
-import com.emenu.features.auth.service.helper.BusinessOwnerDetailEnricher;
 import com.emenu.features.order.models.Payment;
 import com.emenu.features.order.repository.PaymentRepository;
 import com.emenu.features.subscription.models.Subscription;
@@ -59,7 +58,6 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
     private final PaymentRepository paymentRepository;
     private final PasswordEncoder passwordEncoder;
     private final BusinessOwnerMapper mapper;
-    private final BusinessOwnerDetailEnricher enricher;
     private final UserValidationService userValidationService;
 
     /**
@@ -433,10 +431,133 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         BusinessOwnerDetailResponse response = mapper.toDetailResponse(owner);
 
         if (owner.getBusiness() != null) {
-            enricher.enrichDetailResponse(response, owner.getBusiness());
+            enrichDetailResponse(response, owner.getBusiness());
         }
 
         return response;
+    }
+
+    private void enrichDetailResponse(BusinessOwnerDetailResponse response, Business business) {
+        if (business == null) return;
+
+        enrichSubscriptionData(response, business.getId());
+
+        if (response.getCurrentSubscriptionId() != null) {
+            enrichPaymentData(response, response.getCurrentSubscriptionId());
+        }
+    }
+
+    private void enrichSubscriptionData(BusinessOwnerDetailResponse response, UUID businessId) {
+        subscriptionRepository.findCurrentActiveByBusinessId(businessId, LocalDateTime.now())
+                .ifPresentOrElse(
+                        subscription -> populateSubscriptionInfo(response, subscription),
+                        () -> response.setSubscriptionStatus(SubscriptionStatus.EXPIRED)
+                );
+    }
+
+    private void populateSubscriptionInfo(BusinessOwnerDetailResponse response, Subscription subscription) {
+        response.setCurrentSubscriptionId(subscription.getId());
+        response.setCurrentPlanName(subscription.getPlan().getName());
+        response.setCurrentPlanPrice(subscription.getPlan().getPrice());
+        response.setCurrentPlanDurationDays(subscription.getPlan().getDurationDays());
+        response.setSubscriptionStartDate(subscription.getStartDate());
+        response.setSubscriptionEndDate(subscription.getEndDate());
+        response.setDaysRemaining(calculateDaysRemaining(subscription.getEndDate()));
+        response.setDaysActive(calculateDaysActive(subscription.getStartDate()));
+        response.setSubscriptionStatus(determineSubscriptionStatus(subscription));
+        response.setAutoRenew(subscription.getAutoRenew());
+        response.setIsExpiringSoon(subscription.isExpiringSoon(7));
+    }
+
+    private void enrichPaymentData(BusinessOwnerDetailResponse response, UUID subscriptionId) {
+        List<Payment> payments = paymentRepository.findBySubscriptionIdAndIsDeletedFalse(subscriptionId);
+
+        if (payments.isEmpty()) {
+            setDefaultPaymentData(response);
+            return;
+        }
+
+        java.math.BigDecimal totalPaid = payments.stream()
+                .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
+                .map(Payment::getAmount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        java.math.BigDecimal totalPending = payments.stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PENDING)
+                .map(Payment::getAmount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        long completedCount = payments.stream()
+                .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
+                .count();
+
+        long pendingCount = payments.stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PENDING)
+                .count();
+
+        LocalDateTime lastPaymentDate = payments.stream()
+                .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
+                .map(Payment::getCreatedAt)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+
+        response.setTotalPaid(totalPaid);
+        response.setTotalPending(totalPending);
+        response.setTotalPayments(payments.size());
+        response.setCompletedPayments((int) completedCount);
+        response.setPendingPayments((int) pendingCount);
+        response.setPaymentStatus(determinePaymentStatus(totalPaid, totalPending, response.getCurrentPlanPrice()));
+        response.setLastPaymentDate(lastPaymentDate);
+    }
+
+    private void setDefaultPaymentData(BusinessOwnerDetailResponse response) {
+        response.setTotalPaid(java.math.BigDecimal.ZERO);
+        response.setTotalPending(java.math.BigDecimal.ZERO);
+        response.setTotalPayments(0);
+        response.setCompletedPayments(0);
+        response.setPendingPayments(0);
+        response.setPaymentStatus("UNPAID");
+        response.setLastPaymentDate(null);
+    }
+
+    private Long calculateDaysRemaining(LocalDateTime endDate) {
+        if (endDate == null) return 0L;
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isAfter(endDate)) return 0L;
+        return java.time.temporal.ChronoUnit.DAYS.between(now, endDate);
+    }
+
+    private Long calculateDaysActive(LocalDateTime startDate) {
+        if (startDate == null) return 0L;
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(startDate)) return 0L;
+        return java.time.temporal.ChronoUnit.DAYS.between(startDate, now);
+    }
+
+    private SubscriptionStatus determineSubscriptionStatus(Subscription subscription) {
+        if (subscription.isExpired()) {
+            return SubscriptionStatus.EXPIRED;
+        }
+        if (subscription.isExpiringSoon(7)) {
+            return SubscriptionStatus.EXPIRING_SOON;
+        }
+        return SubscriptionStatus.ACTIVE;
+    }
+
+    private String determinePaymentStatus(java.math.BigDecimal totalPaid, java.math.BigDecimal totalPending, java.math.BigDecimal planPrice) {
+        if (planPrice == null) {
+            return "UNKNOWN";
+        }
+
+        if (totalPaid.compareTo(planPrice) >= 0) {
+            return "PAID";
+        } else if (totalPaid.compareTo(java.math.BigDecimal.ZERO) > 0) {
+            return "PARTIALLY_PAID";
+        } else if (totalPending.compareTo(java.math.BigDecimal.ZERO) > 0) {
+            return "PENDING";
+        }
+
+        return "UNPAID";
     }
 
     private List<String> buildCreatedComponentsList(boolean hasPayment) {

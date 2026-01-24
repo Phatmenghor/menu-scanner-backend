@@ -86,18 +86,27 @@ public class JWTGenerator {
      * Generate refresh token for a user
      *
      * @param username the username
+     * @param userType the user type (PLATFORM_USER, BUSINESS_USER, CUSTOMER)
+     * @param businessId the business ID (nullable, required for BUSINESS_USER)
      * @return JWT refresh token
      */
-    public String generateRefreshToken(String username) {
+    public String generateRefreshToken(String username, String userType, String businessId) {
         Date currentDate = new Date();
         Date expiryDate = new Date(currentDate.getTime() + refreshTokenExpiration);
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .setSubject(username)
                 .claim("type", "refresh")
+                .claim("userType", userType)
                 .setIssuedAt(currentDate)
-                .setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .setExpiration(expiryDate);
+
+        // Add businessId claim only if it's not null
+        if (businessId != null) {
+            builder.claim("businessId", businessId);
+        }
+
+        return builder.signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
 
@@ -117,6 +126,24 @@ public class JWTGenerator {
                 .parseClaimsJws(token)
                 .getBody();
         return claims.getSubject();
+    }
+
+    public String getUserTypeFromJWT(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("userType", String.class);
+    }
+
+    public String getBusinessIdFromJWT(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("businessId", String.class);
     }
 
     public Date getExpirationDateFromJWT(String token) {

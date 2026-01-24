@@ -82,6 +82,32 @@ public class User extends BaseUUIDEntity {
     @Column(name = "notes")
     private String notes;
 
+    // Telegram integration fields
+    @Column(name = "telegram_id", unique = true)
+    private Long telegramId;
+
+    @Column(name = "telegram_username")
+    private String telegramUsername;
+
+    @Column(name = "telegram_first_name")
+    private String telegramFirstName;
+
+    @Column(name = "telegram_last_name")
+    private String telegramLastName;
+
+    @Column(name = "telegram_synced_at")
+    private java.time.LocalDateTime telegramSyncedAt;
+
+    // Google OAuth integration fields
+    @Column(name = "google_id")
+    private String googleId;
+
+    @Column(name = "google_email")
+    private String googleEmail;
+
+    @Column(name = "google_synced_at")
+    private java.time.LocalDateTime googleSyncedAt;
+
     public String getFullName() {
         if (firstName != null && lastName != null) {
             return firstName + " " + lastName;
@@ -107,5 +133,41 @@ public class User extends BaseUUIDEntity {
 
     public boolean isCustomer() {
         return UserType.CUSTOMER.equals(userType);
+    }
+
+    public boolean hasTelegramSynced() {
+        return telegramId != null;
+    }
+
+    public boolean hasGoogleSynced() {
+        return googleId != null && googleEmail != null;
+    }
+
+    public void syncTelegram(Long telegramId, String telegramUsername, String telegramFirstName, String telegramLastName) {
+        this.telegramId = telegramId;
+        this.telegramUsername = telegramUsername;
+        this.telegramFirstName = telegramFirstName;
+        this.telegramLastName = telegramLastName;
+        this.telegramSyncedAt = java.time.LocalDateTime.now();
+    }
+
+    public void unsyncTelegram() {
+        this.telegramId = null;
+        this.telegramUsername = null;
+        this.telegramFirstName = null;
+        this.telegramLastName = null;
+        this.telegramSyncedAt = null;
+    }
+
+    public void syncGoogle(String googleId, String googleEmail) {
+        this.googleId = googleId;
+        this.googleEmail = googleEmail;
+        this.googleSyncedAt = java.time.LocalDateTime.now();
+    }
+
+    public void unsyncGoogle() {
+        this.googleId = null;
+        this.googleEmail = null;
+        this.googleSyncedAt = null;
     }
 }

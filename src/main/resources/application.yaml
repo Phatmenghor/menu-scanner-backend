@@ -82,6 +82,20 @@ app:
     token-cleanup:
       enabled: true
 
+  # Social Authentication Configuration
+  social:
+    telegram:
+      bot-token: "8464259107:AAHdIC3EZb_3uID4vnhteY6PYtmO9WGDBjU"
+      enabled: true
+    google:
+      client-id: "${GOOGLE_CLIENT_ID:}"
+      client-secret: "${GOOGLE_CLIENT_SECRET:}"
+      enabled: true
+    facebook:
+      app-id: "${FACEBOOK_APP_ID:}"
+      app-secret: "${FACEBOOK_APP_SECRET:}"
+      enabled: false
+
 # Logging Configuration
 logging:
   level:

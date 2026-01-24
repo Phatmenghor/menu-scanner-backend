@@ -1,6 +1,7 @@
 package com.emenu.features.auth.repository;
 
 import com.emenu.enums.user.RoleEnum;
+import com.emenu.enums.user.RoleScope;
 import com.emenu.features.auth.models.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -12,18 +13,21 @@ import java.util.UUID;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, UUID> {
 
-    /**
-     * Finds a role by name
-     */
     Optional<Role> findByName(RoleEnum name);
 
-    /**
-     * Finds roles by a list of role names
-     */
     List<Role> findByNameIn(List<RoleEnum> names);
 
-    /**
-     * Checks if a role exists by name
-     */
     boolean existsByName(RoleEnum roleEnum);
+
+    Optional<Role> findByCodeAndBusinessIdAndIsDeletedFalse(String code, UUID businessId);
+
+    Optional<Role> findByCodeAndBusinessIdIsNullAndIsDeletedFalse(String code);
+
+    List<Role> findByScopeAndIsDeletedFalse(RoleScope scope);
+
+    List<Role> findByBusinessIdAndIsDeletedFalse(UUID businessId);
+
+    List<Role> findByIsSystemAndIsDeletedFalse(Boolean isSystem);
+
+    boolean existsByCodeAndBusinessIdAndIsDeletedFalse(String code, UUID businessId);
 }
