@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProductImageMapper {
 
-    @Mapping    @Mapping(target = "productId", ignore = true)
+    @Mapping(target = "productId", ignore = true)
     @Mapping(target = "product", ignore = true)
     ProductImage toEntity(ProductImageCreateDto dto);
 
@@ -19,7 +19,7 @@ public interface ProductImageMapper {
     @Mapping(target = "product", ignore = true)
     void updateEntity(ProductImageUpdateDto dto, @MappingTarget ProductImage entity);
 
-    @Mapping    @Mapping(target = "productId", ignore = true)
+    @Mapping(target = "productId", ignore = true)
     @Mapping(target = "product", ignore = true)
     ProductImage toEntityFromUpdate(ProductImageUpdateDto dto);
 

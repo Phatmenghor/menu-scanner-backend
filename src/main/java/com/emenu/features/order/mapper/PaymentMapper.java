@@ -14,9 +14,9 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface PaymentMapper {
 
-    @Mapping    @Mapping    @Mapping(target = "plan", ignore = true)
+    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "subscription", ignore = true)
-    @Mapping    @Mapping(target = "planId", ignore = true)
+    @Mapping(target = "planId", ignore = true)
     @Mapping(target = "subscriptionId", ignore = true)
     @Mapping(target = "amountKhr", ignore = true)
     @Mapping(target = "referenceNumber", ignore = true)
@@ -33,9 +33,9 @@ public interface PaymentMapper {
     List<PaymentResponse> toResponseList(List<Payment> payments);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping    @Mapping    @Mapping(target = "plan", ignore = true)
+    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "subscription", ignore = true)
-    @Mapping    @Mapping(target = "planId", ignore = true)
+    @Mapping(target = "planId", ignore = true)
     @Mapping(target = "subscriptionId", ignore = true)
     @Mapping(target = "amountKhr", ignore = true)
     void updateEntity(PaymentUpdateRequest request, @MappingTarget Payment payment);

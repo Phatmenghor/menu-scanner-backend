@@ -16,7 +16,7 @@ public interface ImageMapper {
 
     ImageMapper INSTANCE = Mappers.getMapper(ImageMapper.class);
 
-    @Mapping    @Mapping(source = "base64", target = "data")
+    @Mapping(source = "base64", target = "data")
     ImageEntity toEntity(ImageUploadRequest request);
 
     // Custom implementation for toDto to include imageUrl

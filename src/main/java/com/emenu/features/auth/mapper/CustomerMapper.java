@@ -17,9 +17,9 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CustomerMapper {
 
-    @Mapping    @Mapping(target = "userType", constant = "CUSTOMER")
+    @Mapping(target = "userType", constant = "CUSTOMER")
     @Mapping(target = "roles", ignore = true)
-    @Mapping    @Mapping    @Mapping(target = "position", ignore = true)
+    @Mapping(target = "position", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "accountStatus", constant = "ACTIVE")
     @Mapping(target = "notes", ignore = true)
@@ -33,11 +33,11 @@ public interface CustomerMapper {
     List<UserResponse> toResponseList(List<User> users);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "email", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "userType", ignore = true)
     @Mapping(target = "roles", ignore = true)
-    @Mapping    @Mapping    @Mapping(target = "position", ignore = true)
+    @Mapping(target = "position", ignore = true)
     @Mapping(target = "notes", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
     void updateEntity(UserUpdateRequest request, @MappingTarget User user);
@@ -46,11 +46,11 @@ public interface CustomerMapper {
      * Restricted update for current customer profile - only allows safe fields
      */
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "email", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "userType", ignore = true)
     @Mapping(target = "roles", ignore = true)
-    @Mapping    @Mapping    @Mapping(target = "position", ignore = true)
+    @Mapping(target = "position", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
     @Mapping(target = "notes", ignore = true)
     void updateCurrentUserProfile(UserUpdateRequest request, @MappingTarget User user);

@@ -14,7 +14,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BrandMapper {
 
-    @Mapping    @Mapping    @Mapping    @Mapping(target = "products", ignore = true)
+    @Mapping(target = "products", ignore = true)
     Brand toEntity(BrandCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
@@ -23,7 +23,7 @@ public interface BrandMapper {
     List<BrandResponse> toResponseList(List<Brand> brands);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping    @Mapping    @Mapping    @Mapping(target = "products", ignore = true)
+    @Mapping(target = "products", ignore = true)
     void updateEntity(BrandUpdateRequest request, @MappingTarget Brand brand);
 
     default PaginationResponse<BrandResponse> toPaginationResponse(Page<Brand> brandPage, PaginationMapper paginationMapper) {

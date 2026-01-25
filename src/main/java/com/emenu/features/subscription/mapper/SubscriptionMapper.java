@@ -16,18 +16,18 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface SubscriptionMapper {
 
-    @Mapping    @Mapping    @Mapping(target = "plan", ignore = true)
+    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "payments", ignore = true)
     @Mapping(target = "startDate", ignore = true)
     @Mapping(target = "endDate", ignore = true)
     Subscription toEntity(SubscriptionCreateRequest request);
 
-    @Mapping    @Mapping    @Mapping    @Mapping    @Mapping    SubscriptionResponse toResponse(Subscription subscription);
+    SubscriptionResponse toResponse(Subscription subscription);
 
     List<SubscriptionResponse> toResponseList(List<Subscription> subscriptions);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping    @Mapping    @Mapping    @Mapping(target = "plan", ignore = true)
+    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "payments", ignore = true)
     void updateEntity(SubscriptionUpdateRequest request, @MappingTarget Subscription subscription);
 

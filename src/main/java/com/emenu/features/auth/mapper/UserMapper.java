@@ -24,7 +24,7 @@ public interface UserMapper {
     @Mapping(target = "roles", source = "roles", qualifiedByName = "rolesToEnums")
     UserResponse toResponse(User user);
 
-    @Mapping    @Mapping    @Mapping    @Mapping    @Mapping    @Mapping    UserBasicInfo toUserBasicInfo(User user);
+    UserBasicInfo toUserBasicInfo(User user);
 
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
@@ -41,12 +41,12 @@ public interface UserMapper {
     @Mapping(target = "password", ignore = true)
     void updateEntity(UserUpdateRequest request, @MappingTarget User user);
 
-    @Mapping    @Mapping(target = "roles", ignore = true)
-    @Mapping    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "password", ignore = true)
     User toEntity(UserCreateRequest request);
 
-    @Mapping    @Mapping(target = "roles", ignore = true)
-    @Mapping    @Mapping    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "password", ignore = true)
     @Mapping(target = "position", ignore = true)
     @Mapping(target = "notes", ignore = true)
     User toEntity(RegisterRequest request);

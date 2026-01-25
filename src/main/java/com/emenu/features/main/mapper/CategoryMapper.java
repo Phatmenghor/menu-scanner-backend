@@ -14,7 +14,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CategoryMapper {
 
-    @Mapping    @Mapping    @Mapping    Category toEntity(CategoryCreateRequest request);
+    Category toEntity(CategoryCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
     CategoryResponse toResponse(Category category);
@@ -22,7 +22,7 @@ public interface CategoryMapper {
     List<CategoryResponse> toResponseList(List<Category> categories);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping    @Mapping    @Mapping    void updateEntity(CategoryUpdateRequest request, @MappingTarget Category category);
+    void updateEntity(CategoryUpdateRequest request, @MappingTarget Category category);
 
     default PaginationResponse<CategoryResponse> toPaginationResponse(Page<Category> categoryPage, PaginationMapper paginationMapper) {
 return paginationMapper.toPaginationResponse(categoryPage, this::toResponseList);

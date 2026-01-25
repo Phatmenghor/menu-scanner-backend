@@ -15,7 +15,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface DeliveryOptionMapper {
 
-    @Mapping    @Mapping    @Mapping    DeliveryOption toEntity(DeliveryOptionCreateRequest request);
+    DeliveryOption toEntity(DeliveryOptionCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
     DeliveryOptionResponse toResponse(DeliveryOption deliveryOption);
@@ -23,7 +23,7 @@ public interface DeliveryOptionMapper {
     List<DeliveryOptionResponse> toResponseList(List<DeliveryOption> deliveryOptions);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping    @Mapping    @Mapping    void updateEntity(DeliveryOptionUpdateRequest request, @MappingTarget DeliveryOption deliveryOption);
+    void updateEntity(DeliveryOptionUpdateRequest request, @MappingTarget DeliveryOption deliveryOption);
 
     default PaginationResponse<DeliveryOptionResponse> toPaginationResponse(Page<DeliveryOption> deliveryOptionPage, PaginationMapper paginationMapper) {
 return paginationMapper.toPaginationResponse(deliveryOptionPage, this::toResponseList);

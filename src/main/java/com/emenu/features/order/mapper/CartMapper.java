@@ -16,7 +16,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CartMapper {
 
-    @Mapping    @Mapping(target = "cartId", ignore = true)
+    @Mapping(target = "cartId", ignore = true)
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "productSize", ignore = true)

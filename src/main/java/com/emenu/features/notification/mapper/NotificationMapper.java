@@ -20,7 +20,7 @@ public interface NotificationMapper {
 
     List<NotificationResponse> toResponseList(List<Notification> notifications);
 
-    @Mapping    @Mapping(target = "status", constant = "SENT")
+    @Mapping(target = "status", constant = "SENT")
     @Mapping(target = "isRead", constant = "false")
     @Mapping(target = "isSeen", constant = "false")
     Notification toEntity(NotificationRequest request);

@@ -14,7 +14,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CustomerAddressMapper {
 
-    @Mapping    @Mapping    @Mapping    CustomerAddress toEntity(CustomerAddressCreateRequest request);
+    CustomerAddress toEntity(CustomerAddressCreateRequest request);
 
     @Mapping(target = "fullAddress", expression = "java(address.getFullAddress())")
     @Mapping(target = "hasCoordinates", expression = "java(address.hasCoordinates())")
@@ -23,7 +23,7 @@ public interface CustomerAddressMapper {
     List<CustomerAddressResponse> toResponseList(List<CustomerAddress> addresses);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping    @Mapping    @Mapping    void updateEntity(CustomerAddressUpdateRequest request, @MappingTarget CustomerAddress address);
+    void updateEntity(CustomerAddressUpdateRequest request, @MappingTarget CustomerAddress address);
 
     default PaginationResponse<CustomerAddressResponse> toPaginationResponse(Page<CustomerAddress> addresses, PaginationMapper paginationMapper) {
 return paginationMapper.toPaginationResponse(addresses, this::toResponseList);

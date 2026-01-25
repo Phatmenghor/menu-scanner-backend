@@ -18,14 +18,14 @@ uses = {ProductImageMapper.class, ProductSizeMapper.class, PaginationMapper.clas
 unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProductMapper {
 
-    @Mapping    @Mapping    @Mapping(target = "viewCount", constant = "0L")
+    @Mapping(target = "viewCount", constant = "0L")
     @Mapping(target = "favoriteCount", constant = "0L")
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "sizes", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
     Product toEntity(ProductCreateDto dto);
 
-    @Mapping    @Mapping    @Mapping(target = "viewCount", ignore = true)
+    @Mapping(target = "viewCount", ignore = true)
     @Mapping(target = "favoriteCount", ignore = true)
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "sizes", ignore = true)

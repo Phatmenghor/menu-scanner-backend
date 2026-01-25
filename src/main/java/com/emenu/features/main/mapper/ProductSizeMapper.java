@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProductSizeMapper {
 
-    @Mapping    @Mapping(target = "productId", ignore = true)
+    @Mapping(target = "productId", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizeStringToPromotionType")
     @Mapping(target = "product", ignore = true)
     ProductSize toEntity(ProductSizeCreateDto dto);
@@ -27,7 +27,7 @@ if (!dto.hasPromotionData()) {
     }
     void updateEntity(ProductSizeUpdateDto dto, @MappingTarget ProductSize entity);
 
-    @Mapping    @Mapping(target = "productId", ignore = true)
+    @Mapping(target = "productId", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizeStringToPromotionType")
     @Mapping(target = "product", ignore = true)
     ProductSize toEntityFromUpdate(ProductSizeUpdateDto dto);

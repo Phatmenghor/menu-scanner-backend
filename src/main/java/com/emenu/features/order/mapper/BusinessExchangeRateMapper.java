@@ -14,7 +14,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BusinessExchangeRateMapper {
 
-    @Mapping    @Mapping(target = "isActive", constant = "true")
+    @Mapping(target = "isActive", constant = "true")
     BusinessExchangeRate toEntity(BusinessExchangeRateCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
@@ -27,7 +27,7 @@ public interface BusinessExchangeRateMapper {
     List<BusinessExchangeRateResponse> toResponseList(List<BusinessExchangeRate> exchangeRates);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping    @Mapping    @Mapping(target = "isActive", ignore = true)
+    @Mapping(target = "isActive", ignore = true)
     void updateEntity(BusinessExchangeRateUpdateRequest request, @MappingTarget BusinessExchangeRate exchangeRate);
 
     default PaginationResponse<BusinessExchangeRateResponse> toPaginationResponse(Page<BusinessExchangeRate> exchangeRatePage, PaginationMapper paginationMapper) {
