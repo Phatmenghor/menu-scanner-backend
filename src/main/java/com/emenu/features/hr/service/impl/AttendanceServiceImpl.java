@@ -31,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -77,8 +78,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         AttendanceCheckInCreateHelper checkInHelper = AttendanceCheckInCreateHelper.builder()
                 .checkInType(request.getCheckInType())
                 .checkInTime(LocalDateTime.now())
-                .latitude(request.getLatitude())
-                .longitude(request.getLongitude())
+                .latitude(request.getLatitude() != null ? BigDecimal.valueOf(request.getLatitude()) : null)
+                .longitude(request.getLongitude() != null ? BigDecimal.valueOf(request.getLongitude()) : null)
                 .remarks(request.getRemarks())
                 .build();
 
