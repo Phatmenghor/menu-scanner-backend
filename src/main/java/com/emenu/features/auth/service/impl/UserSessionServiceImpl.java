@@ -1,7 +1,9 @@
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.exception.custom.ResourceNotFoundException;
+import com.emenu.features.auth.dto.helper.UserSessionCreateHelper;
 import com.emenu.features.auth.dto.session.UserSessionResponse;
+import com.emenu.features.auth.mapper.UserSessionMapper;
 import com.emenu.features.auth.models.RefreshToken;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.models.UserSession;
@@ -29,6 +31,7 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     private final UserSessionRepository sessionRepository;
     private final UserRepository userRepository;
+    private final UserSessionMapper sessionMapper;
 
     @Override
     @Transactional
@@ -39,22 +42,25 @@ public class UserSessionServiceImpl implements UserSessionService {
 
         UserAgentParser.ParsedUserAgent parsedUA = UserAgentParser.parse(userAgent);
 
-        UserSession session = new UserSession();
-        session.setUserId(user.getId());
-        session.setRefreshTokenId(refreshToken.getId());
-        session.setDeviceId(deviceId != null ? deviceId : generateDeviceId(userAgent));
-        session.setDeviceName(deviceName);
-        session.setDeviceType(detectDeviceType(userAgent));
-        session.setUserAgent(userAgent);
-        session.setBrowser(parsedUA.getBrowserWithVersion());
-        session.setOperatingSystem(parsedUA.getOs());
-        session.setIpAddress(ClientIpUtils.getClientIp(request));
-        session.setStatus(SecurityConstants.SESSION_STATUS_ACTIVE);
-        session.setLoginAt(LocalDateTime.now());
-        session.setLastActiveAt(LocalDateTime.now());
-        session.setExpiresAt(refreshToken.getExpiryDate());
-        session.setIsCurrentSession(true);
+        // Build helper DTO, then use pure MapStruct mapping
+        UserSessionCreateHelper helper = UserSessionCreateHelper.builder()
+                .userId(user.getId())
+                .refreshTokenId(refreshToken.getId())
+                .deviceId(deviceId != null ? deviceId : generateDeviceId(userAgent))
+                .deviceName(deviceName)
+                .deviceType(detectDeviceType(userAgent))
+                .userAgent(userAgent)
+                .browser(parsedUA.getBrowserWithVersion())
+                .operatingSystem(parsedUA.getOs())
+                .ipAddress(ClientIpUtils.getClientIp(request))
+                .status(SecurityConstants.SESSION_STATUS_ACTIVE)
+                .loginAt(LocalDateTime.now())
+                .lastActiveAt(LocalDateTime.now())
+                .expiresAt(refreshToken.getExpiryDate())
+                .isCurrentSession(true)
+                .build();
 
+        UserSession session = sessionMapper.createFromHelper(helper);
         sessionRepository.save(session);
         sessionRepository.markOtherSessionsAsNotCurrent(user.getId(), session.getId());
 

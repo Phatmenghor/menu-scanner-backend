@@ -2,9 +2,11 @@ package com.emenu.features.audit.service;
 
 import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ResourceNotFoundException;
+import com.emenu.features.audit.dto.helper.AuditLogCreateHelper;
 import com.emenu.features.audit.dto.filter.AuditLogFilterDTO;
 import com.emenu.features.audit.dto.response.AuditLogResponseDTO;
 import com.emenu.features.audit.dto.response.AuditStatsResponseDTO;
+import com.emenu.features.audit.mapper.AuditLogMapper;
 import com.emenu.features.audit.models.AuditLog;
 import com.emenu.features.audit.repository.AuditLogRepository;
 import com.emenu.security.SecurityUtils;
@@ -33,6 +35,7 @@ public class AuditLogServiceImpl implements AuditLogService {
     private final AuditLogRepository auditLogRepository;
     private final SecurityUtils securityUtils;
     private final PaginationMapper paginationMapper;
+    private final AuditLogMapper auditLogMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -62,55 +65,53 @@ public class AuditLogServiceImpl implements AuditLogService {
     public void logAccessWithBodies(HttpServletRequest request, int statusCode, long responseTimeMs,
                                    String errorMessage, String requestBody, String responseBody) {
         try {
-            AuditLog auditLog = new AuditLog();
+            // Prepare user info
+            UUID userId = null;
+            String userIdentifier = "anonymous";
+            String userType = "ANONYMOUS";
 
             // Try to get user info from security context
             try {
-                UUID userId = securityUtils.getCurrentUserId();
-                String userIdentifier = securityUtils.getCurrentUserIdentifier();
-                UserType userType = securityUtils.getCurrentUserType();
-
-                auditLog.setUserId(userId);
-                auditLog.setUserIdentifier(userIdentifier);
-                auditLog.setUserType(userType != null ? userType.name() : null);
+                userId = securityUtils.getCurrentUserId();
+                userIdentifier = securityUtils.getCurrentUserIdentifier();
+                UserType type = securityUtils.getCurrentUserType();
+                userType = type != null ? type.name() : "ANONYMOUS";
             } catch (Exception e) {
-                // User not authenticated - log as anonymous
-                auditLog.setUserId(null);
-                auditLog.setUserIdentifier("anonymous");
-                auditLog.setUserType("ANONYMOUS");
+                // User not authenticated - use defaults set above
             }
 
-            // Request info
-            auditLog.setHttpMethod(request.getMethod());
-            auditLog.setEndpoint(request.getRequestURI());
-            auditLog.setIpAddress(ClientIpUtils.getClientIp(request));
-            auditLog.setUserAgent(request.getHeader("User-Agent"));
-
-            // Request parameters
-            if (!request.getParameterMap().isEmpty()) {
-                auditLog.setRequestParams(buildParamsString(request.getParameterMap()));
-            }
-
-            // Request/Response bodies (optional - can be null)
+            // Truncate request/response bodies if needed
+            String truncatedRequestBody = null;
             if (requestBody != null && requestBody.length() > 0) {
-                // Limit to 10000 chars to avoid DB issues
-                auditLog.setRequestBody(requestBody.length() > 10000 ?
-                    requestBody.substring(0, 10000) + "... [truncated]" : requestBody);
+                truncatedRequestBody = requestBody.length() > 10000 ?
+                    requestBody.substring(0, 10000) + "... [truncated]" : requestBody;
             }
 
+            String truncatedResponseBody = null;
             if (responseBody != null && responseBody.length() > 0) {
-                // Limit to 10000 chars to avoid DB issues
-                auditLog.setResponseBody(responseBody.length() > 10000 ?
-                    responseBody.substring(0, 10000) + "... [truncated]" : responseBody);
+                truncatedResponseBody = responseBody.length() > 10000 ?
+                    responseBody.substring(0, 10000) + "... [truncated]" : responseBody;
             }
 
-            // Response info
-            auditLog.setStatusCode(statusCode);
-            auditLog.setResponseTimeMs(responseTimeMs);
-            auditLog.setErrorMessage(errorMessage);
-            auditLog.setSessionId(request.getSession(false) != null ?
-                    request.getSession().getId() : null);
+            // Build helper DTO, then use pure MapStruct mapping
+            AuditLogCreateHelper helper = AuditLogCreateHelper.builder()
+                    .userId(userId)
+                    .userIdentifier(userIdentifier)
+                    .userType(userType)
+                    .httpMethod(request.getMethod())
+                    .endpoint(request.getRequestURI())
+                    .ipAddress(ClientIpUtils.getClientIp(request))
+                    .userAgent(request.getHeader("User-Agent"))
+                    .requestParams(!request.getParameterMap().isEmpty() ? buildParamsString(request.getParameterMap()) : null)
+                    .requestBody(truncatedRequestBody)
+                    .responseBody(truncatedResponseBody)
+                    .statusCode(statusCode)
+                    .responseTimeMs(responseTimeMs)
+                    .errorMessage(errorMessage)
+                    .sessionId(request.getSession(false) != null ? request.getSession().getId() : null)
+                    .build();
 
+            AuditLog auditLog = auditLogMapper.createFromHelper(helper);
             auditLogRepository.save(auditLog);
         } catch (Exception e) {
             log.error("Failed to save audit log: {}", e.getMessage(), e);

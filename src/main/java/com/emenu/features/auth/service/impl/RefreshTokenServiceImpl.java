@@ -1,5 +1,7 @@
 package com.emenu.features.auth.service.impl;
 
+import com.emenu.features.auth.dto.helper.RefreshTokenCreateHelper;
+import com.emenu.features.auth.mapper.RefreshTokenMapper;
 import com.emenu.features.auth.models.RefreshToken;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.repository.RefreshTokenRepository;
@@ -28,6 +30,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
     private final JWTGenerator jwtGenerator;
+    private final RefreshTokenMapper refreshTokenMapper;
 
     @Override
     @Transactional
@@ -42,20 +45,19 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 user.getBusinessId() != null ? user.getBusinessId().toString() : null
         );
 
-        // Create refresh token entity
-        RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setToken(tokenString);
-        refreshToken.setUserId(user.getId());
-        refreshToken.setExpiryDate(
-                LocalDateTime.ofInstant(
+        // Build helper DTO, then use pure MapStruct mapping
+        RefreshTokenCreateHelper helper = RefreshTokenCreateHelper.builder()
+                .token(tokenString)
+                .userId(user.getId())
+                .expiryDate(LocalDateTime.ofInstant(
                         jwtGenerator.getRefreshTokenExpiryDate().toInstant(),
-                        ZoneId.systemDefault()
-                )
-        );
-        refreshToken.setIsRevoked(false);
-        refreshToken.setIpAddress(ipAddress);
-        refreshToken.setDeviceInfo(deviceInfo);
+                        ZoneId.systemDefault()))
+                .isRevoked(false)
+                .ipAddress(ipAddress)
+                .deviceInfo(deviceInfo)
+                .build();
 
+        RefreshToken refreshToken = refreshTokenMapper.createFromHelper(helper);
         RefreshToken saved = refreshTokenRepository.save(refreshToken);
         log.info("Refresh token created successfully for user: {}", user.getUserIdentifier());
 
