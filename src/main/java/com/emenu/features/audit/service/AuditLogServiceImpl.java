@@ -11,7 +11,6 @@ import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.utils.ClientIpUtils;
-import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -119,13 +117,15 @@ public class AuditLogServiceImpl implements AuditLogService {
         }
     }
 
+    /* TODO: Implement repository-based filtering
     @Override
     @Transactional(readOnly = true)
     public Page<AuditLogResponseDTO> getAuditLogs(AuditLogFilterDTO filter, Pageable pageable) {
-        Specification<AuditLog> spec = buildSpecification(filter);
-        return auditLogRepository.findAll(spec, pageable)
+        // Use searchAuditLogs method instead
+        return auditLogRepository.findAll(pageable)
                 .map(this::toResponseDTO);
     }
+    */
 
     @Override
     @Transactional(readOnly = true)

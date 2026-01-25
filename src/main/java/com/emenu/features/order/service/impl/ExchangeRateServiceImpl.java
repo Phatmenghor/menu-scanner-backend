@@ -57,8 +57,8 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        // Page needs repository query method
-        return exchangeRateMapper.toPaginationResponse(exchangeRatePage, paginationMapper);
+        Page<ExchangeRate> page = exchangeRateRepository.findAll(pageable);
+        return exchangeRateMapper.toPaginationResponse(page, paginationMapper);
     }
 
     @Override

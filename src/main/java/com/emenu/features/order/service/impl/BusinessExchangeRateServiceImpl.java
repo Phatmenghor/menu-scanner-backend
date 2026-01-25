@@ -76,8 +76,8 @@ public class BusinessExchangeRateServiceImpl implements BusinessExchangeRateServ
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        // Page needs repository query method
-        return exchangeRateMapper.toPaginationResponse(exchangeRatePage, paginationMapper);
+        Page<BusinessExchangeRate> page = exchangeRateRepository.findAll(pageable);
+        return exchangeRateMapper.toPaginationResponse(page, paginationMapper);
     }
 
     @Override

@@ -186,14 +186,14 @@ public class OrderServiceImpl implements OrderService {
         }
         
         // TODO: Implement repository-based filtering
-        
+
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
                 pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
-        
-        // Page needs repository query method
-        return orderMapper.toPaginationResponse(orderPage, paginationMapper);
+
+        Page<Order> page = orderRepository.findAll(pageable);
+        return orderMapper.toPaginationResponse(page, paginationMapper);
     }
 
     @Override

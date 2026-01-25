@@ -15,7 +15,7 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {PaginationMapper.class})
+@Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = org.mapstruct.ReportingPolicy.IGNORE)
 public interface LeaveMapper {
 
     @Mapping(target = "userInfo.id", source = "user.id")

@@ -46,8 +46,8 @@ public class BusinessOrderPaymentServiceImpl implements BusinessOrderPaymentServ
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        // Page needs repository query method
-        return paymentMapper.toPaginationResponse(paymentPage, paginationMapper);
+        Page<BusinessOrderPayment> page = paymentRepository.findAll(pageable);
+        return paymentMapper.toPaginationResponse(page, paginationMapper);
     }
 
     @Override
