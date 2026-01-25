@@ -71,63 +71,92 @@ public class AuditLogServiceImpl implements AuditLogService {
     }
 
     @Override
-    @Async
     public void logAccess(HttpServletRequest request, int statusCode, long responseTimeMs, String errorMessage) {
         logAccessWithBodies(request, statusCode, responseTimeMs, errorMessage, null, null);
     }
 
     @Override
-    @Async
-    @Transactional
     public void logAccessWithBodies(HttpServletRequest request, int statusCode, long responseTimeMs,
                                    String errorMessage, String requestBody, String responseBody) {
+        // Extract all request data SYNCHRONOUSLY before async processing
+        // This prevents "request recycled" errors from Tomcat
+        UUID userId = null;
+        String userIdentifier = "anonymous";
+        String userType = "ANONYMOUS";
+
+        // Try to get user info from security context (must be done synchronously)
         try {
-            // Prepare user info
-            UUID userId = null;
-            String userIdentifier = "anonymous";
-            String userType = "ANONYMOUS";
+            userId = securityUtils.getCurrentUserId();
+            userIdentifier = securityUtils.getCurrentUserIdentifier();
+            UserType type = securityUtils.getCurrentUserType();
+            userType = type != null ? type.name() : "ANONYMOUS";
+        } catch (Exception e) {
+            // User not authenticated - use defaults set above
+        }
 
-            // Try to get user info from security context
-            try {
-                userId = securityUtils.getCurrentUserId();
-                userIdentifier = securityUtils.getCurrentUserIdentifier();
-                UserType type = securityUtils.getCurrentUserType();
-                userType = type != null ? type.name() : "ANONYMOUS";
-            } catch (Exception e) {
-                // User not authenticated - use defaults set above
-            }
+        // Extract request data synchronously (before request is recycled)
+        String httpMethod = request.getMethod();
+        String endpoint = request.getRequestURI();
+        String ipAddress = ClientIpUtils.getClientIp(request);
+        String userAgent = request.getHeader("User-Agent");
+        String requestParams = !request.getParameterMap().isEmpty() ? buildParamsString(request.getParameterMap()) : null;
+        String sessionId = null;
+        try {
+            sessionId = request.getSession(false) != null ? request.getSession().getId() : null;
+        } catch (Exception e) {
+            // Session may not be available
+        }
 
-            // Truncate request/response bodies if needed
-            String truncatedRequestBody = null;
-            if (requestBody != null && requestBody.length() > 0) {
-                truncatedRequestBody = requestBody.length() > 10000 ?
-                    requestBody.substring(0, 10000) + "... [truncated]" : requestBody;
-            }
+        // Build the helper DTO with all extracted data
+        final AuditLogCreateHelper helper = buildAuditLogHelper(
+                userId, userIdentifier, userType, httpMethod, endpoint, ipAddress,
+                userAgent, requestParams, statusCode, responseTimeMs, errorMessage,
+                sessionId, requestBody, responseBody);
 
-            String truncatedResponseBody = null;
-            if (responseBody != null && responseBody.length() > 0) {
-                truncatedResponseBody = responseBody.length() > 10000 ?
-                    responseBody.substring(0, 10000) + "... [truncated]" : responseBody;
-            }
+        // Now save asynchronously - all data is already extracted
+        saveAuditLogAsync(helper);
+    }
 
-            // Build helper DTO, then use pure MapStruct mapping
-            AuditLogCreateHelper helper = AuditLogCreateHelper.builder()
-                    .userId(userId)
-                    .userIdentifier(userIdentifier)
-                    .userType(userType)
-                    .httpMethod(request.getMethod())
-                    .endpoint(request.getRequestURI())
-                    .ipAddress(ClientIpUtils.getClientIp(request))
-                    .userAgent(request.getHeader("User-Agent"))
-                    .requestParams(!request.getParameterMap().isEmpty() ? buildParamsString(request.getParameterMap()) : null)
-                    .requestBody(truncatedRequestBody)
-                    .responseBody(truncatedResponseBody)
-                    .statusCode(statusCode)
-                    .responseTimeMs(responseTimeMs)
-                    .errorMessage(errorMessage)
-                    .sessionId(request.getSession(false) != null ? request.getSession().getId() : null)
-                    .build();
+    private AuditLogCreateHelper buildAuditLogHelper(UUID userId, String userIdentifier, String userType,
+                                                      String httpMethod, String endpoint, String ipAddress,
+                                                      String userAgent, String requestParams, int statusCode,
+                                                      long responseTimeMs, String errorMessage, String sessionId,
+                                                      String requestBody, String responseBody) {
+        // Truncate request/response bodies if needed
+        String truncatedRequestBody = null;
+        if (requestBody != null && requestBody.length() > 0) {
+            truncatedRequestBody = requestBody.length() > 10000 ?
+                requestBody.substring(0, 10000) + "... [truncated]" : requestBody;
+        }
 
+        String truncatedResponseBody = null;
+        if (responseBody != null && responseBody.length() > 0) {
+            truncatedResponseBody = responseBody.length() > 10000 ?
+                responseBody.substring(0, 10000) + "... [truncated]" : responseBody;
+        }
+
+        return AuditLogCreateHelper.builder()
+                .userId(userId)
+                .userIdentifier(userIdentifier)
+                .userType(userType)
+                .httpMethod(httpMethod)
+                .endpoint(endpoint)
+                .ipAddress(ipAddress)
+                .userAgent(userAgent)
+                .requestParams(requestParams)
+                .requestBody(truncatedRequestBody)
+                .responseBody(truncatedResponseBody)
+                .statusCode(statusCode)
+                .responseTimeMs(responseTimeMs)
+                .errorMessage(errorMessage)
+                .sessionId(sessionId)
+                .build();
+    }
+
+    @Async
+    @Transactional
+    public void saveAuditLogAsync(AuditLogCreateHelper helper) {
+        try {
             AuditLog auditLog = auditLogMapper.createFromHelper(helper);
             auditLogRepository.save(auditLog);
         } catch (Exception e) {
