@@ -2,6 +2,7 @@ package com.emenu.features.subscription.service.impl;
 
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.repository.BusinessRepository;
+import com.emenu.features.order.mapper.PaymentMapper;
 import com.emenu.features.order.models.Payment;
 import com.emenu.features.order.repository.PaymentRepository;
 import com.emenu.features.subscription.dto.filter.SubscriptionFilterRequest;
@@ -41,6 +42,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final BusinessRepository businessRepository;
     private final PaymentRepository paymentRepository;
     private final SubscriptionMapper subscriptionMapper;
+    private final PaymentMapper paymentMapper;
     private final SecurityUtils securityUtils;
     private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
 
@@ -188,30 +190,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     private void createPaymentForSubscription(Subscription subscription, SubscriptionRenewRequest request) {
         log.debug("Creating payment for subscription: {}", subscription.getId());
-        Payment payment = new Payment();
-        payment.setBusinessId(subscription.getBusinessId());
-        payment.setPlanId(subscription.getPlanId());
-        payment.setSubscriptionId(subscription.getId());
-        payment.setAmount(request.getPaymentAmount());
-        payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setPaymentType(com.emenu.enums.payment.PaymentType.SUBSCRIPTION);
-        payment.setStatus(com.emenu.enums.payment.PaymentStatus.COMPLETED);
-        payment.setNotes("Payment for subscription renewal");
+        Payment payment = paymentMapper.createSubscriptionPayment(subscription, request);
         paymentRepository.save(payment);
         log.info("Payment created for subscription: {} - Amount: ${}", subscription.getId(), payment.getAmount());
     }
 
     private void createRefundForSubscription(Subscription subscription, SubscriptionCancelRequest request) {
         log.debug("Creating refund for subscription: {}", subscription.getId());
-        Payment refund = new Payment();
-        refund.setBusinessId(subscription.getBusinessId());
-        refund.setPlanId(subscription.getPlanId());
-        refund.setSubscriptionId(subscription.getId());
-        refund.setAmount(request.getRefundAmount().negate());
-        refund.setPaymentMethod(com.emenu.enums.payment.PaymentMethod.OTHER);
-        refund.setPaymentType(com.emenu.enums.payment.PaymentType.REFUND);
-        refund.setStatus(com.emenu.enums.payment.PaymentStatus.COMPLETED);
-        refund.setNotes("Refund for cancelled subscription");
+        Payment refund = paymentMapper.createSubscriptionRefund(subscription, request);
         paymentRepository.save(refund);
         log.info("Refund created for subscription: {} - Amount: ${}", subscription.getId(), refund.getAmount());
     }
