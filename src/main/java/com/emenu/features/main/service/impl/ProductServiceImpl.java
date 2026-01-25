@@ -69,8 +69,17 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSortDirection()
         );
 
-                // TODO: Implement repository-based filtering with findAllWithFilters method
-        Page<Product> productPage = productRepository.findAll(pageable);
+        Page<Product> productPage = productRepository.findAllWithFilters(
+                filter.getBusinessId(),
+                filter.getCategoryId(),
+                filter.getBrandId(),
+                filter.getStatus(),
+                filter.getHasPromotion(),
+                filter.getMinPrice(),
+                filter.getMaxPrice(),
+                filter.getSearch(),
+                pageable
+        );
 
         if (productPage.getContent().isEmpty()) {
             return paginationMapper.toPaginationResponse(productPage, Collections.emptyList());
@@ -119,8 +128,16 @@ public class ProductServiceImpl implements ProductService {
             filter.setBusinessId(currentUser.get().getBusinessId());
         }
 
-        // TODO: Implement repository-based filtering with findAllWithFilters method
-        List<Product> products = productRepository.findAll(PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection())
+        List<Product> products = productRepository.findAllWithFilters(
+                filter.getBusinessId(),
+                filter.getCategoryId(),
+                filter.getBrandId(),
+                filter.getStatus(),
+                filter.getHasPromotion(),
+                filter.getMinPrice(),
+                filter.getMaxPrice(),
+                filter.getSearch(),
+                PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection())
         );
 
         List<ProductListDto> dtoList = productMapper.toListDtos(products);
@@ -178,8 +195,17 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSortDirection()
         );
 
-                // TODO: Implement repository-based filtering with findAllWithFilters method
-        Page<Product> productPage = productRepository.findAll(pageable);
+        Page<Product> productPage = productRepository.findAllWithFilters(
+                filter.getBusinessId(),
+                filter.getCategoryId(),
+                filter.getBrandId(),
+                filter.getStatus(),
+                filter.getHasPromotion(),
+                filter.getMinPrice(),
+                filter.getMaxPrice(),
+                filter.getSearch(),
+                pageable
+        );
 
         List<ProductListDto> dtoList = productMapper.toListDtos(productPage.getContent());
 

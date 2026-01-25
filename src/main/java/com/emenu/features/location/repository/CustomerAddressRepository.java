@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,4 +46,23 @@ public interface CustomerAddressRepository extends JpaRepository<CustomerAddress
            "LEFT JOIN FETCH ca.user " +
            "WHERE ca.id = :id AND ca.isDeleted = false")
     Optional<CustomerAddress> findByIdWithUser(@Param("id") UUID id);
+
+    /**
+     * Find all customer addresses with dynamic filtering
+     */
+    @Query("SELECT ca FROM CustomerAddress ca " +
+           "WHERE ca.isDeleted = false " +
+           "AND (:userId IS NULL OR ca.userId = :userId) " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     LOWER(ca.province) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(ca.district) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(ca.commune) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(ca.village) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(ca.streetNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(ca.note) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<CustomerAddress> findAllWithFilters(
+        @Param("userId") UUID userId,
+        @Param("search") String search,
+        Pageable pageable
+    );
 }

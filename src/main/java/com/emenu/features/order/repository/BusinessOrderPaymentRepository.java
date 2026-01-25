@@ -1,6 +1,10 @@
 package com.emenu.features.order.repository;
 
+import com.emenu.enums.payment.PaymentMethod;
+import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.features.order.models.BusinessOrderPayment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -69,4 +73,36 @@ public interface BusinessOrderPaymentRepository extends JpaRepository<BusinessOr
      */
     @Query("SELECT COUNT(bop) FROM BusinessOrderPayment bop WHERE bop.businessId = :businessId AND bop.order.isGuestOrder = true AND bop.isDeleted = false")
     long countGuestPayments(@Param("businessId") UUID businessId);
+
+    /**
+     * Find all business order payments with dynamic filtering
+     */
+    @Query("SELECT bop FROM BusinessOrderPayment bop " +
+           "LEFT JOIN bop.order o " +
+           "WHERE bop.isDeleted = false " +
+           "AND (:businessId IS NULL OR bop.businessId = :businessId) " +
+           "AND (:statuses IS NULL OR bop.status IN :statuses) " +
+           "AND (:paymentMethod IS NULL OR bop.paymentMethod = :paymentMethod) " +
+           "AND (:customerPaymentMethod IS NULL OR bop.customerPaymentMethod = :customerPaymentMethod) " +
+           "AND (:customerPhone IS NULL OR bop.customerPhone = :customerPhone) " +
+           "AND (:isGuestOrder IS NULL OR o.isGuestOrder = :isGuestOrder) " +
+           "AND (:isPosOrder IS NULL OR o.isPosOrder = :isPosOrder) " +
+           "AND (:createdFrom IS NULL OR bop.createdAt >= :createdFrom) " +
+           "AND (:createdTo IS NULL OR bop.createdAt <= :createdTo) " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     LOWER(bop.paymentReference) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(bop.customerPhone) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<BusinessOrderPayment> findAllWithFilters(
+        @Param("businessId") UUID businessId,
+        @Param("statuses") List<PaymentStatus> statuses,
+        @Param("paymentMethod") PaymentMethod paymentMethod,
+        @Param("customerPaymentMethod") String customerPaymentMethod,
+        @Param("customerPhone") String customerPhone,
+        @Param("isGuestOrder") Boolean isGuestOrder,
+        @Param("isPosOrder") Boolean isPosOrder,
+        @Param("createdFrom") LocalDateTime createdFrom,
+        @Param("createdTo") LocalDateTime createdTo,
+        @Param("search") String search,
+        Pageable pageable
+    );
 }

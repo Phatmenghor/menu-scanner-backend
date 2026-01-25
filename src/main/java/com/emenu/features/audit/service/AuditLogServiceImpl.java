@@ -43,8 +43,25 @@ public class AuditLogServiceImpl implements AuditLogService {
         Sort sort = Sort.by(Sort.Direction.fromString(filter.getSortDirection()), filter.getSortBy());
         Pageable pageable = PageRequest.of(filter.getPageNo() - 1, filter.getPageSize(), sort);
 
-        // TODO: Implement repository-based filtering with findAllWithFilters method
-        Page<AuditLog> page = auditLogRepository.findAll(pageable);
+        Page<AuditLog> page = auditLogRepository.findAllWithFilters(
+                filter.getUserId(),
+                filter.getUserIdentifier(),
+                filter.getUserType(),
+                filter.getHttpMethod(),
+                filter.getEndpoint(),
+                filter.getIpAddress(),
+                filter.getStatusCode(),
+                filter.getMinStatusCode(),
+                filter.getMaxStatusCode(),
+                filter.getStartDate(),
+                filter.getEndDate(),
+                filter.getMinResponseTime(),
+                filter.getMaxResponseTime(),
+                filter.getHasError(),
+                filter.getIsAnonymous(),
+                filter.getSearch(),
+                pageable
+        );
 
         List<AuditLogResponseDTO> content = page.getContent().stream()
                 .map(this::toResponseDTO)
@@ -118,13 +135,28 @@ public class AuditLogServiceImpl implements AuditLogService {
         }
     }
 
-    // TODO: Implement repository-based filtering
     @Override
     @Transactional(readOnly = true)
     public Page<AuditLogResponseDTO> getAuditLogs(AuditLogFilterDTO filter, Pageable pageable) {
-        // Temporarily using searchAuditLogs logic until repository filtering is implemented
-        return auditLogRepository.findAll(pageable)
-                .map(this::toResponseDTO);
+        return auditLogRepository.findAllWithFilters(
+                filter.getUserId(),
+                filter.getUserIdentifier(),
+                filter.getUserType(),
+                filter.getHttpMethod(),
+                filter.getEndpoint(),
+                filter.getIpAddress(),
+                filter.getStatusCode(),
+                filter.getMinStatusCode(),
+                filter.getMaxStatusCode(),
+                filter.getStartDate(),
+                filter.getEndDate(),
+                filter.getMinResponseTime(),
+                filter.getMaxResponseTime(),
+                filter.getHasError(),
+                filter.getIsAnonymous(),
+                filter.getSearch(),
+                pageable
+        ).map(this::toResponseDTO);
     }
 
     @Override

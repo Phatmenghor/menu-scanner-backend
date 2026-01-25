@@ -1,6 +1,8 @@
 package com.emenu.features.order.repository;
 
 import com.emenu.features.order.models.BusinessExchangeRate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -61,4 +63,22 @@ public interface BusinessExchangeRateRepository extends JpaRepository<BusinessEx
      */
     @Query("SELECT ber FROM BusinessExchangeRate ber WHERE ber.isActive = true AND ber.isDeleted = false ORDER BY ber.createdAt DESC")
     List<BusinessExchangeRate> findAllActiveRates();
+
+    /**
+     * Find all business exchange rates with dynamic filtering
+     */
+    @Query("SELECT ber FROM BusinessExchangeRate ber " +
+           "LEFT JOIN ber.business b " +
+           "WHERE ber.isDeleted = false " +
+           "AND (:businessId IS NULL OR ber.businessId = :businessId) " +
+           "AND (:isActive IS NULL OR ber.isActive = :isActive) " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     CAST(ber.usdToKhrRate AS string) LIKE CONCAT('%', :search, '%') OR " +
+           "     LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<BusinessExchangeRate> findAllWithFilters(
+        @Param("businessId") UUID businessId,
+        @Param("isActive") Boolean isActive,
+        @Param("search") String search,
+        Pageable pageable
+    );
 }

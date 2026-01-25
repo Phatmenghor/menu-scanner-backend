@@ -18,6 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.emenu.enums.payment.PaymentStatus;
+
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -40,13 +43,27 @@ public class BusinessOrderPaymentServiceImpl implements BusinessOrderPaymentServ
             filter.setBusinessId(currentUser.getBusinessId());
         }
 
-        // TODO: Implement repository-based filtering
-
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        Page<BusinessOrderPayment> page = paymentRepository.findAll(pageable);
+        // Convert empty list to null for proper query handling
+        List<PaymentStatus> statuses = filter.getStatuses() != null && !filter.getStatuses().isEmpty()
+                ? filter.getStatuses() : null;
+
+        Page<BusinessOrderPayment> page = paymentRepository.findAllWithFilters(
+                filter.getBusinessId(),
+                statuses,
+                filter.getPaymentMethod(),
+                filter.getCustomerPaymentMethod(),
+                filter.getCustomerPhone(),
+                filter.getIsGuestOrder(),
+                filter.getIsPosOrder(),
+                filter.getCreatedFrom(),
+                filter.getCreatedTo(),
+                filter.getSearch(),
+                pageable
+        );
         return paymentMapper.toPaginationResponse(page, paginationMapper);
     }
 

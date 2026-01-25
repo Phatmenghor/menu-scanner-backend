@@ -10,6 +10,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.emenu.enums.product.ProductStatus;
+import org.springframework.data.domain.Sort;
+
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -73,4 +78,68 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "INNER JOIN ProductFavorite pf ON p.id = pf.productId " +
            "WHERE pf.userId = :userId AND p.isDeleted = false AND pf.isDeleted = false")
     Page<Product> findUserFavorites(@Param("userId") UUID userId, Pageable pageable);
+
+    /**
+     * Find all products with dynamic filtering - paginated
+     */
+    @Query("SELECT DISTINCT p FROM Product p " +
+           "LEFT JOIN p.category c " +
+           "LEFT JOIN p.brand b " +
+           "LEFT JOIN p.business bus " +
+           "WHERE p.isDeleted = false " +
+           "AND (:businessId IS NULL OR p.businessId = :businessId) " +
+           "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
+           "AND (:brandId IS NULL OR p.brandId = :brandId) " +
+           "AND (:status IS NULL OR p.status = :status) " +
+           "AND (:hasPromotion IS NULL OR p.hasActivePromotion = :hasPromotion) " +
+           "AND (:minPrice IS NULL OR p.displayPrice >= :minPrice) " +
+           "AND (:maxPrice IS NULL OR p.displayPrice <= :maxPrice) " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Product> findAllWithFilters(
+        @Param("businessId") UUID businessId,
+        @Param("categoryId") UUID categoryId,
+        @Param("brandId") UUID brandId,
+        @Param("status") ProductStatus status,
+        @Param("hasPromotion") Boolean hasPromotion,
+        @Param("minPrice") BigDecimal minPrice,
+        @Param("maxPrice") BigDecimal maxPrice,
+        @Param("search") String search,
+        Pageable pageable
+    );
+
+    /**
+     * Find all products with dynamic filtering - non-paginated
+     */
+    @Query("SELECT DISTINCT p FROM Product p " +
+           "LEFT JOIN p.category c " +
+           "LEFT JOIN p.brand b " +
+           "LEFT JOIN p.business bus " +
+           "WHERE p.isDeleted = false " +
+           "AND (:businessId IS NULL OR p.businessId = :businessId) " +
+           "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
+           "AND (:brandId IS NULL OR p.brandId = :brandId) " +
+           "AND (:status IS NULL OR p.status = :status) " +
+           "AND (:hasPromotion IS NULL OR p.hasActivePromotion = :hasPromotion) " +
+           "AND (:minPrice IS NULL OR p.displayPrice >= :minPrice) " +
+           "AND (:maxPrice IS NULL OR p.displayPrice <= :maxPrice) " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')))")
+    List<Product> findAllWithFilters(
+        @Param("businessId") UUID businessId,
+        @Param("categoryId") UUID categoryId,
+        @Param("brandId") UUID brandId,
+        @Param("status") ProductStatus status,
+        @Param("hasPromotion") Boolean hasPromotion,
+        @Param("minPrice") BigDecimal minPrice,
+        @Param("maxPrice") BigDecimal maxPrice,
+        @Param("search") String search,
+        Sort sort
+    );
 }
