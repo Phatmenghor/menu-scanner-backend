@@ -117,15 +117,14 @@ public class AuditLogServiceImpl implements AuditLogService {
         }
     }
 
-    /* TODO: Implement repository-based filtering
+    // TODO: Implement repository-based filtering
     @Override
     @Transactional(readOnly = true)
     public Page<AuditLogResponseDTO> getAuditLogs(AuditLogFilterDTO filter, Pageable pageable) {
-        // Use searchAuditLogs method instead
+        // Temporarily using searchAuditLogs logic until repository filtering is implemented
         return auditLogRepository.findAll(pageable)
                 .map(this::toResponseDTO);
     }
-    */
 
     @Override
     @Transactional(readOnly = true)
