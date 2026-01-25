@@ -24,13 +24,7 @@ public interface UserMapper {
     @Mapping(target = "roles", source = "roles", qualifiedByName = "rolesToEnums")
     UserResponse toResponse(User user);
 
-    @Mapping(target = "id", source = "id")
-    @Mapping(target = "firstName", source = "firstName")
-    @Mapping(target = "lastName", source = "lastName")
-    @Mapping(target = "email", source = "email")
-    @Mapping(target = "phoneNumber", source = "phoneNumber")
-    @Mapping(target = "profileImageUrl", source = "profileImageUrl")
-    UserBasicInfo toUserBasicInfo(User user);
+    @Mapping    @Mapping    @Mapping    @Mapping    @Mapping    @Mapping    UserBasicInfo toUserBasicInfo(User user);
 
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
@@ -47,34 +41,29 @@ public interface UserMapper {
     @Mapping(target = "password", ignore = true)
     void updateEntity(UserUpdateRequest request, @MappingTarget User user);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    @Mapping(target = "password", ignore = true)
+    @Mapping    @Mapping(target = "roles", ignore = true)
+    @Mapping    @Mapping(target = "password", ignore = true)
     User toEntity(UserCreateRequest request);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "password", ignore = true)
+    @Mapping    @Mapping(target = "roles", ignore = true)
+    @Mapping    @Mapping    @Mapping(target = "password", ignore = true)
     @Mapping(target = "position", ignore = true)
     @Mapping(target = "notes", ignore = true)
     User toEntity(RegisterRequest request);
 
     @Named("rolesToEnums")
     default List<String> rolesToEnums(List<Role> roles) {
-        if (roles == null) return List.of();
-        return roles.stream().map(Role::getName).collect(Collectors.toList());
+if (roles == null) return List.of();
+return roles.stream().map(Role::getName).collect(Collectors.toList());
     }
 
     @Named("rolesToStrings")
     default List<String> rolesToStrings(List<Role> roles) {
-        if (roles == null) return List.of();
-        return roles.stream().map(Role::getName).collect(Collectors.toList());
+if (roles == null) return List.of();
+return roles.stream().map(Role::getName).collect(Collectors.toList());
     }
 
     default PaginationResponse<UserResponse> toPaginationResponse(Page<User> page, PaginationMapper paginationMapper) {
-        return paginationMapper.toPaginationResponse(page, this::toResponseList);
+return paginationMapper.toPaginationResponse(page, this::toResponseList);
     }
 }

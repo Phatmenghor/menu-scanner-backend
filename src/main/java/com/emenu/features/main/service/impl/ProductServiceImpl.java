@@ -69,8 +69,8 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSortDirection()
         );
 
-        Specification<Product> spec = ProductSpecifications.withFilter(filter);
-        Page<Product> productPage = productRepository.findAll(spec, pageable);
+                // TODO: Implement repository-based filtering with findAllWithFilters method
+        Page<Product> productPage = productRepository.findAll(pageable);
 
         if (productPage.getContent().isEmpty()) {
             return paginationMapper.toPaginationResponse(productPage, Collections.emptyList());
@@ -119,11 +119,8 @@ public class ProductServiceImpl implements ProductService {
             filter.setBusinessId(currentUser.get().getBusinessId());
         }
 
-        Specification<Product> spec = ProductSpecifications.withFilter(filter);
-
-        List<Product> products = productRepository.findAll(
-                spec,
-                PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection())
+        // TODO: Implement repository-based filtering with findAllWithFilters method
+        List<Product> products = productRepository.findAll(PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection())
         );
 
         List<ProductListDto> dtoList = productMapper.toListDtos(products);
@@ -181,8 +178,8 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSortDirection()
         );
 
-        Specification<Product> spec = ProductSpecifications.withFilter(filter);
-        Page<Product> productPage = productRepository.findAll(spec, pageable);
+                // TODO: Implement repository-based filtering with findAllWithFilters method
+        Page<Product> productPage = productRepository.findAll(pageable);
 
         List<ProductListDto> dtoList = productMapper.toListDtos(productPage.getContent());
 

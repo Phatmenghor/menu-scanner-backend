@@ -57,14 +57,12 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<CustomerAddressResponse> getAllAddresses(CustomerAddressFilterRequest filter) {
-        
-        Specification<CustomerAddress> spec = CustomerAddressSpecification.buildSpecification(filter);
-        
+        // TODO: Implement repository-based filtering with findAllWithFilters method
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        Page<CustomerAddress> addressPage = addressRepository.findAll(spec, pageable);
+        Page<CustomerAddress> addressPage = addressRepository.findAll(pageable);
         return addressMapper.toPaginationResponse(addressPage, paginationMapper);
     }
 

@@ -14,10 +14,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BannerMapper {
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    Banner toEntity(BannerCreateRequest request);
+    @Mapping    @Mapping    @Mapping    Banner toEntity(BannerCreateRequest request);
 
     @Mapping(source = "business.name", target = "businessName")
     BannerResponse toResponse(Banner banner);
@@ -25,12 +22,9 @@ public interface BannerMapper {
     List<BannerResponse> toResponseList(List<Banner> banners);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    void updateEntity(BannerUpdateRequest request, @MappingTarget Banner banner);
+    @Mapping    @Mapping    @Mapping    void updateEntity(BannerUpdateRequest request, @MappingTarget Banner banner);
 
     default PaginationResponse<BannerResponse> toPaginationResponse(Page<Banner> bannerPage, PaginationMapper paginationMapper) {
-        return paginationMapper.toPaginationResponse(bannerPage, this::toResponseList);
+return paginationMapper.toPaginationResponse(bannerPage, this::toResponseList);
     }
 }

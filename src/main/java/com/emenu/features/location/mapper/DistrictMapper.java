@@ -16,8 +16,7 @@ import java.util.List;
         uses = {ProvinceMapper.class, PaginationMapper.class})
 public interface DistrictMapper {
 
-    @Mapping(target = "province", source = "province")
-    DistrictResponse toResponse(District district);
+    @Mapping    DistrictResponse toResponse(District district);
 
     District toEntity(DistrictRequest request);
 

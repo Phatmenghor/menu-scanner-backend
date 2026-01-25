@@ -16,8 +16,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CartMapper {
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "cartId", ignore = true)
+    @Mapping    @Mapping(target = "cartId", ignore = true)
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "productSize", ignore = true)
@@ -35,17 +34,17 @@ public interface CartMapper {
 
     @AfterMapping
     default void setPromotionDetails(@MappingTarget CartItemResponse response, CartItem cartItem) {
-        if (cartItem.getProductSize() != null && cartItem.getProductSize().isPromotionActive()) {
-            response.setPromotionType(cartItem.getProductSize().getPromotionType() != null ?
-                cartItem.getProductSize().getPromotionType().name() : null);
-            response.setPromotionValue(cartItem.getProductSize().getPromotionValue());
-            response.setPromotionEndDate(cartItem.getProductSize().getPromotionToDate());
-        } else if (cartItem.getProduct() != null && cartItem.getProduct().isPromotionActive()) {
-            response.setPromotionType(cartItem.getProduct().getPromotionType() != null ?
-                cartItem.getProduct().getPromotionType().name() : null);
-            response.setPromotionValue(cartItem.getProduct().getPromotionValue());
-            response.setPromotionEndDate(cartItem.getProduct().getPromotionToDate());
-        }
+if (cartItem.getProductSize() != null && cartItem.getProductSize().isPromotionActive()) {
+    response.setPromotionType(cartItem.getProductSize().getPromotionType() != null ?
+        cartItem.getProductSize().getPromotionType().name() : null);
+    response.setPromotionValue(cartItem.getProductSize().getPromotionValue());
+    response.setPromotionEndDate(cartItem.getProductSize().getPromotionToDate());
+} else if (cartItem.getProduct() != null && cartItem.getProduct().isPromotionActive()) {
+    response.setPromotionType(cartItem.getProduct().getPromotionType() != null ?
+        cartItem.getProduct().getPromotionType().name() : null);
+    response.setPromotionValue(cartItem.getProduct().getPromotionValue());
+    response.setPromotionEndDate(cartItem.getProduct().getPromotionToDate());
+}
     }
 
     List<CartItemResponse> toItemResponseList(List<CartItem> cartItems);
@@ -61,12 +60,12 @@ public interface CartMapper {
 
     @AfterMapping
     default void setCartItems(@MappingTarget CartResponse response, Cart cart) {
-        if (cart.getItems() != null) {
-            response.setItems(toItemResponseList(cart.getItems()));
-        }
+if (cart.getItems() != null) {
+    response.setItems(toItemResponseList(cart.getItems()));
+}
     }
 
     default PaginationResponse<CartResponse> toPaginationResponse(Page<Cart> cartPage, PaginationMapper paginationMapper) {
-        return paginationMapper.toPaginationResponse(cartPage, this::toResponseList);
+return paginationMapper.toPaginationResponse(cartPage, this::toResponseList);
     }
 }

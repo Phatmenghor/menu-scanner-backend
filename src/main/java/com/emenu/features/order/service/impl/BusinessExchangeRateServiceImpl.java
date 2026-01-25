@@ -70,13 +70,13 @@ public class BusinessExchangeRateServiceImpl implements BusinessExchangeRateServ
         UUID businessId = determineBusinessId(filter.getBusinessId());
         filter.setBusinessId(businessId);
 
-        Specification<BusinessExchangeRate> spec = BusinessExchangeRateSpecification.buildSpecification(filter);
+        // TODO: Implement repository-based filtering
 
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        Page<BusinessExchangeRate> exchangeRatePage = exchangeRateRepository.findAll(spec, pageable);
+        // Page needs repository query method
         return exchangeRateMapper.toPaginationResponse(exchangeRatePage, paginationMapper);
     }
 

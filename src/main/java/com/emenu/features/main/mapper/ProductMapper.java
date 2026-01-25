@@ -14,34 +14,30 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 @Mapper(componentModel = "spring",
-        uses = {ProductImageMapper.class, ProductSizeMapper.class, PaginationMapper.class},
-        unmappedTargetPolicy = ReportingPolicy.IGNORE)
+uses = {ProductImageMapper.class, ProductSizeMapper.class, PaginationMapper.class},
+unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProductMapper {
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "viewCount", constant = "0L")
+    @Mapping    @Mapping    @Mapping(target = "viewCount", constant = "0L")
     @Mapping(target = "favoriteCount", constant = "0L")
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "sizes", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
     Product toEntity(ProductCreateDto dto);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "viewCount", ignore = true)
+    @Mapping    @Mapping    @Mapping(target = "viewCount", ignore = true)
     @Mapping(target = "favoriteCount", ignore = true)
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "sizes", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
     @AfterMapping
     default void afterUpdate(ProductUpdateDto dto, @MappingTarget Product entity) {
-        if (!dto.hasPromotionData()) {
-            entity.setPromotionType(null);
-            entity.setPromotionValue(null);
-            entity.setPromotionFromDate(null);
-            entity.setPromotionToDate(null);
-        }
+if (!dto.hasPromotionData()) {
+    entity.setPromotionType(null);
+    entity.setPromotionValue(null);
+    entity.setPromotionFromDate(null);
+    entity.setPromotionToDate(null);
+}
     }
     void updateEntity(ProductUpdateDto dto, @MappingTarget Product entity);
 
@@ -62,25 +58,25 @@ public interface ProductMapper {
 
     @Named("stringToPromotionType")
     default PromotionType stringToPromotionType(String promotionType) {
-        if (promotionType == null || promotionType.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return PromotionType.valueOf(promotionType.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+if (promotionType == null || promotionType.trim().isEmpty()) {
+    return null;
+}
+try {
+    return PromotionType.valueOf(promotionType.toUpperCase());
+} catch (IllegalArgumentException e) {
+    return null;
+}
     }
 
     @Named("promotionTypeToString")
     default String promotionTypeToString(PromotionType promotionType) {
-        return promotionType != null ? promotionType.name() : null;
+return promotionType != null ? promotionType.name() : null;
     }
 
     /**
      * Convert paginated products to pagination response
      */
     default PaginationResponse<ProductListDto> toPaginationResponse(Page<Product> page, PaginationMapper paginationMapper) {
-        return paginationMapper.toPaginationResponse(page, this::toListDtos);
+return paginationMapper.toPaginationResponse(page, this::toListDtos);
     }
 }

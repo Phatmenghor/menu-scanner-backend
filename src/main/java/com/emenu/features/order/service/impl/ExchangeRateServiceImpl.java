@@ -51,13 +51,13 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<ExchangeRateResponse> getAllExchangeRates(ExchangeRateFilterRequest filter) {
-        Specification<ExchangeRate> spec = ExchangeRateSpecification.buildSpecification(filter);
+        // TODO: Implement repository-based filtering
 
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        Page<ExchangeRate> exchangeRatePage = exchangeRateRepository.findAll(spec, pageable);
+        // Page needs repository query method
         return exchangeRateMapper.toPaginationResponse(exchangeRatePage, paginationMapper);
     }
 

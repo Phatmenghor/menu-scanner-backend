@@ -40,13 +40,13 @@ public class BusinessOrderPaymentServiceImpl implements BusinessOrderPaymentServ
             filter.setBusinessId(currentUser.getBusinessId());
         }
 
-        Specification<BusinessOrderPayment> spec = BusinessOrderPaymentSpecification.buildSpecification(filter);
+        // TODO: Implement repository-based filtering
 
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        Page<BusinessOrderPayment> paymentPage = paymentRepository.findAll(spec, pageable);
+        // Page needs repository query method
         return paymentMapper.toPaginationResponse(paymentPage, paginationMapper);
     }
 

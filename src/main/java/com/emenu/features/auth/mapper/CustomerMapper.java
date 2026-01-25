@@ -17,12 +17,9 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CustomerMapper {
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "userType", constant = "CUSTOMER")
+    @Mapping    @Mapping(target = "userType", constant = "CUSTOMER")
     @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "position", ignore = true)
+    @Mapping    @Mapping    @Mapping(target = "position", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "accountStatus", constant = "ACTIVE")
     @Mapping(target = "notes", ignore = true)
@@ -36,14 +33,11 @@ public interface CustomerMapper {
     List<UserResponse> toResponseList(List<User> users);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "email", ignore = true)
+    @Mapping    @Mapping(target = "email", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "userType", ignore = true)
     @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "position", ignore = true)
+    @Mapping    @Mapping    @Mapping(target = "position", ignore = true)
     @Mapping(target = "notes", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
     void updateEntity(UserUpdateRequest request, @MappingTarget User user);
@@ -52,29 +46,26 @@ public interface CustomerMapper {
      * Restricted update for current customer profile - only allows safe fields
      */
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "email", ignore = true)
+    @Mapping    @Mapping(target = "email", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "userType", ignore = true)
     @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "position", ignore = true)
+    @Mapping    @Mapping    @Mapping(target = "position", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
     @Mapping(target = "notes", ignore = true)
     void updateCurrentUserProfile(UserUpdateRequest request, @MappingTarget User user);
 
     @Named("rolesToRoleEnums")
     default List<String> rolesToRoleEnums(List<Role> roles) {
-        if (roles == null) {
-            return null;
-        }
-        return roles.stream()
-                .map(Role::getName)
-                .collect(Collectors.toList());
+if (roles == null) {
+    return null;
+}
+return roles.stream()
+        .map(Role::getName)
+        .collect(Collectors.toList());
     }
 
     default PaginationResponse<UserResponse> toPaginationResponse(Page<User> customerPage, PaginationMapper paginationMapper) {
-        return paginationMapper.toPaginationResponse(customerPage, this::toResponseList);
+return paginationMapper.toPaginationResponse(customerPage, this::toResponseList);
     }
 }

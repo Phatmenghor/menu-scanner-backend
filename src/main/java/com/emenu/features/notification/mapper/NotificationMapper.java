@@ -20,13 +20,12 @@ public interface NotificationMapper {
 
     List<NotificationResponse> toResponseList(List<Notification> notifications);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "status", constant = "SENT")
+    @Mapping    @Mapping(target = "status", constant = "SENT")
     @Mapping(target = "isRead", constant = "false")
     @Mapping(target = "isSeen", constant = "false")
     Notification toEntity(NotificationRequest request);
 
     default PaginationResponse<NotificationResponse> toPaginationResponse(Page<Notification> page, PaginationMapper paginationMapper) {
-        return paginationMapper.toPaginationResponse(page, this::toResponseList);
+return paginationMapper.toPaginationResponse(page, this::toResponseList);
     }
 }

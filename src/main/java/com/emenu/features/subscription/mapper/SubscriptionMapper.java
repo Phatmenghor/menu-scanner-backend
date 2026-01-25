@@ -16,54 +16,44 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface SubscriptionMapper {
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    @Mapping(target = "plan", ignore = true)
+    @Mapping    @Mapping    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "payments", ignore = true)
     @Mapping(target = "startDate", ignore = true)
     @Mapping(target = "endDate", ignore = true)
     Subscription toEntity(SubscriptionCreateRequest request);
 
-    @Mapping(source = "businessId", target = "businessId")
-    @Mapping(source = "planId", target = "planId")
-    @Mapping(source = "startDate", target = "startDate")
-    @Mapping(source = "endDate", target = "endDate")
-    @Mapping(source = "autoRenew", target = "autoRenew")
-    SubscriptionResponse toResponse(Subscription subscription);
+    @Mapping    @Mapping    @Mapping    @Mapping    @Mapping    SubscriptionResponse toResponse(Subscription subscription);
 
     List<SubscriptionResponse> toResponseList(List<Subscription> subscriptions);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "businessId", ignore = true)
-    @Mapping(target = "business", ignore = true)
-    @Mapping(target = "plan", ignore = true)
+    @Mapping    @Mapping    @Mapping    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "payments", ignore = true)
     void updateEntity(SubscriptionUpdateRequest request, @MappingTarget Subscription subscription);
 
     @AfterMapping
     default void setCalculatedFields(@MappingTarget SubscriptionResponse response, Subscription subscription) {
-        response.setDaysRemaining(subscription.getDaysRemaining());
-        response.setStatus(subscription.getStatus());
-        if (subscription.getBusiness() != null) {
-            response.setBusinessName(subscription.getBusiness().getName());
-        } else {
-            response.setBusinessName("Unknown Business");
-        }
-        if (subscription.getPlan() != null) {
-            response.setPlanName(subscription.getPlan().getName());
-            response.setPlanPrice(subscription.getPlan().getPrice().doubleValue());
-            response.setPlanDurationDays(subscription.getPlan().getDurationDays());
-        } else {
-            response.setPlanName("Unknown Plan");
-            response.setPlanPrice(0.0);
-            response.setPlanDurationDays(0);
-        }
-        response.setPaymentStatus(subscription.getPaymentStatus());
-        response.setPaymentAmount(subscription.getPaymentAmount().doubleValue());
+response.setDaysRemaining(subscription.getDaysRemaining());
+response.setStatus(subscription.getStatus());
+if (subscription.getBusiness() != null) {
+    response.setBusinessName(subscription.getBusiness().getName());
+} else {
+    response.setBusinessName("Unknown Business");
+}
+if (subscription.getPlan() != null) {
+    response.setPlanName(subscription.getPlan().getName());
+    response.setPlanPrice(subscription.getPlan().getPrice().doubleValue());
+    response.setPlanDurationDays(subscription.getPlan().getDurationDays());
+} else {
+    response.setPlanName("Unknown Plan");
+    response.setPlanPrice(0.0);
+    response.setPlanDurationDays(0);
+}
+response.setPaymentStatus(subscription.getPaymentStatus());
+response.setPaymentAmount(subscription.getPaymentAmount().doubleValue());
     }
 
     default PaginationResponse<SubscriptionResponse> toPaginationResponse(Page<Subscription> subscriptionPage, PaginationMapper paginationMapper) {
-        return paginationMapper.toPaginationResponse(subscriptionPage, this::toResponseList);
+return paginationMapper.toPaginationResponse(subscriptionPage, this::toResponseList);
     }
 }

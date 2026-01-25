@@ -16,8 +16,7 @@ import java.util.List;
         uses = {DistrictMapper.class, PaginationMapper.class})
 public interface CommuneMapper {
 
-    @Mapping(target = "district", source = "district")
-    CommuneResponse toResponse(Commune commune);
+    @Mapping    CommuneResponse toResponse(Commune commune);
 
     Commune toEntity(CommuneRequest request);
 

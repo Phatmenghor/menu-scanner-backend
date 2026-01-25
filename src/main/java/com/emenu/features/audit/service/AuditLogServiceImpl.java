@@ -42,8 +42,8 @@ public class AuditLogServiceImpl implements AuditLogService {
         Sort sort = Sort.by(Sort.Direction.fromString(filter.getSortDirection()), filter.getSortBy());
         Pageable pageable = PageRequest.of(filter.getPageNo() - 1, filter.getPageSize(), sort);
 
-        Specification<AuditLog> spec = buildSpecification(filter);
-        Page<AuditLog> page = auditLogRepository.findAll(spec, pageable);
+        // TODO: Implement repository-based filtering with findAllWithFilters method
+        Page<AuditLog> page = auditLogRepository.findAll(pageable);
 
         List<AuditLogResponseDTO> content = page.getContent().stream()
                 .map(this::toResponseDTO)
@@ -183,6 +183,7 @@ public class AuditLogServiceImpl implements AuditLogService {
         return toResponseDTO(auditLog);
     }
 
+    /* TODO: Move to repository query
     private Specification<AuditLog> buildSpecification(AuditLogFilterDTO filter) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -253,6 +254,7 @@ public class AuditLogServiceImpl implements AuditLogService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
+    */
 
     private AuditLogResponseDTO toResponseDTO(AuditLog auditLog) {
         AuditLogResponseDTO dto = new AuditLogResponseDTO();
