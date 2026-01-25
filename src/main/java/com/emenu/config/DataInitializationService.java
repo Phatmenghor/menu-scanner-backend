@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RequiredArgsConstructor
 @Slf4j
 @Order(1)
+@SuppressWarnings("deprecation")
 public class DataInitializationService {
 
     private final RoleRepository roleRepository;

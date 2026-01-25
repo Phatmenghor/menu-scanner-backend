@@ -61,6 +61,7 @@ public class OpenApiConfig {
     }
 
     @Bean
+    @SuppressWarnings("unchecked")
     public OpenApiCustomizer localTimeSchemaCustomizer() {
         return openApi -> {
             if (openApi.getComponents() != null && openApi.getComponents().getSchemas() != null) {
