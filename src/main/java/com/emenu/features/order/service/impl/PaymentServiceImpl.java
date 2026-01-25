@@ -140,7 +140,8 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new NotFoundException("Plan not found"));
         Payment payment = paymentMapper.toEntity(request);
         payment.setReferenceNumber(referenceNumber);
-        paymentMapper.setSubscriptionRelationship(payment, subscription);
+        // Use pure MapStruct to update payment with subscription relationship
+        paymentMapper.updateWithSubscription(payment, subscription);
         return savePayment(payment);
     }
 
@@ -174,7 +175,8 @@ public class PaymentServiceImpl implements PaymentService {
         if (request.getSubscriptionId() != null) {
             Subscription subscription = subscriptionRepository.findByIdAndIsDeletedFalse(request.getSubscriptionId())
                     .orElseThrow(() -> new NotFoundException("Subscription not found"));
-            paymentMapper.setSubscriptionRelationship(payment, subscription);
+            // Use pure MapStruct to update payment with subscription relationship
+            paymentMapper.updateWithSubscription(payment, subscription);
         }
         return savePayment(payment);
     }
@@ -194,7 +196,8 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new NotFoundException("Business not found for subscription"));
         planRepository.findByIdAndIsDeletedFalse(subscription.getPlanId())
                 .orElseThrow(() -> new NotFoundException("Plan not found for subscription"));
-        paymentMapper.setSubscriptionRelationship(payment, subscription);
+        // Use pure MapStruct to update payment with subscription relationship
+        paymentMapper.updateWithSubscription(payment, subscription);
     }
 
     private void updatePaymentBusiness(Payment payment, UUID businessId) {

@@ -190,14 +190,20 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     private void createPaymentForSubscription(Subscription subscription, SubscriptionRenewRequest request) {
         log.debug("Creating payment for subscription: {}", subscription.getId());
-        Payment payment = paymentMapper.createSubscriptionPayment(subscription, request);
+        // Build helper DTO, then use pure MapStruct mapping
+        com.emenu.features.order.dto.helper.PaymentCreateHelper helper =
+            paymentMapper.buildSubscriptionPaymentHelper(subscription, request);
+        Payment payment = paymentMapper.createFromHelper(helper);
         paymentRepository.save(payment);
         log.info("Payment created for subscription: {} - Amount: ${}", subscription.getId(), payment.getAmount());
     }
 
     private void createRefundForSubscription(Subscription subscription, SubscriptionCancelRequest request) {
         log.debug("Creating refund for subscription: {}", subscription.getId());
-        Payment refund = paymentMapper.createSubscriptionRefund(subscription, request);
+        // Build helper DTO, then use pure MapStruct mapping
+        com.emenu.features.order.dto.helper.PaymentCreateHelper helper =
+            paymentMapper.buildSubscriptionRefundHelper(subscription, request);
+        Payment refund = paymentMapper.createFromHelper(helper);
         paymentRepository.save(refund);
         log.info("Refund created for subscription: {} - Amount: ${}", subscription.getId(), refund.getAmount());
     }

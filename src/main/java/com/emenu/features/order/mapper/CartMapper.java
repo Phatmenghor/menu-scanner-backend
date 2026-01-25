@@ -1,5 +1,6 @@
 package com.emenu.features.order.mapper;
 
+import com.emenu.features.order.dto.helper.CartCreateHelper;
 import com.emenu.features.order.dto.request.CartItemRequest;
 import com.emenu.features.order.dto.response.CartItemResponse;
 import com.emenu.features.order.dto.response.CartResponse;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.UUID;
 
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CartMapper {
@@ -68,4 +70,11 @@ if (cart.getItems() != null) {
     default PaginationResponse<CartResponse> toPaginationResponse(Page<Cart> cartPage, PaginationMapper paginationMapper) {
 return paginationMapper.toPaginationResponse(cartPage, this::toResponseList);
     }
+
+    /**
+     * Create a new cart from helper DTO - pure MapStruct mapping
+     */
+    @Mapping(source = "userId", target = "userId")
+    @Mapping(source = "businessId", target = "businessId")
+    Cart createFromHelper(CartCreateHelper helper);
 }

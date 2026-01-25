@@ -3,6 +3,7 @@ package com.emenu.features.order.mapper;
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.enums.payment.PaymentType;
+import com.emenu.features.order.dto.helper.PaymentCreateHelper;
 import com.emenu.features.order.dto.request.PaymentCreateRequest;
 import com.emenu.features.order.dto.response.PaymentResponse;
 import com.emenu.features.order.dto.update.PaymentUpdateRequest;
@@ -53,70 +54,65 @@ return paginationMapper.toPaginationResponse(paymentPage, this::toResponseList);
     }
 
     /**
-     * Create a payment for subscription renewal
+     * Create payment from helper DTO - pure MapStruct mapping
      */
-    default Payment createSubscriptionPayment(Subscription subscription, SubscriptionRenewRequest request) {
-        Payment payment = new Payment();
-        payment.setBusinessId(subscription.getBusinessId());
-        payment.setPlanId(subscription.getPlanId());
-        payment.setSubscriptionId(subscription.getId());
-        payment.setAmount(request.getPaymentAmount());
-        payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setPaymentType(PaymentType.SUBSCRIPTION);
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setNotes("Payment for subscription renewal");
-        return payment;
+    Payment createFromHelper(PaymentCreateHelper helper);
+
+    /**
+     * Helper method to build PaymentCreateHelper for subscription renewal
+     */
+    default PaymentCreateHelper buildSubscriptionPaymentHelper(Subscription subscription, SubscriptionRenewRequest request) {
+        return PaymentCreateHelper.builder()
+                .businessId(subscription.getBusinessId())
+                .planId(subscription.getPlanId())
+                .subscriptionId(subscription.getId())
+                .amount(request.getPaymentAmount())
+                .paymentMethod(request.getPaymentMethod())
+                .paymentType(PaymentType.SUBSCRIPTION)
+                .status(PaymentStatus.COMPLETED)
+                .notes("Payment for subscription renewal")
+                .build();
     }
 
     /**
-     * Create a refund payment for subscription cancellation
+     * Helper method to build PaymentCreateHelper for subscription refund
      */
-    default Payment createSubscriptionRefund(Subscription subscription, SubscriptionCancelRequest request) {
-        Payment refund = new Payment();
-        refund.setBusinessId(subscription.getBusinessId());
-        refund.setPlanId(subscription.getPlanId());
-        refund.setSubscriptionId(subscription.getId());
-        refund.setAmount(request.getRefundAmount().negate());
-        refund.setPaymentMethod(PaymentMethod.OTHER);
-        refund.setPaymentType(PaymentType.REFUND);
-        refund.setStatus(PaymentStatus.COMPLETED);
-        refund.setNotes("Refund for cancelled subscription");
-        return refund;
+    default PaymentCreateHelper buildSubscriptionRefundHelper(Subscription subscription, SubscriptionCancelRequest request) {
+        return PaymentCreateHelper.builder()
+                .businessId(subscription.getBusinessId())
+                .planId(subscription.getPlanId())
+                .subscriptionId(subscription.getId())
+                .amount(request.getRefundAmount().negate())
+                .paymentMethod(PaymentMethod.OTHER)
+                .paymentType(PaymentType.REFUND)
+                .status(PaymentStatus.COMPLETED)
+                .notes("Refund for cancelled subscription")
+                .build();
     }
 
     /**
-     * Create a payment with subscription relationship
+     * Helper method to build PaymentCreateHelper with subscription relationship
      */
-    default Payment createPaymentForSubscription(UUID businessId, UUID planId, UUID subscriptionId,
-                                                 BigDecimal amount, PaymentMethod method,
-                                                 PaymentType type, String notes) {
-        Payment payment = new Payment();
-        payment.setBusinessId(businessId);
-        payment.setPlanId(planId);
-        payment.setSubscriptionId(subscriptionId);
-        payment.setAmount(amount);
-        payment.setPaymentMethod(method);
-        payment.setPaymentType(type);
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setNotes(notes);
-        return payment;
+    default PaymentCreateHelper buildPaymentHelper(UUID businessId, UUID planId, UUID subscriptionId,
+                                                     BigDecimal amount, PaymentMethod method,
+                                                     PaymentType type, String notes) {
+        return PaymentCreateHelper.builder()
+                .businessId(businessId)
+                .planId(planId)
+                .subscriptionId(subscriptionId)
+                .amount(amount)
+                .paymentMethod(method)
+                .paymentType(type)
+                .status(PaymentStatus.COMPLETED)
+                .notes(notes)
+                .build();
     }
 
     /**
-     * Set subscription relationship on payment
+     * Update payment with subscription relationship
      */
-    default void setSubscriptionRelationship(Payment payment, Subscription subscription) {
-        payment.setBusinessId(subscription.getBusinessId());
-        payment.setPlanId(subscription.getPlanId());
-        payment.setSubscriptionId(subscription.getId());
-    }
-
-    /**
-     * Set subscription relationship on payment by IDs
-     */
-    default void setSubscriptionRelationship(Payment payment, UUID businessId, UUID planId, UUID subscriptionId) {
-        payment.setBusinessId(businessId);
-        payment.setPlanId(planId);
-        payment.setSubscriptionId(subscriptionId);
-    }
+    @Mapping(source = "subscription.businessId", target = "businessId")
+    @Mapping(source = "subscription.planId", target = "planId")
+    @Mapping(source = "subscription.id", target = "subscriptionId")
+    void updateWithSubscription(@MappingTarget Payment payment, Subscription subscription);
 }

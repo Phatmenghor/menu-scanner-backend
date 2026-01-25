@@ -194,12 +194,12 @@ public class CartServiceImpl implements CartService {
             return existingCart.get();
         }
 
-        // Create new cart
-        Cart newCart = new Cart();
-        newCart.setUserId(userId);
-        newCart.setBusinessId(businessId);
+        // Create new cart using helper DTO and pure MapStruct
+        com.emenu.features.order.dto.helper.CartCreateHelper helper =
+            new com.emenu.features.order.dto.helper.CartCreateHelper(userId, businessId);
+        Cart newCart = cartMapper.createFromHelper(helper);
         Cart savedCart = cartRepository.save(newCart);
-        
+
         log.info("Created new cart for user: {} and business: {}", userId, businessId);
         return savedCart;
     }
