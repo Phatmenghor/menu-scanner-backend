@@ -1,6 +1,5 @@
 package com.emenu.features.order.dto.helper;
 
-import com.emenu.enums.payment.CustomerPaymentMethod;
 import com.emenu.enums.payment.PaymentMethod;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,5 +22,5 @@ public class BusinessOrderPaymentCreateHelper {
     private String referenceNumber;
     private BigDecimal amount;
     private PaymentMethod paymentMethod;
-    private CustomerPaymentMethod customerPaymentMethod;
+    private String customerPaymentMethod;
 }
