@@ -1,5 +1,6 @@
 package com.emenu.features.order.mapper;
 
+import com.emenu.features.order.dto.helper.BusinessOrderPaymentCreateHelper;
 import com.emenu.features.order.dto.response.BusinessOrderPaymentResponse;
 import com.emenu.features.order.models.BusinessOrderPayment;
 import com.emenu.shared.dto.PaginationResponse;
@@ -24,6 +25,11 @@ public interface BusinessOrderPaymentMapper {
     BusinessOrderPaymentResponse toResponse(BusinessOrderPayment payment);
 
     List<BusinessOrderPaymentResponse> toResponseList(List<BusinessOrderPayment> payments);
+
+    /**
+     * Create BusinessOrderPayment from helper DTO - pure MapStruct mapping
+     */
+    BusinessOrderPayment createFromHelper(BusinessOrderPaymentCreateHelper helper);
 
     default String getCustomerName(BusinessOrderPayment payment) {
         if (payment.getOrder() == null) return null;

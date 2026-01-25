@@ -6,9 +6,12 @@ import com.emenu.exception.custom.BusinessValidationException;
 import com.emenu.exception.custom.ResourceNotFoundException;
 import com.emenu.features.auth.mapper.UserMapper;
 import com.emenu.features.hr.dto.filter.AttendanceFilterRequest;
+import com.emenu.features.hr.dto.helper.AttendanceCheckInCreateHelper;
+import com.emenu.features.hr.dto.helper.AttendanceCreateHelper;
 import com.emenu.features.hr.dto.request.AttendanceCheckInRequest;
 import com.emenu.features.hr.dto.response.AttendanceResponse;
 import com.emenu.features.hr.dto.update.AttendanceUpdateRequest;
+import com.emenu.features.hr.mapper.AttendanceCheckInMapper;
 import com.emenu.features.hr.mapper.AttendanceMapper;
 import com.emenu.features.hr.models.Attendance;
 import com.emenu.features.hr.models.AttendanceCheckIn;
@@ -19,6 +22,8 @@ import com.emenu.features.hr.service.AttendanceService;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
+import com.emenu.shared.utils.DateTimeUtils;
+import com.emenu.shared.utils.StringFormatUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,17 +46,14 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final WorkScheduleRepository workScheduleRepository;
     private final AttendanceMapper mapper;
+    private final AttendanceCheckInMapper checkInMapper;
     private final PaginationMapper paginationMapper;
     private final UserMapper userMapper;
 
-    /**
-     * Processes employee check-in/check-out and calculates attendance status
-     */
     @Override
     public AttendanceResponse checkIn(AttendanceCheckInRequest request, UUID userId, UUID businessId) {
         log.info("Processing check-in for user: {}, type: {}", userId, request.getCheckInType());
 
-        // Validate work schedule exists and belongs to user
         WorkSchedule schedule = workScheduleRepository.findByIdAndIsDeletedFalse(request.getWorkScheduleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Work schedule not found"));
 
@@ -62,21 +64,17 @@ public class AttendanceServiceImpl implements AttendanceService {
         LocalDate today = LocalDate.now();
         DayOfWeek dayOfWeek = today.getDayOfWeek();
 
-        // Check if today is a working day for the schedule
         if (!schedule.getWorkDays().contains(dayOfWeek)) {
             throw new BusinessValidationException("Today is not a working day according to your schedule");
         }
 
-        // Get or create attendance record for today
         Attendance attendance = attendanceRepository
                 .findByUserIdAndAttendanceDateAndIsDeletedFalse(userId, today)
                 .orElseGet(() -> createNewAttendance(userId, businessId, request.getWorkScheduleId(), today));
 
-        // Validate check-in sequence
         validateCheckInSequence(attendance, request.getCheckInType());
 
-        // Create check-in record
-        AttendanceCheckIn checkIn = AttendanceCheckIn.builder()
+        AttendanceCheckInCreateHelper checkInHelper = AttendanceCheckInCreateHelper.builder()
                 .checkInType(request.getCheckInType())
                 .checkInTime(LocalDateTime.now())
                 .latitude(request.getLatitude())
@@ -84,13 +82,12 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .remarks(request.getRemarks())
                 .build();
 
+        AttendanceCheckIn checkIn = checkInMapper.createFromHelper(checkInHelper);
         attendance.addCheckIn(checkIn);
 
-        // Calculate attendance status when checking out
         if (request.getCheckInType() == CheckInType.END) {
             calculateAttendanceStatus(attendance, schedule);
         } else {
-            // Update status to present on check-in
             attendance.setStatus(AttendanceStatusEnum.PRESENT);
         }
 
@@ -102,29 +99,28 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     private Attendance createNewAttendance(UUID userId, UUID businessId, UUID workScheduleId, LocalDate date) {
-        Attendance newAttendance = Attendance.builder()
+        AttendanceCreateHelper helper = AttendanceCreateHelper.builder()
                 .userId(userId)
                 .businessId(businessId)
                 .workScheduleId(workScheduleId)
                 .attendanceDate(date)
                 .status(AttendanceStatusEnum.ABSENT)
                 .build();
+
+        Attendance newAttendance = mapper.createFromHelper(helper);
         return attendanceRepository.save(newAttendance);
     }
 
     private void validateCheckInSequence(Attendance attendance, CheckInType requestedType) {
         int currentCount = attendance.getCheckIns().size();
 
-        // Check for duplicate check-in type
         boolean checkInExists = attendance.getCheckIns().stream()
                 .anyMatch(c -> c.getCheckInType() == requestedType);
 
         if (checkInExists) {
-            throw new BusinessValidationException(
-                    "Already checked in for type: " + requestedType);
+            throw new BusinessValidationException("Already checked in for type: " + requestedType);
         }
 
-        // Validate sequence: must start with START, then END
         if (currentCount == 0 && requestedType != CheckInType.START) {
             throw new BusinessValidationException("Must clock in (START) first");
         }
@@ -153,20 +149,15 @@ public class AttendanceServiceImpl implements AttendanceService {
         LocalDateTime endTime = endCheckIn.getCheckInTime();
         LocalDateTime expectedStart = LocalDateTime.of(attendance.getAttendanceDate(), schedule.getStartTime());
 
-        // Calculate if late
         boolean isLate = startTime.isAfter(expectedStart);
 
-        // Calculate total work duration
-        Duration workDuration = Duration.between(startTime, endTime);
-        long totalWorkMinutes = workDuration.toMinutes();
+        long totalWorkMinutes = DateTimeUtils.calculateDurationMinutes(startTime, endTime);
 
-        // Deduct break time if configured
         if (schedule.getBreakStartTime() != null && schedule.getBreakEndTime() != null) {
             Duration breakDuration = Duration.between(schedule.getBreakStartTime(), schedule.getBreakEndTime());
             totalWorkMinutes -= breakDuration.toMinutes();
         }
 
-        // Calculate expected work hours
         Duration expectedWorkDuration = Duration.between(schedule.getStartTime(), schedule.getEndTime());
         long expectedWorkMinutes = expectedWorkDuration.toMinutes();
 
@@ -175,9 +166,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             expectedWorkMinutes -= breakDuration.toMinutes();
         }
 
-        // Determine final status
-        // Consider half-day if worked less than 60% of expected hours
-        double workPercentage = (double) totalWorkMinutes / expectedWorkMinutes * 100;
+        double workPercentage = DateTimeUtils.calculateWorkPercentage(totalWorkMinutes, expectedWorkMinutes);
 
         if (isLate) {
             attendance.setStatus(AttendanceStatusEnum.LATE);
@@ -187,13 +176,11 @@ public class AttendanceServiceImpl implements AttendanceService {
             attendance.setStatus(AttendanceStatusEnum.PRESENT);
         }
 
-        log.info("Calculated attendance status: {}, worked: {} minutes, expected: {} minutes, percentage: {}%",
-                attendance.getStatus(), totalWorkMinutes, expectedWorkMinutes, String.format("%.2f", workPercentage));
+        log.info("Calculated attendance status: {}, worked: {} minutes, expected: {} minutes, percentage: {}",
+                attendance.getStatus(), totalWorkMinutes, expectedWorkMinutes,
+                StringFormatUtils.formatPercentage(workPercentage));
     }
 
-    /**
-     * Retrieves attendance record by ID
-     */
     @Override
     @Transactional(readOnly = true)
     public AttendanceResponse getById(UUID id) {
@@ -202,9 +189,6 @@ public class AttendanceServiceImpl implements AttendanceService {
         return enrichWithUserInfo(mapper.toResponse(attendance), attendance);
     }
 
-    /**
-     * Retrieves all attendance records with filtering and pagination support
-     */
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<AttendanceResponse> getAll(AttendanceFilterRequest filter) {
@@ -230,25 +214,17 @@ public class AttendanceServiceImpl implements AttendanceService {
                         .toList());
     }
 
-    /**
-     * Updates an attendance record
-     */
     @Override
     public AttendanceResponse update(UUID id, AttendanceUpdateRequest request) {
         Attendance attendance = attendanceRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance not found"));
 
-        if (request.getRemarks() != null) {
-            attendance.setRemarks(request.getRemarks());
-        }
-
+        mapper.updateEntity(request, attendance);
         attendance = attendanceRepository.save(attendance);
+
         return enrichWithUserInfo(mapper.toResponse(attendance), attendance);
     }
 
-    /**
-     * Soft deletes an attendance record
-     */
     @Override
     public AttendanceResponse delete(UUID id) {
         Attendance attendance = attendanceRepository.findByIdAndIsDeletedFalse(id)

@@ -1,5 +1,6 @@
 package com.emenu.features.hr.mapper;
 
+import com.emenu.features.hr.dto.helper.AttendanceCreateHelper;
 import com.emenu.features.hr.dto.response.AttendanceResponse;
 import com.emenu.features.hr.dto.update.AttendanceUpdateRequest;
 import com.emenu.features.hr.models.Attendance;
@@ -29,6 +30,11 @@ public interface AttendanceMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntity(AttendanceUpdateRequest request, @MappingTarget Attendance attendance);
+
+    /**
+     * Create Attendance from helper DTO - pure MapStruct mapping
+     */
+    Attendance createFromHelper(AttendanceCreateHelper helper);
 
     /**
      * Convert paginated attendances to pagination response

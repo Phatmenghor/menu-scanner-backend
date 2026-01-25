@@ -1,6 +1,7 @@
 package com.emenu.features.main.mapper;
 
 import com.emenu.enums.product.PromotionType;
+import com.emenu.features.main.dto.helper.ProductCreateHelper;
 import com.emenu.features.main.dto.request.ProductCreateDto;
 import com.emenu.features.main.dto.response.ProductDetailDto;
 import com.emenu.features.main.dto.response.ProductListDto;
@@ -12,6 +13,7 @@ import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.UUID;
 
 @Mapper(componentModel = "spring",
 uses = {ProductImageMapper.class, ProductSizeMapper.class, PaginationMapper.class},
@@ -24,6 +26,28 @@ public interface ProductMapper {
     @Mapping(target = "sizes", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
     Product toEntity(ProductCreateDto dto);
+
+    /**
+     * Apply business-specific fields to product after creation
+     */
+    @Mapping(target = "businessId", source = "businessId")
+    @Mapping(target = "viewCount", source = "viewCount")
+    @Mapping(target = "favoriteCount", source = "favoriteCount")
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void applyBusinessFields(ProductCreateHelper helper, @MappingTarget Product product);
+
+    /**
+     * Helper method to set business fields on product
+     */
+    default Product setBusinessFields(Product product, UUID businessId) {
+        ProductCreateHelper helper = ProductCreateHelper.builder()
+                .businessId(businessId)
+                .viewCount(0L)
+                .favoriteCount(0L)
+                .build();
+        applyBusinessFields(helper, product);
+        return product;
+    }
 
     @Mapping(target = "viewCount", ignore = true)
     @Mapping(target = "favoriteCount", ignore = true)

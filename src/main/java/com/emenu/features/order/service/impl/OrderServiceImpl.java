@@ -4,26 +4,31 @@ import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.order.dto.filter.OrderFilterRequest;
+import com.emenu.features.order.dto.helper.BusinessOrderPaymentCreateHelper;
+import com.emenu.features.order.dto.helper.OrderCreateHelper;
+import com.emenu.features.order.dto.helper.OrderItemCreateHelper;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
 import com.emenu.features.order.dto.request.POSOrderCreateRequest;
 import com.emenu.features.order.dto.request.POSOrderItemRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.dto.update.OrderStatusUpdateRequest;
+import com.emenu.features.order.mapper.BusinessOrderPaymentMapper;
 import com.emenu.features.order.mapper.OrderMapper;
+import com.emenu.features.order.models.BusinessOrderPayment;
 import com.emenu.features.order.models.Cart;
 import com.emenu.features.order.models.Order;
 import com.emenu.features.order.models.OrderItem;
+import com.emenu.features.order.repository.BusinessOrderPaymentRepository;
 import com.emenu.features.order.repository.CartRepository;
 import com.emenu.features.order.repository.OrderRepository;
 import com.emenu.features.order.service.OrderService;
-import com.emenu.features.order.models.BusinessOrderPayment;
-import com.emenu.features.order.repository.BusinessOrderPaymentRepository;
 import com.emenu.features.main.models.Product;
 import com.emenu.features.main.models.ProductSize;
 import com.emenu.features.main.repository.ProductRepository;
 import com.emenu.features.main.repository.ProductSizeRepository;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.generate.OrderNumberGenerator;
 import com.emenu.shared.generate.PaymentReferenceGenerator;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
@@ -34,11 +39,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
@@ -52,39 +54,32 @@ public class OrderServiceImpl implements OrderService {
     private final ProductSizeRepository productSizeRepository;
     private final BusinessOrderPaymentRepository paymentRepository;
     private final OrderMapper orderMapper;
+    private final BusinessOrderPaymentMapper paymentMapper;
     private final SecurityUtils securityUtils;
+    private final OrderNumberGenerator orderNumberGenerator;
     private final PaymentReferenceGenerator paymentReferenceGenerator;
     private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
-    
-    private static final AtomicLong orderCounter = new AtomicLong(System.currentTimeMillis() % 10000);
 
     @Override
     public OrderResponse createOrderFromCart(OrderCreateRequest request) {
         log.info("Creating order from cart for business: {}", request.getBusinessId());
-        
+
         User currentUser = securityUtils.getCurrentUser();
-        
-        // Get cart with items
+
         Cart cart = cartRepository.findByUserIdAndBusinessIdWithItems(currentUser.getId(), request.getBusinessId())
                 .orElseThrow(() -> new ValidationException("Cart is empty or not found"));
-        
+
         if (cart.getItems() == null || cart.getItems().isEmpty()) {
             throw new ValidationException("Cannot create order from empty cart");
         }
-        
-        // Create order
+
         Order order = createBaseOrder(request, currentUser.getId());
         Order savedOrder = orderRepository.save(order);
-        
-        // Create order items from cart items
+
         createOrderItemsFromCart(savedOrder.getId(), cart);
-        
-        // Create payment record
         createPaymentRecord(savedOrder);
-        
-        // Clear cart after successful order
         clearCartAfterOrder(currentUser.getId(), request.getBusinessId());
-        
+
         log.info("Order created successfully: {}", savedOrder.getOrderNumber());
         return getOrderById(savedOrder.getId());
     }
@@ -92,23 +87,17 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse createGuestOrder(OrderCreateRequest request, List<UUID> cartItemIds) {
         log.info("Creating guest order for business: {}", request.getBusinessId());
-        
+
         if (request.getGuestPhone() == null || request.getGuestPhone().trim().isEmpty()) {
             throw new ValidationException("Phone number is required for guest orders");
         }
-        
-        // Create guest order
-        Order order = createBaseOrder(request, null);
-        order.setIsGuestOrder(true);
-        order.setGuestPhone(request.getGuestPhone());
-        order.setGuestName(request.getGuestName());
-        order.setGuestLocation(request.getGuestLocation());
-        
+
+        OrderCreateHelper helper = orderMapper.buildGuestOrderHelper(request, generateOrderNumber());
+        Order order = orderMapper.createFromHelper(helper);
         Order savedOrder = orderRepository.save(order);
-        
-        // Create payment record
+
         createPaymentRecord(savedOrder);
-        
+
         log.info("Guest order created successfully: {}", savedOrder.getOrderNumber());
         return getOrderById(savedOrder.getId());
     }
@@ -116,45 +105,34 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse createPOSOrder(POSOrderCreateRequest request) {
         log.info("Creating POS order for customer: {}", request.getCustomerPhone());
-        
+
         User currentUser = securityUtils.getCurrentUser();
         validateUserBusinessAssociation(currentUser);
-        
-        // Create POS order
-        Order order = new Order();
-        order.setOrderNumber(generateOrderNumber());
-        order.setBusinessId(currentUser.getBusinessId());
-        order.setGuestPhone(request.getCustomerPhone());
-        order.setGuestName(request.getCustomerName());
-        order.setGuestLocation(request.getCustomerLocation());
-        order.setPaymentMethod(request.getPaymentMethod());
-        order.setCustomerNote(request.getCustomerNote());
-        order.setBusinessNote(request.getBusinessNote());
-        order.setIsPosOrder(true);
-        order.setIsGuestOrder(true);
-        order.setIsPaid(true); // POS orders are paid immediately
-        
-        // Calculate pricing from items
+
         BigDecimal subtotal = calculatePOSOrderTotal(request.getItems());
-        order.setSubtotal(subtotal);
-        order.setTotalAmount(subtotal);
-        
-        Order savedOrder = orderRepository.save(order);
-        
-        // Create order items
-        createPOSOrderItems(savedOrder.getId(), request.getItems());
-        
-        // Create payment record
-        BusinessOrderPayment payment = new BusinessOrderPayment(
-            savedOrder.getBusinessId(),
-            savedOrder.getId(),
-            paymentReferenceGenerator.generateUniqueReference(),
-            savedOrder.getTotalAmount(),
-            savedOrder.getPaymentMethod(),
-            request.getCustomerPaymentMethod()
+        OrderCreateHelper helper = orderMapper.buildPOSOrderHelper(
+                request,
+                currentUser.getBusinessId(),
+                generateOrderNumber(),
+                subtotal
         );
+
+        Order order = orderMapper.createFromHelper(helper);
+        Order savedOrder = orderRepository.save(order);
+
+        createPOSOrderItems(savedOrder.getId(), request.getItems());
+
+        BusinessOrderPaymentCreateHelper paymentHelper = BusinessOrderPaymentCreateHelper.builder()
+                .businessId(savedOrder.getBusinessId())
+                .orderId(savedOrder.getId())
+                .referenceNumber(paymentReferenceGenerator.generateUniqueReference())
+                .amount(savedOrder.getTotalAmount())
+                .paymentMethod(savedOrder.getPaymentMethod())
+                .customerPaymentMethod(request.getCustomerPaymentMethod())
+                .build();
+        BusinessOrderPayment payment = paymentMapper.createFromHelper(paymentHelper);
         paymentRepository.save(payment);
-        
+
         log.info("POS order created successfully: {}", savedOrder.getOrderNumber());
         return getOrderById(savedOrder.getId());
     }
@@ -179,13 +157,10 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public PaginationResponse<OrderResponse> getAllOrders(OrderFilterRequest filter) {
         User currentUser = securityUtils.getCurrentUser();
-        
-        // Business users can only see their own orders
+
         if (currentUser.isBusinessUser() && filter.getBusinessId() == null) {
             filter.setBusinessId(currentUser.getBusinessId());
         }
-        
-        // TODO: Implement repository-based filtering
 
         int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
@@ -206,29 +181,27 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse updateOrderStatus(UUID orderId, OrderStatusUpdateRequest request) {
         User currentUser = securityUtils.getCurrentUser();
-        
+
         Order order = orderRepository.findByIdWithDetails(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
-        
-        // Security check - only business owner can update orders
+
         if (!currentUser.getBusinessId().equals(order.getBusinessId())) {
             throw new ValidationException("You can only update orders for your business");
         }
-        
-        // Update status
+
         switch (request.getStatus()) {
             case CONFIRMED -> order.confirm();
             case DELIVERED -> order.complete();
             case CANCELLED -> order.cancel();
             case REJECTED -> order.reject();
         }
-        
+
         if (request.getBusinessNote() != null) {
             order.setBusinessNote(request.getBusinessNote());
         }
-        
+
         Order updatedOrder = orderRepository.save(order);
-        
+
         log.info("Order status updated: {} -> {}", orderId, request.getStatus());
         return orderMapper.toResponse(updatedOrder);
     }
@@ -240,41 +213,21 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toResponseList(orders);
     }
 
-    // Private helper methods
     private Order createBaseOrder(OrderCreateRequest request, UUID customerId) {
-        Order order = new Order();
-        order.setOrderNumber(generateOrderNumber());
-        order.setCustomerId(customerId);
-        order.setBusinessId(request.getBusinessId());
-        order.setDeliveryAddressId(request.getDeliveryAddressId());
-        order.setDeliveryOptionId(request.getDeliveryOptionId());
-        order.setPaymentMethod(request.getPaymentMethod());
-        order.setCustomerNote(request.getCustomerNote());
-        order.setIsPosOrder(request.getIsPosOrder());
-        order.setIsGuestOrder(request.getIsGuestOrder());
-        
-        return order;
+        OrderCreateHelper helper = orderMapper.buildBaseOrderHelper(request, customerId, generateOrderNumber());
+        return orderMapper.createFromHelper(helper);
     }
 
     private void createOrderItemsFromCart(UUID orderId, Cart cart) {
         BigDecimal subtotal = BigDecimal.ZERO;
-        
+
         for (var cartItem : cart.getItems()) {
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrderId(orderId);
-            orderItem.setProductId(cartItem.getProductId());
-            orderItem.setProductSizeId(cartItem.getProductSizeId());
-            orderItem.setProductName(cartItem.getProduct().getName());
-            orderItem.setProductImageUrl(cartItem.getProduct().getMainImageUrl());
-            orderItem.setSizeName(cartItem.getSizeName());
-            orderItem.setUnitPrice(cartItem.getFinalPrice());
-            orderItem.setQuantity(cartItem.getQuantity());
+            OrderItemCreateHelper helper = orderMapper.buildOrderItemHelperFromCartItem(cartItem, orderId);
+            OrderItem orderItem = orderMapper.createOrderItemFromHelper(helper);
             orderItem.calculateTotalPrice();
-            
             subtotal = subtotal.add(orderItem.getTotalPrice());
         }
-        
-        // Update order total
+
         Order order = orderRepository.findById(orderId).orElseThrow();
         order.setSubtotal(subtotal);
         order.setTotalAmount(subtotal.add(order.getDeliveryFee()));
@@ -285,37 +238,41 @@ public class OrderServiceImpl implements OrderService {
         for (POSOrderItemRequest itemRequest : itemRequests) {
             Product product = productRepository.findByIdAndIsDeletedFalse(itemRequest.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product not found: " + itemRequest.getProductId()));
-            
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrderId(orderId);
-            orderItem.setProductId(itemRequest.getProductId());
-            orderItem.setProductSizeId(itemRequest.getProductSizeId());
-            orderItem.setProductName(product.getName());
-            orderItem.setProductImageUrl(product.getMainImageUrl());
-            orderItem.setQuantity(itemRequest.getQuantity());
-            
-            // Get price from product or size
+
+            String sizeName;
+            BigDecimal unitPrice;
+
             if (itemRequest.getProductSizeId() != null) {
                 ProductSize productSize = productSizeRepository.findById(itemRequest.getProductSizeId())
                         .orElseThrow(() -> new NotFoundException("Product size not found"));
-                orderItem.setSizeName(productSize.getName());
-                orderItem.setUnitPrice(productSize.getFinalPrice());
+                sizeName = productSize.getName();
+                unitPrice = productSize.getFinalPrice();
             } else {
-                orderItem.setSizeName("Standard");
-                orderItem.setUnitPrice(product.getFinalPrice());
+                sizeName = "Standard";
+                unitPrice = product.getFinalPrice();
             }
-            
+
+            OrderItemCreateHelper helper = orderMapper.buildOrderItemHelperFromProduct(
+                    orderId,
+                    product,
+                    itemRequest.getProductSizeId(),
+                    sizeName,
+                    unitPrice,
+                    itemRequest.getQuantity()
+            );
+
+            OrderItem orderItem = orderMapper.createOrderItemFromHelper(helper);
             orderItem.calculateTotalPrice();
         }
     }
 
     private BigDecimal calculatePOSOrderTotal(List<POSOrderItemRequest> items) {
         BigDecimal total = BigDecimal.ZERO;
-        
+
         for (POSOrderItemRequest item : items) {
             Product product = productRepository.findByIdAndIsDeletedFalse(item.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product not found: " + item.getProductId()));
-            
+
             BigDecimal itemPrice;
             if (item.getProductSizeId() != null) {
                 ProductSize productSize = productSizeRepository.findById(item.getProductSizeId())
@@ -324,22 +281,23 @@ public class OrderServiceImpl implements OrderService {
             } else {
                 itemPrice = product.getFinalPrice();
             }
-            
+
             total = total.add(itemPrice.multiply(BigDecimal.valueOf(item.getQuantity())));
         }
-        
+
         return total;
     }
 
     private void createPaymentRecord(Order order) {
-        BusinessOrderPayment payment = new BusinessOrderPayment(
-            order.getBusinessId(),
-            order.getId(),
-            paymentReferenceGenerator.generateUniqueReference(),
-            order.getTotalAmount(),
-            order.getPaymentMethod(),
-            null // Will be set by business for POS orders
-        );
+        BusinessOrderPaymentCreateHelper helper = BusinessOrderPaymentCreateHelper.builder()
+                .businessId(order.getBusinessId())
+                .orderId(order.getId())
+                .referenceNumber(paymentReferenceGenerator.generateUniqueReference())
+                .amount(order.getTotalAmount())
+                .paymentMethod(order.getPaymentMethod())
+                .customerPaymentMethod(null)
+                .build();
+        BusinessOrderPayment payment = paymentMapper.createFromHelper(helper);
         paymentRepository.save(payment);
     }
 
@@ -360,15 +318,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private String generateOrderNumber() {
-        String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        long counter = orderCounter.incrementAndGet() % 10000;
-        String orderNumber;
-        
-        do {
-            orderNumber = String.format("ORD-%s-%04d", date, counter);
-            counter = (counter + 1) % 10000;
-        } while (orderRepository.existsByOrderNumber(orderNumber));
-        
-        return orderNumber;
+        return orderNumberGenerator.generateUniqueOrderNumber(orderRepository::existsByOrderNumber);
     }
 }

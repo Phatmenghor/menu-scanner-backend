@@ -252,10 +252,7 @@ public class ProductServiceImpl implements ProductService {
         validateUserBusinessAssociation(currentUser);
 
         Product product = productMapper.toEntity(request);
-        product.setBusinessId(currentUser.getBusinessId());
-        product.setViewCount(0L);
-        product.setFavoriteCount(0L);
-
+        productMapper.setBusinessFields(product, currentUser.getBusinessId());
         product.initializeDisplayFields();
 
         Product savedProduct = productRepository.save(product);

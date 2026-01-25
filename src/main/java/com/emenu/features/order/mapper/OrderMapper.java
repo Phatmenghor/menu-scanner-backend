@@ -111,4 +111,46 @@ public interface OrderMapper {
                 .quantity(cartItem.getQuantity())
                 .build();
     }
+
+    /**
+     * Helper to build OrderItemCreateHelper from product (for POS orders)
+     */
+    default OrderItemCreateHelper buildOrderItemHelperFromProduct(
+            UUID orderId,
+            Product product,
+            UUID productSizeId,
+            String sizeName,
+            BigDecimal unitPrice,
+            Integer quantity) {
+        return OrderItemCreateHelper.builder()
+                .orderId(orderId)
+                .productId(product.getId())
+                .productSizeId(productSizeId)
+                .productName(product.getName())
+                .productImageUrl(product.getMainImageUrl())
+                .sizeName(sizeName)
+                .unitPrice(unitPrice)
+                .quantity(quantity)
+                .build();
+    }
+
+    /**
+     * Helper to build guest order helper from base order
+     */
+    default OrderCreateHelper buildGuestOrderHelper(OrderCreateRequest request, String orderNumber) {
+        return OrderCreateHelper.builder()
+                .orderNumber(orderNumber)
+                .customerId(null)
+                .businessId(request.getBusinessId())
+                .deliveryAddressId(request.getDeliveryAddressId())
+                .deliveryOptionId(request.getDeliveryOptionId())
+                .paymentMethod(request.getPaymentMethod())
+                .customerNote(request.getCustomerNote())
+                .isPosOrder(request.getIsPosOrder())
+                .isGuestOrder(true)
+                .guestPhone(request.getGuestPhone())
+                .guestName(request.getGuestName())
+                .guestLocation(request.getGuestLocation())
+                .build();
+    }
 }
