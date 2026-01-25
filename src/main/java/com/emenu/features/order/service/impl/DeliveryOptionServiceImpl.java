@@ -1,5 +1,6 @@
 package com.emenu.features.order.service.impl;
 
+import com.emenu.enums.common.Status;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
@@ -67,9 +68,13 @@ public class DeliveryOptionServiceImpl implements DeliveryOptionService {
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
+        // Convert empty list to null for proper query handling
+        List<Status> statuses = filter.getStatuses() != null && !filter.getStatuses().isEmpty()
+                ? filter.getStatuses() : null;
+
         Page<DeliveryOption> deliveryOptionPage = deliveryOptionRepository.findAllWithFilters(
                 filter.getBusinessId(),
-                filter.getStatuses(),
+                statuses,
                 filter.getSearch(),
                 filter.getMinPrice(),
                 filter.getMaxPrice(),
@@ -81,9 +86,13 @@ public class DeliveryOptionServiceImpl implements DeliveryOptionService {
     @Override
     @Transactional(readOnly = true)
     public List<DeliveryOptionResponse> getAllItemDeliveryOptions(DeliveryOptionAllFilterRequest filter) {
+        // Convert empty list to null for proper query handling
+        List<Status> statuses = filter.getStatuses() != null && !filter.getStatuses().isEmpty()
+                ? filter.getStatuses() : null;
+
         List<DeliveryOption> deliveryOptions = deliveryOptionRepository.findAllWithFilters(
                 filter.getBusinessId(),
-                filter.getStatuses(),
+                statuses,
                 filter.getSearch(),
                 filter.getMinPrice(),
                 filter.getMaxPrice(),

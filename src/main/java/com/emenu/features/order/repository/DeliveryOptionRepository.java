@@ -54,7 +54,7 @@ public interface DeliveryOptionRepository extends JpaRepository<DeliveryOption, 
            "LEFT JOIN d.business b " +
            "WHERE d.isDeleted = false " +
            "AND (:businessId IS NULL OR d.businessId = :businessId) " +
-           "AND (:statuses IS NULL OR :statuses IS EMPTY OR d.status IN :statuses) " +
+           "AND (:statuses IS NULL OR d.status IN :statuses) " +
            "AND (:minPrice IS NULL OR d.price >= :minPrice) " +
            "AND (:maxPrice IS NULL OR d.price <= :maxPrice) " +
            "AND (:search IS NULL OR :search = '' OR " +
@@ -77,7 +77,7 @@ public interface DeliveryOptionRepository extends JpaRepository<DeliveryOption, 
            "LEFT JOIN d.business b " +
            "WHERE d.isDeleted = false " +
            "AND (:businessId IS NULL OR d.businessId = :businessId) " +
-           "AND (:statuses IS NULL OR :statuses IS EMPTY OR d.status IN :statuses) " +
+           "AND (:statuses IS NULL OR d.status IN :statuses) " +
            "AND (:minPrice IS NULL OR d.price >= :minPrice) " +
            "AND (:maxPrice IS NULL OR d.price <= :maxPrice) " +
            "AND (:search IS NULL OR :search = '' OR " +
