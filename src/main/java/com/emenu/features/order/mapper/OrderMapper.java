@@ -6,7 +6,6 @@ import com.emenu.features.main.models.Product;
 import com.emenu.features.order.dto.helper.OrderCreateHelper;
 import com.emenu.features.order.dto.helper.OrderItemCreateHelper;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
-import com.emenu.features.order.dto.request.OrderItemRequest;
 import com.emenu.features.order.dto.request.POSOrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.models.Cart;
@@ -17,6 +16,7 @@ import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.data.domain.Page;
 
@@ -57,15 +57,6 @@ public interface OrderMapper {
      * Create order item from helper DTO - pure MapStruct mapping
      */
     OrderItem createOrderItemFromHelper(OrderItemCreateHelper helper);
-
-    /**
-     * Update order with guest details - pure MapStruct mapping
-     */
-    @Mapping(target = "isGuestOrder", constant = "true")
-    @Mapping(source = "guestPhone", target = "guestPhone")
-    @Mapping(source = "guestName", target = "guestName")
-    @Mapping(source = "guestLocation", target = "guestLocation")
-    void updateWithGuestDetails(@MappingTarget Order order, String guestPhone, String guestName, String guestLocation);
 
     /**
      * Helper to build OrderCreateHelper for base order
@@ -118,23 +109,6 @@ public interface OrderMapper {
                 .sizeName(cartItem.getSizeName())
                 .unitPrice(cartItem.getFinalPrice())
                 .quantity(cartItem.getQuantity())
-                .build();
-    }
-
-    /**
-     * Helper to build OrderItemCreateHelper from request
-     */
-    default OrderItemCreateHelper buildOrderItemHelperFromRequest(OrderItemRequest itemRequest, UUID orderId, Product product,
-                                                                    String sizeName, BigDecimal unitPrice) {
-        return OrderItemCreateHelper.builder()
-                .orderId(orderId)
-                .productId(itemRequest.getProductId())
-                .productSizeId(itemRequest.getProductSizeId())
-                .productName(product.getName())
-                .productImageUrl(product.getMainImageUrl())
-                .quantity(itemRequest.getQuantity())
-                .sizeName(sizeName)
-                .unitPrice(unitPrice)
                 .build();
     }
 }
