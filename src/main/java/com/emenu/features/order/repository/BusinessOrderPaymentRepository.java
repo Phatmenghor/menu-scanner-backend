@@ -84,14 +84,15 @@ public interface BusinessOrderPaymentRepository extends JpaRepository<BusinessOr
            "AND (:statuses IS NULL OR bop.status IN :statuses) " +
            "AND (:paymentMethod IS NULL OR bop.paymentMethod = :paymentMethod) " +
            "AND (:customerPaymentMethod IS NULL OR bop.customerPaymentMethod = :customerPaymentMethod) " +
-           "AND (:customerPhone IS NULL OR bop.customerPhone = :customerPhone) " +
+           "AND (:customerPhone IS NULL OR o.guestPhone = :customerPhone) " +
            "AND (:isGuestOrder IS NULL OR o.isGuestOrder = :isGuestOrder) " +
            "AND (:isPosOrder IS NULL OR o.isPosOrder = :isPosOrder) " +
            "AND (:createdFrom IS NULL OR bop.createdAt >= :createdFrom) " +
            "AND (:createdTo IS NULL OR bop.createdAt <= :createdTo) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "     LOWER(bop.paymentReference) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "     LOWER(bop.customerPhone) LIKE LOWER(CONCAT('%', :search, '%')))")
+           "     LOWER(o.guestPhone) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(o.guestName) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<BusinessOrderPayment> findAllWithFilters(
         @Param("businessId") UUID businessId,
         @Param("statuses") List<PaymentStatus> statuses,
