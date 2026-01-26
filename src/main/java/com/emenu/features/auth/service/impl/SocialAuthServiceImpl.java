@@ -172,6 +172,13 @@ public class SocialAuthServiceImpl implements SocialAuthService {
         Role role = roleRepository.findByNameAndIsDeletedFalse(defaultRole)
                 .orElseThrow(() -> new ValidationException("Default role not found: " + defaultRole));
 
+        // Validate role is compatible with the user type
+        if (!role.isCompatibleWithUserType(userType)) {
+            throw new ValidationException(
+                    String.format("Role '%s' is not properly configured for '%s' user type", defaultRole, userType)
+            );
+        }
+
         User user = new User();
         user.setUserIdentifier(userIdentifier);
         user.setEmail(userInfo.getEmail());
