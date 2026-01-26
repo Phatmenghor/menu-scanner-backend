@@ -66,16 +66,41 @@ public class UserServiceImpl implements UserService {
             user.setBusinessId(business.getId());
         }
 
+        // Validate business users must have a business ID
+        if (request.getUserType() == UserType.BUSINESS_USER && request.getBusinessId() == null) {
+            throw new ValidationException("Business ID is required for BUSINESS_USER type");
+        }
+
         List<Role> roles = roleRepository.findByNameInAndIsDeletedFalse(request.getRoles());
         if (roles.size() != request.getRoles().size()) {
             throw new ValidationException("One or more roles not found");
         }
+
+        // Validate role-userType compatibility
+        validateRoleUserTypeCompatibility(roles, request.getUserType());
+
         user.setRoles(roles);
 
         User savedUser = userRepository.save(user);
-        log.info("User created: {}", savedUser.getUserIdentifier());
-        
+        log.info("User created: {} with type: {} and roles: {}",
+                savedUser.getUserIdentifier(), savedUser.getUserType(), request.getRoles());
+
         return userMapper.toResponse(savedUser);
+    }
+
+    /**
+     * Validates that all roles are compatible with the user type
+     */
+    private void validateRoleUserTypeCompatibility(List<Role> roles, UserType userType) {
+        for (Role role : roles) {
+            if (!role.isCompatibleWithUserType(userType)) {
+                throw new ValidationException(
+                        String.format("Role '%s' is not compatible with user type '%s'. " +
+                                "This role is for '%s' users.",
+                                role.getName(), userType, role.getUserType())
+                );
+            }
+        }
     }
 
     /**
@@ -145,6 +170,9 @@ public class UserServiceImpl implements UserService {
             if (roles.size() != request.getRoles().size()) {
                 throw new ValidationException("One or more roles not found");
             }
+
+            // Validate role-userType compatibility
+            validateRoleUserTypeCompatibility(roles, user.getUserType());
 
             user.getRoles().clear();
             user.getRoles().addAll(roles);

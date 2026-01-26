@@ -63,15 +63,43 @@ public class Role extends BaseUUIDEntity {
         return "CUSTOMER".equals(name);
     }
 
+    /**
+     * Check if this is a platform role based on userType field
+     */
     public boolean isPlatformRole() {
-        return businessId == null && (name != null && name.startsWith("PLATFORM_"));
+        return userType == UserType.PLATFORM_USER;
     }
 
+    /**
+     * Check if this is a business role based on userType field
+     */
     public boolean isBusinessRole() {
-        return businessId != null || (name != null && name.startsWith("BUSINESS_"));
+        return userType == UserType.BUSINESS_USER;
     }
 
+    /**
+     * Check if this is a customer role based on userType field
+     */
     public boolean isCustomerRole() {
-        return name != null && name.startsWith("CUSTOMER");
+        return userType == UserType.CUSTOMER;
+    }
+
+    /**
+     * Check if this role is compatible with the given user type
+     */
+    public boolean isCompatibleWithUserType(UserType targetUserType) {
+        if (userType == null || targetUserType == null) {
+            return true; // Allow null for backward compatibility
+        }
+        return userType == targetUserType;
+    }
+
+    /**
+     * Check if this is a system role that cannot be modified
+     */
+    public boolean isSystemRole() {
+        return "PLATFORM_OWNER".equals(name) ||
+               "BUSINESS_OWNER".equals(name) ||
+               "CUSTOMER".equals(name);
     }
 }

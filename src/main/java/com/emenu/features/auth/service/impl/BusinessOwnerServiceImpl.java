@@ -342,6 +342,11 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         Role ownerRole = roleRepository.findByNameAndIsDeletedFalse("BUSINESS_OWNER")
                 .orElseThrow(() -> new NotFoundException("Business owner role not found"));
 
+        // Validate role is compatible with BUSINESS_USER type
+        if (!ownerRole.isCompatibleWithUserType(UserType.BUSINESS_USER)) {
+            throw new ValidationException("BUSINESS_OWNER role is not properly configured for BUSINESS_USER type");
+        }
+
         User owner = new User();
         owner.setUserIdentifier(request.getOwnerUserIdentifier());
         owner.setEmail(request.getOwnerEmail());

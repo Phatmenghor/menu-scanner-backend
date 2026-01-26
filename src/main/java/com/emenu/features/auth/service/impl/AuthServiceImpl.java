@@ -215,6 +215,12 @@ public class AuthServiceImpl implements AuthService {
 
         Role customerRole = roleRepository.findByNameAndIsDeletedFalse("CUSTOMER")
                 .orElseThrow(() -> new ValidationException("Customer role not found"));
+
+        // Validate role is compatible with CUSTOMER user type
+        if (!customerRole.isCompatibleWithUserType(UserType.CUSTOMER)) {
+            throw new ValidationException("CUSTOMER role is not properly configured for CUSTOMER user type");
+        }
+
         user.setRoles(List.of(customerRole));
 
         User savedUser = userRepository.save(user);
