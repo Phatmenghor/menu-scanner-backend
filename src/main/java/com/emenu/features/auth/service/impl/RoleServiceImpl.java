@@ -14,7 +14,6 @@ import com.emenu.features.auth.repository.BusinessRepository;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.service.RoleService;
 import com.emenu.shared.dto.PaginationResponse;
-import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,6 @@ public class RoleServiceImpl implements RoleService {
     private final RoleRepository roleRepository;
     private final BusinessRepository businessRepository;
     private final RoleMapper roleMapper;
-    private final PaginationMapper paginationMapper;
 
     @Override
     public RoleResponse createRole(RoleCreateRequest request) {
@@ -78,7 +76,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional(readOnly = true)
     public PaginationResponse<RoleResponse> getAllRoles(RoleFilterRequest request) {
-        log.debug("Getting all roles with filters");
+        log.debug("Getting all roles with filters and pagination");
 
         Pageable pageable = PaginationUtils.createPageable(
                 request.getPageNo(),
@@ -91,11 +89,13 @@ public class RoleServiceImpl implements RoleService {
         List<UserType> userTypes = (request.getUserTypes() != null && !request.getUserTypes().isEmpty())
                 ? request.getUserTypes() : null;
 
+        Boolean includeAll = request.getIncludeAll() != null ? request.getIncludeAll() : false;
+
         Page<Role> rolesPage = roleRepository.findAllWithFilters(
                 request.getBusinessId(),
-                request.getPlatformRolesOnly(),
                 userTypes,
                 request.getSearch(),
+                includeAll,
                 pageable
         );
 
@@ -117,57 +117,25 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<RoleResponse> getPlatformRoles() {
-        log.debug("Getting all platform roles");
-        List<Role> roles = roleRepository.findByBusinessIdIsNullAndIsDeletedFalse();
-        return roles.stream()
-                .map(roleMapper::toResponse)
-                .map(response -> enrichRoleResponse(response, null))
-                .toList();
-    }
+    public List<RoleResponse> getAllRolesList(RoleFilterRequest request) {
+        log.debug("Getting all roles as list with filters");
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<RoleResponse> getBusinessRoles(UUID businessId) {
-        log.debug("Getting roles for business: {}", businessId);
+        // Convert empty list to null to skip filtering
+        List<UserType> userTypes = (request.getUserTypes() != null && !request.getUserTypes().isEmpty())
+                ? request.getUserTypes() : null;
 
-        // Validate business exists
-        if (businessRepository.existsByIdAndIsDeletedFalse(businessId)) {
-            throw new ResourceNotFoundException("Business not found");
-        }
+        Boolean includeAll = request.getIncludeAll() != null ? request.getIncludeAll() : false;
 
-        List<Role> roles = roleRepository.findByBusinessIdAndIsDeletedFalse(businessId);
-        return roles.stream()
-                .map(roleMapper::toResponse)
-                .map(response -> enrichRoleResponse(response, businessId))
-                .toList();
-    }
+        List<Role> roles = roleRepository.findAllListWithFilters(
+                request.getBusinessId(),
+                userTypes,
+                request.getSearch(),
+                includeAll
+        );
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<RoleResponse> getRolesByUserType(UserType userType) {
-        log.debug("Getting roles for user type: {}", userType);
-        List<Role> roles = roleRepository.findByUserTypeAndIsDeletedFalse(userType);
         return roles.stream()
                 .map(roleMapper::toResponse)
                 .map(response -> enrichRoleResponse(response, response.getBusinessId()))
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<RoleResponse> getRolesByUserTypeAndBusinessId(UserType userType, UUID businessId) {
-        log.debug("Getting roles for user type: {} and business: {}", userType, businessId);
-
-        // Validate business exists
-        if (businessRepository.existsByIdAndIsDeletedFalse(businessId)) {
-            throw new ResourceNotFoundException("Business not found");
-        }
-
-        List<Role> roles = roleRepository.findByUserTypeAndBusinessIdAndIsDeletedFalse(userType, businessId);
-        return roles.stream()
-                .map(roleMapper::toResponse)
-                .map(response -> enrichRoleResponse(response, businessId))
                 .toList();
     }
 
@@ -178,24 +146,6 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleRepository.findByIdAndIsDeletedFalse(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
         return enrichRoleResponse(roleMapper.toResponse(role), role.getBusinessId());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public RoleResponse getRoleByName(String name) {
-        log.debug("Getting role by name: {}", name);
-        Role role = roleRepository.findByNameAndBusinessIdIsNullAndIsDeletedFalse(name.toUpperCase())
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
-        return enrichRoleResponse(roleMapper.toResponse(role), null);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public RoleResponse getRoleByNameAndBusinessId(String name, UUID businessId) {
-        log.debug("Getting role by name: {} and business: {}", name, businessId);
-        Role role = roleRepository.findByNameAndBusinessIdAndIsDeletedFalse(name.toUpperCase(), businessId)
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
-        return enrichRoleResponse(roleMapper.toResponse(role), businessId);
     }
 
     @Override
@@ -252,29 +202,14 @@ public class RoleServiceImpl implements RoleService {
             throw new ValidationException("Cannot delete system roles");
         }
 
-        // Check if role has users assigned
-        if (role.getUsers() != null && !role.getUsers().isEmpty()) {
-            throw new ValidationException("Cannot delete role with assigned users. Remove all users first.");
-        }
-
+        // Soft delete - does not affect current users
+        // Owners can update users themselves if needed
         role.setIsDeleted(true);
         role.setDeletedAt(LocalDateTime.now());
         Role deletedRole = roleRepository.save(role);
 
-        log.info("Role deleted: {}", deletedRole.getName());
+        log.info("Role soft deleted: {}", deletedRole.getName());
         return enrichRoleResponse(roleMapper.toResponse(deletedRole), deletedRole.getBusinessId());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsByName(String name) {
-        return roleRepository.existsByNameAndIsDeletedFalse(name.toUpperCase());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsByNameAndBusinessId(String name, UUID businessId) {
-        return roleRepository.existsByNameAndBusinessIdAndIsDeletedFalse(name.toUpperCase(), businessId);
     }
 
     /**

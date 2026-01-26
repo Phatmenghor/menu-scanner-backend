@@ -1,6 +1,5 @@
 package com.emenu.features.auth.service;
 
-import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.dto.filter.RoleFilterRequest;
 import com.emenu.features.auth.dto.request.RoleCreateRequest;
 import com.emenu.features.auth.dto.response.RoleResponse;
@@ -23,39 +22,14 @@ public interface RoleService {
     PaginationResponse<RoleResponse> getAllRoles(RoleFilterRequest request);
 
     /**
-     * Get all platform-level roles (no pagination)
+     * Get all roles as list with filtering (no pagination)
      */
-    List<RoleResponse> getPlatformRoles();
-
-    /**
-     * Get all roles for a specific business
-     */
-    List<RoleResponse> getBusinessRoles(UUID businessId);
-
-    /**
-     * Get all roles by user type
-     */
-    List<RoleResponse> getRolesByUserType(UserType userType);
-
-    /**
-     * Get all roles by user type for a specific business
-     */
-    List<RoleResponse> getRolesByUserTypeAndBusinessId(UserType userType, UUID businessId);
+    List<RoleResponse> getAllRolesList(RoleFilterRequest request);
 
     /**
      * Get a role by ID
      */
     RoleResponse getRoleById(UUID roleId);
-
-    /**
-     * Get a role by name (platform-level)
-     */
-    RoleResponse getRoleByName(String name);
-
-    /**
-     * Get a role by name for a specific business
-     */
-    RoleResponse getRoleByNameAndBusinessId(String name, UUID businessId);
 
     /**
      * Update a role
@@ -64,16 +38,7 @@ public interface RoleService {
 
     /**
      * Delete a role (soft delete)
+     * Does not affect current users - owners can update users themselves
      */
     RoleResponse deleteRole(UUID roleId);
-
-    /**
-     * Check if a role exists by name
-     */
-    boolean existsByName(String name);
-
-    /**
-     * Check if a role exists by name and business ID
-     */
-    boolean existsByNameAndBusinessId(String name, UUID businessId);
 }

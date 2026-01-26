@@ -40,12 +40,15 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
 
     boolean existsByNameAndBusinessIdIsNullAndIsDeletedFalse(String name);
 
+    List<Role> findByIsDeletedFalse();
+
     /**
      * Find all roles with filtering and pagination
+     * Supports includeAll to include soft-deleted items
      */
-    @Query("SELECT r FROM Role r WHERE r.isDeleted = false " +
+    @Query("SELECT r FROM Role r WHERE " +
+            "(:includeAll = true OR r.isDeleted = false) " +
             "AND (:businessId IS NULL OR r.businessId = :businessId) " +
-            "AND (:platformRolesOnly IS NULL OR :platformRolesOnly = false OR r.businessId IS NULL) " +
             "AND (:userTypes IS NULL OR r.userType IN :userTypes) " +
             "AND (:search IS NULL OR :search = '' OR " +
             "LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
@@ -53,25 +56,26 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
             "LOWER(r.description) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Role> findAllWithFilters(
             @Param("businessId") UUID businessId,
-            @Param("platformRolesOnly") Boolean platformRolesOnly,
             @Param("userTypes") List<UserType> userTypes,
             @Param("search") String search,
+            @Param("includeAll") Boolean includeAll,
             Pageable pageable);
 
     /**
-     * Count all roles with filtering
+     * Find all roles as list with filtering (no pagination)
+     * Supports includeAll to include soft-deleted items
      */
-    @Query("SELECT COUNT(r) FROM Role r WHERE r.isDeleted = false " +
+    @Query("SELECT r FROM Role r WHERE " +
+            "(:includeAll = true OR r.isDeleted = false) " +
             "AND (:businessId IS NULL OR r.businessId = :businessId) " +
-            "AND (:platformRolesOnly IS NULL OR :platformRolesOnly = false OR r.businessId IS NULL) " +
             "AND (:userTypes IS NULL OR r.userType IN :userTypes) " +
             "AND (:search IS NULL OR :search = '' OR " +
             "LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(r.displayName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(r.description) LIKE LOWER(CONCAT('%', :search, '%')))")
-    long countAllWithFilters(
+    List<Role> findAllListWithFilters(
             @Param("businessId") UUID businessId,
-            @Param("platformRolesOnly") Boolean platformRolesOnly,
             @Param("userTypes") List<UserType> userTypes,
-            @Param("search") String search);
+            @Param("search") String search,
+            @Param("includeAll") Boolean includeAll);
 }

@@ -19,16 +19,6 @@ public class RoleFilterRequest extends BaseFilterRequest {
     private UUID businessId;
 
     /**
-     * Filter to only show platform-level roles (businessId is null)
-     */
-    private Boolean platformRolesOnly;
-
-    /**
-     * Filter by role types: PLATFORM, BUSINESS, CUSTOMER
-     */
-    private List<String> roleTypes;
-
-    /**
      * Filter by user types: PLATFORM_USER, BUSINESS_USER, CUSTOMER
      */
     private List<UserType> userTypes;
@@ -37,4 +27,9 @@ public class RoleFilterRequest extends BaseFilterRequest {
      * Search text for role name, display name, or description
      */
     private String search;
+
+    /**
+     * Include all items (including soft-deleted). Default is false (only active).
+     */
+    private Boolean includeAll = false;
 }
