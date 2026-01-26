@@ -11,9 +11,9 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_HOST_AUTH_METHOD: scram-sha-256
     ports:
-      - "5432:5432"
+      - "5432:5432"   # PostgreSQL accessible on host:5432
     volumes:
-      - ./pgdata:/var/lib/postgresql/data   # Host folder for persistent data
+      - /Users/shadow/Project/data:/var/lib/postgresql/data  # Host folder for persistent data
     command: >
       postgres
       -c listen_addresses='*'
