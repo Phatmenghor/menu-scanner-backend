@@ -78,4 +78,6 @@ public interface BusinessRepository extends JpaRepository<Business, UUID> {
      */
     @Query("SELECT b FROM Business b WHERE b.email = :email AND b.isDeleted = false")
     Optional<Business> findByEmailAndIsDeletedFalse(@Param("email") String email);
+
+    boolean existsByIdAndIsDeletedFalse(UUID businessId);
 }

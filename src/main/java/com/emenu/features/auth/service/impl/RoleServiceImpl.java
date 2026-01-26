@@ -132,7 +132,7 @@ public class RoleServiceImpl implements RoleService {
         log.debug("Getting roles for business: {}", businessId);
 
         // Validate business exists
-        if (!businessRepository.existsByIdAndIsDeletedFalse(businessId)) {
+        if (businessRepository.existsByIdAndIsDeletedFalse(businessId)) {
             throw new ResourceNotFoundException("Business not found");
         }
 
@@ -160,7 +160,7 @@ public class RoleServiceImpl implements RoleService {
         log.debug("Getting roles for user type: {} and business: {}", userType, businessId);
 
         // Validate business exists
-        if (!businessRepository.existsByIdAndIsDeletedFalse(businessId)) {
+        if (businessRepository.existsByIdAndIsDeletedFalse(businessId)) {
             throw new ResourceNotFoundException("Business not found");
         }
 
