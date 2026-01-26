@@ -1,4 +1,4 @@
-package com.emenu.features.audit.service;
+package com.emenu.features.audit.service.impl;
 
 import com.emenu.enums.user.UserType;
 import com.emenu.exception.custom.ResourceNotFoundException;
@@ -9,6 +9,7 @@ import com.emenu.features.audit.dto.response.AuditStatsResponseDTO;
 import com.emenu.features.audit.mapper.AuditLogMapper;
 import com.emenu.features.audit.models.AuditLog;
 import com.emenu.features.audit.repository.AuditLogRepository;
+import com.emenu.features.audit.service.AuditLogService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
