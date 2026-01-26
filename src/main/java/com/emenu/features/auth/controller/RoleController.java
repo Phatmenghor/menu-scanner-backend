@@ -35,7 +35,6 @@ public class RoleController {
      * Create a new role (platform-level or business-specific)
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<RoleResponse>> createRole(
             @Valid @RequestBody RoleCreateRequest request) {
         log.info("Create role request: {}", request.getName());
@@ -60,7 +59,7 @@ public class RoleController {
      * Get all roles as list with filtering (no pagination)
      * Filter options: businessId, userTypes, search, includeAll
      */
-    @PostMapping("/list")
+    @PostMapping("/all-list")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRolesList(
             @Valid @RequestBody RoleFilterRequest request) {
         log.info("Get all roles as list with filters");
@@ -84,7 +83,6 @@ public class RoleController {
      * Cannot update system roles (PLATFORM_OWNER, BUSINESS_OWNER, CUSTOMER)
      */
     @PutMapping("/{roleId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<RoleResponse>> updateRole(
             @PathVariable UUID roleId,
             @Valid @RequestBody RoleUpdateRequest request) {
@@ -99,7 +97,6 @@ public class RoleController {
      * Does not affect current users - owners can update users themselves
      */
     @DeleteMapping("/{roleId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<RoleResponse>> deleteRole(
             @PathVariable UUID roleId) {
         log.info("Delete role: {}", roleId);
