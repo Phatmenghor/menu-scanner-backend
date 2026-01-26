@@ -335,40 +335,52 @@ public class DataInitializationService {
     }
 
     /**
-     * Initialize test sessions for the platform owner (17 successful sessions)
+     * Initialize test sessions for ALL users (17 sessions each)
      */
     private int initializeTestSessions() {
         try {
-            log.info("🔄 Initializing test sessions for platform owner...");
+            log.info("🔄 Initializing test sessions for ALL users...");
 
-            // Find the platform owner
-            User platformOwner = userRepository.findByUserIdentifierAndIsDeletedFalse(defaultAdminEmail)
-                    .orElse(null);
+            // Find all active users
+            List<User> allUsers = userRepository.findAll().stream()
+                    .filter(user -> !user.getIsDeleted())
+                    .toList();
 
-            if (platformOwner == null) {
-                log.warn("⚠️ Platform owner not found, skipping session generation");
+            if (allUsers.isEmpty()) {
+                log.warn("⚠️ No users found, skipping session generation");
                 return 0;
             }
 
-            // Check if sessions already exist for this user
-            long existingSessionCount = userSessionRepository.countActiveSessionsByUserId(platformOwner.getId());
-            List<UserSession> allSessions = userSessionRepository.findAllSessionsByUserId(platformOwner.getId());
+            int totalSessionsCreated = 0;
+            int usersProcessed = 0;
 
-            if (!allSessions.isEmpty()) {
-                log.info("ℹ️ Test sessions already exist for platform owner ({} sessions), skipping...", allSessions.size());
-                return 0;
+            for (User user : allUsers) {
+                // Check if sessions already exist for this user
+                List<UserSession> existingSessions = userSessionRepository.findAllSessionsByUserId(user.getId());
+
+                if (!existingSessions.isEmpty()) {
+                    log.info("ℹ️ Test sessions already exist for user {} ({} sessions), skipping...",
+                            user.getUserIdentifier(), existingSessions.size());
+                    continue;
+                }
+
+                int sessionsCreated = createTestSessionsForUser(user);
+                totalSessionsCreated += sessionsCreated;
+                usersProcessed++;
+
+                // Update user's active session count
+                long activeCount = userSessionRepository.countActiveSessionsByUserId(user.getId());
+                user.setActiveSessionsCount((int) activeCount);
+                user.setLastLoginAt(LocalDateTime.now());
+                user.setLastActiveAt(LocalDateTime.now());
+                userRepository.save(user);
+
+                log.info("✅ Created {} sessions for user: {} (Type: {})",
+                        sessionsCreated, user.getUserIdentifier(), user.getUserType());
             }
 
-            int sessionsCreated = createTestSessionsForUser(platformOwner);
-
-            // Update user's active session count
-            long activeCount = userSessionRepository.countActiveSessionsByUserId(platformOwner.getId());
-            platformOwner.setActiveSessionsCount((int) activeCount);
-            platformOwner.setLastLoginAt(LocalDateTime.now());
-            platformOwner.setLastActiveAt(LocalDateTime.now());
-            userRepository.save(platformOwner);
-
-            return sessionsCreated;
+            log.info("🎉 Total: Created {} test sessions for {} users", totalSessionsCreated, usersProcessed);
+            return totalSessionsCreated;
 
         } catch (Exception e) {
             log.error("❌ Error initializing test sessions: {}", e.getMessage(), e);
