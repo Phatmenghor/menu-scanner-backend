@@ -137,41 +137,6 @@ public class DataInitializationService {
         }
     }
 
-    @SuppressWarnings("unused")
-    private int createMissingRoles_DEPRECATED(List<String> missingRoles) {
-        int createdCount = 0;
-
-        for (String roleName : missingRoles) {
-            try {
-                if (roleRepository.existsByNameAndIsDeletedFalse(roleName)) {
-                    log.debug("Role {} already exists (created by another process)", roleName);
-                    continue;
-                }
-
-                Role role = new Role();
-                role.setName(roleName);
-                role.setDisplayName(roleName.replace("_", " "));
-                role.setDescription("System role: " + roleName);
-                roleRepository.save(role);
-                createdCount++;
-                
-                log.info("✅ Successfully created role: {} with ID: {}", roleName, role.getId());
-                
-            } catch (Exception e) {
-                // ✅ ENHANCED: Handle potential constraint violations gracefully
-                if (e.getMessage() != null && e.getMessage().contains("constraint")) {
-                    log.warn("⚠️ Role {} likely already exists (constraint violation), continuing...", roleName);
-                    continue;
-                } else {
-                    log.error("❌ Error creating role {}: {}", roleName, e.getMessage());
-                    throw new RuntimeException("Failed to create role: " + roleName, e);
-                }
-            }
-        }
-        
-        return createdCount;
-    }
-
     private int initializeDefaultUsers() {
         try {
             log.info("🔄 Initializing default users...");
