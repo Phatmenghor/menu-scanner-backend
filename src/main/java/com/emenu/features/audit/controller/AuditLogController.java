@@ -22,21 +22,18 @@ public class AuditLogController {
     private final AuditLogService auditLogService;
 
     @PostMapping("/search")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<PaginationResponse<AuditLogResponseDTO>> searchAuditLogs(@RequestBody AuditLogFilterDTO filter) {
         log.debug("Searching audit logs with filter: {}", filter);
         return ResponseEntity.ok(auditLogService.searchAuditLogs(filter));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<AuditLogResponseDTO> getAuditLogById(@PathVariable UUID id) {
         log.debug("Getting audit log by id: {}", id);
         return ResponseEntity.ok(auditLogService.getAuditLogById(id));
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<AuditStatsResponseDTO> getAuditStats() {
         log.debug("Getting audit statistics");
         return ResponseEntity.ok(auditLogService.getAuditStats());
