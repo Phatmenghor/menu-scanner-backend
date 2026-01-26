@@ -100,19 +100,26 @@ public class DataInitializationService {
         try {
             log.info("🔄 Ensuring system roles exist...");
 
-            String[] systemRoles = {"PLATFORM_OWNER", "BUSINESS_OWNER", "CUSTOMER"};
+            // System roles with their user types
+            record RoleConfig(String name, UserType userType) {}
+            RoleConfig[] systemRoles = {
+                    new RoleConfig("PLATFORM_OWNER", UserType.PLATFORM_USER),
+                    new RoleConfig("BUSINESS_OWNER", UserType.BUSINESS_USER),
+                    new RoleConfig("CUSTOMER", UserType.CUSTOMER)
+            };
             int createdCount = 0;
 
-            for (String roleName : systemRoles) {
-                if (!roleRepository.existsByNameAndIsDeletedFalse(roleName)) {
+            for (RoleConfig roleConfig : systemRoles) {
+                if (!roleRepository.existsByNameAndIsDeletedFalse(roleConfig.name())) {
                     Role role = new Role();
-                    role.setName(roleName);
-                    role.setDisplayName(roleName.replace("_", " "));
-                    role.setDescription("System role: " + roleName);
+                    role.setName(roleConfig.name());
+                    role.setDisplayName(roleConfig.name().replace("_", " "));
+                    role.setDescription("System role: " + roleConfig.name());
                     role.setBusinessId(null);
+                    role.setUserType(roleConfig.userType());
                     roleRepository.save(role);
                     createdCount++;
-                    log.info("✅ Created system role: {}", roleName);
+                    log.info("✅ Created system role: {} for user type: {}", roleConfig.name(), roleConfig.userType());
                 }
             }
 

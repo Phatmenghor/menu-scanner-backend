@@ -1,5 +1,6 @@
 package com.emenu.features.auth.models;
 
+import com.emenu.enums.user.UserType;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -14,7 +15,8 @@ import java.util.UUID;
 @Table(name = "roles", indexes = {
         @Index(name = "idx_role_deleted", columnList = "is_deleted"),
         @Index(name = "idx_role_name", columnList = "name, is_deleted"),
-        @Index(name = "idx_role_business", columnList = "business_id, is_deleted")
+        @Index(name = "idx_role_business", columnList = "business_id, is_deleted"),
+        @Index(name = "idx_role_user_type", columnList = "user_type, is_deleted")
 }, uniqueConstraints = {
         @UniqueConstraint(name = "uk_role_name_business", columnNames = {"name", "business_id"})
 })
@@ -35,6 +37,16 @@ public class Role extends BaseUUIDEntity {
 
     @Column(name = "business_id")
     private UUID businessId;
+
+    /**
+     * The user type this role belongs to.
+     * PLATFORM_USER - for platform admin roles
+     * BUSINESS_USER - for business-specific roles
+     * CUSTOMER - for customer roles
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_type", length = 50)
+    private UserType userType;
 
     @ManyToMany(mappedBy = "roles")
     private List<User> users;
