@@ -1,4 +1,4 @@
 #!/bin/bash
-# Stop backend and PostgreSQL (from build compose)
+# Stop backend only (PostgreSQL keeps running)
 docker-compose -f docker-compose.build.yml down
-echo "Backend and PostgreSQL stopped"
+echo "Backend stopped (PostgreSQL still running)"

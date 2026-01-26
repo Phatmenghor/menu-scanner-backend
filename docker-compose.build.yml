@@ -1,26 +1,6 @@
 version: '3.9'
 
 services:
-  postgres:
-    image: postgres:15
-    container_name: emenu_postgres
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Hour1819
-      POSTGRES_DB: e_menu_platform
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d e_menu_platform"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - emenu_network
-
   backend:
     build:
       context: .
@@ -30,18 +10,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/e_menu_platform
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/e_menu_platform
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=Hour1819
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - emenu_network
-
-volumes:
-  postgres_data:
-
-networks:
-  emenu_network:
-    driver: bridge
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
