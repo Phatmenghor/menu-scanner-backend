@@ -6,6 +6,7 @@ services:
     container_name: my_postgres
     restart: always
     environment:
+      # 127.0.0.1
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Hour1819
       POSTGRES_DB: e_menu_platform
