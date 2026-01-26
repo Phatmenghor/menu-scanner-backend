@@ -69,7 +69,6 @@ public class AuditLogFilter extends OncePerRequestFilter {
 
             if (shouldLogBodies(request.getMethod())) {
                 requestBody = getContentAsString(wrappedRequest.getContentAsByteArray());
-                responseBody = getContentAsString(wrappedResponse.getContentAsByteArray());
             }
 
             // Log the request asynchronously
@@ -79,8 +78,7 @@ public class AuditLogFilter extends OncePerRequestFilter {
                     statusCode,
                     responseTimeMs,
                     errorMessage,
-                    requestBody,
-                    responseBody
+                    requestBody
                 );
             } catch (Exception e) {
                 log.error("Failed to log audit entry: {}", e.getMessage());

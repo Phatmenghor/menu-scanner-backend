@@ -26,7 +26,7 @@ public interface AuditLogService {
      * Log an access request with request/response bodies
      */
     void logAccessWithBodies(HttpServletRequest request, int statusCode, long responseTimeMs,
-                            String errorMessage, String requestBody, String responseBody);
+                            String errorMessage, String requestBody);
 
     /**
      * Get audit logs with filters and pagination

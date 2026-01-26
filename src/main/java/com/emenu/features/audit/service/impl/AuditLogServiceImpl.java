@@ -73,12 +73,12 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     @Override
     public void logAccess(HttpServletRequest request, int statusCode, long responseTimeMs, String errorMessage) {
-        logAccessWithBodies(request, statusCode, responseTimeMs, errorMessage, null, null);
+        logAccessWithBodies(request, statusCode, responseTimeMs, errorMessage, null);
     }
 
     @Override
     public void logAccessWithBodies(HttpServletRequest request, int statusCode, long responseTimeMs,
-                                   String errorMessage, String requestBody, String responseBody) {
+                                   String errorMessage, String requestBody) {
         // Extract all request data SYNCHRONOUSLY before async processing
         // This prevents "request recycled" errors from Tomcat
         UUID userId = null;
@@ -112,7 +112,7 @@ public class AuditLogServiceImpl implements AuditLogService {
         final AuditLogCreateHelper helper = buildAuditLogHelper(
                 userId, userIdentifier, userType, httpMethod, endpoint, ipAddress,
                 userAgent, requestParams, statusCode, responseTimeMs, errorMessage,
-                sessionId, requestBody, responseBody);
+                sessionId, requestBody);
 
         // Now save asynchronously - all data is already extracted
         saveAuditLogAsync(helper);
@@ -122,18 +122,12 @@ public class AuditLogServiceImpl implements AuditLogService {
                                                       String httpMethod, String endpoint, String ipAddress,
                                                       String userAgent, String requestParams, int statusCode,
                                                       long responseTimeMs, String errorMessage, String sessionId,
-                                                      String requestBody, String responseBody) {
+                                                      String requestBody) {
         // Truncate request/response bodies if needed
         String truncatedRequestBody = null;
         if (requestBody != null && requestBody.length() > 0) {
             truncatedRequestBody = requestBody.length() > 10000 ?
                 requestBody.substring(0, 10000) + "... [truncated]" : requestBody;
-        }
-
-        String truncatedResponseBody = null;
-        if (responseBody != null && responseBody.length() > 0) {
-            truncatedResponseBody = responseBody.length() > 10000 ?
-                responseBody.substring(0, 10000) + "... [truncated]" : responseBody;
         }
 
         return AuditLogCreateHelper.builder()
@@ -146,7 +140,6 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .userAgent(userAgent)
                 .requestParams(requestParams)
                 .requestBody(truncatedRequestBody)
-                .responseBody(truncatedResponseBody)
                 .statusCode(statusCode)
                 .responseTimeMs(responseTimeMs)
                 .errorMessage(errorMessage)

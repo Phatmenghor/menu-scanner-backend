@@ -24,7 +24,6 @@ public class AuditLogCreateHelper {
     private String userAgent;
     private String requestParams;
     private String requestBody;
-    private String responseBody;
     private Integer statusCode;
     private Long responseTimeMs;
     private String errorMessage;
