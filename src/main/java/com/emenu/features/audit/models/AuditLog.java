@@ -63,7 +63,4 @@ public class AuditLog extends BaseUUIDEntity {
 
     @Column(name = "request_body", columnDefinition = "TEXT")
     private String requestBody;
-
-    @Column(name = "response_body", columnDefinition = "TEXT")
-    private String responseBody;
 }

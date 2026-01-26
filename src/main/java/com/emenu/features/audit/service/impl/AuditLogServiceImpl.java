@@ -254,7 +254,6 @@ public class AuditLogServiceImpl implements AuditLogService {
         dto.setSessionId(auditLog.getSessionId());
         dto.setRequestParams(auditLog.getRequestParams());
         dto.setRequestBody(auditLog.getRequestBody());
-        dto.setResponseBody(auditLog.getResponseBody());
         dto.setCreatedAt(auditLog.getCreatedAt());
         return dto;
     }

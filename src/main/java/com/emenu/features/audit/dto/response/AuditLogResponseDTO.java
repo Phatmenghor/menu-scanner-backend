@@ -26,6 +26,5 @@ public class AuditLogResponseDTO {
     private String sessionId;
     private String requestParams;
     private String requestBody;
-    private String responseBody;
     private LocalDateTime createdAt;
 }

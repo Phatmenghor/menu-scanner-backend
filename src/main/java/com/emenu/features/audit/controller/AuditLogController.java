@@ -21,7 +21,7 @@ public class AuditLogController {
 
     private final AuditLogService auditLogService;
 
-    @PostMapping("/search")
+    @PostMapping("/get-all")
     public ResponseEntity<PaginationResponse<AuditLogResponseDTO>> searchAuditLogs(@RequestBody AuditLogFilterDTO filter) {
         log.debug("Searching audit logs with filter: {}", filter);
         return ResponseEntity.ok(auditLogService.searchAuditLogs(filter));
