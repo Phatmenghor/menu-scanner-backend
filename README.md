@@ -84,7 +84,7 @@ cd emenu-saas-platform
 
 2. **Start with Docker Compose**
 ```bash
-docker-compose up -d
+docker-compose.yml up -d
 ```
 
 3. **Access the application**
@@ -303,7 +303,7 @@ User testUser = UserTestDataBuilder.aUser()
 
 ### Docker Production
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose.yml -f docker-compose.yml.prod.yml up -d
 ```
 
 ### Environment Setup
