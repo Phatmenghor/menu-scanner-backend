@@ -6,13 +6,12 @@ services:
     container_name: my_postgres
     restart: always
     environment:
-      # 127.0.0.1
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Hour1819
-      POSTGRES_DB: e_menu_platform
+      POSTGRES_DB: postgres
       POSTGRES_HOST_AUTH_METHOD: md5
     ports:
-      - "5555:5555"
+      - "5555:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     command: >
@@ -20,7 +19,7 @@ services:
       -c listen_addresses='*'
       -c password_encryption=md5
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d e_menu_platform"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
