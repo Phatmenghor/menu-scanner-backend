@@ -1,13 +1,19 @@
 #!/bin/bash
 
-# Stop containers
-docker-compose -f docker-compose.build.yml down
-echo "Backend stopped"
+COMPOSE_FILE=docker-compose.build.yml
+CONTAINER_NAME=emenu_backend
 
-# Start containers
-docker-compose -f docker-compose.build.yml up -d --build
-echo "Backend started on port 8080"
+# Stop and remove old container if exists
+if [ "$(docker ps -aq -f name=$CONTAINER_NAME)" ]; then
+    echo "Stopping old container..."
+    docker stop $CONTAINER_NAME
+    echo "Removing old container..."
+    docker rm $CONTAINER_NAME
+fi
 
-# Print Swagger UI link
-echo ""
-echo "Application is ready! Access Swagger UI at: http://localhost:8080/swagger-ui/index.html"
+# Build and start new container
+echo "Building and starting backend using $COMPOSE_FILE..."
+docker-compose -f $COMPOSE_FILE build backend
+docker-compose -f $COMPOSE_FILE up -d backend
+
+echo "Backend started successfully!"
