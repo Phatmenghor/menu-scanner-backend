@@ -12,7 +12,7 @@ services:
       POSTGRES_DB: e_menu_platform
       POSTGRES_HOST_AUTH_METHOD: md5
     ports:
-      - "5555:5432"
+      - "5555:5555"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     command: >
