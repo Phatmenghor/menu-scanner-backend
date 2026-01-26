@@ -1,6 +1,8 @@
 package com.emenu.features.auth.repository;
 
 import com.emenu.features.auth.models.UserSession;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +16,16 @@ import java.util.UUID;
 
 @Repository
 public interface UserSessionRepository extends JpaRepository<UserSession, UUID> {
+
+    /**
+     * Find session by ID and user ID (for security verification)
+     */
+    Optional<UserSession> findByIdAndUserIdAndIsDeletedFalse(UUID id, UUID userId);
+
+    /**
+     * Find session by ID (for admin access)
+     */
+    Optional<UserSession> findByIdAndIsDeletedFalse(UUID id);
 
     /**
      * Find all active sessions for a user
@@ -76,4 +88,45 @@ public interface UserSessionRepository extends JpaRepository<UserSession, UUID> 
     @Modifying
     @Query("UPDATE UserSession s SET s.isDeleted = true, s.deletedAt = :deletedAt WHERE s.status IN ('LOGGED_OUT', 'EXPIRED', 'REVOKED') AND s.loggedOutAt < :cutoffDate")
     int cleanupOldSessions(@Param("deletedAt") LocalDateTime deletedAt, @Param("cutoffDate") LocalDateTime cutoffDate);
+
+    /**
+     * Find all sessions with filters (for admin view) - paginated
+     */
+    @Query("SELECT s FROM UserSession s LEFT JOIN FETCH s.user u WHERE s.isDeleted = false " +
+            "AND (:userId IS NULL OR s.userId = :userId) " +
+            "AND (:statuses IS NULL OR s.status IN :statuses) " +
+            "AND (:deviceTypes IS NULL OR s.deviceType IN :deviceTypes) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "LOWER(s.deviceName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(s.browser) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(s.ipAddress) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.userIdentifier) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<UserSession> findAllWithFilters(
+            @Param("userId") UUID userId,
+            @Param("statuses") List<String> statuses,
+            @Param("deviceTypes") List<String> deviceTypes,
+            @Param("search") String search,
+            Pageable pageable);
+
+    /**
+     * Count query for findAllWithFilters
+     */
+    @Query("SELECT COUNT(s) FROM UserSession s LEFT JOIN s.user u WHERE s.isDeleted = false " +
+            "AND (:userId IS NULL OR s.userId = :userId) " +
+            "AND (:statuses IS NULL OR s.status IN :statuses) " +
+            "AND (:deviceTypes IS NULL OR s.deviceType IN :deviceTypes) " +
+            "AND (:search IS NULL OR :search = '' OR " +
+            "LOWER(s.deviceName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(s.browser) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(s.ipAddress) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.userIdentifier) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
+    long countAllWithFilters(
+            @Param("userId") UUID userId,
+            @Param("statuses") List<String> statuses,
+            @Param("deviceTypes") List<String> deviceTypes,
+            @Param("search") String search);
 }

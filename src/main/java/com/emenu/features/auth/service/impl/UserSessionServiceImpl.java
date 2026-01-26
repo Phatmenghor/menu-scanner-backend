@@ -1,7 +1,9 @@
 package com.emenu.features.auth.service.impl;
 
 import com.emenu.exception.custom.ResourceNotFoundException;
+import com.emenu.features.auth.dto.filter.SessionFilterRequest;
 import com.emenu.features.auth.dto.helper.UserSessionCreateHelper;
+import com.emenu.features.auth.dto.session.AdminSessionResponse;
 import com.emenu.features.auth.dto.session.UserSessionResponse;
 import com.emenu.features.auth.mapper.UserSessionMapper;
 import com.emenu.features.auth.models.RefreshToken;
@@ -11,11 +13,16 @@ import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.repository.UserSessionRepository;
 import com.emenu.features.auth.service.UserSessionService;
 import com.emenu.shared.constants.SecurityConstants;
+import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
+import com.emenu.shared.pagination.PaginationUtils;
 import com.emenu.shared.utils.ClientIpUtils;
 import com.emenu.shared.utils.UserAgentParser;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +39,7 @@ public class UserSessionServiceImpl implements UserSessionService {
     private final UserSessionRepository sessionRepository;
     private final UserRepository userRepository;
     private final UserSessionMapper sessionMapper;
+    private final PaginationMapper paginationMapper;
 
     @Override
     @Transactional
@@ -97,6 +105,49 @@ public class UserSessionServiceImpl implements UserSessionService {
         return sessionRepository.findAllSessionsByUserId(userId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserSessionResponse getSessionById(UUID sessionId, UUID userId) {
+        UserSession session = sessionRepository.findByIdAndUserIdAndIsDeletedFalse(sessionId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
+        return toResponse(session);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminSessionResponse getSessionByIdAdmin(UUID sessionId) {
+        UserSession session = sessionRepository.findByIdAndIsDeletedFalse(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
+        return toAdminResponse(session);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaginationResponse<AdminSessionResponse> getAllSessionsAdmin(SessionFilterRequest request) {
+        Pageable pageable = PaginationUtils.createPageable(
+                request.getPageNo(), request.getPageSize(), request.getSortBy(), request.getSortDirection()
+        );
+
+        List<String> statuses = (request.getStatuses() != null && !request.getStatuses().isEmpty())
+                ? request.getStatuses() : null;
+        List<String> deviceTypes = (request.getDeviceTypes() != null && !request.getDeviceTypes().isEmpty())
+                ? request.getDeviceTypes() : null;
+
+        Page<UserSession> page = sessionRepository.findAllWithFilters(
+                request.getUserId(),
+                statuses,
+                deviceTypes,
+                request.getSearch(),
+                pageable
+        );
+
+        List<AdminSessionResponse> content = page.getContent().stream()
+                .map(this::toAdminResponse)
+                .collect(Collectors.toList());
+
+        return paginationMapper.toPaginationResponse(page, content);
     }
 
     @Override
@@ -175,6 +226,47 @@ public class UserSessionServiceImpl implements UserSessionService {
                 .loginAt(session.getLoginAt())
                 .lastActiveAt(session.getLastActiveAt())
                 .expiresAt(session.getExpiresAt())
+                .isCurrentSession(session.getIsCurrentSession())
+                .sessionDurationMinutes(session.getSessionDurationMinutes())
+                .inactiveDurationMinutes(session.getInactiveDurationMinutes())
+                .build();
+    }
+
+    private AdminSessionResponse toAdminResponse(UserSession session) {
+        User user = session.getUser();
+        String userFullName = null;
+        String userIdentifier = null;
+        String userType = null;
+
+        if (user != null) {
+            userFullName = (user.getFirstName() != null ? user.getFirstName() : "") +
+                    (user.getLastName() != null ? " " + user.getLastName() : "");
+            userFullName = userFullName.trim().isEmpty() ? null : userFullName.trim();
+            userIdentifier = user.getUserIdentifier();
+            userType = user.getUserType() != null ? user.getUserType().name() : null;
+        }
+
+        return AdminSessionResponse.builder()
+                .id(session.getId())
+                .userId(session.getUserId())
+                .userIdentifier(userIdentifier)
+                .userFullName(userFullName)
+                .userType(userType)
+                .deviceId(session.getDeviceId())
+                .deviceName(session.getDeviceName())
+                .deviceType(session.getDeviceType())
+                .deviceDisplayName(session.getDeviceDisplayName())
+                .browser(session.getBrowser())
+                .operatingSystem(session.getOperatingSystem())
+                .ipAddress(session.getIpAddress())
+                .country(session.getCountry())
+                .city(session.getCity())
+                .status(session.getStatus())
+                .loginAt(session.getLoginAt())
+                .lastActiveAt(session.getLastActiveAt())
+                .expiresAt(session.getExpiresAt())
+                .loggedOutAt(session.getLoggedOutAt())
+                .logoutReason(session.getLogoutReason())
                 .isCurrentSession(session.getIsCurrentSession())
                 .sessionDurationMinutes(session.getSessionDurationMinutes())
                 .inactiveDurationMinutes(session.getInactiveDurationMinutes())

@@ -1,8 +1,11 @@
 package com.emenu.features.auth.controller;
 
+import com.emenu.features.auth.dto.filter.SessionFilterRequest;
+import com.emenu.features.auth.dto.session.AdminSessionResponse;
 import com.emenu.features.auth.dto.session.UserSessionResponse;
 import com.emenu.features.auth.service.UserSessionService;
 import com.emenu.security.SecurityUtils;
+import com.emenu.shared.dto.PaginationResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +36,28 @@ public class SessionController {
         UUID userId = securityUtils.getCurrentUserId();
         log.info("User {} requesting all sessions", userId);
         return ResponseEntity.ok(sessionService.getAllSessions(userId));
+    }
+
+    @GetMapping("/{sessionId}")
+    public ResponseEntity<UserSessionResponse> getSessionById(@PathVariable UUID sessionId) {
+        UUID userId = securityUtils.getCurrentUserId();
+        log.info("User {} requesting session detail: {}", userId, sessionId);
+        return ResponseEntity.ok(sessionService.getSessionById(sessionId, userId));
+    }
+
+    // ========== Admin Endpoints ==========
+
+    @PostMapping("/admin/all")
+    public ResponseEntity<PaginationResponse<AdminSessionResponse>> getAllSessionsAdmin(
+            @RequestBody SessionFilterRequest request) {
+        log.info("Admin requesting all sessions with filters");
+        return ResponseEntity.ok(sessionService.getAllSessionsAdmin(request));
+    }
+
+    @GetMapping("/admin/{sessionId}")
+    public ResponseEntity<AdminSessionResponse> getSessionByIdAdmin(@PathVariable UUID sessionId) {
+        log.info("Admin requesting session detail: {}", sessionId);
+        return ResponseEntity.ok(sessionService.getSessionByIdAdmin(sessionId));
     }
 
     @DeleteMapping("/{sessionId}")
