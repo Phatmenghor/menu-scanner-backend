@@ -38,7 +38,6 @@ public class RoleController {
      * Business Owner can create business-specific roles
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse<RoleResponse>> createRole(
             @Valid @RequestBody RoleCreateRequest request) {
         log.info("Create role request: {}", request.getName());
@@ -53,7 +52,6 @@ public class RoleController {
      * Business Owner sees platform roles + their business roles
      */
     @PostMapping("/all")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<PaginationResponse<RoleResponse>>> getAllRoles(
             @Valid @RequestBody RoleFilterRequest request) {
         log.info("Get all roles with filters");
@@ -76,7 +74,6 @@ public class RoleController {
      * Get all roles for a specific business
      */
     @GetMapping("/business/{businessId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getBusinessRoles(
             @PathVariable UUID businessId) {
         log.info("Get roles for business: {}", businessId);
@@ -91,7 +88,6 @@ public class RoleController {
      * CUSTOMER - for customer roles
      */
     @GetMapping("/user-type/{userType}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getRolesByUserType(
             @PathVariable UserType userType) {
         log.info("Get roles for user type: {}", userType);
@@ -103,7 +99,6 @@ public class RoleController {
      * Get all roles by user type for a specific business
      */
     @GetMapping("/user-type/{userType}/business/{businessId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getRolesByUserTypeAndBusinessId(
             @PathVariable UserType userType,
             @PathVariable UUID businessId) {
@@ -116,7 +111,6 @@ public class RoleController {
      * Get a role by ID
      */
     @GetMapping("/{roleId}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<RoleResponse>> getRoleById(
             @PathVariable UUID roleId) {
         log.info("Get role by ID: {}", roleId);
@@ -128,7 +122,6 @@ public class RoleController {
      * Get a platform role by name
      */
     @GetMapping("/name/{name}")
-    @PreAuthorize("hasAnyRole('PLATFORM_OWNER', 'BUSINESS_OWNER', 'PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponse<RoleResponse>> getRoleByName(
             @PathVariable String name) {
         log.info("Get role by name: {}", name);
