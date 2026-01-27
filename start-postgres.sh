@@ -6,5 +6,5 @@ echo "PostgreSQL stopped"
 
 # Start containers
 docker-compose up -d
-echo "PostgreSQL started on port 5432"
+echo "PostgreSQL started on port 1111"
 
