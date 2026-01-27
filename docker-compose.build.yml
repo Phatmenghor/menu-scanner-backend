@@ -6,7 +6,7 @@ services:
     container_name: emenu_backend
     restart: always
     ports:
-      - "8080:8080"
+      - "9090:8080"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:1111/e_menu_platform
       - SPRING_DATASOURCE_USERNAME=postgres
