@@ -3,6 +3,12 @@
 -- Generates: 25 Provinces, 2,500 Districts, 250,000 Communes, 25,000,000 Villages
 -- Run in pgAdmin (may take several minutes for 25M village rows)
 -- Safe to re-run (skips existing records by code).
+--
+-- Code format (each level appends 2 digits from parent):
+--   Province: PP           → 01, 02, ... 25
+--   District: PP+DD        → 0100, 0101, ... 0199
+--   Commune:  PPDD+CC      → 010000, 010001, ... 010099
+--   Village:  PPDDCC+VV    → 01000000, 01000001, ... 01000099
 -- =====================================================================
 
 -- =====================================================================
@@ -15,6 +21,7 @@ ALTER TABLE location_village_cbc DROP CONSTRAINT IF EXISTS location_village_cbc_
 
 -- =====================================================================
 -- 1. INSERT 25 PROVINCES (Real Cambodia provinces)
+--    Code: 01 to 25
 -- =====================================================================
 INSERT INTO location_province_cbc (id, province_code, province_en, province_kh, version, is_deleted, created_at, updated_at, created_by, updated_by)
 VALUES
@@ -47,81 +54,70 @@ ON CONFLICT DO NOTHING;
 
 -- =====================================================================
 -- 2. INSERT 2,500 DISTRICTS (100 per province)
---    Code format: PPDD (e.g., 0101 = Province 01, District 01)
+--    Code: province_code + 00..99  →  0100, 0101, ... 2599
 -- =====================================================================
 INSERT INTO location_district_cbc (id, district_code, district_en, district_kh, province_code, version, is_deleted, created_at, updated_at, created_by, updated_by)
 SELECT
     gen_random_uuid(),
-    LPAD(p.pnum::text, 2, '0') || LPAD(d.dnum::text, 2, '0'),
-    p.province_en || ' District ' || d.dnum,
-    p.province_kh || ' ស្រុក ' || d.dnum,
-    LPAD(p.pnum::text, 2, '0'),
+    p.province_code || LPAD(d.n::text, 2, '0'),
+    p.province_en || ' District ' || d.n,
+    p.province_kh || ' ស្រុក ' || d.n,
+    p.province_code,
     0,
     false,
-    NOW(),
-    NOW(),
-    'system',
-    'system'
-FROM (
-    SELECT province_en, province_kh, ROW_NUMBER() OVER (ORDER BY province_code) AS pnum, province_code
-    FROM location_province_cbc WHERE is_deleted = false
-) p
-CROSS JOIN generate_series(1, 100) AS d(dnum)
-WHERE NOT EXISTS (
-    SELECT 1 FROM location_district_cbc dc
-    WHERE dc.district_code = LPAD(p.pnum::text, 2, '0') || LPAD(d.dnum::text, 2, '0')
+    NOW(), NOW(), 'system', 'system'
+FROM location_province_cbc p
+CROSS JOIN generate_series(0, 99) AS d(n)
+WHERE p.is_deleted = false
+AND NOT EXISTS (
+    SELECT 1 FROM location_district_cbc ex
+    WHERE ex.district_code = p.province_code || LPAD(d.n::text, 2, '0')
 );
 
 -- =====================================================================
 -- 3. INSERT 250,000 COMMUNES (100 per district)
---    Code format: PPDDCC (e.g., 010101 = Province 01, District 01, Commune 01)
+--    Code: district_code + 00..99  →  010000, 010001, ... 259999
 -- =====================================================================
 INSERT INTO location_commune_cbc (id, commune_code, commune_en, commune_kh, district_code, version, is_deleted, created_at, updated_at, created_by, updated_by)
 SELECT
     gen_random_uuid(),
-    dc.district_code || LPAD(c.cnum::text, 2, '0'),
-    dc.district_en || ' Commune ' || c.cnum,
-    dc.district_kh || ' ឃុំ ' || c.cnum,
-    dc.district_code,
+    d.district_code || LPAD(c.n::text, 2, '0'),
+    d.district_en || ' Commune ' || c.n,
+    d.district_kh || ' ឃុំ ' || c.n,
+    d.district_code,
     0,
     false,
-    NOW(),
-    NOW(),
-    'system',
-    'system'
-FROM location_district_cbc dc
-CROSS JOIN generate_series(1, 100) AS c(cnum)
-WHERE dc.is_deleted = false
+    NOW(), NOW(), 'system', 'system'
+FROM location_district_cbc d
+CROSS JOIN generate_series(0, 99) AS c(n)
+WHERE d.is_deleted = false
 AND NOT EXISTS (
-    SELECT 1 FROM location_commune_cbc cc
-    WHERE cc.commune_code = dc.district_code || LPAD(c.cnum::text, 2, '0')
+    SELECT 1 FROM location_commune_cbc ex
+    WHERE ex.commune_code = d.district_code || LPAD(c.n::text, 2, '0')
 );
 
 -- =====================================================================
 -- 4. INSERT 25,000,000 VILLAGES (100 per commune)
---    Code format: PPDDCCVV (e.g., 01010101 = Province 01, District 01, Commune 01, Village 01)
---    NOTE: This inserts 25 million rows. It may take several minutes.
---    Consider running in batches if needed (see batch version below).
+--    Code: commune_code + 00..99  →  01000000, 01000001, ... 25999999
+--    NOTE: 25 million rows — may take several minutes.
+--    If it times out, use the BATCH version at the bottom instead.
 -- =====================================================================
 INSERT INTO location_village_cbc (id, village_code, village_en, village_kh, commune_code, version, is_deleted, created_at, updated_at, created_by, updated_by)
 SELECT
     gen_random_uuid(),
-    cc.commune_code || LPAD(v.vnum::text, 2, '0'),
-    cc.commune_en || ' Village ' || v.vnum,
-    cc.commune_kh || ' ភូមិ ' || v.vnum,
-    cc.commune_code,
+    c.commune_code || LPAD(v.n::text, 2, '0'),
+    c.commune_en || ' Village ' || v.n,
+    c.commune_kh || ' ភូមិ ' || v.n,
+    c.commune_code,
     0,
     false,
-    NOW(),
-    NOW(),
-    'system',
-    'system'
-FROM location_commune_cbc cc
-CROSS JOIN generate_series(1, 100) AS v(vnum)
-WHERE cc.is_deleted = false
+    NOW(), NOW(), 'system', 'system'
+FROM location_commune_cbc c
+CROSS JOIN generate_series(0, 99) AS v(n)
+WHERE c.is_deleted = false
 AND NOT EXISTS (
-    SELECT 1 FROM location_village_cbc vc
-    WHERE vc.village_code = cc.commune_code || LPAD(v.vnum::text, 2, '0')
+    SELECT 1 FROM location_village_cbc ex
+    WHERE ex.village_code = c.commune_code || LPAD(v.n::text, 2, '0')
 );
 
 -- =====================================================================
@@ -135,7 +131,7 @@ SELECT
 
 -- =====================================================================
 -- ALTERNATIVE: BATCH INSERT VILLAGES (if the full 25M insert times out)
--- Uncomment and run one province at a time.
+-- Uncomment and run — it inserts per province (~1M rows at a time).
 -- =====================================================================
 -- DO $$
 -- DECLARE
@@ -149,25 +145,22 @@ SELECT
 --         INSERT INTO location_village_cbc (id, village_code, village_en, village_kh, commune_code, version, is_deleted, created_at, updated_at, created_by, updated_by)
 --         SELECT
 --             gen_random_uuid(),
---             cc.commune_code || LPAD(v.vnum::text, 2, '0'),
---             cc.commune_en || ' Village ' || v.vnum,
---             cc.commune_kh || ' ភូមិ ' || v.vnum,
---             cc.commune_code,
+--             c.commune_code || LPAD(v.n::text, 2, '0'),
+--             c.commune_en || ' Village ' || v.n,
+--             c.commune_kh || ' ភូមិ ' || v.n,
+--             c.commune_code,
 --             0,
 --             false,
---             NOW(),
---             NOW(),
---             'system',
---             'system'
---         FROM location_commune_cbc cc
---         CROSS JOIN generate_series(1, 100) AS v(vnum)
---         WHERE cc.is_deleted = false
---         AND cc.district_code LIKE p_code || '%'
+--             NOW(), NOW(), 'system', 'system'
+--         FROM location_commune_cbc c
+--         CROSS JOIN generate_series(0, 99) AS v(n)
+--         WHERE c.is_deleted = false
+--         AND c.district_code LIKE p_code || '%'
 --         AND NOT EXISTS (
---             SELECT 1 FROM location_village_cbc vc
---             WHERE vc.village_code = cc.commune_code || LPAD(v.vnum::text, 2, '0')
+--             SELECT 1 FROM location_village_cbc ex
+--             WHERE ex.village_code = c.commune_code || LPAD(v.n::text, 2, '0')
 --         );
 --
---         RAISE NOTICE 'Completed villages for province %', p_code;
+--         RAISE NOTICE 'Done province %', p_code;
 --     END LOOP;
 -- END $$;
