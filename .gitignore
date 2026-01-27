@@ -1,38 +1,144 @@
-HELP.md
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+############################
+# OS files
+############################
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
 
-### STS ###
+############################
+# Java / JVM
+############################
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+
+############################
+# Maven
+############################
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# Maven Wrapper (DO NOT COMMIT JAR)
+.mvn/wrapper/maven-wrapper.jar
+
+############################
+# Gradle
+############################
+.gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+############################
+# Spring Boot
+############################
+logs/
+*.log
+*.log.*
+spring.log
+
+############################
+# IntelliJ IDEA
+############################
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+############################
+# Eclipse / STS
+############################
 .apt_generated
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
-.sts4-cache
+.sts4-cache/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
+############################
+# NetBeans
+############################
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+############################
+# VS Code
+############################
 .vscode/
 
-### Log files ###
-logs/
-*.log
-*.log.*
+############################
+# Environment variables
+############################
+.env
+.env.*
+*.env
+
+############################
+# Docker
+############################
+docker-compose.override.yml
+*.docker.env
+
+############################
+# Node (if frontend exists)
+############################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+############################
+# Test / Coverage
+############################
+coverage/
+*.lcov
+*.exec
+
+############################
+# Temporary / Backup
+############################
+*.swp
+*.swo
+*~
+*.tmp
+*.bak
+
+############################
+# IDE / Tool caches
+############################
+.cache/
+.history/
+
+############################
+# Database dumps
+############################
+*.sql
+*.dump
+*.db
+*.sqlite
+
+############################
+# Certificates / Keys
+############################
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
