@@ -300,26 +300,36 @@ public class DataInitializationService {
     }
 
     /**
-     * Initialize test sessions for ALL users (17 sessions each)
+     * Only the test users created by this service — NOT all 300K+ users.
      */
+    private static final List<String> TEST_USER_IDENTIFIERS = List.of(
+            "phatmenghor19@gmail.com",  // platform owner (uses defaultAdminEmail)
+            "demo-business-owner",
+            "demo-customer",
+            "inactive-user",
+            "locked-user",
+            "suspended-user"
+    );
+
     private int initializeTestSessions() {
         try {
-            log.info("🔄 Initializing test sessions for ALL users...");
-
-            // Find all active users
-            List<User> allUsers = userRepository.findAll().stream()
-                    .filter(user -> !user.getIsDeleted())
-                    .toList();
-
-            if (allUsers.isEmpty()) {
-                log.warn("⚠️ No users found, skipping session generation");
-                return 0;
-            }
+            log.info("🔄 Initializing test sessions for default test users...");
 
             int totalSessionsCreated = 0;
             int usersProcessed = 0;
 
-            for (User user : allUsers) {
+            for (String identifier : TEST_USER_IDENTIFIERS) {
+                // Use the configured admin email for the platform owner
+                String lookupId = "phatmenghor19@gmail.com".equals(identifier) ? defaultAdminEmail : identifier;
+
+                var optionalUser = userRepository.findByUserIdentifierAndIsDeletedFalse(lookupId);
+                if (optionalUser.isEmpty()) {
+                    log.debug("ℹ️ Test user {} not found, skipping sessions", lookupId);
+                    continue;
+                }
+
+                User user = optionalUser.get();
+
                 // Check if sessions already exist for this user
                 List<UserSession> existingSessions = userSessionRepository.findAllSessionsByUserId(user.getId());
 
