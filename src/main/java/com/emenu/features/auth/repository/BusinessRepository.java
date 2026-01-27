@@ -80,4 +80,9 @@ public interface BusinessRepository extends JpaRepository<Business, UUID> {
     Optional<Business> findByEmailAndIsDeletedFalse(@Param("email") String email);
 
     boolean existsByIdAndIsDeletedFalse(UUID businessId);
+
+    /**
+     * Find all non-deleted businesses by their IDs (batch lookup)
+     */
+    List<Business> findAllByIdInAndIsDeletedFalse(List<UUID> ids);
 }

@@ -24,7 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -101,8 +105,9 @@ public class RoleServiceImpl implements RoleService {
 
         List<RoleResponse> responses = rolesPage.getContent().stream()
                 .map(roleMapper::toResponse)
-                .map(response -> enrichRoleResponse(response, response.getBusinessId()))
                 .toList();
+
+        enrichRoleResponses(responses);
 
         return PaginationResponse.<RoleResponse>builder()
                 .content(responses)
@@ -133,10 +138,13 @@ public class RoleServiceImpl implements RoleService {
                 includeAll
         );
 
-        return roles.stream()
+        List<RoleResponse> responses = roles.stream()
                 .map(roleMapper::toResponse)
-                .map(response -> enrichRoleResponse(response, response.getBusinessId()))
                 .toList();
+
+        enrichRoleResponses(responses);
+
+        return responses;
     }
 
     @Override
@@ -220,7 +228,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     /**
-     * Enrich role response with business name
+     * Enrich role response with business name (single role lookup)
      */
     private RoleResponse enrichRoleResponse(RoleResponse response, UUID businessId) {
         if (businessId != null) {
@@ -228,5 +236,33 @@ public class RoleServiceImpl implements RoleService {
                     .ifPresent(business -> response.setBusinessName(business.getName()));
         }
         return response;
+    }
+
+    /**
+     * Batch enrich role responses with business names (single query instead of N+1)
+     */
+    private void enrichRoleResponses(List<RoleResponse> responses) {
+        List<UUID> businessIds = responses.stream()
+                .map(RoleResponse::getBusinessId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (businessIds.isEmpty()) {
+            return;
+        }
+
+        Map<UUID, String> businessNameMap = businessRepository.findAllByIdInAndIsDeletedFalse(businessIds)
+                .stream()
+                .collect(Collectors.toMap(Business::getId, Business::getName));
+
+        responses.forEach(response -> {
+            if (response.getBusinessId() != null) {
+                String businessName = businessNameMap.get(response.getBusinessId());
+                if (businessName != null) {
+                    response.setBusinessName(businessName);
+                }
+            }
+        });
     }
 }
