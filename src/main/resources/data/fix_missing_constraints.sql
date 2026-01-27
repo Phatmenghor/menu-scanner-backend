@@ -11,6 +11,7 @@
 DO $$
 DECLARE
     tbl TEXT;
+    dup_count INTEGER;
     tables TEXT[] := ARRAY[
         'audit_logs', 'blacklisted_tokens', 'businesses', 'business_settings',
         'refresh_tokens', 'roles', 'users', 'user_sessions',
@@ -52,6 +53,18 @@ BEGIN
         ELSE
             -- Remove rows with NULL id
             EXECUTE format('DELETE FROM %I WHERE id IS NULL', tbl);
+
+            -- Remove duplicate id rows, keeping only the one with the latest ctid
+            EXECUTE format(
+                'DELETE FROM %I a USING %I b
+                 WHERE a.id = b.id AND a.ctid < b.ctid',
+                tbl, tbl
+            );
+            GET DIAGNOSTICS dup_count = ROW_COUNT;
+            IF dup_count > 0 THEN
+                RAISE NOTICE 'Removed % duplicate row(s) from table: %', dup_count, tbl;
+            END IF;
+
             -- Add primary key
             EXECUTE format('ALTER TABLE %I ADD PRIMARY KEY (id)', tbl);
             RAISE NOTICE 'Added PRIMARY KEY to table: %', tbl;
