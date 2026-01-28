@@ -113,7 +113,6 @@ public class DataInitializationService {
                 if (!roleRepository.existsByNameAndIsDeletedFalse(roleConfig.name())) {
                     Role role = new Role();
                     role.setName(roleConfig.name());
-                    role.setDisplayName(roleConfig.name().replace("_", " "));
                     role.setDescription("System role: " + roleConfig.name());
                     role.setBusinessId(null);
                     role.setUserType(roleConfig.userType());

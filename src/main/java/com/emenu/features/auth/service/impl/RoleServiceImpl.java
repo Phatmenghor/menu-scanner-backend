@@ -63,11 +63,6 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleMapper.toEntity(request);
         role.setName(normalizedName);
 
-        // Set display name if not provided
-        if (role.getDisplayName() == null || role.getDisplayName().isEmpty()) {
-            role.setDisplayName(normalizedName.replace("_", " "));
-        }
-
         Role savedRole = roleRepository.save(role);
         log.info("Role created: {} with ID: {}", savedRole.getName(), savedRole.getId());
 
@@ -183,11 +178,6 @@ public class RoleServiceImpl implements RoleService {
         }
 
         roleMapper.updateEntity(request, role);
-
-        // Update display name if name was updated but display name wasn't
-        if (request.getName() != null && request.getDisplayName() == null) {
-            role.setDisplayName(role.getName().replace("_", " "));
-        }
 
         Role savedRole = roleRepository.save(role);
         log.info("Role updated: {}", savedRole.getName());

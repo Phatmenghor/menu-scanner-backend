@@ -28,9 +28,6 @@ public class Role extends BaseUUIDEntity {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "display_name", length = 200)
-    private String displayName;
-
     @Column(name = "description", length = 500)
     private String description;
 

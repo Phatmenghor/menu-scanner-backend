@@ -12,7 +12,6 @@ import java.util.UUID;
 public class RoleResponse extends BaseAuditResponse {
 
     private String name;
-    private String displayName;
     private String description;
     private UUID businessId;
     private UserType userType;
