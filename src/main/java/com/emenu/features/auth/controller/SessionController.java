@@ -7,18 +7,15 @@ import com.emenu.features.auth.service.UserSessionService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/sessions")
 @RequiredArgsConstructor
-@Slf4j
 public class SessionController {
 
     private final UserSessionService sessionService;
@@ -33,17 +30,15 @@ public class SessionController {
     }
 
     @DeleteMapping("/{sessionId}")
-    public ResponseEntity<Map<String, String>> logoutSession(@PathVariable UUID sessionId) {
+    public ResponseEntity<UserSessionResponse> logoutSession(@PathVariable UUID sessionId) {
         UUID userId = securityUtils.getCurrentUserId();
-        sessionService.logoutSession(sessionId, userId);
-        return ResponseEntity.ok(Map.of("message", "Session logged out successfully"));
+        return ResponseEntity.ok(sessionService.logoutSession(sessionId, userId));
     }
 
     @PostMapping("/logout-others")
-    public ResponseEntity<Map<String, String>> logoutOtherSessions(@RequestParam UUID currentSessionId) {
+    public ResponseEntity<List<UserSessionResponse>> logoutOtherSessions(@RequestParam UUID currentSessionId) {
         UUID userId = securityUtils.getCurrentUserId();
-        sessionService.logoutOtherSessions(userId, currentSessionId);
-        return ResponseEntity.ok(Map.of("message", "Other sessions logged out successfully"));
+        return ResponseEntity.ok(sessionService.logoutOtherSessions(userId, currentSessionId));
     }
 
     // ========== Admin Endpoints ==========
@@ -55,14 +50,12 @@ public class SessionController {
     }
 
     @DeleteMapping("/admin/{sessionId}")
-    public ResponseEntity<Map<String, String>> logoutSessionAdmin(@PathVariable UUID sessionId) {
-        sessionService.logoutSessionAdmin(sessionId);
-        return ResponseEntity.ok(Map.of("message", "Session logged out successfully"));
+    public ResponseEntity<AdminSessionResponse> logoutSessionAdmin(@PathVariable UUID sessionId) {
+        return ResponseEntity.ok(sessionService.logoutSessionAdmin(sessionId));
     }
 
     @PostMapping("/admin/logout-all/{userId}")
-    public ResponseEntity<Map<String, String>> logoutAllSessionsAdmin(@PathVariable UUID userId) {
-        sessionService.logoutAllSessionsAdmin(userId);
-        return ResponseEntity.ok(Map.of("message", "All sessions logged out successfully"));
+    public ResponseEntity<List<AdminSessionResponse>> logoutAllSessionsAdmin(@PathVariable UUID userId) {
+        return ResponseEntity.ok(sessionService.logoutAllSessionsAdmin(userId));
     }
 }

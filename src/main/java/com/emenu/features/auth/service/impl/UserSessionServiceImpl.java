@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,15 +45,13 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     @Override
     @Transactional
-    public UserSession createSession(User user, RefreshToken refreshToken, HttpServletRequest request) {
+    public UserSessionResponse createSession(User user, RefreshToken refreshToken, HttpServletRequest request) {
         String userAgent = request.getHeader(SecurityConstants.HEADER_USER_AGENT);
         String deviceId = request.getHeader(SecurityConstants.HEADER_DEVICE_ID);
         String deviceName = request.getHeader(SecurityConstants.HEADER_DEVICE_NAME);
         String ipAddress = ClientIpUtils.getClientIp(request);
 
         UserAgentParser.ParsedUserAgent parsedUA = UserAgentParser.parse(userAgent);
-
-        // Get location from IP (async, won't block)
         String location = getLocationFromIp(ipAddress);
 
         UserSessionCreateHelper helper = UserSessionCreateHelper.builder()
@@ -77,14 +76,13 @@ public class UserSessionServiceImpl implements UserSessionService {
         sessionRepository.save(session);
         sessionRepository.markOtherSessionsAsNotCurrent(user.getId(), session.getId());
 
-        // Update user
         user.setLastLoginAt(LocalDateTime.now());
         user.setLastActiveAt(LocalDateTime.now());
         user.setActiveSessionsCount(sessionRepository.countActiveSessionsByUserId(user.getId()).intValue());
         userRepository.save(user);
 
         log.info("Created session for user: {} on device: {} from {}", user.getUserIdentifier(), session.getDeviceDisplayName(), location);
-        return session;
+        return sessionMapper.toResponse(session);
     }
 
     @Override
@@ -95,26 +93,35 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     @Override
     @Transactional
-    public void logoutSession(UUID sessionId, UUID userId) {
-        int updated = sessionRepository.logoutSession(sessionId, userId, LocalDateTime.now(), "User logged out");
-        if (updated > 0) {
-            updateActiveSessionsCount(userId);
-            log.info("User {} logged out from session {}", userId, sessionId);
-        }
+    public UserSessionResponse logoutSession(UUID sessionId, UUID userId) {
+        UserSession session = sessionRepository.findByIdAndUserIdAndIsDeletedFalse(sessionId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
+
+        session.logout("User logged out");
+        sessionRepository.save(session);
+        updateActiveSessionsCount(userId);
+
+        log.info("User {} logged out from session {}", userId, sessionId);
+        return sessionMapper.toResponse(session);
     }
 
     @Override
     @Transactional
-    public void logoutOtherSessions(UUID userId, UUID currentSessionId) {
+    public List<UserSessionResponse> logoutOtherSessions(UUID userId, UUID currentSessionId) {
         List<UserSession> sessions = sessionRepository.findActiveSessionsByUserId(userId);
+        List<UserSession> loggedOutSessions = new ArrayList<>();
+
         for (UserSession session : sessions) {
             if (!session.getId().equals(currentSessionId)) {
                 session.logout("Logged out from other device");
                 sessionRepository.save(session);
+                loggedOutSessions.add(session);
             }
         }
+
         updateActiveSessionsCount(userId);
-        log.info("User {} logged out from all other devices", userId);
+        log.info("User {} logged out from {} other devices", userId, loggedOutSessions.size());
+        return sessionMapper.toResponseList(loggedOutSessions);
     }
 
     @Override
@@ -136,7 +143,7 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     @Override
     @Transactional
-    public void logoutSessionAdmin(UUID sessionId) {
+    public AdminSessionResponse logoutSessionAdmin(UUID sessionId) {
         UserSession session = sessionRepository.findByIdAndIsDeletedFalse(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
 
@@ -146,14 +153,23 @@ public class UserSessionServiceImpl implements UserSessionService {
             updateActiveSessionsCount(session.getUserId());
             log.info("Admin logged out session {}", sessionId);
         }
+
+        return sessionMapper.toAdminResponse(session);
     }
 
     @Override
     @Transactional
-    public void logoutAllSessionsAdmin(UUID userId) {
-        sessionRepository.logoutAllSessionsByUserId(userId, LocalDateTime.now(), "Admin logged out all");
+    public List<AdminSessionResponse> logoutAllSessionsAdmin(UUID userId) {
+        List<UserSession> sessions = sessionRepository.findActiveSessionsByUserId(userId);
+
+        for (UserSession session : sessions) {
+            session.logout("Admin logged out all");
+            sessionRepository.save(session);
+        }
+
         updateActiveSessionsCount(userId);
-        log.info("Admin logged out all sessions for user {}", userId);
+        log.info("Admin logged out {} sessions for user {}", sessions.size(), userId);
+        return sessionMapper.toAdminResponseList(sessions);
     }
 
     private void updateActiveSessionsCount(UUID userId) {
