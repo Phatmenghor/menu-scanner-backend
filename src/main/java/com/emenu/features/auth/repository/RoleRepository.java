@@ -24,23 +24,9 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
 
     boolean existsByNameAndIsDeletedFalse(String name);
 
-    Optional<Role> findByNameAndBusinessIdAndIsDeletedFalse(String name, UUID businessId);
-
-    Optional<Role> findByNameAndBusinessIdIsNullAndIsDeletedFalse(String name);
-
-    List<Role> findByBusinessIdAndIsDeletedFalse(UUID businessId);
-
-    List<Role> findByBusinessIdIsNullAndIsDeletedFalse();
-
-    List<Role> findByUserTypeAndIsDeletedFalse(UserType userType);
-
-    List<Role> findByUserTypeAndBusinessIdAndIsDeletedFalse(UserType userType, UUID businessId);
-
     boolean existsByNameAndBusinessIdAndIsDeletedFalse(String name, UUID businessId);
 
     boolean existsByNameAndBusinessIdIsNullAndIsDeletedFalse(String name);
-
-    List<Role> findByIsDeletedFalse();
 
     /**
      * Find all roles with filtering and pagination
@@ -52,7 +38,6 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
             "AND (:userTypes IS NULL OR r.userType IN :userTypes) " +
             "AND (:search IS NULL OR :search = '' OR " +
             "LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(r.displayName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(r.description) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Role> findAllWithFilters(
             @Param("businessId") UUID businessId,
@@ -71,7 +56,6 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
             "AND (:userTypes IS NULL OR r.userType IN :userTypes) " +
             "AND (:search IS NULL OR :search = '' OR " +
             "LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(r.displayName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(r.description) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<Role> findAllListWithFilters(
             @Param("businessId") UUID businessId,
