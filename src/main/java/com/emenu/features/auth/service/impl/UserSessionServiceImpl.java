@@ -29,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -94,17 +93,13 @@ public class UserSessionServiceImpl implements UserSessionService {
     @Override
     @Transactional(readOnly = true)
     public List<UserSessionResponse> getActiveSessions(UUID userId) {
-        return sessionRepository.findActiveSessionsByUserId(userId).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        return sessionMapper.toResponseList(sessionRepository.findActiveSessionsByUserId(userId));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<UserSessionResponse> getAllSessions(UUID userId) {
-        return sessionRepository.findAllSessionsByUserId(userId).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        return sessionMapper.toResponseList(sessionRepository.findAllSessionsByUserId(userId));
     }
 
     @Override
@@ -112,7 +107,7 @@ public class UserSessionServiceImpl implements UserSessionService {
     public UserSessionResponse getSessionById(UUID sessionId, UUID userId) {
         UserSession session = sessionRepository.findByIdAndUserIdAndIsDeletedFalse(sessionId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
-        return toResponse(session);
+        return sessionMapper.toResponse(session);
     }
 
     @Override
@@ -120,7 +115,7 @@ public class UserSessionServiceImpl implements UserSessionService {
     public AdminSessionResponse getSessionByIdAdmin(UUID sessionId) {
         UserSession session = sessionRepository.findByIdAndIsDeletedFalse(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
-        return toAdminResponse(session);
+        return sessionMapper.toAdminResponse(session);
     }
 
     @Override
@@ -143,11 +138,7 @@ public class UserSessionServiceImpl implements UserSessionService {
                 pageable
         );
 
-        List<AdminSessionResponse> content = page.getContent().stream()
-                .map(this::toAdminResponse)
-                .collect(Collectors.toList());
-
-        return paginationMapper.toPaginationResponse(page, content);
+        return sessionMapper.toPaginationResponse(page, paginationMapper);
     }
 
     @Override
@@ -208,69 +199,6 @@ public class UserSessionServiceImpl implements UserSessionService {
             user.setActiveSessionsCount(sessionRepository.countActiveSessionsByUserId(userId).intValue());
             userRepository.save(user);
         }
-    }
-
-    private UserSessionResponse toResponse(UserSession session) {
-        return UserSessionResponse.builder()
-                .id(session.getId())
-                .deviceId(session.getDeviceId())
-                .deviceName(session.getDeviceName())
-                .deviceType(session.getDeviceType())
-                .deviceDisplayName(session.getDeviceDisplayName())
-                .browser(session.getBrowser())
-                .operatingSystem(session.getOperatingSystem())
-                .ipAddress(session.getIpAddress())
-                .country(session.getCountry())
-                .city(session.getCity())
-                .status(session.getStatus())
-                .loginAt(session.getLoginAt())
-                .lastActiveAt(session.getLastActiveAt())
-                .expiresAt(session.getExpiresAt())
-                .isCurrentSession(session.getIsCurrentSession())
-                .sessionDurationMinutes(session.getSessionDurationMinutes())
-                .inactiveDurationMinutes(session.getInactiveDurationMinutes())
-                .build();
-    }
-
-    private AdminSessionResponse toAdminResponse(UserSession session) {
-        User user = session.getUser();
-        String userFullName = null;
-        String userIdentifier = null;
-        String userType = null;
-
-        if (user != null) {
-            userFullName = (user.getFirstName() != null ? user.getFirstName() : "") +
-                    (user.getLastName() != null ? " " + user.getLastName() : "");
-            userFullName = userFullName.trim().isEmpty() ? null : userFullName.trim();
-            userIdentifier = user.getUserIdentifier();
-            userType = user.getUserType() != null ? user.getUserType().name() : null;
-        }
-
-        return AdminSessionResponse.builder()
-                .id(session.getId())
-                .userId(session.getUserId())
-                .userIdentifier(userIdentifier)
-                .userFullName(userFullName)
-                .userType(userType)
-                .deviceId(session.getDeviceId())
-                .deviceName(session.getDeviceName())
-                .deviceType(session.getDeviceType())
-                .deviceDisplayName(session.getDeviceDisplayName())
-                .browser(session.getBrowser())
-                .operatingSystem(session.getOperatingSystem())
-                .ipAddress(session.getIpAddress())
-                .country(session.getCountry())
-                .city(session.getCity())
-                .status(session.getStatus())
-                .loginAt(session.getLoginAt())
-                .lastActiveAt(session.getLastActiveAt())
-                .expiresAt(session.getExpiresAt())
-                .loggedOutAt(session.getLoggedOutAt())
-                .logoutReason(session.getLogoutReason())
-                .isCurrentSession(session.getIsCurrentSession())
-                .sessionDurationMinutes(session.getSessionDurationMinutes())
-                .inactiveDurationMinutes(session.getInactiveDurationMinutes())
-                .build();
     }
 
     private String generateDeviceId(String userAgent) {
