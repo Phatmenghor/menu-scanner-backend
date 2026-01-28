@@ -156,26 +156,6 @@ public class UserSessionServiceImpl implements UserSessionService {
         log.info("Admin logged out all sessions for user {}", userId);
     }
 
-    @Override
-    @Transactional
-    public void expireOldSessions() {
-        List<UserSession> expiredSessions = sessionRepository.findExpiredSessions(LocalDateTime.now());
-        for (UserSession session : expiredSessions) {
-            session.expire();
-            sessionRepository.save(session);
-            updateActiveSessionsCount(session.getUserId());
-        }
-        log.info("Expired {} sessions", expiredSessions.size());
-    }
-
-    @Override
-    @Transactional
-    public void cleanupOldSessions(int daysOld) {
-        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(daysOld);
-        int deleted = sessionRepository.cleanupOldSessions(LocalDateTime.now(), cutoffDate);
-        log.info("Cleaned up {} old sessions", deleted);
-    }
-
     private void updateActiveSessionsCount(UUID userId) {
         User user = userRepository.findById(userId).orElse(null);
         if (user != null) {

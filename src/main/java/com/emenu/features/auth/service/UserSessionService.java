@@ -33,10 +33,4 @@ public interface UserSessionService {
     void logoutSessionAdmin(UUID sessionId);
 
     void logoutAllSessionsAdmin(UUID userId);
-
-    // ========== Maintenance ==========
-
-    void expireOldSessions();
-
-    void cleanupOldSessions(int daysOld);
 }
