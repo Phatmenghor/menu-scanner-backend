@@ -24,12 +24,6 @@ public class SessionController {
     private final UserSessionService sessionService;
     private final SecurityUtils securityUtils;
 
-    @GetMapping("/active")
-    public ResponseEntity<List<UserSessionResponse>> getActiveSessions() {
-        UUID userId = securityUtils.getCurrentUserId();
-        log.info("User {} requesting active sessions", userId);
-        return ResponseEntity.ok(sessionService.getActiveSessions(userId));
-    }
 
     @GetMapping("/all")
     public ResponseEntity<List<UserSessionResponse>> getAllSessions() {
