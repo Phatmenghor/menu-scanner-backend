@@ -5,8 +5,10 @@ import com.emenu.features.auth.dto.session.AdminSessionResponse;
 import com.emenu.features.auth.dto.session.UserSessionResponse;
 import com.emenu.features.auth.service.UserSessionService;
 import com.emenu.security.SecurityUtils;
+import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/sessions")
 @RequiredArgsConstructor
+@Slf4j
 public class SessionController {
 
     private final UserSessionService sessionService;
@@ -27,6 +30,17 @@ public class SessionController {
     public ResponseEntity<List<UserSessionResponse>> getAllSessions() {
         UUID userId = securityUtils.getCurrentUserId();
         return ResponseEntity.ok(sessionService.getAllSessions(userId));
+    }
+
+    /**
+     * Get a session by ID
+     */
+    @GetMapping("/{sessionId}")
+    public ResponseEntity<ApiResponse<AdminSessionResponse>> getRoleById(
+            @PathVariable UUID sessionId) {
+        log.info("Get role by ID: {}", sessionId);
+        AdminSessionResponse response = sessionService.getSessionById(sessionId);
+        return ResponseEntity.ok(ApiResponse.success("Session retrieved", response));
     }
 
     @DeleteMapping("/{sessionId}")

@@ -17,6 +17,8 @@ public interface UserSessionService {
 
     UserSessionResponse createSession(User user, RefreshToken refreshToken, HttpServletRequest request);
 
+    AdminSessionResponse getSessionById(UUID sessionId);
+
     // ========== User Endpoints ==========
 
     List<UserSessionResponse> getAllSessions(UUID userId);
