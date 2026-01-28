@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -47,9 +46,6 @@ public class Role extends BaseUUIDEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "user_type", length = 50)
     private UserType userType;
-
-    @ManyToMany(mappedBy = "roles")
-    private List<User> users;
 
     public boolean isPlatformOwner() {
         return "PLATFORM_OWNER".equals(name);

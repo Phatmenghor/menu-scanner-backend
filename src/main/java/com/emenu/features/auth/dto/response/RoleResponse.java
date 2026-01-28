@@ -24,14 +24,4 @@ public class RoleResponse extends BaseAuditResponse {
      * CUSTOMER - for customer roles
      */
     private UserType userType;
-
-    /**
-     * Role type classification (derived from userType and businessId)
-     */
-    private String roleType; // PLATFORM, BUSINESS, CUSTOMER
-
-    /**
-     * Number of users assigned to this role
-     */
-    private Integer userCount;
 }
