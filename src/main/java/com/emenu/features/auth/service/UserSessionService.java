@@ -32,10 +32,4 @@ public interface UserSessionService {
     AdminSessionResponse logoutSessionAdmin(UUID sessionId);
 
     List<AdminSessionResponse> logoutAllSessionsAdmin(UUID userId);
-
-    // ========== Maintenance ==========
-
-    void expireOldSessions();
-
-    void cleanupOldSessions(int daysOld);
 }
