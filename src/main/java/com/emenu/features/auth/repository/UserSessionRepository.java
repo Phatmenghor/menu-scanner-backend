@@ -35,8 +35,10 @@ public interface UserSessionRepository extends JpaRepository<UserSession, UUID> 
 
     /**
      * Find all sessions for a user (active and inactive)
+     * Orders by: current session first, then active sessions, then by last activity
      */
-    @Query("SELECT s FROM UserSession s WHERE s.userId = :userId AND s.isDeleted = false ORDER BY s.loginAt DESC")
+    @Query("SELECT s FROM UserSession s WHERE s.userId = :userId AND s.isDeleted = false " +
+            "ORDER BY s.isCurrentSession DESC, CASE WHEN s.status = 'ACTIVE' THEN 0 ELSE 1 END, s.lastActiveAt DESC")
     List<UserSession> findAllSessionsByUserId(@Param("userId") UUID userId);
 
     /**

@@ -20,6 +20,7 @@ import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
 import com.emenu.features.auth.service.AuthService;
 import com.emenu.features.auth.service.RefreshTokenService;
+import com.emenu.features.auth.service.UserSessionService;
 import com.emenu.features.auth.service.UserValidationService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.security.jwt.JWTGenerator;
@@ -55,6 +56,7 @@ public class AuthServiceImpl implements AuthService {
     private final SecurityUtils securityUtils;
     private final TokenBlacklistService tokenBlacklistService;
     private final RefreshTokenService refreshTokenService;
+    private final UserSessionService userSessionService;
     private final UserValidationService userValidationService;
 
     /**
@@ -105,6 +107,12 @@ public class AuthServiceImpl implements AuthService {
             String ipAddress = getClientIpAddress();
             String deviceInfo = getDeviceInfo();
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, ipAddress, deviceInfo);
+
+            // Create user session for device tracking
+            HttpServletRequest httpRequest = getHttpServletRequest();
+            if (httpRequest != null) {
+                userSessionService.createSession(user, refreshToken, httpRequest);
+            }
 
             // Build login response
             LoginResponse response = userMapper.toLoginResponse(user, accessToken);
@@ -319,21 +327,31 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * Get client IP address from request
+     * Get HttpServletRequest from RequestContextHolder
      */
-    private String getClientIpAddress() {
+    private HttpServletRequest getHttpServletRequest() {
         try {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
-                HttpServletRequest request = attributes.getRequest();
-                String xForwardedFor = request.getHeader("X-Forwarded-For");
-                if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-                    return xForwardedFor.split(",")[0].trim();
-                }
-                return request.getRemoteAddr();
+                return attributes.getRequest();
             }
         } catch (Exception e) {
-            log.warn("Failed to get client IP address", e);
+            log.warn("Failed to get HttpServletRequest", e);
+        }
+        return null;
+    }
+
+    /**
+     * Get client IP address from request
+     */
+    private String getClientIpAddress() {
+        HttpServletRequest request = getHttpServletRequest();
+        if (request != null) {
+            String xForwardedFor = request.getHeader("X-Forwarded-For");
+            if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+                return xForwardedFor.split(",")[0].trim();
+            }
+            return request.getRemoteAddr();
         }
         return "Unknown";
     }
@@ -342,14 +360,9 @@ public class AuthServiceImpl implements AuthService {
      * Get device info from request
      */
     private String getDeviceInfo() {
-        try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes != null) {
-                HttpServletRequest request = attributes.getRequest();
-                return request.getHeader("User-Agent");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to get device info", e);
+        HttpServletRequest request = getHttpServletRequest();
+        if (request != null) {
+            return request.getHeader("User-Agent");
         }
         return "Unknown";
     }
@@ -421,6 +434,12 @@ public class AuthServiceImpl implements AuthService {
         String ipAddress = getClientIpAddress();
         String deviceInfo = getDeviceInfo();
         RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user, ipAddress, deviceInfo);
+
+        // Create/update user session for device tracking
+        HttpServletRequest httpRequest = getHttpServletRequest();
+        if (httpRequest != null) {
+            userSessionService.createSession(user, newRefreshToken, httpRequest);
+        }
 
         // Revoke old refresh token
         refreshTokenService.revokeRefreshToken(refreshTokenString, "TOKEN_REFRESH");

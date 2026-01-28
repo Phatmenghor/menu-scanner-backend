@@ -153,6 +153,20 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     @Override
     @Transactional
+    public void logoutSessionAdmin(UUID sessionId) {
+        UserSession session = sessionRepository.findByIdAndIsDeletedFalse(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
+
+        if (session.isActive()) {
+            session.logout("Admin logged out this session");
+            sessionRepository.save(session);
+            updateActiveSessionsCount(session.getUserId());
+            log.info("Admin logged out session {}", sessionId);
+        }
+    }
+
+    @Override
+    @Transactional
     public void logoutAllOtherDevices(UUID userId, UUID currentSessionId) {
         List<UserSession> sessions = sessionRepository.findActiveSessionsByUserId(userId);
         for (UserSession session : sessions) {

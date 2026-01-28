@@ -54,6 +54,11 @@ public interface UserSessionService {
     void logoutSession(UUID sessionId, UUID userId);
 
     /**
+     * Logout from a specific session (admin access - no user verification)
+     */
+    void logoutSessionAdmin(UUID sessionId);
+
+    /**
      * Logout from all devices except current
      */
     void logoutAllOtherDevices(UUID userId, UUID currentSessionId);

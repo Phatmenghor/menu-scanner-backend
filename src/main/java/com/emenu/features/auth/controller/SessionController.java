@@ -24,6 +24,7 @@ public class SessionController {
     private final UserSessionService sessionService;
     private final SecurityUtils securityUtils;
 
+    // ========== User Endpoints ==========
 
     @GetMapping("/all")
     public ResponseEntity<List<UserSessionResponse>> getAllSessions() {
@@ -37,6 +38,22 @@ public class SessionController {
         UUID userId = securityUtils.getCurrentUserId();
         log.info("User {} requesting session detail: {}", userId, sessionId);
         return ResponseEntity.ok(sessionService.getSessionById(sessionId, userId));
+    }
+
+    @DeleteMapping("/{sessionId}")
+    public ResponseEntity<Map<String, String>> logoutSession(@PathVariable UUID sessionId) {
+        UUID userId = securityUtils.getCurrentUserId();
+        log.info("User {} logging out from session {}", userId, sessionId);
+        sessionService.logoutSession(sessionId, userId);
+        return ResponseEntity.ok(Map.of("message", "Successfully logged out from device"));
+    }
+
+    @PostMapping("/logout-others")
+    public ResponseEntity<Map<String, String>> logoutOtherDevices(@RequestParam UUID currentSessionId) {
+        UUID userId = securityUtils.getCurrentUserId();
+        log.info("User {} logging out from other devices, keeping session {}", userId, currentSessionId);
+        sessionService.logoutAllOtherDevices(userId, currentSessionId);
+        return ResponseEntity.ok(Map.of("message", "Successfully logged out from other devices"));
     }
 
     // ========== Admin Endpoints ==========
@@ -54,27 +71,17 @@ public class SessionController {
         return ResponseEntity.ok(sessionService.getSessionByIdAdmin(sessionId));
     }
 
-    @DeleteMapping("/{sessionId}")
-    public ResponseEntity<Map<String, String>> logoutSession(@PathVariable UUID sessionId) {
-        UUID userId = securityUtils.getCurrentUserId();
-        log.info("User {} logging out from session {}", userId, sessionId);
-        sessionService.logoutSession(sessionId, userId);
-        return ResponseEntity.ok(Map.of("message", "Successfully logged out from device"));
-    }
-
-    @PostMapping("/logout-all")
-    public ResponseEntity<Map<String, String>> logoutAllDevices() {
-        UUID userId = securityUtils.getCurrentUserId();
-        log.warn("User {} logging out from ALL devices", userId);
+    @PostMapping("/admin/logout-all/{userId}")
+    public ResponseEntity<Map<String, String>> logoutAllDevicesAdmin(@PathVariable UUID userId) {
+        log.warn("Admin logging out ALL devices for user {}", userId);
         sessionService.logoutAllDevices(userId);
-        return ResponseEntity.ok(Map.of("message", "Successfully logged out from all devices"));
+        return ResponseEntity.ok(Map.of("message", "Successfully logged out user from all devices"));
     }
 
-    @PostMapping("/logout-others")
-    public ResponseEntity<Map<String, String>> logoutOtherDevices(@RequestParam UUID currentSessionId) {
-        UUID userId = securityUtils.getCurrentUserId();
-        log.info("User {} logging out from other devices, keeping session {}", userId, currentSessionId);
-        sessionService.logoutAllOtherDevices(userId, currentSessionId);
-        return ResponseEntity.ok(Map.of("message", "Successfully logged out from other devices"));
+    @DeleteMapping("/admin/{sessionId}")
+    public ResponseEntity<Map<String, String>> logoutSessionAdmin(@PathVariable UUID sessionId) {
+        log.info("Admin logging out session {}", sessionId);
+        sessionService.logoutSessionAdmin(sessionId);
+        return ResponseEntity.ok(Map.of("message", "Successfully logged out session"));
     }
 }
