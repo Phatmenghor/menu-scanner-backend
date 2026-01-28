@@ -82,6 +82,24 @@ public class UserSessionServiceImpl implements UserSessionService {
     }
 
     @Override
+    @Transactional
+    public void updateLastActive(UUID userId, String deviceId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null) {
+            user.setLastActiveAt(LocalDateTime.now());
+            userRepository.save(user);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserSessionResponse> getActiveSessions(UUID userId) {
+        return sessionRepository.findActiveSessionsByUserId(userId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<UserSessionResponse> getAllSessions(UUID userId) {
         return sessionRepository.findAllSessionsByUserId(userId).stream()
@@ -162,6 +180,26 @@ public class UserSessionServiceImpl implements UserSessionService {
         sessionRepository.logoutAllSessionsByUserId(userId, LocalDateTime.now(), "Logged out from all devices");
         updateActiveSessionsCount(userId);
         log.info("User {} logged out from all devices", userId);
+    }
+
+    @Override
+    @Transactional
+    public void expireOldSessions() {
+        List<UserSession> expiredSessions = sessionRepository.findExpiredSessions(LocalDateTime.now());
+        for (UserSession session : expiredSessions) {
+            session.expire();
+            sessionRepository.save(session);
+            updateActiveSessionsCount(session.getUserId());
+        }
+        log.info("Expired {} old sessions", expiredSessions.size());
+    }
+
+    @Override
+    @Transactional
+    public void cleanupOldSessions(int daysOld) {
+        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(daysOld);
+        int deleted = sessionRepository.cleanupOldSessions(LocalDateTime.now(), cutoffDate);
+        log.info("Cleaned up {} old sessions", deleted);
     }
 
     private void updateActiveSessionsCount(UUID userId) {
