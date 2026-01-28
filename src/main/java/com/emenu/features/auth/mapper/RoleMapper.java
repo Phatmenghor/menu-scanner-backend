@@ -1,6 +1,7 @@
 package com.emenu.features.auth.mapper;
 
 import com.emenu.features.auth.dto.request.RoleCreateRequest;
+import com.emenu.features.auth.dto.response.RoleDetailResponse;
 import com.emenu.features.auth.dto.response.RoleResponse;
 import com.emenu.features.auth.dto.update.RoleUpdateRequest;
 import com.emenu.features.auth.models.Role;
@@ -14,10 +15,12 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface RoleMapper {
 
-    @Mapping(target = "businessName", ignore = true)
     RoleResponse toResponse(Role role);
 
     List<RoleResponse> toResponseList(List<Role> roles);
+
+    @Mapping(target = "businessName", ignore = true)
+    RoleDetailResponse toDetailResponse(Role role);
 
     Role toEntity(RoleCreateRequest request);
 

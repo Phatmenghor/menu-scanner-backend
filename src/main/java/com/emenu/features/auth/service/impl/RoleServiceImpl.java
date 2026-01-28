@@ -5,6 +5,7 @@ import com.emenu.exception.custom.ResourceNotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.dto.filter.RoleFilterRequest;
 import com.emenu.features.auth.dto.request.RoleCreateRequest;
+import com.emenu.features.auth.dto.response.RoleDetailResponse;
 import com.emenu.features.auth.dto.response.RoleResponse;
 import com.emenu.features.auth.dto.update.RoleUpdateRequest;
 import com.emenu.features.auth.mapper.RoleMapper;
@@ -24,11 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +51,7 @@ public class RoleServiceImpl implements RoleService {
                 throw new ValidationException("Role with this name already exists for this business");
             }
             // Validate business exists
-            Business business = businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
+            businessRepository.findByIdAndIsDeletedFalse(request.getBusinessId())
                     .orElseThrow(() -> new ValidationException("Business not found"));
         } else {
             // Platform-level role
@@ -74,7 +71,7 @@ public class RoleServiceImpl implements RoleService {
         Role savedRole = roleRepository.save(role);
         log.info("Role created: {} with ID: {}", savedRole.getName(), savedRole.getId());
 
-        return enrichRoleResponse(roleMapper.toResponse(savedRole), request.getBusinessId());
+        return roleMapper.toResponse(savedRole);
     }
 
     @Override
@@ -107,8 +104,6 @@ public class RoleServiceImpl implements RoleService {
                 .map(roleMapper::toResponse)
                 .toList();
 
-        enrichRoleResponses(responses);
-
         return PaginationResponse.<RoleResponse>builder()
                 .content(responses)
                 .pageNo(rolesPage.getNumber() + 1)
@@ -138,22 +133,24 @@ public class RoleServiceImpl implements RoleService {
                 includeAll
         );
 
-        List<RoleResponse> responses = roles.stream()
+        return roles.stream()
                 .map(roleMapper::toResponse)
                 .toList();
-
-        enrichRoleResponses(responses);
-
-        return responses;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public RoleResponse getRoleById(UUID roleId) {
+    public RoleDetailResponse getRoleById(UUID roleId) {
         log.debug("Getting role by ID: {}", roleId);
         Role role = roleRepository.findByIdAndIsDeletedFalse(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
-        return enrichRoleResponse(roleMapper.toResponse(role), role.getBusinessId());
+
+        RoleDetailResponse response = roleMapper.toDetailResponse(role);
+        if (role.getBusinessId() != null) {
+            businessRepository.findByIdAndIsDeletedFalse(role.getBusinessId())
+                    .ifPresent(business -> response.setBusinessName(business.getName()));
+        }
+        return response;
     }
 
     @Override
@@ -195,7 +192,7 @@ public class RoleServiceImpl implements RoleService {
         Role savedRole = roleRepository.save(role);
         log.info("Role updated: {}", savedRole.getName());
 
-        return enrichRoleResponse(roleMapper.toResponse(savedRole), savedRole.getBusinessId());
+        return roleMapper.toResponse(savedRole);
     }
 
     @Override
@@ -217,52 +214,10 @@ public class RoleServiceImpl implements RoleService {
         Role deletedRole = roleRepository.save(role);
 
         log.info("Role soft deleted: {}", deletedRole.getName());
-        return enrichRoleResponse(roleMapper.toResponse(deletedRole), deletedRole.getBusinessId());
+        return roleMapper.toResponse(deletedRole);
     }
 
-    /**
-     * Check if role is a system role that should not be modified
-     */
     private boolean isSystemRole(String roleName) {
         return List.of("PLATFORM_OWNER", "BUSINESS_OWNER", "CUSTOMER").contains(roleName);
-    }
-
-    /**
-     * Enrich role response with business name (single role lookup)
-     */
-    private RoleResponse enrichRoleResponse(RoleResponse response, UUID businessId) {
-        if (businessId != null) {
-            businessRepository.findByIdAndIsDeletedFalse(businessId)
-                    .ifPresent(business -> response.setBusinessName(business.getName()));
-        }
-        return response;
-    }
-
-    /**
-     * Batch enrich role responses with business names (single query instead of N+1)
-     */
-    private void enrichRoleResponses(List<RoleResponse> responses) {
-        List<UUID> businessIds = responses.stream()
-                .map(RoleResponse::getBusinessId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-
-        if (businessIds.isEmpty()) {
-            return;
-        }
-
-        Map<UUID, String> businessNameMap = businessRepository.findAllByIdInAndIsDeletedFalse(businessIds)
-                .stream()
-                .collect(Collectors.toMap(Business::getId, Business::getName));
-
-        responses.forEach(response -> {
-            if (response.getBusinessId() != null) {
-                String businessName = businessNameMap.get(response.getBusinessId());
-                if (businessName != null) {
-                    response.setBusinessName(businessName);
-                }
-            }
-        });
     }
 }

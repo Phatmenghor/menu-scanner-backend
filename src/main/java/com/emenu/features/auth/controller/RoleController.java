@@ -2,6 +2,7 @@ package com.emenu.features.auth.controller;
 
 import com.emenu.features.auth.dto.filter.RoleFilterRequest;
 import com.emenu.features.auth.dto.request.RoleCreateRequest;
+import com.emenu.features.auth.dto.response.RoleDetailResponse;
 import com.emenu.features.auth.dto.response.RoleResponse;
 import com.emenu.features.auth.dto.update.RoleUpdateRequest;
 import com.emenu.features.auth.service.RoleService;
@@ -71,10 +72,10 @@ public class RoleController {
      * Get a role by ID
      */
     @GetMapping("/{roleId}")
-    public ResponseEntity<ApiResponse<RoleResponse>> getRoleById(
+    public ResponseEntity<ApiResponse<RoleDetailResponse>> getRoleById(
             @PathVariable UUID roleId) {
         log.info("Get role by ID: {}", roleId);
-        RoleResponse response = roleService.getRoleById(roleId);
+        RoleDetailResponse response = roleService.getRoleById(roleId);
         return ResponseEntity.ok(ApiResponse.success("Role retrieved", response));
     }
 

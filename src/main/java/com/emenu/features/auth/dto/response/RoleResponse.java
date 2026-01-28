@@ -15,13 +15,5 @@ public class RoleResponse extends BaseAuditResponse {
     private String displayName;
     private String description;
     private UUID businessId;
-    private String businessName;
-
-    /**
-     * The user type this role belongs to.
-     * PLATFORM_USER - for platform admin roles
-     * BUSINESS_USER - for business-specific roles
-     * CUSTOMER - for customer roles
-     */
     private UserType userType;
 }
