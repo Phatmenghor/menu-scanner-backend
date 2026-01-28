@@ -32,8 +32,7 @@ public class AdminSessionResponse {
 
     // Location info
     private String ipAddress;
-    private String country;
-    private String city;
+    private String location;
 
     // Session info
     private String status;
@@ -43,6 +42,4 @@ public class AdminSessionResponse {
     private LocalDateTime loggedOutAt;
     private String logoutReason;
     private Boolean isCurrentSession;
-    private Long sessionDurationMinutes;
-    private Long inactiveDurationMinutes;
 }

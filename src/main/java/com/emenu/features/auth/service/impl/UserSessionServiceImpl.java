@@ -17,6 +17,7 @@ import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
 import com.emenu.shared.utils.ClientIpUtils;
+import com.emenu.shared.utils.IpGeolocationService;
 import com.emenu.shared.utils.UserAgentParser;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -39,17 +40,21 @@ public class UserSessionServiceImpl implements UserSessionService {
     private final UserRepository userRepository;
     private final UserSessionMapper sessionMapper;
     private final PaginationMapper paginationMapper;
+    private final IpGeolocationService geolocationService;
 
     @Override
     @Transactional
-    public void createSession(User user, RefreshToken refreshToken, HttpServletRequest request) {
+    public UserSession createSession(User user, RefreshToken refreshToken, HttpServletRequest request) {
         String userAgent = request.getHeader(SecurityConstants.HEADER_USER_AGENT);
         String deviceId = request.getHeader(SecurityConstants.HEADER_DEVICE_ID);
         String deviceName = request.getHeader(SecurityConstants.HEADER_DEVICE_NAME);
+        String ipAddress = ClientIpUtils.getClientIp(request);
 
         UserAgentParser.ParsedUserAgent parsedUA = UserAgentParser.parse(userAgent);
 
-        // Build helper DTO, then use pure MapStruct mapping
+        // Get location from IP (async, won't block)
+        String location = getLocationFromIp(ipAddress);
+
         UserSessionCreateHelper helper = UserSessionCreateHelper.builder()
                 .userId(user.getId())
                 .refreshTokenId(refreshToken.getId())
@@ -59,7 +64,8 @@ public class UserSessionServiceImpl implements UserSessionService {
                 .userAgent(userAgent)
                 .browser(parsedUA.getBrowserWithVersion())
                 .operatingSystem(parsedUA.getOs())
-                .ipAddress(ClientIpUtils.getClientIp(request))
+                .ipAddress(ipAddress)
+                .location(location)
                 .status(SecurityConstants.SESSION_STATUS_ACTIVE)
                 .loginAt(LocalDateTime.now())
                 .lastActiveAt(LocalDateTime.now())
@@ -71,29 +77,14 @@ public class UserSessionServiceImpl implements UserSessionService {
         sessionRepository.save(session);
         sessionRepository.markOtherSessionsAsNotCurrent(user.getId(), session.getId());
 
-        // Update user login time and active sessions count
+        // Update user
         user.setLastLoginAt(LocalDateTime.now());
         user.setLastActiveAt(LocalDateTime.now());
         user.setActiveSessionsCount(sessionRepository.countActiveSessionsByUserId(user.getId()).intValue());
         userRepository.save(user);
 
-        log.info("Created session for user: {} on device: {}", user.getUserIdentifier(), session.getDeviceDisplayName());
-    }
-
-    @Override
-    @Transactional
-    public void updateLastActive(UUID userId, String deviceId) {
-        User user = userRepository.findById(userId).orElse(null);
-        if (user != null) {
-            user.setLastActiveAt(LocalDateTime.now());
-            userRepository.save(user);
-        }
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<UserSessionResponse> getActiveSessions(UUID userId) {
-        return sessionMapper.toResponseList(sessionRepository.findActiveSessionsByUserId(userId));
+        log.info("Created session for user: {} on device: {} from {}", user.getUserIdentifier(), session.getDeviceDisplayName(), location);
+        return session;
     }
 
     @Override
@@ -103,48 +94,9 @@ public class UserSessionServiceImpl implements UserSessionService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public UserSessionResponse getSessionById(UUID sessionId, UUID userId) {
-        UserSession session = sessionRepository.findByIdAndUserIdAndIsDeletedFalse(sessionId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
-        return sessionMapper.toResponse(session);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public AdminSessionResponse getSessionByIdAdmin(UUID sessionId) {
-        UserSession session = sessionRepository.findByIdAndIsDeletedFalse(sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
-        return sessionMapper.toAdminResponse(session);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public PaginationResponse<AdminSessionResponse> getAllSessionsAdmin(SessionFilterRequest request) {
-        Pageable pageable = PaginationUtils.createPageable(
-                request.getPageNo(), request.getPageSize(), request.getSortBy(), request.getSortDirection()
-        );
-
-        List<String> statuses = (request.getStatuses() != null && !request.getStatuses().isEmpty())
-                ? request.getStatuses() : null;
-        List<String> deviceTypes = (request.getDeviceTypes() != null && !request.getDeviceTypes().isEmpty())
-                ? request.getDeviceTypes() : null;
-
-        Page<UserSession> page = sessionRepository.findAllWithFilters(
-                request.getUserId(),
-                statuses,
-                deviceTypes,
-                request.getSearch(),
-                pageable
-        );
-
-        return sessionMapper.toPaginationResponse(page, paginationMapper);
-    }
-
-    @Override
     @Transactional
     public void logoutSession(UUID sessionId, UUID userId) {
-        int updated = sessionRepository.logoutSession(sessionId, userId, LocalDateTime.now(), "User logged out from this device");
+        int updated = sessionRepository.logoutSession(sessionId, userId, LocalDateTime.now(), "User logged out");
         if (updated > 0) {
             updateActiveSessionsCount(userId);
             log.info("User {} logged out from session {}", userId, sessionId);
@@ -153,21 +105,7 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     @Override
     @Transactional
-    public void logoutSessionAdmin(UUID sessionId) {
-        UserSession session = sessionRepository.findByIdAndIsDeletedFalse(sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
-
-        if (session.isActive()) {
-            session.logout("Admin logged out this session");
-            sessionRepository.save(session);
-            updateActiveSessionsCount(session.getUserId());
-            log.info("Admin logged out session {}", sessionId);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void logoutAllOtherDevices(UUID userId, UUID currentSessionId) {
+    public void logoutOtherSessions(UUID userId, UUID currentSessionId) {
         List<UserSession> sessions = sessionRepository.findActiveSessionsByUserId(userId);
         for (UserSession session : sessions) {
             if (!session.getId().equals(currentSessionId)) {
@@ -180,11 +118,42 @@ public class UserSessionServiceImpl implements UserSessionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PaginationResponse<AdminSessionResponse> getAllSessionsAdmin(SessionFilterRequest request) {
+        Pageable pageable = PaginationUtils.createPageable(
+                request.getPageNo(), request.getPageSize(), request.getSortBy(), request.getSortDirection()
+        );
+
+        List<String> statuses = (request.getStatuses() != null && !request.getStatuses().isEmpty()) ? request.getStatuses() : null;
+        List<String> deviceTypes = (request.getDeviceTypes() != null && !request.getDeviceTypes().isEmpty()) ? request.getDeviceTypes() : null;
+
+        Page<UserSession> page = sessionRepository.findAllWithFilters(
+                request.getUserId(), statuses, deviceTypes, request.getSearch(), pageable
+        );
+
+        return sessionMapper.toPaginationResponse(page, paginationMapper);
+    }
+
+    @Override
     @Transactional
-    public void logoutAllDevices(UUID userId) {
-        sessionRepository.logoutAllSessionsByUserId(userId, LocalDateTime.now(), "Logged out from all devices");
+    public void logoutSessionAdmin(UUID sessionId) {
+        UserSession session = sessionRepository.findByIdAndIsDeletedFalse(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
+
+        if (session.isActive()) {
+            session.logout("Admin logged out");
+            sessionRepository.save(session);
+            updateActiveSessionsCount(session.getUserId());
+            log.info("Admin logged out session {}", sessionId);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void logoutAllSessionsAdmin(UUID userId) {
+        sessionRepository.logoutAllSessionsByUserId(userId, LocalDateTime.now(), "Admin logged out all");
         updateActiveSessionsCount(userId);
-        log.info("User {} logged out from all devices", userId);
+        log.info("Admin logged out all sessions for user {}", userId);
     }
 
     @Override
@@ -196,7 +165,7 @@ public class UserSessionServiceImpl implements UserSessionService {
             sessionRepository.save(session);
             updateActiveSessionsCount(session.getUserId());
         }
-        log.info("Expired {} old sessions", expiredSessions.size());
+        log.info("Expired {} sessions", expiredSessions.size());
     }
 
     @Override
@@ -216,7 +185,7 @@ public class UserSessionServiceImpl implements UserSessionService {
     }
 
     private String generateDeviceId(String userAgent) {
-        return UUID.nameUUIDFromBytes(userAgent.getBytes()).toString();
+        return UUID.nameUUIDFromBytes((userAgent != null ? userAgent : "unknown").getBytes()).toString();
     }
 
     private String detectDeviceType(String userAgent) {
@@ -225,5 +194,15 @@ public class UserSessionServiceImpl implements UserSessionService {
         if (ua.contains("mobile")) return SecurityConstants.DEVICE_TYPE_MOBILE;
         if (ua.contains("tablet") || ua.contains("ipad")) return SecurityConstants.DEVICE_TYPE_TABLET;
         return SecurityConstants.DEVICE_TYPE_DESKTOP;
+    }
+
+    private String getLocationFromIp(String ipAddress) {
+        try {
+            IpGeolocationService.GeoLocation geo = geolocationService.getLocation(ipAddress);
+            return geo.getLocationDisplay();
+        } catch (Exception e) {
+            log.warn("Failed to get location for IP: {}", ipAddress);
+            return "Unknown";
+        }
     }
 }

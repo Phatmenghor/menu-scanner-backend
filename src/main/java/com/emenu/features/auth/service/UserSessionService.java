@@ -5,6 +5,7 @@ import com.emenu.features.auth.dto.session.AdminSessionResponse;
 import com.emenu.features.auth.dto.session.UserSessionResponse;
 import com.emenu.features.auth.models.RefreshToken;
 import com.emenu.features.auth.models.User;
+import com.emenu.features.auth.models.UserSession;
 import com.emenu.shared.dto.PaginationResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -13,68 +14,29 @@ import java.util.UUID;
 
 public interface UserSessionService {
 
-    /**
-     * Create a new user session
-     */
-    void createSession(User user, RefreshToken refreshToken, HttpServletRequest request);
+    // ========== Session Creation ==========
 
-    /**
-     * Update last active time for current session
-     */
-    void updateLastActive(UUID userId, String deviceId);
+    UserSession createSession(User user, RefreshToken refreshToken, HttpServletRequest request);
 
-    /**
-     * Get all active sessions for a user
-     */
-    List<UserSessionResponse> getActiveSessions(UUID userId);
+    // ========== User Endpoints ==========
 
-    /**
-     * Get all sessions (active and inactive) for a user
-     */
     List<UserSessionResponse> getAllSessions(UUID userId);
 
-    /**
-     * Get session by ID for a specific user
-     */
-    UserSessionResponse getSessionById(UUID sessionId, UUID userId);
-
-    /**
-     * Get session by ID (admin access)
-     */
-    AdminSessionResponse getSessionByIdAdmin(UUID sessionId);
-
-    /**
-     * Get all sessions with filters and pagination (admin view)
-     */
-    PaginationResponse<AdminSessionResponse> getAllSessionsAdmin(SessionFilterRequest request);
-
-    /**
-     * Logout from a specific session/device
-     */
     void logoutSession(UUID sessionId, UUID userId);
 
-    /**
-     * Logout from a specific session (admin access - no user verification)
-     */
+    void logoutOtherSessions(UUID userId, UUID currentSessionId);
+
+    // ========== Admin Endpoints ==========
+
+    PaginationResponse<AdminSessionResponse> getAllSessionsAdmin(SessionFilterRequest request);
+
     void logoutSessionAdmin(UUID sessionId);
 
-    /**
-     * Logout from all devices except current
-     */
-    void logoutAllOtherDevices(UUID userId, UUID currentSessionId);
+    void logoutAllSessionsAdmin(UUID userId);
 
-    /**
-     * Logout from all devices
-     */
-    void logoutAllDevices(UUID userId);
+    // ========== Maintenance ==========
 
-    /**
-     * Mark expired sessions
-     */
     void expireOldSessions();
 
-    /**
-     * Clean up old logged out sessions
-     */
     void cleanupOldSessions(int daysOld);
 }

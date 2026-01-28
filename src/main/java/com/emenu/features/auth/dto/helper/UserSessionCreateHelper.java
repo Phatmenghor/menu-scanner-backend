@@ -8,14 +8,12 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Helper DTO for creating UserSession via MapStruct
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserSessionCreateHelper {
+
     private UUID userId;
     private UUID refreshTokenId;
     private String deviceId;
@@ -25,6 +23,7 @@ public class UserSessionCreateHelper {
     private String browser;
     private String operatingSystem;
     private String ipAddress;
+    private String location;
     private String status;
     private LocalDateTime loginAt;
     private LocalDateTime lastActiveAt;

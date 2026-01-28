@@ -22,13 +22,10 @@ public class UserSessionResponse {
     private String browser;
     private String operatingSystem;
     private String ipAddress;
-    private String country;
-    private String city;
+    private String location;
     private String status;
     private LocalDateTime loginAt;
     private LocalDateTime lastActiveAt;
     private LocalDateTime expiresAt;
     private Boolean isCurrentSession;
-    private Long sessionDurationMinutes;
-    private Long inactiveDurationMinutes;
 }

@@ -17,83 +17,43 @@ import java.util.UUID;
 @Repository
 public interface UserSessionRepository extends JpaRepository<UserSession, UUID> {
 
-    /**
-     * Find session by ID and user ID (for security verification)
-     */
     Optional<UserSession> findByIdAndUserIdAndIsDeletedFalse(UUID id, UUID userId);
 
-    /**
-     * Find session by ID (for admin access)
-     */
     Optional<UserSession> findByIdAndIsDeletedFalse(UUID id);
 
-    /**
-     * Find all active sessions for a user
-     */
-    @Query("SELECT s FROM UserSession s WHERE s.userId = :userId AND s.status = 'ACTIVE' AND s.isDeleted = false ORDER BY s.lastActiveAt DESC")
-    List<UserSession> findActiveSessionsByUserId(@Param("userId") UUID userId);
-
-    /**
-     * Find all sessions for a user (active and inactive)
-     * Orders by: current session first, then active sessions, then by last activity
-     */
     @Query("SELECT s FROM UserSession s WHERE s.userId = :userId AND s.isDeleted = false " +
             "ORDER BY s.isCurrentSession DESC, CASE WHEN s.status = 'ACTIVE' THEN 0 ELSE 1 END, s.lastActiveAt DESC")
     List<UserSession> findAllSessionsByUserId(@Param("userId") UUID userId);
 
-    /**
-     * Find session by device ID
-     */
-    Optional<UserSession> findByUserIdAndDeviceIdAndStatusAndIsDeletedFalse(UUID userId, String deviceId, String status);
+    @Query("SELECT s FROM UserSession s WHERE s.userId = :userId AND s.status = 'ACTIVE' AND s.isDeleted = false")
+    List<UserSession> findActiveSessionsByUserId(@Param("userId") UUID userId);
 
-    /**
-     * Find session by refresh token ID
-     */
-    Optional<UserSession> findByRefreshTokenIdAndIsDeletedFalse(UUID refreshTokenId);
-
-    /**
-     * Count active sessions for a user
-     */
     @Query("SELECT COUNT(s) FROM UserSession s WHERE s.userId = :userId AND s.status = 'ACTIVE' AND s.isDeleted = false")
     Long countActiveSessionsByUserId(@Param("userId") UUID userId);
 
-    /**
-     * Logout all sessions for a user
-     */
     @Modifying
-    @Query("UPDATE UserSession s SET s.status = 'LOGGED_OUT', s.loggedOutAt = :loggedOutAt, s.logoutReason = :reason, s.isCurrentSession = false WHERE s.userId = :userId AND s.status = 'ACTIVE' AND s.isDeleted = false")
+    @Query("UPDATE UserSession s SET s.status = 'LOGGED_OUT', s.loggedOutAt = :loggedOutAt, s.logoutReason = :reason, s.isCurrentSession = false " +
+            "WHERE s.id = :sessionId AND s.userId = :userId AND s.status = 'ACTIVE'")
+    int logoutSession(@Param("sessionId") UUID sessionId, @Param("userId") UUID userId,
+                      @Param("loggedOutAt") LocalDateTime loggedOutAt, @Param("reason") String reason);
+
+    @Modifying
+    @Query("UPDATE UserSession s SET s.status = 'LOGGED_OUT', s.loggedOutAt = :loggedOutAt, s.logoutReason = :reason, s.isCurrentSession = false " +
+            "WHERE s.userId = :userId AND s.status = 'ACTIVE' AND s.isDeleted = false")
     int logoutAllSessionsByUserId(@Param("userId") UUID userId, @Param("loggedOutAt") LocalDateTime loggedOutAt, @Param("reason") String reason);
 
-    /**
-     * Logout specific session
-     */
-    @Modifying
-    @Query("UPDATE UserSession s SET s.status = 'LOGGED_OUT', s.loggedOutAt = :loggedOutAt, s.logoutReason = :reason, s.isCurrentSession = false WHERE s.id = :sessionId AND s.userId = :userId AND s.status = 'ACTIVE'")
-    int logoutSession(@Param("sessionId") UUID sessionId, @Param("userId") UUID userId, @Param("loggedOutAt") LocalDateTime loggedOutAt, @Param("reason") String reason);
-
-    /**
-     * Mark session as current
-     */
     @Modifying
     @Query("UPDATE UserSession s SET s.isCurrentSession = false WHERE s.userId = :userId AND s.id != :sessionId")
     void markOtherSessionsAsNotCurrent(@Param("userId") UUID userId, @Param("sessionId") UUID sessionId);
 
-    /**
-     * Find expired sessions
-     */
     @Query("SELECT s FROM UserSession s WHERE s.status = 'ACTIVE' AND s.expiresAt < :now AND s.isDeleted = false")
     List<UserSession> findExpiredSessions(@Param("now") LocalDateTime now);
 
-    /**
-     * Clean up old logged out sessions
-     */
     @Modifying
-    @Query("UPDATE UserSession s SET s.isDeleted = true, s.deletedAt = :deletedAt WHERE s.status IN ('LOGGED_OUT', 'EXPIRED', 'REVOKED') AND s.loggedOutAt < :cutoffDate")
+    @Query("UPDATE UserSession s SET s.isDeleted = true, s.deletedAt = :deletedAt " +
+            "WHERE s.status IN ('LOGGED_OUT', 'EXPIRED') AND s.loggedOutAt < :cutoffDate")
     int cleanupOldSessions(@Param("deletedAt") LocalDateTime deletedAt, @Param("cutoffDate") LocalDateTime cutoffDate);
 
-    /**
-     * Find all sessions with filters (for admin view) - paginated
-     */
     @Query("SELECT s FROM UserSession s LEFT JOIN FETCH s.user u WHERE s.isDeleted = false " +
             "AND (:userId IS NULL OR s.userId = :userId) " +
             "AND (:statuses IS NULL OR s.status IN :statuses) " +
@@ -102,33 +62,11 @@ public interface UserSessionRepository extends JpaRepository<UserSession, UUID> 
             "LOWER(s.deviceName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(s.browser) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(s.ipAddress) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(u.userIdentifier) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
+            "LOWER(u.userIdentifier) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<UserSession> findAllWithFilters(
             @Param("userId") UUID userId,
             @Param("statuses") List<String> statuses,
             @Param("deviceTypes") List<String> deviceTypes,
             @Param("search") String search,
             Pageable pageable);
-
-    /**
-     * Count query for findAllWithFilters
-     */
-    @Query("SELECT COUNT(s) FROM UserSession s LEFT JOIN s.user u WHERE s.isDeleted = false " +
-            "AND (:userId IS NULL OR s.userId = :userId) " +
-            "AND (:statuses IS NULL OR s.status IN :statuses) " +
-            "AND (:deviceTypes IS NULL OR s.deviceType IN :deviceTypes) " +
-            "AND (:search IS NULL OR :search = '' OR " +
-            "LOWER(s.deviceName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(s.browser) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(s.ipAddress) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(u.userIdentifier) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
-    long countAllWithFilters(
-            @Param("userId") UUID userId,
-            @Param("statuses") List<String> statuses,
-            @Param("deviceTypes") List<String> deviceTypes,
-            @Param("search") String search);
 }
