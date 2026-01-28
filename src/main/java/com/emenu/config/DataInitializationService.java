@@ -4,11 +4,8 @@ import com.emenu.enums.user.AccountStatus;
 import com.emenu.enums.user.UserType;
 import com.emenu.features.auth.models.Role;
 import com.emenu.features.auth.models.User;
-import com.emenu.features.auth.models.UserSession;
 import com.emenu.features.auth.repository.RoleRepository;
 import com.emenu.features.auth.repository.UserRepository;
-import com.emenu.features.auth.repository.UserSessionRepository;
-import com.emenu.features.subscription.service.SubscriptionPlanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,9 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
@@ -32,9 +27,7 @@ public class DataInitializationService {
 
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-    private final UserSessionRepository userSessionRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SubscriptionPlanService subscriptionPlanService;
 
     private static final AtomicBoolean initialized = new AtomicBoolean(false);
     private static final Object initLock = new Object();
@@ -47,9 +40,6 @@ public class DataInitializationService {
 
     @Value("${app.init.admin-password:88889999}")
     private String defaultAdminPassword;
-
-    @Value("${app.init.create-test-sessions:true}")
-    private boolean createTestSessions;
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
@@ -77,11 +67,6 @@ public class DataInitializationService {
                 if (createDefaultAdmin) {
                     int usersCreated = initializeDefaultUsers();
                     log.info("✅ Default users initialization completed - {} users processed", usersCreated);
-                }
-
-                if (createTestSessions) {
-                    int sessionsCreated = initializeTestSessions();
-                    log.info("✅ Test sessions initialization completed - {} sessions created", sessionsCreated);
                 }
 
                 // Mark as initialized only after all steps complete
@@ -142,9 +127,6 @@ public class DataInitializationService {
             
             int usersCreated = 0;
             usersCreated += createPlatformOwner();
-            usersCreated += createDemoBusinessOwner();
-            usersCreated += createDemoCustomer();
-            usersCreated += createTestAccounts();
             
             return usersCreated;
             
@@ -184,324 +166,5 @@ public class DataInitializationService {
             log.error("❌ Error creating platform owner: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create platform owner", e);
         }
-    }
-
-    private int createDemoBusinessOwner() {
-        try {
-            String businessUserIdentifier = "demo-business-owner";
-            if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(businessUserIdentifier)) {
-                User businessOwner = new User();
-                businessOwner.setUserIdentifier(businessUserIdentifier);
-                businessOwner.setEmail("demo-business@emenu-platform.com");
-                businessOwner.setPassword(passwordEncoder.encode("88889999"));
-                businessOwner.setFirstName("Demo");
-                businessOwner.setLastName("Restaurant Owner");
-                businessOwner.setUserType(UserType.BUSINESS_USER);
-                businessOwner.setAccountStatus(AccountStatus.ACTIVE);
-                businessOwner.setPhoneNumber("+1234567890");
-                businessOwner.setPosition("Owner");
-                businessOwner.setAddress("123 Demo Street");
-
-                Role businessOwnerRole = roleRepository.findByNameAndIsDeletedFalse("BUSINESS_OWNER")
-                        .orElseThrow(() -> new RuntimeException("Business owner role not found"));
-                businessOwner.setRoles(List.of(businessOwnerRole));
-
-                businessOwner = userRepository.save(businessOwner);
-                log.info("✅ Created demo business owner: {} with ID: {}", businessUserIdentifier, businessOwner.getId());
-                return 1;
-            } else {
-                log.info("ℹ️ Demo business owner already exists: {}", businessUserIdentifier);
-                return 0;
-            }
-        } catch (Exception e) {
-            log.error("❌ Error creating demo business owner: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to create demo business owner", e);
-        }
-    }
-
-    private int createDemoCustomer() {
-        try {
-            String customerUserIdentifier = "demo-customer";
-            if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(customerUserIdentifier)) {
-                User customer = new User();
-                customer.setUserIdentifier(customerUserIdentifier);
-                customer.setEmail("demo-customer@emenu-platform.com");
-                customer.setPassword(passwordEncoder.encode("88889999"));
-                customer.setFirstName("Demo");
-                customer.setLastName("Customer");
-                customer.setUserType(UserType.CUSTOMER);
-                customer.setAccountStatus(AccountStatus.ACTIVE);
-                customer.setPhoneNumber("+1987654321");
-
-                Role customerRole = roleRepository.findByNameAndIsDeletedFalse("CUSTOMER")
-                        .orElseThrow(() -> new RuntimeException("Customer role not found"));
-                customer.setRoles(List.of(customerRole));
-
-                customer = userRepository.save(customer);
-                log.info("✅ Created demo customer: {} with ID: {}", customerUserIdentifier, customer.getId());
-                return 1;
-            } else {
-                log.info("ℹ️ Demo customer already exists: {}", customerUserIdentifier);
-                return 0;
-            }
-        } catch (Exception e) {
-            log.error("❌ Error creating demo customer: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to create demo customer", e);
-        }
-    }
-
-    private int createTestAccounts() {
-        try {
-            log.info("🔄 Creating test accounts with different statuses...");
-
-            int created = 0;
-            created += createTestUser("inactive-user", "Test", "Inactive", AccountStatus.INACTIVE, "CUSTOMER");
-            created += createTestUser("locked-user", "Test", "Locked", AccountStatus.LOCKED, "CUSTOMER");
-            created += createTestUser("suspended-user", "Test", "Suspended", AccountStatus.SUSPENDED, "BUSINESS_OWNER");
-
-            return created;
-            
-        } catch (Exception e) {
-            log.error("❌ Error creating test accounts: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to create test accounts", e);
-        }
-    }
-
-    private int createTestUser(String userIdentifier, String firstName, String lastName,
-                              AccountStatus status, String roleName) {
-        try {
-            if (!userRepository.existsByUserIdentifierAndIsDeletedFalse(userIdentifier)) {
-                User user = new User();
-                user.setUserIdentifier(userIdentifier);
-                user.setEmail(userIdentifier + "@emenu-platform.com");
-                user.setPassword(passwordEncoder.encode("88889999"));
-                user.setFirstName(firstName);
-                user.setLastName(lastName);
-                user.setUserType("CUSTOMER".equals(roleName) ? UserType.CUSTOMER :
-                        roleName.startsWith("BUSINESS_") ? UserType.BUSINESS_USER : UserType.PLATFORM_USER);
-                user.setAccountStatus(status);
-
-                Role role = roleRepository.findByNameAndIsDeletedFalse(roleName)
-                        .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
-                user.setRoles(List.of(role));
-
-                user = userRepository.save(user);
-                log.info("✅ Created test user: {} with status: {} and ID: {}", userIdentifier, status, user.getId());
-                return 1;
-            } else {
-                log.info("ℹ️ Test user already exists: {}", userIdentifier);
-                return 0;
-            }
-        } catch (Exception e) {
-            log.error("❌ Error creating test user {}: {}", userIdentifier, e.getMessage(), e);
-            throw new RuntimeException("Failed to create test user: " + userIdentifier, e);
-        }
-    }
-
-    /**
-     * Only the test users created by this service — NOT all 300K+ users.
-     */
-    private static final List<String> TEST_USER_IDENTIFIERS = List.of(
-            "phatmenghor19@gmail.com",  // platform owner (uses defaultAdminEmail)
-            "demo-business-owner",
-            "demo-customer",
-            "inactive-user",
-            "locked-user",
-            "suspended-user"
-    );
-
-    private int initializeTestSessions() {
-        try {
-            log.info("🔄 Initializing test sessions for default test users...");
-
-            int totalSessionsCreated = 0;
-            int usersProcessed = 0;
-
-            for (String identifier : TEST_USER_IDENTIFIERS) {
-                // Use the configured admin email for the platform owner
-                String lookupId = "phatmenghor19@gmail.com".equals(identifier) ? defaultAdminEmail : identifier;
-
-                var optionalUser = userRepository.findByUserIdentifierAndIsDeletedFalse(lookupId);
-                if (optionalUser.isEmpty()) {
-                    log.debug("ℹ️ Test user {} not found, skipping sessions", lookupId);
-                    continue;
-                }
-
-                User user = optionalUser.get();
-
-                // Check if sessions already exist for this user
-                List<UserSession> existingSessions = userSessionRepository.findAllSessionsByUserId(user.getId());
-
-                if (!existingSessions.isEmpty()) {
-                    log.info("ℹ️ Test sessions already exist for user {} ({} sessions), skipping...",
-                            user.getUserIdentifier(), existingSessions.size());
-                    continue;
-                }
-
-                int sessionsCreated = createTestSessionsForUser(user);
-                totalSessionsCreated += sessionsCreated;
-                usersProcessed++;
-
-                // Update user's active session count
-                long activeCount = userSessionRepository.countActiveSessionsByUserId(user.getId());
-                user.setActiveSessionsCount((int) activeCount);
-                user.setLastLoginAt(LocalDateTime.now());
-                user.setLastActiveAt(LocalDateTime.now());
-                userRepository.save(user);
-
-                log.info("✅ Created {} sessions for user: {} (Type: {})",
-                        sessionsCreated, user.getUserIdentifier(), user.getUserType());
-            }
-
-            log.info("🎉 Total: Created {} test sessions for {} users", totalSessionsCreated, usersProcessed);
-            return totalSessionsCreated;
-
-        } catch (Exception e) {
-            log.error("❌ Error initializing test sessions: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to initialize test sessions", e);
-        }
-    }
-
-    /**
-     * Create 17 test sessions with varied data for a user
-     */
-    private int createTestSessionsForUser(User user) {
-        UUID userId = user.getId();
-        int sessionsCreated = 0;
-        LocalDateTime now = LocalDateTime.now();
-
-        // Session data arrays for variety
-        String[] deviceTypes = {"WEB", "MOBILE", "TABLET", "DESKTOP"};
-        String[] browsers = {"Chrome 120", "Firefox 121", "Safari 17", "Edge 120", "Chrome Mobile 120", "Safari Mobile 17", "Samsung Browser 23", "Opera 106"};
-        String[] operatingSystems = {"Windows 11", "macOS Sonoma", "Ubuntu 22.04", "Android 14", "iOS 17", "Windows 10", "macOS Ventura", "Fedora 39"};
-        String[] cities = {"Phnom Penh", "Siem Reap", "Battambang", "Sihanoukville", "Kampot", "Kep", "Kratie", "Banlung"};
-        String[] countries = {"Cambodia", "Cambodia", "Cambodia", "Cambodia", "Thailand", "Vietnam", "Singapore", "Malaysia"};
-        String[] ipPrefixes = {"192.168.1.", "10.0.0.", "172.16.0.", "203.189.140.", "175.100.12.", "202.62.23.", "43.252.89.", "103.16.128."};
-
-        // Create 17 sessions with varied statuses (most ACTIVE for successful sessions)
-        for (int i = 0; i < 17; i++) {
-            UserSession session = new UserSession();
-            session.setUserId(userId);
-            session.setDeviceId(UUID.randomUUID().toString());
-            session.setDeviceName(generateDeviceName(i, deviceTypes[i % deviceTypes.length]));
-            session.setDeviceType(deviceTypes[i % deviceTypes.length]);
-            session.setUserAgent(generateUserAgent(browsers[i % browsers.length], operatingSystems[i % operatingSystems.length]));
-            session.setBrowser(browsers[i % browsers.length]);
-            session.setOperatingSystem(operatingSystems[i % operatingSystems.length]);
-            session.setIpAddress(ipPrefixes[i % ipPrefixes.length] + (100 + i));
-            session.setCity(cities[i % cities.length]);
-            session.setCountry(countries[i % countries.length]);
-
-            // Vary login times (spread over last 30 days)
-            LocalDateTime loginTime = now.minusDays(30 - i * 2).minusHours(i).minusMinutes(i * 5);
-            session.setLoginAt(loginTime);
-            session.setLastActiveAt(loginTime.plusHours(i % 12).plusMinutes(i * 3));
-            session.setExpiresAt(loginTime.plusDays(7)); // 7 days expiry
-
-            // Set status - most should be ACTIVE for "successful" sessions
-            String status = determineSessionStatus(i);
-            session.setStatus(status);
-
-            // Set logout details for non-active sessions
-            if ("LOGGED_OUT".equals(status)) {
-                session.setLoggedOutAt(loginTime.plusDays(1).plusHours(i % 6));
-                session.setLogoutReason(getLogoutReason(i));
-            } else if ("EXPIRED".equals(status)) {
-                session.setLoggedOutAt(session.getExpiresAt());
-            } else if ("REVOKED".equals(status)) {
-                session.setLoggedOutAt(loginTime.plusHours(i % 24));
-                session.setLogoutReason("Admin revocation for security audit");
-            }
-
-            // Mark one session as current (the most recent active one)
-            session.setIsCurrentSession(i == 0 && "ACTIVE".equals(status));
-
-            userSessionRepository.save(session);
-            sessionsCreated++;
-            log.debug("✅ Created test session {} for user {} - Status: {}, Device: {}",
-                    i + 1, user.getUserIdentifier(), status, session.getDeviceName());
-        }
-
-        log.info("✅ Created {} test sessions for user: {}", sessionsCreated, user.getUserIdentifier());
-        return sessionsCreated;
-    }
-
-    /**
-     * Generate a descriptive device name
-     */
-    private String generateDeviceName(int index, String deviceType) {
-        String[] webNames = {"Office Workstation", "Home Desktop", "Work Laptop", "Personal MacBook", "Development PC"};
-        String[] mobileNames = {"iPhone 15 Pro", "Samsung Galaxy S24", "Google Pixel 8", "OnePlus 12", "Xiaomi 14"};
-        String[] tabletNames = {"iPad Pro 12.9", "Samsung Tab S9", "iPad Air", "Lenovo Tab P12", "Surface Pro 9"};
-        String[] desktopNames = {"Gaming PC", "iMac 24", "Mac Mini M2", "Dell XPS Desktop", "HP Pavilion"};
-
-        return switch (deviceType) {
-            case "WEB" -> webNames[index % webNames.length];
-            case "MOBILE" -> mobileNames[index % mobileNames.length];
-            case "TABLET" -> tabletNames[index % tabletNames.length];
-            case "DESKTOP" -> desktopNames[index % desktopNames.length];
-            default -> "Unknown Device " + (index + 1);
-        };
-    }
-
-    /**
-     * Generate a realistic user agent string
-     */
-    private String generateUserAgent(String browser, String os) {
-        String osString = switch (os) {
-            case "Windows 11" -> "Windows NT 10.0; Win64; x64";
-            case "Windows 10" -> "Windows NT 10.0; Win64; x64";
-            case "macOS Sonoma" -> "Macintosh; Intel Mac OS X 14_0";
-            case "macOS Ventura" -> "Macintosh; Intel Mac OS X 13_0";
-            case "Ubuntu 22.04" -> "X11; Ubuntu; Linux x86_64";
-            case "Fedora 39" -> "X11; Fedora; Linux x86_64";
-            case "Android 14" -> "Linux; Android 14; SM-S928B";
-            case "iOS 17" -> "iPhone; CPU iPhone OS 17_0 like Mac OS X";
-            default -> "Windows NT 10.0; Win64; x64";
-        };
-
-        String browserString = switch (browser) {
-            case "Chrome 120" -> "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-            case "Firefox 121" -> "Gecko/20100101 Firefox/121.0";
-            case "Safari 17" -> "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
-            case "Edge 120" -> "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0";
-            case "Chrome Mobile 120" -> "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
-            case "Safari Mobile 17" -> "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
-            case "Samsung Browser 23" -> "AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/23.0 Chrome/115.0.0.0 Mobile Safari/537.36";
-            case "Opera 106" -> "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0";
-            default -> "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-        };
-
-        return "Mozilla/5.0 (" + osString + ") " + browserString;
-    }
-
-    /**
-     * Determine session status - most should be ACTIVE for successful sessions
-     */
-    private String determineSessionStatus(int index) {
-        // 12 ACTIVE, 2 LOGGED_OUT, 2 EXPIRED, 1 REVOKED = 17 total
-        if (index < 12) {
-            return "ACTIVE";
-        } else if (index < 14) {
-            return "LOGGED_OUT";
-        } else if (index < 16) {
-            return "EXPIRED";
-        } else {
-            return "REVOKED";
-        }
-    }
-
-    /**
-     * Get logout reason for logged out sessions
-     */
-    private String getLogoutReason(int index) {
-        String[] reasons = {
-                "User initiated logout",
-                "Session timeout",
-                "Logged out from another device",
-                "Password changed",
-                "Security check logout"
-        };
-        return reasons[index % reasons.length];
     }
 }
