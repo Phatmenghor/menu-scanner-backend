@@ -11,12 +11,7 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "roles", indexes = {
-        @Index(name = "idx_role_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_role_name", columnList = "name, is_deleted"),
-        @Index(name = "idx_role_business", columnList = "business_id, is_deleted"),
-        @Index(name = "idx_role_user_type", columnList = "user_type, is_deleted")
-}, uniqueConstraints = {
+@Table(name = "roles", uniqueConstraints = {
         @UniqueConstraint(name = "uk_role_name_business", columnNames = {"name", "business_id"})
 })
 @Data
@@ -34,47 +29,12 @@ public class Role extends BaseUUIDEntity {
     @Column(name = "business_id")
     private UUID businessId;
 
-    /**
-     * The user type this role belongs to.
-     * PLATFORM_USER - for platform admin roles
-     * BUSINESS_USER - for business-specific roles
-     * CUSTOMER - for customer roles
-     */
     @Enumerated(EnumType.STRING)
     @Column(name = "user_type", length = 50)
     private UserType userType;
 
-    public boolean isPlatformOwner() {
-        return "PLATFORM_OWNER".equals(name);
-    }
-
-    public boolean isBusinessOwner() {
-        return "BUSINESS_OWNER".equals(name);
-    }
-
     public boolean isCustomer() {
         return "CUSTOMER".equals(name);
-    }
-
-    /**
-     * Check if this is a platform role based on userType field
-     */
-    public boolean isPlatformRole() {
-        return userType == UserType.PLATFORM_USER;
-    }
-
-    /**
-     * Check if this is a business role based on userType field
-     */
-    public boolean isBusinessRole() {
-        return userType == UserType.BUSINESS_USER;
-    }
-
-    /**
-     * Check if this is a customer role based on userType field
-     */
-    public boolean isCustomerRole() {
-        return userType == UserType.CUSTOMER;
     }
 
     /**
@@ -85,14 +45,5 @@ public class Role extends BaseUUIDEntity {
             return true; // Allow null for backward compatibility
         }
         return userType == targetUserType;
-    }
-
-    /**
-     * Check if this is a system role that cannot be modified
-     */
-    public boolean isSystemRole() {
-        return "PLATFORM_OWNER".equals(name) ||
-               "BUSINESS_OWNER".equals(name) ||
-               "CUSTOMER".equals(name);
     }
 }

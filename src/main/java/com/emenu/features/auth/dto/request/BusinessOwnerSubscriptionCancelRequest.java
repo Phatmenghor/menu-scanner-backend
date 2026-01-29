@@ -16,9 +16,7 @@ public class BusinessOwnerSubscriptionCancelRequest {
     
     @NotBlank(message = "Cancellation reason is required")
     private String reason;
-    
     private String notes;
-    
     private BigDecimal refundAmount;
     private String refundMethod;
     private String refundReference;

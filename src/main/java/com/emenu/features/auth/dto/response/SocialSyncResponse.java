@@ -20,15 +20,13 @@ public class SocialSyncResponse {
 
     private String message;
 
-    private String provider; // "telegram" or "google"
+    private String provider;
 
     private LocalDateTime syncedAt;
 
-    // Telegram specific fields
     private Long telegramId;
     private String telegramUsername;
 
-    // Google specific fields
     private String googleId;
     private String googleEmail;
 

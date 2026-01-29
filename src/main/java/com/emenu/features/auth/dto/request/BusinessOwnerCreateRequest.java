@@ -29,7 +29,6 @@ public class BusinessOwnerCreateRequest {
     
     @NotBlank(message = "Owner full name is required")
     private String ownerFullName;
-    
     private String ownerPhone;
     
     @NotBlank(message = "Business name is required")
@@ -38,15 +37,12 @@ public class BusinessOwnerCreateRequest {
     @NotBlank(message = "Business email is required")
     @Email(message = "Invalid business email format")
     private String businessEmail;
-    
     private String businessPhone;
     private String businessAddress;
     
     @NotNull(message = "Subscription plan ID is required")
     private UUID planId;
-    
     private Integer customDurationDays;
-    
     private BigDecimal paymentAmount;
     private String paymentMethod;
     private String paymentReference;

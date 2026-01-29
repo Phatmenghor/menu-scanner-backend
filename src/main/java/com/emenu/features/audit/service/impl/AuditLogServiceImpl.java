@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,39 +49,20 @@ public class AuditLogServiceImpl implements AuditLogService {
                 filter.getUserId(),
                 filter.getUserIdentifier(),
                 filter.getUserType(),
-                filter.getHttpMethod(),
-                filter.getEndpoint(),
-                filter.getIpAddress(),
-                filter.getStatusCode(),
-                filter.getMinStatusCode(),
-                filter.getMaxStatusCode(),
-                filter.getStartDate(),
-                filter.getEndDate(),
-                filter.getMinResponseTime(),
-                filter.getMaxResponseTime(),
-                filter.getHasError(),
-                filter.getIsAnonymous(),
                 filter.getSearch(),
                 pageable
         );
 
         List<AuditLogResponseDTO> content = page.getContent().stream()
-                .map(this::toResponseDTO)
-                .toList();
+                .map(auditLogMapper::toResponseDTO)
+                .collect(Collectors.toList());
 
         return paginationMapper.toPaginationResponse(page, content);
     }
 
     @Override
-    public void logAccess(HttpServletRequest request, int statusCode, long responseTimeMs, String errorMessage) {
-        logAccessWithBodies(request, statusCode, responseTimeMs, errorMessage, null);
-    }
-
-    @Override
     public void logAccessWithBodies(HttpServletRequest request, int statusCode, long responseTimeMs,
                                    String errorMessage, String requestBody) {
-        // Extract all request data SYNCHRONOUSLY before async processing
-        // This prevents "request recycled" errors from Tomcat
         UUID userId = null;
         String userIdentifier = "anonymous";
         String userType = "ANONYMOUS";
@@ -125,7 +107,7 @@ public class AuditLogServiceImpl implements AuditLogService {
                                                       String requestBody) {
         // Truncate request/response bodies if needed
         String truncatedRequestBody = null;
-        if (requestBody != null && requestBody.length() > 0) {
+        if (requestBody != null && !requestBody.isEmpty()) {
             truncatedRequestBody = requestBody.length() > 10000 ?
                 requestBody.substring(0, 10000) + "... [truncated]" : requestBody;
         }
@@ -160,58 +142,6 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AuditLogResponseDTO> getAuditLogs(AuditLogFilterDTO filter, Pageable pageable) {
-        return auditLogRepository.findAllWithFilters(
-                filter.getUserId(),
-                filter.getUserIdentifier(),
-                filter.getUserType(),
-                filter.getHttpMethod(),
-                filter.getEndpoint(),
-                filter.getIpAddress(),
-                filter.getStatusCode(),
-                filter.getMinStatusCode(),
-                filter.getMaxStatusCode(),
-                filter.getStartDate(),
-                filter.getEndDate(),
-                filter.getMinResponseTime(),
-                filter.getMaxResponseTime(),
-                filter.getHasError(),
-                filter.getIsAnonymous(),
-                filter.getSearch(),
-                pageable
-        ).map(this::toResponseDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<AuditLogResponseDTO> getUserAuditLogs(UUID userId, Pageable pageable) {
-        return auditLogRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
-                .map(this::toResponseDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<AuditLogResponseDTO> getAuditLogsByIp(String ipAddress, Pageable pageable) {
-        return auditLogRepository.findByIpAddressOrderByCreatedAtDesc(ipAddress, pageable)
-                .map(this::toResponseDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<AuditLogResponseDTO> getErrorLogs(Pageable pageable) {
-        return auditLogRepository.findErrorLogs(pageable)
-                .map(this::toResponseDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<AuditLogResponseDTO> getAnonymousAccessLogs(Pageable pageable) {
-        return auditLogRepository.findAnonymousAccessLogs(pageable)
-                .map(this::toResponseDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public AuditStatsResponseDTO getAuditStats() {
         LocalDateTime last24Hours = LocalDateTime.now().minusHours(24);
         LocalDateTime last7Days = LocalDateTime.now().minusDays(7);
@@ -235,27 +165,7 @@ public class AuditLogServiceImpl implements AuditLogService {
     public AuditLogResponseDTO getAuditLogById(UUID id) {
         AuditLog auditLog = auditLogRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Audit log not found with id: " + id));
-        return toResponseDTO(auditLog);
-    }
-
-    private AuditLogResponseDTO toResponseDTO(AuditLog auditLog) {
-        AuditLogResponseDTO dto = new AuditLogResponseDTO();
-        dto.setId(auditLog.getId());
-        dto.setUserId(auditLog.getUserId());
-        dto.setUserIdentifier(auditLog.getUserIdentifier());
-        dto.setUserType(auditLog.getUserType());
-        dto.setHttpMethod(auditLog.getHttpMethod());
-        dto.setEndpoint(auditLog.getEndpoint());
-        dto.setIpAddress(auditLog.getIpAddress());
-        dto.setUserAgent(auditLog.getUserAgent());
-        dto.setStatusCode(auditLog.getStatusCode());
-        dto.setResponseTimeMs(auditLog.getResponseTimeMs());
-        dto.setErrorMessage(auditLog.getErrorMessage());
-        dto.setSessionId(auditLog.getSessionId());
-        dto.setRequestParams(auditLog.getRequestParams());
-        dto.setRequestBody(auditLog.getRequestBody());
-        dto.setCreatedAt(auditLog.getCreatedAt());
-        return dto;
+        return auditLogMapper.toResponseDTO(auditLog);
     }
 
     private String buildParamsString(Map<String, String[]> paramMap) {
@@ -265,7 +175,7 @@ public class AuditLogServiceImpl implements AuditLogService {
 
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String[]> entry : paramMap.entrySet()) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append("&");
             }
             sb.append(entry.getKey()).append("=");

@@ -18,40 +18,10 @@ public interface AuditLogService {
     PaginationResponse<AuditLogResponseDTO> searchAuditLogs(AuditLogFilterDTO filter);
 
     /**
-     * Log an access request asynchronously
-     */
-    void logAccess(HttpServletRequest request, int statusCode, long responseTimeMs, String errorMessage);
-
-    /**
      * Log an access request with request/response bodies
      */
     void logAccessWithBodies(HttpServletRequest request, int statusCode, long responseTimeMs,
                             String errorMessage, String requestBody);
-
-    /**
-     * Get audit logs with filters and pagination
-     */
-    Page<AuditLogResponseDTO> getAuditLogs(AuditLogFilterDTO filter, Pageable pageable);
-
-    /**
-     * Get audit logs for a specific user
-     */
-    Page<AuditLogResponseDTO> getUserAuditLogs(UUID userId, Pageable pageable);
-
-    /**
-     * Get audit logs by IP address
-     */
-    Page<AuditLogResponseDTO> getAuditLogsByIp(String ipAddress, Pageable pageable);
-
-    /**
-     * Get error logs (status code >= 400)
-     */
-    Page<AuditLogResponseDTO> getErrorLogs(Pageable pageable);
-
-    /**
-     * Get anonymous access logs (requests without token)
-     */
-    Page<AuditLogResponseDTO> getAnonymousAccessLogs(Pageable pageable);
 
     /**
      * Get audit statistics

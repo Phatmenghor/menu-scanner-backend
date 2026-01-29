@@ -13,7 +13,6 @@ public class LoginResponse {
     private String refreshToken;
     private String tokenType = "Bearer";
     private UUID userId;
-
     private String userIdentifier;
     private String email;
     private String fullName;

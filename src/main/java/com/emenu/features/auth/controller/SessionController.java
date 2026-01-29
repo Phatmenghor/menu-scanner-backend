@@ -1,8 +1,8 @@
 package com.emenu.features.auth.controller;
 
 import com.emenu.features.auth.dto.filter.SessionFilterRequest;
-import com.emenu.features.auth.dto.session.AdminSessionResponse;
-import com.emenu.features.auth.dto.session.UserSessionResponse;
+import com.emenu.features.auth.dto.response.AdminSessionResponse;
+import com.emenu.features.auth.dto.response.UserSessionResponse;
 import com.emenu.features.auth.service.UserSessionService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;

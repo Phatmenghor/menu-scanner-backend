@@ -1,8 +1,8 @@
 package com.emenu.features.auth.mapper;
 
 import com.emenu.features.auth.dto.helper.UserSessionCreateHelper;
-import com.emenu.features.auth.dto.session.AdminSessionResponse;
-import com.emenu.features.auth.dto.session.UserSessionResponse;
+import com.emenu.features.auth.dto.response.AdminSessionResponse;
+import com.emenu.features.auth.dto.response.UserSessionResponse;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.auth.models.UserSession;
 import com.emenu.shared.dto.PaginationResponse;

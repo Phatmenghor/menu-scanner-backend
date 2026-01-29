@@ -10,7 +10,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class BusinessFilterRequest extends BaseFilterRequest {
-    
     private List<BusinessStatus> status;
     private Boolean hasActiveSubscription;
 }

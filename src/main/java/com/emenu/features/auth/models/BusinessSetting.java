@@ -10,10 +10,7 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "business_settings", indexes = {
-        @Index(name = "idx_business_setting_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_business_setting_business", columnList = "business_id, is_deleted")
-})
+@Table(name = "business_settings")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

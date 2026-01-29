@@ -20,12 +20,10 @@ public class BusinessOwnerCreateResponse {
     private String ownerUserIdentifier;
     private String ownerEmail;
     private String ownerFullName;
-    
     private UUID businessId;
     private String businessName;
     private String businessEmail;
     private String businessStatus;
-    
     private UUID subscriptionId;
     private String planName;
     private BigDecimal planPrice;
@@ -33,12 +31,10 @@ public class BusinessOwnerCreateResponse {
     private LocalDateTime subscriptionStartDate;
     private LocalDateTime subscriptionEndDate;
     private Long daysRemaining;
-    
     private UUID paymentId;
     private BigDecimal paymentAmount;
     private String paymentStatus;
     private String paymentMethod;
-    
     private List<String> createdComponents;
     private LocalDateTime createdAt;
 }

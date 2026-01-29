@@ -14,12 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "businesses", indexes = {
-        @Index(name = "idx_business_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_business_status", columnList = "status, is_deleted"),
-        @Index(name = "idx_business_subscription", columnList = "is_subscription_active, is_deleted"),
-        @Index(name = "idx_business_owner", columnList = "owner_id, is_deleted")
-})
+@Table(name = "businesses")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -64,7 +59,7 @@ public class Business extends BaseUUIDEntity {
             return true;
         }
         if (subscriptions != null && !subscriptions.isEmpty()) {
-            return subscriptions.stream().anyMatch(sub -> sub.isActive());
+            return subscriptions.stream().anyMatch(Subscription::isActive);
         }
         return false;
     }

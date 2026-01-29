@@ -13,18 +13,10 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class BusinessOwnerFilterRequest extends BaseFilterRequest {
-    
-    // Business filters
     private List<BusinessStatus> businessStatuses;
-    
-    // Owner account filters
     private List<AccountStatus> ownerAccountStatuses;
-    
-    // Subscription filters
     private List<SubscriptionStatus> subscriptionStatuses;
     private Boolean autoRenew;
     private Integer expiringSoonDays = 7;
-    
-    // Payment filters
     private List<PaymentStatus> paymentStatuses;
 }

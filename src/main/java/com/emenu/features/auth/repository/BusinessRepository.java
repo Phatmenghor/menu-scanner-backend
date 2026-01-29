@@ -22,11 +22,6 @@ public interface BusinessRepository extends JpaRepository<Business, UUID> {
     Optional<Business> findByIdAndIsDeletedFalse(UUID id);
 
     /**
-     * Finds a non-deleted business by name
-     */
-    Optional<Business> findByNameAndIsDeletedFalse(String name);
-
-    /**
      * Checks if a non-deleted business exists with the given name
      */
     boolean existsByNameAndIsDeletedFalse(String name);
@@ -56,18 +51,6 @@ public interface BusinessRepository extends JpaRepository<Business, UUID> {
     );
 
     /**
-     * Counts non-deleted businesses by status
-     */
-    @Query("SELECT COUNT(b) FROM Business b WHERE b.status = :status AND b.isDeleted = false")
-    long countByStatus(@Param("status") BusinessStatus status);
-
-    /**
-     * Counts non-deleted businesses with active subscriptions
-     */
-    @Query("SELECT COUNT(b) FROM Business b WHERE b.isSubscriptionActive = true AND b.isDeleted = false")
-    long countActiveSubscriptions();
-
-    /**
      * Check if business exists by email
      */
     @Query("SELECT COUNT(b) > 0 FROM Business b WHERE b.email = :email AND b.isDeleted = false")
@@ -79,10 +62,4 @@ public interface BusinessRepository extends JpaRepository<Business, UUID> {
     @Query("SELECT b FROM Business b WHERE b.email = :email AND b.isDeleted = false")
     Optional<Business> findByEmailAndIsDeletedFalse(@Param("email") String email);
 
-    boolean existsByIdAndIsDeletedFalse(UUID businessId);
-
-    /**
-     * Find all non-deleted businesses by their IDs (batch lookup)
-     */
-    List<Business> findAllByIdInAndIsDeletedFalse(List<UUID> ids);
 }

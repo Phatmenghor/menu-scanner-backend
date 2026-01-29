@@ -26,7 +26,6 @@ public class SocialAuthRequest {
     private UserType userType;
 
     private UUID businessId;
-
     private String deviceInfo;
     private String ipAddress;
 }

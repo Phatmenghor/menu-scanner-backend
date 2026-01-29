@@ -18,17 +18,6 @@ public class RoleUpdateRequest {
     @Size(max = 500, message = "Description must not exceed 500 characters")
     private String description;
 
-    /**
-     * Optional business ID for business-specific roles.
-     * If null, the role will be a platform-level role.
-     */
     private UUID businessId;
-
-    /**
-     * The user type this role belongs to.
-     * PLATFORM_USER - for platform admin roles
-     * BUSINESS_USER - for business-specific roles
-     * CUSTOMER - for customer roles
-     */
     private UserType userType;
 }

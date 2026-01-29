@@ -33,26 +33,12 @@ public interface UserSessionRepository extends JpaRepository<UserSession, UUID> 
 
     @Modifying
     @Query("UPDATE UserSession s SET s.status = 'LOGGED_OUT', s.loggedOutAt = :loggedOutAt, s.logoutReason = :reason, s.isCurrentSession = false " +
-            "WHERE s.id = :sessionId AND s.userId = :userId AND s.status = 'ACTIVE'")
-    int logoutSession(@Param("sessionId") UUID sessionId, @Param("userId") UUID userId,
-                      @Param("loggedOutAt") LocalDateTime loggedOutAt, @Param("reason") String reason);
-
-    @Modifying
-    @Query("UPDATE UserSession s SET s.status = 'LOGGED_OUT', s.loggedOutAt = :loggedOutAt, s.logoutReason = :reason, s.isCurrentSession = false " +
             "WHERE s.userId = :userId AND s.status = 'ACTIVE' AND s.isDeleted = false")
     int logoutAllSessionsByUserId(@Param("userId") UUID userId, @Param("loggedOutAt") LocalDateTime loggedOutAt, @Param("reason") String reason);
 
     @Modifying
     @Query("UPDATE UserSession s SET s.isCurrentSession = false WHERE s.userId = :userId AND s.id != :sessionId")
     void markOtherSessionsAsNotCurrent(@Param("userId") UUID userId, @Param("sessionId") UUID sessionId);
-
-    @Query("SELECT s FROM UserSession s WHERE s.status = 'ACTIVE' AND s.expiresAt < :now AND s.isDeleted = false")
-    List<UserSession> findExpiredSessions(@Param("now") LocalDateTime now);
-
-    @Modifying
-    @Query("UPDATE UserSession s SET s.isDeleted = true, s.deletedAt = :deletedAt " +
-            "WHERE s.status IN ('LOGGED_OUT', 'EXPIRED') AND s.loggedOutAt < :cutoffDate")
-    int cleanupOldSessions(@Param("deletedAt") LocalDateTime deletedAt, @Param("cutoffDate") LocalDateTime cutoffDate);
 
     @Query("SELECT s FROM UserSession s LEFT JOIN FETCH s.user u WHERE s.isDeleted = false " +
             "AND (:userId IS NULL OR s.userId = :userId) " +

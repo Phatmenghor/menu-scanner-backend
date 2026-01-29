@@ -17,12 +17,6 @@ import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Implementation of RefreshTokenService for managing refresh tokens.
- *
- * @author Cambodia E-Menu Platform
- * @version 1.0.0
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -131,25 +125,5 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         );
 
         log.info("Revoked {} refresh tokens for user: {}", revokedCount, userId);
-    }
-
-    @Override
-    @Transactional
-    public void deleteExpiredTokens() {
-        log.info("Starting cleanup of expired and revoked refresh tokens");
-
-        LocalDateTime now = LocalDateTime.now();
-        // Delete tokens revoked more than 7 days ago
-        LocalDateTime cutoffDate = now.minusDays(7);
-
-        int deletedCount = refreshTokenRepository.deleteExpiredAndRevokedTokens(now, cutoffDate);
-
-        log.info("Deleted {} expired/revoked refresh tokens", deletedCount);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<RefreshToken> findByToken(String token) {
-        return refreshTokenRepository.findByToken(token);
     }
 }

@@ -1,6 +1,7 @@
 package com.emenu.features.audit.mapper;
 
 import com.emenu.features.audit.dto.helper.AuditLogCreateHelper;
+import com.emenu.features.audit.dto.response.AuditLogResponseDTO;
 import com.emenu.features.audit.models.AuditLog;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
@@ -15,4 +16,6 @@ public interface AuditLogMapper {
      * Create AuditLog from helper DTO - pure MapStruct mapping
      */
     AuditLog createFromHelper(AuditLogCreateHelper helper);
+
+    AuditLogResponseDTO toResponseDTO(AuditLog auditLog);
 }

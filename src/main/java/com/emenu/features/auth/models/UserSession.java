@@ -11,12 +11,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_sessions", indexes = {
-        @Index(name = "idx_session_user", columnList = "user_id, is_deleted"),
-        @Index(name = "idx_session_status", columnList = "status, is_deleted"),
-        @Index(name = "idx_session_device", columnList = "device_id, is_deleted"),
-        @Index(name = "idx_session_token", columnList = "refresh_token_id, is_deleted")
-})
+@Table(name = "user_sessions")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

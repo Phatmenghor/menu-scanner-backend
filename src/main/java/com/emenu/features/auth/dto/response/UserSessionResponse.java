@@ -1,4 +1,4 @@
-package com.emenu.features.auth.dto.session;
+package com.emenu.features.auth.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

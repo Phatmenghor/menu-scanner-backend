@@ -11,7 +11,6 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class RoleFilterRequest extends BaseFilterRequest {
-
     private UUID businessId;
     private List<UserType> userTypes;
     private Boolean includeAll = false;

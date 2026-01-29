@@ -13,11 +13,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "blacklisted_tokens", indexes = {
-        @Index(name = "idx_blacklisted_token", columnList = "token"),
-        @Index(name = "idx_blacklisted_user", columnList = "user_identifier"),
-        @Index(name = "idx_blacklisted_expiry", columnList = "expiry_date")
-})
+@Table(name = "blacklisted_tokens")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

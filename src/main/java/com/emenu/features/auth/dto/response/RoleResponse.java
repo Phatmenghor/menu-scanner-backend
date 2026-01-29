@@ -10,7 +10,6 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class RoleResponse extends BaseAuditResponse {
-
     private String name;
     private String description;
     private UUID businessId;

@@ -21,7 +21,6 @@ public class RegisterRequest {
 
     @NotNull(message = "User type is required")
     private UserType userType = UserType.CUSTOMER;
-
     private String firstName;
     private String lastName;
     private String profileImageUrl;

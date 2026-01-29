@@ -28,10 +28,7 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
 
     boolean existsByNameAndBusinessIdIsNullAndIsDeletedFalse(String name);
 
-    /**
-     * Find all roles with filtering and pagination
-     * Supports includeAll to include soft-deleted items
-     */
+
     @Query("SELECT r FROM Role r WHERE " +
             "(:includeAll = true OR r.isDeleted = false) " +
             "AND (:businessId IS NULL OR r.businessId = :businessId) " +
@@ -46,10 +43,6 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
             @Param("includeAll") Boolean includeAll,
             Pageable pageable);
 
-    /**
-     * Find all roles as list with filtering (no pagination)
-     * Supports includeAll to include soft-deleted items
-     */
     @Query("SELECT r FROM Role r WHERE " +
             "(:includeAll = true OR r.isDeleted = false) " +
             "AND (:businessId IS NULL OR r.businessId = :businessId) " +

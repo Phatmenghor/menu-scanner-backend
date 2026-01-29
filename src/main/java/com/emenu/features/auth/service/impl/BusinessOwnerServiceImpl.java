@@ -69,23 +69,23 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         validateBusinessOwnerCreation(request);
 
         Business business = createBusiness(request);
-        log.info("✅ Business created: {}", business.getName());
+        log.info("Business created: {}", business.getName());
 
         User owner = createOwnerUser(request, business.getId());
-        log.info("✅ Owner created: {}", owner.getUserIdentifier());
+        log.info("Owner created: {}", owner.getUserIdentifier());
 
         business.setOwnerId(owner.getId());
         businessRepository.save(business);
 
         Subscription subscription = createSubscription(business.getId(), request);
-        log.info("✅ Subscription created");
+        log.info("Subscription created");
 
         Payment payment = request.hasPaymentInfo() && request.isPaymentInfoComplete()
                 ? createPayment(subscription, request)
                 : null;
 
         if (payment != null) {
-            log.info("✅ Payment created: ${}", payment.getAmount());
+            log.info("Payment created: ${}", payment.getAmount());
         }
 
         business.activateSubscription();
@@ -94,7 +94,7 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         BusinessOwnerCreateResponse response = mapper.toCreateResponse(owner, business, subscription, payment);
         response.setCreatedComponents(buildCreatedComponentsList(payment != null));
 
-        log.info("✅ Business owner created successfully: {}", owner.getFullName());
+        log.info("Business owner created successfully: {}", owner.getFullName());
         return response;
     }
 
@@ -204,7 +204,7 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
                     request.getPaymentMethod(), request.getPaymentReference(), request.getPaymentNotes());
         }
 
-        log.info("✅ Subscription renewed for business owner: {}", ownerId);
+        log.info("Subscription renewed for business owner: {}", ownerId);
         return buildEnrichedDetailResponse(owner);
     }
 
@@ -234,7 +234,7 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
                     request.getPaymentMethod(), request.getPaymentReference(), request.getPaymentNotes());
         }
 
-        log.info("✅ Plan changed for business owner: {}", ownerId);
+        log.info("Plan changed for business owner: {}", ownerId);
         return buildEnrichedDetailResponse(owner);
     }
 
@@ -272,7 +272,7 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
             createRefundPayment(currentSubscription, request);
         }
 
-        log.info("✅ Subscription cancelled for business owner: {}", ownerId);
+        log.info("Subscription cancelled for business owner: {}", ownerId);
         return buildEnrichedDetailResponse(owner);
     }
 
@@ -301,7 +301,7 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         owner.softDelete();
         businessOwnerRepository.save(owner);
 
-        log.info("✅ Business owner deleted: {}", ownerId);
+        log.info("Business owner deleted: {}", ownerId);
         return buildEnrichedDetailResponse(owner);
     }
 
@@ -321,11 +321,6 @@ public class BusinessOwnerServiceImpl implements BusinessOwnerService {
         if (!planRepository.existsById(request.getPlanId())) {
             throw new NotFoundException("Plan not found: " + request.getPlanId());
         }
-
-        // Note: Username validation for business users cannot be done here because the business
-        // doesn't exist yet. The username must be unique within the business, but we don't have
-        // the businessId at this point. This validation will be handled at the database level
-        // through unique constraints and will result in a database exception if violated.
     }
 
     private Business createBusiness(BusinessOwnerCreateRequest request) {

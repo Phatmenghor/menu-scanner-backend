@@ -163,7 +163,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleValidationExceptions(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
 
-        // ✅ ENHANCED: Detailed field-by-field validation errors
         Map<String, Object> fieldErrors = new HashMap<>();
         List<String> missingFields = new ArrayList<>();
         List<String> invalidFields = new ArrayList<>();
@@ -197,7 +196,6 @@ public class GlobalExceptionHandler {
         errorDetails.put("invalidFields", invalidFields);
         errorDetails.put("totalErrors", fieldErrors.size());
 
-        // ✅ ENHANCED: Better error message
         String message = String.format("Validation failed for %d field(s). Required fields: %s",
                 fieldErrors.size(),
                 missingFields.isEmpty() ? "none" : String.join(", ", missingFields));
@@ -232,7 +230,6 @@ public class GlobalExceptionHandler {
         String message = "An unexpected error occurred while processing your request.";
         Map<String, Object> errorDetails = createErrorDetails(ErrorCodes.INTERNAL_SERVER_ERROR, request);
 
-        // ✅ ENHANCED: Better error message parsing
         if (ex.getMessage() != null) {
             String exMessage = ex.getMessage().toLowerCase();
             if (exMessage.contains("subdomain")) {
@@ -273,7 +270,6 @@ public class GlobalExceptionHandler {
 
         Map<String, Object> errorDetails = createErrorDetails(ErrorCodes.VALIDATION_ERROR, request);
 
-        // ✅ ENHANCED: Parse validation message for specific field information
         String message = ex.getMessage();
 
         // Extract specific field information from error message
@@ -430,7 +426,6 @@ public class GlobalExceptionHandler {
         String errorCode = ErrorCodes.VALIDATION_ERROR;
         Map<String, Object> errorDetails = createErrorDetails(errorCode, request);
 
-        // ✅ ENHANCED: Better constraint violation parsing
         String exceptionMessage = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
         String rootCauseMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage().toLowerCase() : "";
         String fullMessage = (exceptionMessage + " " + rootCauseMessage).toLowerCase();

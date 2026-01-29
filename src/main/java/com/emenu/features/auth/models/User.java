@@ -13,13 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users", indexes = {
-        @Index(name = "idx_user_deleted", columnList = "is_deleted"),
-        @Index(name = "idx_user_identifier", columnList = "user_identifier, is_deleted"),
-        @Index(name = "idx_user_business", columnList = "business_id, is_deleted"),
-        @Index(name = "idx_user_identifier_type", columnList = "user_identifier, user_type, is_deleted"),
-        @Index(name = "idx_user_identifier_business", columnList = "user_identifier, business_id, is_deleted")
-}, uniqueConstraints = {
+@Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(name = "uk_platform_user_identifier", columnNames = {"user_identifier", "user_type"}),
         @UniqueConstraint(name = "uk_business_user_identifier", columnNames = {"user_identifier", "business_id"})
 })
@@ -133,24 +127,12 @@ public class User extends BaseUUIDEntity {
         return AccountStatus.ACTIVE.equals(accountStatus);
     }
 
-    public boolean isPlatformUser() {
-        return UserType.PLATFORM_USER.equals(userType);
-    }
-
     public boolean isBusinessUser() {
         return UserType.BUSINESS_USER.equals(userType);
     }
 
     public boolean isCustomer() {
         return UserType.CUSTOMER.equals(userType);
-    }
-
-    public boolean hasTelegramSynced() {
-        return telegramId != null;
-    }
-
-    public boolean hasGoogleSynced() {
-        return googleId != null && googleEmail != null;
     }
 
     public void syncTelegram(Long telegramId, String telegramUsername, String telegramFirstName, String telegramLastName) {
