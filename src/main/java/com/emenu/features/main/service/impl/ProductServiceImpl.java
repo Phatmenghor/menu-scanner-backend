@@ -85,6 +85,9 @@ public class ProductServiceImpl implements ProductService {
             return paginationMapper.toPaginationResponse(productPage, Collections.emptyList());
         }
 
+        // Recalculate display fields from current sizes
+        productPage.getContent().forEach(Product::syncDisplayFieldsFromSizes);
+
         List<ProductListDto> dtoList = productMapper.toListDtos(productPage.getContent());
 
         if (currentUser.isPresent()) {
@@ -139,6 +142,9 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSearch(),
                 PaginationUtils.createSort(filter.getSortBy(), filter.getSortDirection())
         );
+
+        // Recalculate display fields from current sizes
+        products.forEach(Product::syncDisplayFieldsFromSizes);
 
         List<ProductListDto> dtoList = productMapper.toListDtos(products);
 
@@ -206,6 +212,9 @@ public class ProductServiceImpl implements ProductService {
                 filter.getSearch(),
                 pageable
         );
+
+        // Recalculate display fields from current sizes
+        productPage.getContent().forEach(Product::syncDisplayFieldsFromSizes);
 
         List<ProductListDto> dtoList = productMapper.toListDtos(productPage.getContent());
 
