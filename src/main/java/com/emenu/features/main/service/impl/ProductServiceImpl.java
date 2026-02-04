@@ -223,6 +223,9 @@ public class ProductServiceImpl implements ProductService {
             validateBusinessAccess(product, currentUser.get());
         }
 
+        // Recalculate display fields from current sizes (fixes stale DB values)
+        product.syncDisplayFieldsFromSizes();
+
         ProductDetailDto dto = productMapper.toDetailDto(product);
 
         populateUserFieldsForDetail(dto, currentUser, product);
@@ -237,6 +240,9 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new NotFoundException("Product not found: " + id));
 
         productRepository.incrementViewCount(id);
+
+        // Recalculate display fields from current sizes (fixes stale DB values)
+        product.syncDisplayFieldsFromSizes();
 
         ProductDetailDto dto = productMapper.toDetailDto(product);
 

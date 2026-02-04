@@ -116,7 +116,12 @@ public class Product extends BaseUUIDEntity {
     private List<ProductSize> sizes = new ArrayList<>();
 
     public void syncDisplayFieldsFromSizes() {
-        if (sizes == null || sizes.isEmpty()) {
+        List<ProductSize> activeSizes = (sizes == null) ? List.of() : sizes.stream()
+                .filter(size -> size != null && !size.getIsDeleted())
+                .toList();
+
+        if (activeSizes.isEmpty()) {
+            // No active sizes - use product's own fields
             this.hasSizes = false;
             this.displayPrice = getFinalPrice();
             this.displayOriginPrice = this.price;
@@ -126,11 +131,8 @@ public class Product extends BaseUUIDEntity {
             this.displayPromotionToDate = this.promotionToDate;
             this.hasActivePromotion = isPromotionActive();
         } else {
+            // Has active sizes - use size fields
             this.hasSizes = true;
-
-            List<ProductSize> activeSizes = sizes.stream()
-                    .filter(size -> size != null && !size.getIsDeleted())
-                    .toList();
 
             // hasActivePromotion = true if ANY size has an active promotion
             this.hasActivePromotion = activeSizes.stream().anyMatch(ProductSize::isPromotionActive);
@@ -150,13 +152,6 @@ public class Product extends BaseUUIDEntity {
                 this.displayPromotionFromDate = displaySize.getPromotionFromDate();
                 this.displayPromotionToDate = displaySize.getPromotionToDate();
                 this.displayPrice = displaySize.getFinalPrice();
-            } else {
-                this.displayOriginPrice = this.price;
-                this.displayPromotionType = this.promotionType;
-                this.displayPromotionValue = this.promotionValue;
-                this.displayPromotionFromDate = this.promotionFromDate;
-                this.displayPromotionToDate = this.promotionToDate;
-                this.displayPrice = getFinalPrice();
             }
         }
     }
