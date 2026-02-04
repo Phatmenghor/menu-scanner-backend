@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -42,18 +41,19 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
     private final PaginationMapper paginationMapper;
     private final SecurityUtils securityUtils;
 
-    /**
-     * Toggle product favorite status for current user
-     */
     @Override
-    public FavoriteToggleDto toggleFavorite(UUID productId) {
+    public FavoriteToggleDto toggleFavorite(UUID productId, UUID businessId) {
         User currentUser = securityUtils.getCurrentUser();
         UUID userId = currentUser.getId();
 
-        log.info("Toggling favorite - Product: {}, User: {}", productId, userId);
+        log.info("Toggling favorite - Product: {}, Business: {}, User: {}", productId, businessId, userId);
 
         Product product = productRepository.findByIdAndIsDeletedFalse(productId)
                 .orElseThrow(() -> new NotFoundException("Product not found: " + productId));
+
+        if (!product.getBusinessId().equals(businessId)) {
+            throw new ValidationException("Product does not belong to the specified business");
+        }
 
         if (!product.isActive()) {
             throw new ValidationException("Cannot favorite inactive product");
@@ -82,14 +82,11 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
         return favoriteMapper.createToggleResponse(productId, userId, finalStatus, action);
     }
 
-    /**
-     * Get paginated list of user's favorite products
-     */
     @Override
     @Transactional(readOnly = true)
-    public PaginationResponse<ProductListDto> getUserFavorites(ProductFilterDto filter) {
+    public PaginationResponse<ProductListDto> getUserFavorites(UUID businessId, ProductFilterDto filter) {
         UUID userId = securityUtils.getCurrentUserId();
-        log.info("Getting favorites - User: {}", userId);
+        log.info("Getting favorites - User: {}, Business: {}", userId, businessId);
 
         Pageable pageable = PaginationUtils.createPageable(
             filter.getPageNo(),
@@ -98,7 +95,7 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
             "DESC"
         );
 
-        Page<Product> favoritePage = productRepository.findUserFavorites(userId, pageable);
+        Page<Product> favoritePage = productRepository.findUserFavoritesByBusiness(userId, businessId, pageable);
 
         PaginationResponse<ProductListDto> response = productMapper.toPaginationResponse(
             favoritePage,
@@ -107,21 +104,18 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
 
         response.getContent().forEach(product -> product.setIsFavorited(true));
 
-        log.info("Retrieved {} favorites - User: {}", response.getContent().size(), userId);
+        log.info("Retrieved {} favorites - User: {}, Business: {}", response.getContent().size(), userId, businessId);
         return response;
     }
 
-    /**
-     * Remove all favorites for current user
-     */
     @Override
-    public FavoriteRemoveAllDto removeAllFavorites() {
+    public FavoriteRemoveAllDto removeAllFavorites(UUID businessId) {
         UUID userId = securityUtils.getCurrentUserId();
-        log.info("Removing all favorites - User: {}", userId);
+        log.info("Removing all favorites - User: {}, Business: {}", userId, businessId);
 
-        int removedCount = favoriteRepository.deleteAllByUserId(userId);
+        int removedCount = favoriteRepository.deleteAllByUserIdAndBusinessId(userId, businessId);
 
-        log.info("Removed {} favorites - User: {}", removedCount, userId);
+        log.info("Removed {} favorites - User: {}, Business: {}", removedCount, userId, businessId);
 
         return FavoriteRemoveAllDto.builder()
                 .userId(userId)
@@ -130,5 +124,4 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
                 .message(String.format("Removed %d products from favorites", removedCount))
                 .build();
     }
-
 }
