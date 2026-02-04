@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -126,13 +127,22 @@ public class Product extends BaseUUIDEntity {
             this.hasActivePromotion = isPromotionActive();
         } else {
             this.hasSizes = true;
-            
-            // Use the first non-deleted size (ordered by price ASC)
-            ProductSize displaySize = sizes.stream()
+
+            List<ProductSize> activeSizes = sizes.stream()
                     .filter(size -> size != null && !size.getIsDeleted())
-                    .findFirst()
-                    .orElse(null);
-            
+                    .toList();
+
+            // hasActivePromotion = true if ANY size has an active promotion
+            this.hasActivePromotion = activeSizes.stream().anyMatch(ProductSize::isPromotionActive);
+
+            // Pick display size: cheapest promoted size first, otherwise cheapest overall
+            ProductSize displaySize = activeSizes.stream()
+                    .filter(ProductSize::isPromotionActive)
+                    .min(Comparator.comparing(ProductSize::getPrice))
+                    .orElseGet(() -> activeSizes.stream()
+                            .min(Comparator.comparing(ProductSize::getPrice))
+                            .orElse(null));
+
             if (displaySize != null) {
                 this.displayOriginPrice = displaySize.getPrice();
                 this.displayPromotionType = displaySize.getPromotionType();
@@ -140,7 +150,6 @@ public class Product extends BaseUUIDEntity {
                 this.displayPromotionFromDate = displaySize.getPromotionFromDate();
                 this.displayPromotionToDate = displaySize.getPromotionToDate();
                 this.displayPrice = displaySize.getFinalPrice();
-                this.hasActivePromotion = displaySize.isPromotionActive();
             } else {
                 this.displayOriginPrice = this.price;
                 this.displayPromotionType = this.promotionType;
@@ -148,7 +157,6 @@ public class Product extends BaseUUIDEntity {
                 this.displayPromotionFromDate = this.promotionFromDate;
                 this.displayPromotionToDate = this.promotionToDate;
                 this.displayPrice = getFinalPrice();
-                this.hasActivePromotion = isPromotionActive();
             }
         }
     }
