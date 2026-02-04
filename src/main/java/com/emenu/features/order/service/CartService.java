@@ -1,7 +1,9 @@
 package com.emenu.features.order.service;
 
+import com.emenu.features.order.dto.request.CartItemCreateRequest;
 import com.emenu.features.order.dto.request.CartItemRequest;
 import com.emenu.features.order.dto.response.CartResponse;
+import com.emenu.features.order.dto.response.CartSummaryResponse;
 import com.emenu.features.order.dto.update.CartUpdateRequest;
 
 import java.util.UUID;
@@ -37,4 +39,10 @@ public interface CartService {
      * GET - Get cart items count
      */
     Long getCartItemsCount(UUID userId, UUID businessId);
+
+    /**
+     * POST - Submit cart item (add/update/remove)
+     * Quantity 0 = remove, quantity >= 1 = set quantity
+     */
+    CartSummaryResponse submitCartItem(CartItemCreateRequest request);
 }

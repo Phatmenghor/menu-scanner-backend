@@ -2,8 +2,11 @@ package com.emenu.features.order.service.impl;
 
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
+import com.emenu.features.auth.models.User;
+import com.emenu.features.order.dto.request.CartItemCreateRequest;
 import com.emenu.features.order.dto.request.CartItemRequest;
 import com.emenu.features.order.dto.response.CartResponse;
+import com.emenu.features.order.dto.response.CartSummaryResponse;
 import com.emenu.features.order.dto.update.CartUpdateRequest;
 import com.emenu.features.order.mapper.CartMapper;
 import com.emenu.features.order.models.Cart;
@@ -15,6 +18,7 @@ import com.emenu.features.main.models.Product;
 import com.emenu.features.main.models.ProductSize;
 import com.emenu.features.main.repository.ProductRepository;
 import com.emenu.features.main.repository.ProductSizeRepository;
+import com.emenu.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,6 +38,7 @@ public class CartServiceImpl implements CartService {
     private final ProductRepository productRepository;
     private final ProductSizeRepository productSizeRepository;
     private final CartMapper cartMapper;
+    private final SecurityUtils securityUtils;
 
     @Override
     @Transactional(readOnly = true)
@@ -183,6 +188,63 @@ public class CartServiceImpl implements CartService {
             log.error("Error counting cart items for user: {}: {}", userId, e.getMessage());
             return 0L;
         }
+    }
+
+    @Override
+    public CartSummaryResponse submitCartItem(CartItemCreateRequest request) {
+        User currentUser = securityUtils.getCurrentUser();
+        UUID userId = currentUser.getId();
+
+        log.info("Submit cart item - User: {}, Product: {}, Quantity: {}",
+                userId, request.getProductId(), request.getQuantity());
+
+        // Validate product and derive businessId
+        UUID businessId = validateProductAndGetBusinessId(request.getProductId(), request.getProductSizeId());
+
+        // Get or create cart
+        Cart cart = getOrCreateCart(userId, businessId);
+
+        // Check if item already exists in cart
+        Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndProductIdAndSizeId(
+                cart.getId(), request.getProductId(), request.getProductSizeId());
+
+        if (existingItem.isPresent()) {
+            CartItem item = existingItem.get();
+
+            if (request.getQuantity() == 0) {
+                cartItemRepository.delete(item);
+                log.info("Removed cart item: {} for user: {}", item.getId(), userId);
+            } else {
+                item.setQuantity(request.getQuantity());
+                cartItemRepository.save(item);
+                log.info("Updated cart item quantity to: {} for user: {}", request.getQuantity(), userId);
+            }
+        } else {
+            if (request.getQuantity() > 0) {
+                CartItem newItem = new CartItem(
+                        cart.getId(),
+                        request.getProductId(),
+                        request.getProductSizeId(),
+                        request.getQuantity()
+                );
+                cartItemRepository.save(newItem);
+                log.info("Added new item to cart with quantity: {} for user: {}", request.getQuantity(), userId);
+            }
+        }
+
+        // Reload cart with items for response
+        Optional<Cart> updatedCart = cartRepository.findByUserIdAndBusinessIdWithItems(userId, businessId);
+        if (updatedCart.isPresent()) {
+            Cart loaded = updatedCart.get();
+            filterUnavailableItems(loaded);
+            return cartMapper.toSummaryResponse(loaded);
+        }
+
+        // Return empty summary
+        CartSummaryResponse empty = new CartSummaryResponse();
+        empty.setBusinessId(businessId);
+        empty.setTotalItems(0);
+        return empty;
     }
 
     // ===== PRIVATE HELPER METHODS =====

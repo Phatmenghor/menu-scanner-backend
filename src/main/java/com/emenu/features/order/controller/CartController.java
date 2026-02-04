@@ -1,8 +1,10 @@
 package com.emenu.features.order.controller;
 
 import com.emenu.features.auth.models.User;
+import com.emenu.features.order.dto.request.CartItemCreateRequest;
 import com.emenu.features.order.dto.request.CartItemRequest;
 import com.emenu.features.order.dto.response.CartResponse;
+import com.emenu.features.order.dto.response.CartSummaryResponse;
 import com.emenu.features.order.dto.update.CartUpdateRequest;
 import com.emenu.features.order.service.CartService;
 import com.emenu.security.SecurityUtils;
@@ -36,6 +38,20 @@ public class CartController {
         CartResponse cart = cartService.getCart(currentUser.getId(), businessId);
         
         return ResponseEntity.ok(ApiResponse.success("Cart retrieved successfully", cart));
+    }
+
+    /**
+     * POST - Submit cart item (add/update/remove)
+     * Quantity 0 = remove item, quantity >= 1 = set exact quantity
+     */
+    @PostMapping
+    public ResponseEntity<ApiResponse<CartSummaryResponse>> submitCartItem(@Valid @RequestBody CartItemCreateRequest request) {
+        log.info("Submit cart item - product: {}, qty: {}", request.getProductId(), request.getQuantity());
+        CartSummaryResponse cart = cartService.submitCartItem(request);
+        String message = request.getQuantity() == 0 ?
+                "Item removed from cart successfully" :
+                "Cart updated successfully";
+        return ResponseEntity.ok(ApiResponse.success(message, cart));
     }
 
     /**

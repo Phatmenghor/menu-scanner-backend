@@ -4,6 +4,7 @@ import com.emenu.features.order.dto.helper.CartCreateHelper;
 import com.emenu.features.order.dto.request.CartItemRequest;
 import com.emenu.features.order.dto.response.CartItemResponse;
 import com.emenu.features.order.dto.response.CartResponse;
+import com.emenu.features.order.dto.response.CartSummaryResponse;
 import com.emenu.features.order.models.Cart;
 import com.emenu.features.order.models.CartItem;
 import com.emenu.shared.dto.PaginationResponse;
@@ -69,6 +70,20 @@ if (cart.getItems() != null) {
 
     default PaginationResponse<CartResponse> toPaginationResponse(Page<Cart> cartPage, PaginationMapper paginationMapper) {
 return paginationMapper.toPaginationResponse(cartPage, this::toResponseList);
+    }
+
+    @Mapping(source = "business.name", target = "businessName")
+    @Mapping(target = "totalItems", expression = "java(cart.getTotalItems())")
+    @Mapping(target = "subtotal", expression = "java(cart.getSubtotal())")
+    @Mapping(target = "totalDiscount", expression = "java(cart.getTotalDiscount())")
+    @Mapping(target = "finalTotal", expression = "java(cart.getSubtotal())")
+    CartSummaryResponse toSummaryResponse(Cart cart);
+
+    @AfterMapping
+    default void setSummaryCartItems(@MappingTarget CartSummaryResponse response, Cart cart) {
+        if (cart.getItems() != null) {
+            response.setItems(toItemResponseList(cart.getItems()));
+        }
     }
 
     /**
