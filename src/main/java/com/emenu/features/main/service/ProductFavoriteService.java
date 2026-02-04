@@ -9,7 +9,7 @@ import com.emenu.shared.dto.PaginationResponse;
 import java.util.UUID;
 
 public interface ProductFavoriteService {
-    FavoriteToggleDto toggleFavorite(UUID productId, UUID businessId);
-    PaginationResponse<ProductListDto> getUserFavorites(UUID businessId, ProductFilterDto filter);
+    FavoriteToggleDto toggleFavorite(UUID productId);
+    PaginationResponse<ProductListDto> getUserFavorites(ProductFilterDto filter);
     FavoriteRemoveAllDto removeAllFavorites(UUID businessId);
 }

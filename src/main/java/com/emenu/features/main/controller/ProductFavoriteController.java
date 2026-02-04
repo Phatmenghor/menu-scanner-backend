@@ -27,25 +27,20 @@ public class ProductFavoriteController {
      * Toggle favorite status for a product
      */
     @PostMapping("/{productId}/toggle")
-    public ResponseEntity<ApiResponse<FavoriteToggleDto>> toggleFavorite(
-            @PathVariable UUID productId,
-            @RequestParam UUID businessId) {
-        log.info("Toggle favorite - Product: {}, Business: {}", productId, businessId);
-
-        FavoriteToggleDto result = favoriteService.toggleFavorite(productId, businessId);
-
+    public ResponseEntity<ApiResponse<FavoriteToggleDto>> toggleFavorite(@PathVariable UUID productId) {
+        log.info("Toggle favorite - Product: {}", productId);
+        FavoriteToggleDto result = favoriteService.toggleFavorite(productId);
         return ResponseEntity.ok(ApiResponse.success(result.getMessage(), result));
     }
 
     /**
-     * Get paginated list of user's favorite products
+     * Get paginated list of user's favorite products (businessId from filter body)
      */
     @PostMapping("/my-favorites")
     public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getUserFavorites(
-            @RequestParam UUID businessId,
             @Valid @RequestBody ProductFilterDto filter) {
-        log.info("Get user favorites - Business: {}", businessId);
-        PaginationResponse<ProductListDto> favorites = favoriteService.getUserFavorites(businessId, filter);
+        log.info("Get user favorites - Business: {}", filter.getBusinessId());
+        PaginationResponse<ProductListDto> favorites = favoriteService.getUserFavorites(filter);
         return ResponseEntity.ok(ApiResponse.success("Favorite products retrieved successfully", favorites));
     }
 
@@ -55,9 +50,7 @@ public class ProductFavoriteController {
     @DeleteMapping("/all")
     public ResponseEntity<ApiResponse<FavoriteRemoveAllDto>> removeAllFavorites(@RequestParam UUID businessId) {
         log.info("Remove all favorites - Business: {}", businessId);
-
         FavoriteRemoveAllDto result = favoriteService.removeAllFavorites(businessId);
-
         return ResponseEntity.ok(ApiResponse.success("All favorites removed successfully", result));
     }
 }

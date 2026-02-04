@@ -42,18 +42,14 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
     private final SecurityUtils securityUtils;
 
     @Override
-    public FavoriteToggleDto toggleFavorite(UUID productId, UUID businessId) {
+    public FavoriteToggleDto toggleFavorite(UUID productId) {
         User currentUser = securityUtils.getCurrentUser();
         UUID userId = currentUser.getId();
 
-        log.info("Toggling favorite - Product: {}, Business: {}, User: {}", productId, businessId, userId);
+        log.info("Toggling favorite - Product: {}, User: {}", productId, userId);
 
         Product product = productRepository.findByIdAndIsDeletedFalse(productId)
                 .orElseThrow(() -> new NotFoundException("Product not found: " + productId));
-
-        if (!product.getBusinessId().equals(businessId)) {
-            throw new ValidationException("Product does not belong to the specified business");
-        }
 
         if (!product.isActive()) {
             throw new ValidationException("Cannot favorite inactive product");
@@ -84,8 +80,9 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
 
     @Override
     @Transactional(readOnly = true)
-    public PaginationResponse<ProductListDto> getUserFavorites(UUID businessId, ProductFilterDto filter) {
+    public PaginationResponse<ProductListDto> getUserFavorites(ProductFilterDto filter) {
         UUID userId = securityUtils.getCurrentUserId();
+        UUID businessId = filter.getBusinessId();
         log.info("Getting favorites - User: {}, Business: {}", userId, businessId);
 
         Pageable pageable = PaginationUtils.createPageable(
@@ -95,7 +92,12 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
             "DESC"
         );
 
-        Page<Product> favoritePage = productRepository.findUserFavoritesByBusiness(userId, businessId, pageable);
+        Page<Product> favoritePage;
+        if (businessId != null) {
+            favoritePage = productRepository.findUserFavoritesByBusiness(userId, businessId, pageable);
+        } else {
+            favoritePage = productRepository.findUserFavorites(userId, pageable);
+        }
 
         PaginationResponse<ProductListDto> response = productMapper.toPaginationResponse(
             favoritePage,
@@ -104,7 +106,7 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
 
         response.getContent().forEach(product -> product.setIsFavorited(true));
 
-        log.info("Retrieved {} favorites - User: {}, Business: {}", response.getContent().size(), userId, businessId);
+        log.info("Retrieved {} favorites - User: {}", response.getContent().size(), userId);
         return response;
     }
 

@@ -30,6 +30,18 @@ public interface CartRepository extends JpaRepository<Cart, UUID> {
     Optional<Cart> findByUserIdAndBusinessIdAndIsDeletedFalse(UUID userId, UUID businessId);
 
     /**
+     * Finds the most recently updated non-deleted cart for a user with items eagerly fetched
+     */
+    @Query("SELECT c FROM Cart c " +
+           "LEFT JOIN FETCH c.items ci " +
+           "LEFT JOIN FETCH ci.product p " +
+           "LEFT JOIN FETCH ci.productSize ps " +
+           "LEFT JOIN FETCH c.business " +
+           "WHERE c.userId = :userId AND c.isDeleted = false " +
+           "ORDER BY c.updatedAt DESC")
+    List<Cart> findByUserIdWithItems(@Param("userId") UUID userId);
+
+    /**
      * Counts total quantity of active products in a user's cart for a specific business
      */
     @Query("SELECT COALESCE(SUM(ci.quantity), 0) FROM Cart c " +
