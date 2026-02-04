@@ -87,4 +87,36 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
     List<Map<String, Object>> getProductQuantitiesInCart(@Param("userId") UUID userId,
                                                           @Param("businessId") UUID businessId,
                                                           @Param("productIds") List<UUID> productIds);
+
+    /**
+     * Get total quantities for products in user's cart across all businesses.
+     */
+    @Query("""
+            SELECT ci.productId as productId, SUM(ci.quantity) as totalQuantity
+            FROM CartItem ci
+            JOIN Cart c ON ci.cartId = c.id
+            WHERE c.userId = :userId
+            AND ci.productId IN :productIds
+            AND ci.isDeleted = false
+            AND c.isDeleted = false
+            GROUP BY ci.productId
+            """)
+    List<Map<String, Object>> getProductQuantitiesInCartAllBusinesses(@Param("userId") UUID userId,
+                                                                       @Param("productIds") List<UUID> productIds);
+
+    /**
+     * Get per-size quantities for a specific product in user's cart.
+     */
+    @Query("""
+            SELECT ci.productSizeId as productSizeId, ci.quantity as quantity
+            FROM CartItem ci
+            JOIN Cart c ON ci.cartId = c.id
+            WHERE c.userId = :userId
+            AND ci.productId = :productId
+            AND ci.productSizeId IS NOT NULL
+            AND ci.isDeleted = false
+            AND c.isDeleted = false
+            """)
+    List<Map<String, Object>> getSizeQuantitiesInCart(@Param("userId") UUID userId,
+                                                       @Param("productId") UUID productId);
 }

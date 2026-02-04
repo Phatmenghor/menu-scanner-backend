@@ -21,26 +21,54 @@ public class CartQueryHelper {
 
     /**
      * Get cart quantities for multiple products for a specific user and business.
-     * Returns a map of productId to total quantity in cart.
+     * If businessId is null, queries across all businesses.
      *
      * @param userId      The user ID
-     * @param businessId  The business ID
+     * @param businessId  The business ID (nullable)
      * @param productIds  List of product IDs to check
      * @return Map of productId to total quantity in cart
      */
     public Map<UUID, Integer> getProductQuantitiesInCart(UUID userId, UUID businessId, List<UUID> productIds) {
-        if (userId == null || businessId == null || productIds == null || productIds.isEmpty()) {
+        if (userId == null || productIds == null || productIds.isEmpty()) {
             return Map.of();
         }
 
-        List<Map<String, Object>> results = cartItemRepository.getProductQuantitiesInCart(userId, businessId, productIds);
+        List<Map<String, Object>> results;
+        if (businessId != null) {
+            results = cartItemRepository.getProductQuantitiesInCart(userId, businessId, productIds);
+        } else {
+            results = cartItemRepository.getProductQuantitiesInCartAllBusinesses(userId, productIds);
+        }
 
         Map<UUID, Integer> quantityMap = new HashMap<>();
         for (Map<String, Object> result : results) {
             UUID productId = (UUID) result.get("productId");
-            // Cast to Number first, then convert to int to handle both Integer and Long
             Number totalQuantity = (Number) result.get("totalQuantity");
             quantityMap.put(productId, totalQuantity.intValue());
+        }
+
+        return quantityMap;
+    }
+
+    /**
+     * Get per-size quantities for a specific product in user's cart.
+     *
+     * @param userId    The user ID
+     * @param productId The product ID
+     * @return Map of productSizeId to quantity in cart
+     */
+    public Map<UUID, Integer> getSizeQuantitiesInCart(UUID userId, UUID productId) {
+        if (userId == null || productId == null) {
+            return Map.of();
+        }
+
+        List<Map<String, Object>> results = cartItemRepository.getSizeQuantitiesInCart(userId, productId);
+
+        Map<UUID, Integer> quantityMap = new HashMap<>();
+        for (Map<String, Object> result : results) {
+            UUID sizeId = (UUID) result.get("productSizeId");
+            Number quantity = (Number) result.get("quantity");
+            quantityMap.put(sizeId, quantity.intValue());
         }
 
         return quantityMap;

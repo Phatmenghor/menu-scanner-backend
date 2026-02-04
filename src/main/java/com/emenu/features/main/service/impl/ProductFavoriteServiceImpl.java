@@ -14,6 +14,7 @@ import com.emenu.features.main.models.ProductFavorite;
 import com.emenu.features.main.repository.ProductFavoriteRepository;
 import com.emenu.features.main.repository.ProductRepository;
 import com.emenu.features.main.service.ProductFavoriteService;
+import com.emenu.features.order.utils.CartQueryHelper;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
@@ -26,7 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +41,7 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
     private final FavoriteMapper favoriteMapper;
     private final PaginationMapper paginationMapper;
     private final SecurityUtils securityUtils;
+    private final CartQueryHelper cartQueryHelper;
 
     @Override
     public FavoriteToggleDto toggleFavorite(UUID productId) {
@@ -104,7 +106,20 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
             paginationMapper
         );
 
-        response.getContent().forEach(product -> product.setIsFavorited(true));
+        if (!response.getContent().isEmpty()) {
+            List<UUID> productIds = response.getContent().stream()
+                    .map(ProductListDto::getId)
+                    .toList();
+
+            Map<UUID, Integer> cartQuantities = cartQueryHelper.getProductQuantitiesInCart(
+                    userId, businessId, productIds
+            );
+
+            response.getContent().forEach(product -> {
+                product.setIsFavorited(true);
+                product.setQuantityInCart(cartQuantities.getOrDefault(product.getId(), 0));
+            });
+        }
 
         log.info("Retrieved {} favorites - User: {}", response.getContent().size(), userId);
         return response;

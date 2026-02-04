@@ -29,7 +29,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException, IOException {
+                                    FilterChain filterChain) throws ServletException, IOException {
         try {
             String token = getJWTFromRequest(request);
 

@@ -225,20 +225,7 @@ public class ProductServiceImpl implements ProductService {
 
         ProductDetailDto dto = productMapper.toDetailDto(product);
 
-        if (currentUser.isPresent()) {
-            boolean isFavorited = favoriteQueryHelper.isFavorited(currentUser.get().getId(), product.getId());
-            dto.setIsFavorited(isFavorited);
-
-            // Get cart quantity for this product
-            Map<UUID, Integer> cartQuantities = cartQueryHelper.getProductQuantitiesInCart(
-                    currentUser.get().getId(),
-                    product.getBusinessId(),
-                    List.of(product.getId())
-            );
-            dto.setQuantityInCart(cartQuantities.getOrDefault(product.getId(), 0));
-        } else {
-            dto.setQuantityInCart(0);
-        }
+        populateUserFieldsForDetail(dto, currentUser, product);
 
         return dto;
     }
@@ -254,22 +241,39 @@ public class ProductServiceImpl implements ProductService {
         ProductDetailDto dto = productMapper.toDetailDto(product);
 
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
+        populateUserFieldsForDetail(dto, currentUser, product);
+
+        return dto;
+    }
+
+    private void populateUserFieldsForDetail(ProductDetailDto dto, Optional<User> currentUser, Product product) {
         if (currentUser.isPresent()) {
-            boolean isFavorited = favoriteQueryHelper.isFavorited(currentUser.get().getId(), product.getId());
+            UUID userId = currentUser.get().getId();
+
+            boolean isFavorited = favoriteQueryHelper.isFavorited(userId, product.getId());
             dto.setIsFavorited(isFavorited);
 
             // Get cart quantity for this product
             Map<UUID, Integer> cartQuantities = cartQueryHelper.getProductQuantitiesInCart(
-                    currentUser.get().getId(),
+                    userId,
                     product.getBusinessId(),
                     List.of(product.getId())
             );
             dto.setQuantityInCart(cartQuantities.getOrDefault(product.getId(), 0));
+
+            // Get per-size quantities in cart
+            if (dto.getSizes() != null && !dto.getSizes().isEmpty()) {
+                Map<UUID, Integer> sizeQuantities = cartQueryHelper.getSizeQuantitiesInCart(userId, product.getId());
+                dto.getSizes().forEach(size ->
+                        size.setQuantityInCart(sizeQuantities.getOrDefault(size.getId(), 0))
+                );
+            }
         } else {
             dto.setQuantityInCart(0);
+            if (dto.getSizes() != null) {
+                dto.getSizes().forEach(size -> size.setQuantityInCart(0));
+            }
         }
-
-        return dto;
     }
 
     @Override

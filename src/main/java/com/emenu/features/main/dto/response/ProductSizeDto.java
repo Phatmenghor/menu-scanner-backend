@@ -16,5 +16,6 @@ public class ProductSizeDto {
     private LocalDateTime promotionToDate;
     private BigDecimal finalPrice;
     private Boolean hasPromotion;
+    private Integer quantityInCart;
     private LocalDateTime createdAt;
 }

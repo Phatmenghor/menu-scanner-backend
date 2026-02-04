@@ -127,14 +127,11 @@ public class Product extends BaseUUIDEntity {
         } else {
             this.hasSizes = true;
             
+            // Use the first non-deleted size (ordered by price ASC)
             ProductSize displaySize = sizes.stream()
                     .filter(size -> size != null && !size.getIsDeleted())
-                    .filter(ProductSize::isPromotionActive)
                     .findFirst()
-                    .orElseGet(() -> sizes.stream()
-                            .filter(size -> size != null && !size.getIsDeleted())
-                            .min((s1, s2) -> s1.getPrice().compareTo(s2.getPrice()))
-                            .orElse(null));
+                    .orElse(null);
             
             if (displaySize != null) {
                 this.displayOriginPrice = displaySize.getPrice();
