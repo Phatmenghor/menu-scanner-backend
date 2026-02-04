@@ -36,32 +36,6 @@ public class ProductFavoriteController {
     }
 
     /**
-     * Remove a specific favorite by ID
-     */
-    @DeleteMapping("/{favoriteId}")
-    public ResponseEntity<ApiResponse<Void>> removeFavoriteById(@PathVariable UUID favoriteId) {
-        log.info("Remove favorite by ID: {}", favoriteId);
-
-        favoriteService.removeFavoriteById(favoriteId);
-
-        return ResponseEntity.ok(ApiResponse.success("Favorite removed successfully", null));
-    }
-
-    /**
-     * Get paginated list of user's favorite products
-     */
-    @PostMapping("/my-favorites")
-    public ResponseEntity<ApiResponse<PaginationResponse<ProductListDto>>> getUserFavorites(
-            @Valid @RequestBody ProductFilterDto filter) {
-
-        log.info("Get user favorites");
-
-        PaginationResponse<ProductListDto> favorites = favoriteService.getUserFavorites(filter);
-
-        return ResponseEntity.ok(ApiResponse.success("Favorite products retrieved successfully", favorites));
-    }
-
-    /**
      * Remove all favorites for current user
      */
     @DeleteMapping("/all")

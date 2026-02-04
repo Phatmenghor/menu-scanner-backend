@@ -15,17 +15,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "carts",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "business_id"}),
-        indexes = {
-                // ✅ FIXED: BaseUUIDEntity indexes
-                @Index(name = "idx_cart_deleted", columnList = "is_deleted"),
-                @Index(name = "idx_cart_deleted_created", columnList = "is_deleted, created_at"),
-
-                // ✅ FIXED: Relationship indexes
-                @Index(name = "idx_cart_user_deleted", columnList = "user_id, is_deleted"),
-                @Index(name = "idx_cart_business_deleted", columnList = "business_id, is_deleted"),
-                @Index(name = "idx_cart_user_business_deleted", columnList = "user_id, business_id, is_deleted")
-        })
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "business_id"})
+)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

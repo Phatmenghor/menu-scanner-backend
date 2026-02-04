@@ -83,29 +83,6 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
     }
 
     /**
-     * Remove a specific favorite by its ID
-     */
-    @Override
-    public void removeFavoriteById(UUID favoriteId) {
-        User currentUser = securityUtils.getCurrentUser();
-        UUID userId = currentUser.getId();
-
-        log.info("Removing favorite by ID - Favorite: {}, User: {}", favoriteId, userId);
-
-        ProductFavorite favorite = favoriteRepository.findById(favoriteId)
-                .orElseThrow(() -> new NotFoundException("Favorite not found: " + favoriteId));
-
-        if (!favorite.getUserId().equals(userId)) {
-            throw new ValidationException("You can only remove your own favorites");
-        }
-
-        favoriteRepository.deleteByFavoriteId(favoriteId);
-        productRepository.decrementFavoriteCount(favorite.getProductId());
-
-        log.info("Favorite removed - ID: {}", favoriteId);
-    }
-
-    /**
      * Get paginated list of user's favorite products
      */
     @Override
@@ -154,15 +131,4 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
                 .build();
     }
 
-    /**
-     * Get list of product IDs that are favorited by user
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public List<UUID> getFavoriteProductIds(UUID userId, List<UUID> productIds) {
-        if (userId == null || productIds == null || productIds.isEmpty()) {
-            return List.of();
-        }
-        return favoriteRepository.findFavoriteProductIdsByUserIdAndProductIds(userId, productIds);
-    }
 }
