@@ -372,8 +372,6 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
-        log.info("Processing refresh token request");
-
         String refreshTokenString = request.getRefreshToken();
 
         // Verify refresh token JWT structure first
