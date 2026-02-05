@@ -97,30 +97,26 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional(readOnly = true)
-    public CartSummaryResponse getCart() {
+    public CartSummaryResponse getCart(UUID businessId) {
         UUID userId = securityUtils.getCurrentUserId();
-        log.info("Getting cart for user: {}", userId);
+        log.info("Getting cart for user: {} and business: {}", userId, businessId);
 
-        List<Cart> carts = cartRepository.findByUserIdWithItems(userId);
-        if (!carts.isEmpty()) {
-            Cart cart = carts.getFirst();
-            filterUnavailableItems(cart);
-            return cartMapper.toSummaryResponse(cart);
-        }
-
-        return emptyCartSummary();
+        return loadCartSummary(userId, businessId);
     }
 
     @Override
-    public CartSummaryResponse clearCart() {
+    public CartSummaryResponse clearCart(UUID businessId) {
         UUID userId = securityUtils.getCurrentUserId();
-        log.info("Clearing cart for user: {}", userId);
+        log.info("Clearing cart for user: {} and business: {}", userId, businessId);
 
-        List<Cart> carts = cartRepository.findByUserIdWithItems(userId);
-        for (Cart cart : carts) {
+        Optional<Cart> cartOpt = cartRepository.findByUserIdAndBusinessIdWithItems(userId, businessId);
+        if (cartOpt.isPresent()) {
+            Cart cart = cartOpt.get();
             if (cart.getItems() != null && !cart.getItems().isEmpty()) {
+                int count = cart.getItems().size();
                 cartItemRepository.deleteAll(cart.getItems());
-                log.info("Cleared {} items from cart: {}", cart.getItems().size(), cart.getId());
+                cart.getItems().clear();
+                log.info("Cleared {} items from cart: {}", count, cart.getId());
             }
         }
 

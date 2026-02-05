@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/cart")
 @RequiredArgsConstructor
@@ -25,17 +27,17 @@ public class CartController {
         return ResponseEntity.ok(ApiResponse.success("Cart updated successfully", cart));
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<CartSummaryResponse>> getCart() {
-        log.info("Getting cart");
-        CartSummaryResponse cart = cartService.getCart();
+    @GetMapping("/{businessId}")
+    public ResponseEntity<ApiResponse<CartSummaryResponse>> getCart(@PathVariable UUID businessId) {
+        log.info("Getting cart for business: {}", businessId);
+        CartSummaryResponse cart = cartService.getCart(businessId);
         return ResponseEntity.ok(ApiResponse.success("Cart retrieved successfully", cart));
     }
 
-    @DeleteMapping("/clear")
-    public ResponseEntity<ApiResponse<CartSummaryResponse>> clearCart() {
-        log.info("Clearing cart");
-        CartSummaryResponse cart = cartService.clearCart();
+    @DeleteMapping("/{businessId}/clear")
+    public ResponseEntity<ApiResponse<CartSummaryResponse>> clearCart(@PathVariable UUID businessId) {
+        log.info("Clearing cart for business: {}", businessId);
+        CartSummaryResponse cart = cartService.clearCart(businessId);
         return ResponseEntity.ok(ApiResponse.success("Cart cleared", cart));
     }
 }

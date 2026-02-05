@@ -3,6 +3,8 @@ package com.emenu.features.order.service;
 import com.emenu.features.order.dto.request.CartItemCreateRequest;
 import com.emenu.features.order.dto.response.CartSummaryResponse;
 
+import java.util.UUID;
+
 public interface CartService {
 
     /**
@@ -12,12 +14,12 @@ public interface CartService {
     CartSummaryResponse submitCartItem(CartItemCreateRequest request);
 
     /**
-     * GET - Get current user's cart
+     * GET - Get current user's cart for a specific business
      */
-    CartSummaryResponse getCart();
+    CartSummaryResponse getCart(UUID businessId);
 
     /**
-     * DELETE - Clear current user's cart
+     * DELETE - Clear current user's cart for a specific business
      */
-    CartSummaryResponse clearCart();
+    CartSummaryResponse clearCart(UUID businessId);
 }
