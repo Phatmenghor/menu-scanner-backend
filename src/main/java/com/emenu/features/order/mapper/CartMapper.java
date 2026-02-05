@@ -27,7 +27,7 @@ public interface CartMapper {
 
     @Mapping(source = "product.name", target = "productName")
     @Mapping(target = "sizeName", expression = "java(cartItem.getSizeName())")
-    @Mapping(target = "productImageUrl", expression = "java(cartItem.getProduct().getMainImageUrl())")
+    @Mapping(target = "productImageUrl", expression = "java(cartItem.getProduct() != null ? cartItem.getProduct().getMainImageUrl() : null)")
     @Mapping(target = "currentPrice", expression = "java(cartItem.getCurrentPrice())")
     @Mapping(target = "finalPrice", expression = "java(cartItem.getFinalPrice())")
     @Mapping(target = "totalPrice", expression = "java(cartItem.getTotalPrice())")

@@ -16,6 +16,8 @@ import com.emenu.features.main.models.ProductSize;
 import com.emenu.features.main.repository.ProductRepository;
 import com.emenu.features.main.repository.ProductSizeRepository;
 import com.emenu.security.SecurityUtils;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,9 @@ public class CartServiceImpl implements CartService {
     private final ProductSizeRepository productSizeRepository;
     private final CartMapper cartMapper;
     private final SecurityUtils securityUtils;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public CartSummaryResponse submitCartItem(CartItemCreateRequest request) {
@@ -79,6 +84,12 @@ public class CartServiceImpl implements CartService {
                 log.info("Added new item to cart with quantity: {} for user: {}", request.getQuantity(), userId);
             }
         }
+
+        // Flush pending changes and clear the persistence context so the reload
+        // query populates all lazy relations (product, productSize) from the database
+        // instead of returning cached entities with null associations.
+        entityManager.flush();
+        entityManager.clear();
 
         // Reload cart with items for response
         return loadCartSummary(userId, businessId);
