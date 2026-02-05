@@ -68,7 +68,6 @@ public class Cart extends BaseUUIDEntity {
                 .sum();
     }
 
-    // ✅ NEW: Count unavailable items
     public Integer getUnavailableItemsCount() {
         if (items == null || items.isEmpty()) {
             return 0;
