@@ -87,7 +87,7 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     @Override
     public AdminSessionResponse getSessionById(UUID sessionId) {
-        UserSession session = sessionRepository.findByIdAndIsDeletedFalse(sessionId)
+        UserSession session = sessionRepository.findByIdWithUser(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
         return sessionMapper.toAdminResponse(session);
     }

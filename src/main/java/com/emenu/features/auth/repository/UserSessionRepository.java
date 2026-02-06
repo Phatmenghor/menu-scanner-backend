@@ -19,7 +19,8 @@ public interface UserSessionRepository extends JpaRepository<UserSession, UUID> 
 
     Optional<UserSession> findByIdAndUserIdAndIsDeletedFalse(UUID id, UUID userId);
 
-    Optional<UserSession> findByIdAndIsDeletedFalse(UUID id);
+    @Query("SELECT s FROM UserSession s LEFT JOIN FETCH s.user WHERE s.id = :id AND s.isDeleted = false")
+    Optional<UserSession> findByIdWithUser(@Param("id") UUID id);
 
     @Query("SELECT s FROM UserSession s WHERE s.userId = :userId AND s.isDeleted = false " +
             "ORDER BY s.isCurrentSession DESC, CASE WHEN s.status = 'ACTIVE' THEN 0 ELSE 1 END, s.lastActiveAt DESC")

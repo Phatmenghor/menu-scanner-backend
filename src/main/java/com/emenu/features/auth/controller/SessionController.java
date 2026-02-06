@@ -41,7 +41,7 @@ public class SessionController {
     @GetMapping("/{sessionId}")
     public ResponseEntity<ApiResponse<AdminSessionResponse>> getRoleById(
             @PathVariable UUID sessionId) {
-        log.info("Get role by ID: {}", sessionId);
+        log.info("Get session by ID: {}", sessionId);
         AdminSessionResponse response = sessionService.getSessionById(sessionId);
         return ResponseEntity.ok(ApiResponse.success("Session retrieved successfully", response));
     }
