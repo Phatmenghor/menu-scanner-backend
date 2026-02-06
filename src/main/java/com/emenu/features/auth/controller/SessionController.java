@@ -9,6 +9,7 @@ import com.emenu.shared.dto.ApiResponse;
 import com.emenu.shared.dto.PaginationResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,9 +28,11 @@ public class SessionController {
     // ========== User Endpoints ==========
 
     @GetMapping
-    public ResponseEntity<List<UserSessionResponse>> getAllSessions() {
+    public ResponseEntity<ApiResponse<List<UserSessionResponse>>> getAllSessions() {
+        log.info("Getting all sessions for current user");
         UUID userId = securityUtils.getCurrentUserId();
-        return ResponseEntity.ok(sessionService.getAllSessions(userId));
+        List<UserSessionResponse> allSessions = sessionService.getAllSessions(userId);
+        return ResponseEntity.ok(ApiResponse.success("All sessions retrieved successfully", allSessions));
     }
 
     /**
@@ -40,36 +43,36 @@ public class SessionController {
             @PathVariable UUID sessionId) {
         log.info("Get role by ID: {}", sessionId);
         AdminSessionResponse response = sessionService.getSessionById(sessionId);
-        return ResponseEntity.ok(ApiResponse.success("Session retrieved", response));
+        return ResponseEntity.ok(ApiResponse.success("Session retrieved successfully", response));
     }
 
     @DeleteMapping("/{sessionId}")
-    public ResponseEntity<UserSessionResponse> logoutSession(@PathVariable UUID sessionId) {
+    public ResponseEntity<ApiResponse<UserSessionResponse>> logoutSession(@PathVariable UUID sessionId) {
         UUID userId = securityUtils.getCurrentUserId();
-        return ResponseEntity.ok(sessionService.logoutSession(sessionId, userId));
+        return ResponseEntity.ok(ApiResponse.success("Session retrieved successfully", sessionService.logoutSession(sessionId, userId)));
     }
 
     @PostMapping("/logout-others")
-    public ResponseEntity<List<UserSessionResponse>> logoutOtherSessions(@RequestParam UUID currentSessionId) {
+    public ResponseEntity<ApiResponse<List<UserSessionResponse>>> logoutOtherSessions(@RequestParam UUID currentSessionId) {
         UUID userId = securityUtils.getCurrentUserId();
-        return ResponseEntity.ok(sessionService.logoutOtherSessions(userId, currentSessionId));
+        return ResponseEntity.ok(ApiResponse.success("Session retrieved successfully", sessionService.logoutOtherSessions(userId, currentSessionId)));
     }
 
     // ========== Admin Endpoints ==========
 
     @PostMapping("/admin/all")
-    public ResponseEntity<PaginationResponse<AdminSessionResponse>> getAllSessionsAdmin(
+    public ResponseEntity<ApiResponse<PaginationResponse<AdminSessionResponse>>> getAllSessionsAdmin(
             @RequestBody SessionFilterRequest request) {
-        return ResponseEntity.ok(sessionService.getAllSessionsAdmin(request));
+        return ResponseEntity.ok(ApiResponse.success("Session retrieved successfully", sessionService.getAllSessionsAdmin(request)));
     }
 
     @DeleteMapping("/admin/{sessionId}")
-    public ResponseEntity<AdminSessionResponse> logoutSessionAdmin(@PathVariable UUID sessionId) {
-        return ResponseEntity.ok(sessionService.logoutSessionAdmin(sessionId));
+    public ResponseEntity<ApiResponse<AdminSessionResponse>> logoutSessionAdmin(@PathVariable UUID sessionId) {
+        return ResponseEntity.ok(ApiResponse.success("Session retrieved successfully", sessionService.logoutSessionAdmin(sessionId)));
     }
 
     @PostMapping("/admin/logout-all/{userId}")
-    public ResponseEntity<List<AdminSessionResponse>> logoutAllSessionsAdmin(@PathVariable UUID userId) {
-        return ResponseEntity.ok(sessionService.logoutAllSessionsAdmin(userId));
+    public ResponseEntity<ApiResponse<List<AdminSessionResponse>>> logoutAllSessionsAdmin(@PathVariable UUID userId) {
+        return ResponseEntity.ok(ApiResponse.success("Session retrieved successfully", sessionService.logoutAllSessionsAdmin(userId)));
     }
 }
