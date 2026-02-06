@@ -4,6 +4,7 @@ import com.emenu.exception.custom.*;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.constants.ErrorCodes;
 import com.emenu.shared.dto.ApiResponse;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -417,6 +418,17 @@ public class GlobalExceptionHandler {
     // ================================
     // DATABASE ERRORS
     // ================================
+
+    @ExceptionHandler(OptimisticLockException.class)
+    public ResponseEntity<ApiResponse<Object>> handleOptimisticLockException(
+            OptimisticLockException ex, HttpServletRequest request) {
+        log.warn("Optimistic lock conflict for request to {}: {}", request.getRequestURI(), ex.getMessage());
+
+        Map<String, Object> errorDetails = createErrorDetails("CONFLICT", request);
+        ApiResponse<Object> response = new ApiResponse<>("error",
+                "The data was modified by another request. Please try again.", errorDetails);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolation(

@@ -16,6 +16,7 @@ import com.emenu.features.main.models.ProductSize;
 import com.emenu.features.main.repository.ProductRepository;
 import com.emenu.features.main.repository.ProductSizeRepository;
 import com.emenu.security.SecurityUtils;
+import com.emenu.shared.retry.RetryOnOptimisticLock;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,7 @@ public class CartServiceImpl implements CartService {
     private EntityManager entityManager;
 
     @Override
+    @RetryOnOptimisticLock
     public CartSummaryResponse submitCartItem(CartItemCreateRequest request) {
         User currentUser = securityUtils.getCurrentUser();
         UUID userId = currentUser.getId();
