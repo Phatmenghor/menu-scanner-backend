@@ -57,8 +57,9 @@ public class CartServiceImpl implements CartService {
         // Get or create cart
         Cart cart = getOrCreateCart(userId, businessId);
 
-        // Check if item already exists in cart
-        Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndProductIdAndSizeId(
+        // Check if item already exists in cart (with pessimistic lock to prevent
+        // OptimisticLockException when users rapidly update quantities)
+        Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndProductIdAndSizeIdForUpdate(
                 cart.getId(), request.getProductId(), request.getProductSizeId());
 
         if (existingItem.isPresent()) {

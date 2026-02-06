@@ -1,7 +1,9 @@
 package com.emenu.features.order.repository;
 
 import com.emenu.features.order.models.CartItem;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,6 +30,16 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
     Optional<CartItem> findByCartIdAndProductIdAndSizeId(@Param("cartId") UUID cartId,
                                                           @Param("productId") UUID productId,
                                                           @Param("productSizeId") UUID productSizeId);
+
+    /**
+     * Finds a non-deleted cart item with pessimistic write lock (FOR UPDATE) to prevent
+     * concurrent modification race conditions when users rapidly update quantities.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT ci FROM CartItem ci WHERE ci.cartId = :cartId AND ci.productId = :productId AND (:productSizeId IS NULL AND ci.productSizeId IS NULL OR ci.productSizeId = :productSizeId) AND ci.isDeleted = false")
+    Optional<CartItem> findByCartIdAndProductIdAndSizeIdForUpdate(@Param("cartId") UUID cartId,
+                                                                    @Param("productId") UUID productId,
+                                                                    @Param("productSizeId") UUID productSizeId);
 
     /**
      * Permanently deletes cart items for deleted products
