@@ -8,7 +8,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class CustomerAddressCreateRequest {
+public class LocationCreateRequest {
     
     private String village; // Ex: Phum Svay Dangkum
     private String commune; // Ex: Sangkat Svay Dangkum

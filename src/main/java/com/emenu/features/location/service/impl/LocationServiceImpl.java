@@ -3,16 +3,17 @@ package com.emenu.features.location.service.impl;
 import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
-import com.emenu.features.location.dto.filter.CustomerAddressFilterRequest;
-import com.emenu.features.location.dto.request.CustomerAddressCreateRequest;
-import com.emenu.features.location.dto.response.CustomerAddressResponse;
-import com.emenu.features.location.dto.update.CustomerAddressUpdateRequest;
-import com.emenu.features.location.mapper.CustomerAddressMapper;
-import com.emenu.features.location.models.CustomerAddress;
-import com.emenu.features.location.repository.CustomerAddressRepository;
-import com.emenu.features.location.service.CustomerAddressService;
+import com.emenu.features.location.dto.filter.LocationFilterRequest;
+import com.emenu.features.location.dto.request.LocationCreateRequest;
+import com.emenu.features.location.dto.response.LocationResponse;
+import com.emenu.features.location.dto.update.LocationUpdateRequest;
+import com.emenu.features.location.mapper.LocationMapper;
+import com.emenu.features.location.models.Location;
+import com.emenu.features.location.repository.LocationRepository;
+import com.emenu.features.location.service.LocationService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,18 +29,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class CustomerAddressServiceImpl implements CustomerAddressService {
+public class LocationServiceImpl implements LocationService {
 
-    private final CustomerAddressRepository addressRepository;
-    private final CustomerAddressMapper addressMapper;
+    private final LocationRepository addressRepository;
+    private final LocationMapper addressMapper;
     private final SecurityUtils securityUtils;
-    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
+    private final PaginationMapper paginationMapper;
 
     @Override
-    public CustomerAddressResponse createAddress(CustomerAddressCreateRequest request) {
+    public LocationResponse createAddress(LocationCreateRequest request) {
         User currentUser = securityUtils.getCurrentUser();
         
-        CustomerAddress address = addressMapper.toEntity(request);
+        Location address = addressMapper.toEntity(request);
         address.setUserId(currentUser.getId());
         
         // If this is set as default or no default exists, make it default
@@ -48,7 +49,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
             address.setAsDefault();
         }
         
-        CustomerAddress savedAddress = addressRepository.save(address);
+        Location savedAddress = addressRepository.save(address);
         log.info("Address created for user: {}", currentUser.getUserIdentifier());
         
         return addressMapper.toResponse(savedAddress);
@@ -56,12 +57,12 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
 
     @Override
     @Transactional(readOnly = true)
-    public PaginationResponse<CustomerAddressResponse> getAllAddresses(CustomerAddressFilterRequest filter) {
+    public PaginationResponse<LocationResponse> getAllAddresses(LocationFilterRequest filter) {
         Pageable pageable = PaginationUtils.createPageable(
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        Page<CustomerAddress> addressPage = addressRepository.findAllWithFilters(
+        Page<Location> addressPage = addressRepository.findAllWithFilters(
                 filter.getUserId(),
                 filter.getSearch(),
                 pageable
@@ -71,25 +72,18 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CustomerAddressResponse> getMyAddressesList() {
+    public List<LocationResponse> getMyAddressesList() {
         User currentUser = securityUtils.getCurrentUser();
-        List<CustomerAddress> addresses = addressRepository
+        List<Location> addresses = addressRepository
                 .findByUserIdAndIsDeletedFalseOrderByIsDefaultDescCreatedAtDesc(currentUser.getId());
         return addressMapper.toResponseList(addresses);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<CustomerAddressResponse> getMyAddresses() {
-        // Deprecated method - use getMyAddressesList() instead
-        return getMyAddressesList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public CustomerAddressResponse getAddressById(UUID id) {
+    public LocationResponse getAddressById(UUID id) {
         User currentUser = securityUtils.getCurrentUser();
-        CustomerAddress address = addressRepository.findByIdAndIsDeletedFalse(id)
+        Location address = addressRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Address not found"));
         
         if (!address.getUserId().equals(currentUser.getId())) {
@@ -100,9 +94,9 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     }
 
     @Override
-    public CustomerAddressResponse updateAddress(UUID id, CustomerAddressUpdateRequest request) {
+    public LocationResponse updateAddress(UUID id, LocationUpdateRequest request) {
         User currentUser = securityUtils.getCurrentUser();
-        CustomerAddress address = addressRepository.findByIdAndIsDeletedFalse(id)
+        Location address = addressRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Address not found"));
         
         if (!address.getUserId().equals(currentUser.getId())) {
@@ -116,14 +110,14 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
             address.setAsDefault();
         }
         
-        CustomerAddress updatedAddress = addressRepository.save(address);
+        Location updatedAddress = addressRepository.save(address);
         return addressMapper.toResponse(updatedAddress);
     }
 
     @Override
-    public CustomerAddressResponse deleteAddress(UUID id) {
+    public LocationResponse deleteAddress(UUID id) {
         User currentUser = securityUtils.getCurrentUser();
-        CustomerAddress address = addressRepository.findByIdAndIsDeletedFalse(id)
+        Location address = addressRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Address not found"));
         
         if (!address.getUserId().equals(currentUser.getId())) {
@@ -138,27 +132,10 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     }
 
     @Override
-    public CustomerAddressResponse setDefaultAddress(UUID id) {
-        User currentUser = securityUtils.getCurrentUser();
-        CustomerAddress address = addressRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new NotFoundException("Address not found"));
-        
-        if (!address.getUserId().equals(currentUser.getId())) {
-            throw new ValidationException("You can only set your own addresses as default");
-        }
-        
-        clearDefaultForUser(currentUser.getId());
-        address.setAsDefault();
-        
-        CustomerAddress updatedAddress = addressRepository.save(address);
-        return addressMapper.toResponse(updatedAddress);
-    }
-
-    @Override
     @Transactional(readOnly = true)
-    public CustomerAddressResponse getDefaultAddress() {
+    public LocationResponse getDefaultAddress() {
         User currentUser = securityUtils.getCurrentUser();
-        CustomerAddress defaultAddress = addressRepository
+        Location defaultAddress = addressRepository
                 .findByUserIdAndIsDefaultTrueAndIsDeletedFalse(currentUser.getId())
                 .orElseThrow(() -> new NotFoundException("No default address found"));
         

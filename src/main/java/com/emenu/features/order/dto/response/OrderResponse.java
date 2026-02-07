@@ -2,7 +2,7 @@ package com.emenu.features.order.dto.response;
 
 import com.emenu.enums.order.OrderStatus;
 import com.emenu.enums.payment.PaymentMethod;
-import com.emenu.features.location.dto.response.CustomerAddressResponse;
+import com.emenu.features.location.dto.response.LocationResponse;
 import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,7 +28,7 @@ public class OrderResponse extends BaseAuditResponse {
     private String businessName;
     
     // Delivery info
-    private CustomerAddressResponse deliveryAddress;
+    private LocationResponse deliveryAddress;
     private DeliveryOptionResponse deliveryOption;
     
     // Order details

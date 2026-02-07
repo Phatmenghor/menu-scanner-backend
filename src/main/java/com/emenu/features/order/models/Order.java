@@ -4,7 +4,7 @@ import com.emenu.enums.order.OrderStatus;
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.User;
-import com.emenu.features.location.models.CustomerAddress;
+import com.emenu.features.location.models.Location;
 import com.emenu.shared.domain.BaseUUIDEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -76,7 +76,7 @@ public class Order extends BaseUUIDEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delivery_address_id", insertable = false, updatable = false)
-    private CustomerAddress deliveryAddress;
+    private Location deliveryAddress;
 
     @Column(name = "delivery_option_id")
     private UUID deliveryOptionId;

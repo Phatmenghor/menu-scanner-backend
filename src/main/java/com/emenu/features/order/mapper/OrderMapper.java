@@ -1,14 +1,12 @@
 package com.emenu.features.order.mapper;
 
-import com.emenu.enums.payment.PaymentMethod;
-import com.emenu.features.location.mapper.CustomerAddressMapper;
+import com.emenu.features.location.mapper.LocationMapper;
 import com.emenu.features.main.models.Product;
 import com.emenu.features.order.dto.helper.OrderCreateHelper;
 import com.emenu.features.order.dto.helper.OrderItemCreateHelper;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
 import com.emenu.features.order.dto.request.POSOrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
-import com.emenu.features.order.models.Cart;
 import com.emenu.features.order.models.CartItem;
 import com.emenu.features.order.models.Order;
 import com.emenu.features.order.models.OrderItem;
@@ -16,7 +14,6 @@ import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.data.domain.Page;
 
@@ -25,7 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        uses = {CustomerAddressMapper.class, DeliveryOptionMapper.class, OrderItemMapper.class, PaginationMapper.class})
+        uses = {LocationMapper.class, DeliveryOptionMapper.class, OrderItemMapper.class, PaginationMapper.class})
 public interface OrderMapper {
 
     @Mapping(target = "customerName", expression = "java(order.getCustomerIdentifier())")

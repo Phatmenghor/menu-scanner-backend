@@ -17,7 +17,7 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class CustomerAddress extends BaseUUIDEntity {
+public class Location extends BaseUUIDEntity {
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;

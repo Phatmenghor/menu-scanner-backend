@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class CustomerAddressFilterRequest extends BaseFilterRequest {
+public class LocationFilterRequest extends BaseFilterRequest {
     private UUID userId;
     private Status status;
 }

@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class CustomerAddressResponse extends BaseAuditResponse {
+public class LocationResponse extends BaseAuditResponse {
     private UUID userId;
     private String village;
     private String commune;

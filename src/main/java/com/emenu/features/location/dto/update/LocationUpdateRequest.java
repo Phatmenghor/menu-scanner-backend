@@ -7,7 +7,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class CustomerAddressUpdateRequest {
+public class LocationUpdateRequest {
     private String village;
     private String commune;
     private String district;
