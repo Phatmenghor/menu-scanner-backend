@@ -38,6 +38,10 @@ public class Location extends BaseUUIDEntity {
     @Column(name = "province", nullable = false)
     private String province; // Ex: Siem Reap
 
+    @Column(name = "country", nullable = false)_
+
+    private String country;
+
     @Column(name = "street_number")
     private String streetNumber; // Ex: Street 63 or "St. 271"
 
