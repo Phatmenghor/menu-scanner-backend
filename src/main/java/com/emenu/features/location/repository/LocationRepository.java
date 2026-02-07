@@ -31,7 +31,7 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
      * Clears the default flag for all non-deleted addresses belonging to a user
      */
     @Modifying
-    @Query("UPDATE CustomerAddress ca SET ca.isDefault = false WHERE ca.userId = :userId AND ca.isDeleted = false")
+    @Query("UPDATE Location ca SET ca.isDefault = false WHERE ca.userId = :userId AND ca.isDeleted = false")
     void clearDefaultForUser(@Param("userId") UUID userId);
 
     /**
@@ -42,7 +42,7 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
     /**
      * Finds a non-deleted customer address by ID with user details eagerly fetched
      */
-    @Query("SELECT ca FROM CustomerAddress ca " +
+    @Query("SELECT ca FROM Location ca " +
            "LEFT JOIN FETCH ca.user " +
            "WHERE ca.id = :id AND ca.isDeleted = false")
     Optional<Location> findByIdWithUser(@Param("id") UUID id);
@@ -50,7 +50,7 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
     /**
      * Find all customer addresses with dynamic filtering
      */
-    @Query("SELECT ca FROM CustomerAddress ca " +
+    @Query("SELECT ca FROM Location ca " +
            "WHERE ca.isDeleted = false " +
            "AND (:userId IS NULL OR ca.userId = :userId) " +
            "AND (:search IS NULL OR :search = '' OR " +

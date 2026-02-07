@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/public/location")
+@RequestMapping("/api/v1/public/locations")
 @RequiredArgsConstructor
 @Slf4j
 public class PublicLocationController {
@@ -36,7 +36,7 @@ public class PublicLocationController {
     /**
      * Retrieves all provinces with pagination and filtering
      */
-    @PostMapping("/all")
+    @PostMapping("/all-province")
     public ResponseEntity<ApiResponse<PaginationResponse<ProvinceResponse>>> getAllProvinces(
             @Valid @RequestBody ProvinceFilterRequest request) {
         log.info("Get all provinces");
@@ -47,7 +47,7 @@ public class PublicLocationController {
     /**
      * Retrieves all districts with pagination and filtering
      */
-    @PostMapping("/all")
+    @PostMapping("/all-district")
     public ResponseEntity<ApiResponse<PaginationResponse<DistrictResponse>>> getAllDistricts(
             @Valid @RequestBody DistrictFilterRequest request) {
         log.info("Get all districts");
@@ -58,7 +58,7 @@ public class PublicLocationController {
     /**
      * Retrieves all communes with pagination and filtering
      */
-    @PostMapping("/all")
+    @PostMapping("/all-commune")
     public ResponseEntity<ApiResponse<PaginationResponse<CommuneResponse>>> getAllCommunes(
             @Valid @RequestBody CommuneFilterRequest request) {
         log.info("Get all communes");
@@ -69,7 +69,7 @@ public class PublicLocationController {
     /**
      * Retrieves all villages with pagination and filtering
      */
-    @PostMapping("/all")
+    @PostMapping("/all-village")
     public ResponseEntity<ApiResponse<PaginationResponse<VillageResponse>>> getAllVillages(
             @Valid @RequestBody VillageFilterRequest request) {
         log.info("Get all villages");

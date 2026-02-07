@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/location")
+@RequestMapping("/api/v1/locations")
 @RequiredArgsConstructor
 @Slf4j
 public class LocationController {
