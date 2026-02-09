@@ -30,6 +30,7 @@ import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.generate.OrderNumberGenerator;
 import com.emenu.shared.generate.PaymentReferenceGenerator;
+import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +59,7 @@ public class OrderServiceImpl implements OrderService {
     private final SecurityUtils securityUtils;
     private final OrderNumberGenerator orderNumberGenerator;
     private final PaymentReferenceGenerator paymentReferenceGenerator;
-    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
+    private final PaginationMapper paginationMapper;
 
     @Override
     public OrderResponse createOrderFromCart(OrderCreateRequest request) {
@@ -162,9 +163,8 @@ public class OrderServiceImpl implements OrderService {
             filter.setBusinessId(currentUser.getBusinessId());
         }
 
-        int pageNo = filter.getPageNo() != null && filter.getPageNo() > 0 ? filter.getPageNo() - 1 : 0;
         Pageable pageable = PaginationUtils.createPageable(
-                pageNo, filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+                filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
         Page<Order> page = orderRepository.findAll(pageable);

@@ -10,6 +10,7 @@ import com.emenu.features.order.repository.BusinessOrderPaymentRepository;
 import com.emenu.features.order.service.BusinessOrderPaymentService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,7 @@ public class BusinessOrderPaymentServiceImpl implements BusinessOrderPaymentServ
     private final BusinessOrderPaymentRepository paymentRepository;
     private final BusinessOrderPaymentMapper paymentMapper;
     private final SecurityUtils securityUtils;
-    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
+    private final PaginationMapper paginationMapper;
 
     @Override
     public PaginationResponse<BusinessOrderPaymentResponse> getAllPayments(BusinessOrderPaymentFilterRequest filter) {
