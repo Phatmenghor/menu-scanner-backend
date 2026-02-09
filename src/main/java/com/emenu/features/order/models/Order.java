@@ -72,6 +72,13 @@ public class Order extends BaseUUIDEntity {
     @Column(name = "status", nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
 
+    @Column(name = "order_process_status_id")
+    private UUID orderProcessStatusId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_process_status_id", insertable = false, updatable = false)
+    private OrderProcessStatus orderProcessStatus;
+
     @Column(name = "customer_note", columnDefinition = "TEXT")
     private String customerNote;
 

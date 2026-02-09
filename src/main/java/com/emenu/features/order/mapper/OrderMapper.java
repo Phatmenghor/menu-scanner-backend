@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        uses = {LocationMapper.class, DeliveryOptionMapper.class, OrderItemMapper.class, PaginationMapper.class})
+        uses = {LocationMapper.class, DeliveryOptionMapper.class, OrderItemMapper.class, PaginationMapper.class, OrderProcessStatusMapper.class})
 public interface OrderMapper {
 
     @Mapping(target = "customerName", expression = "java(order.getCustomerIdentifier())")

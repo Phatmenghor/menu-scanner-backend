@@ -18,8 +18,10 @@ import com.emenu.features.order.models.BusinessOrderPayment;
 import com.emenu.features.order.models.Cart;
 import com.emenu.features.order.models.Order;
 import com.emenu.features.order.models.OrderItem;
+import com.emenu.features.order.models.OrderProcessStatus;
 import com.emenu.features.order.repository.BusinessOrderPaymentRepository;
 import com.emenu.features.order.repository.CartRepository;
+import com.emenu.features.order.repository.OrderProcessStatusRepository;
 import com.emenu.features.order.repository.OrderRepository;
 import com.emenu.features.order.service.OrderService;
 import com.emenu.features.main.models.Product;
@@ -54,6 +56,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final ProductSizeRepository productSizeRepository;
     private final BusinessOrderPaymentRepository paymentRepository;
+    private final OrderProcessStatusRepository orderProcessStatusRepository;
     private final OrderMapper orderMapper;
     private final BusinessOrderPaymentMapper paymentMapper;
     private final SecurityUtils securityUtils;
@@ -75,6 +78,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Order order = createBaseOrder(request, currentUser.getId());
+        assignDefaultProcessStatus(order, request.getBusinessId());
         Order savedOrder = orderRepository.save(order);
 
         createOrderItemsFromCart(savedOrder.getId(), cart);
@@ -95,6 +99,7 @@ public class OrderServiceImpl implements OrderService {
 
         OrderCreateHelper helper = orderMapper.buildGuestOrderHelper(request, generateOrderNumber());
         Order order = orderMapper.createFromHelper(helper);
+        assignDefaultProcessStatus(order, request.getBusinessId());
         Order savedOrder = orderRepository.save(order);
 
         createPaymentRecord(savedOrder);
@@ -119,6 +124,7 @@ public class OrderServiceImpl implements OrderService {
         );
 
         Order order = orderMapper.createFromHelper(helper);
+        assignDefaultProcessStatus(order, currentUser.getBusinessId());
         Order savedOrder = orderRepository.save(order);
 
         createPOSOrderItems(savedOrder.getId(), request.getItems());
@@ -194,6 +200,13 @@ public class OrderServiceImpl implements OrderService {
             case DELIVERED -> order.complete();
             case CANCELLED -> order.cancel();
             case REJECTED -> order.reject();
+        }
+
+        if (request.getOrderProcessStatusId() != null) {
+            OrderProcessStatus processStatus = orderProcessStatusRepository
+                    .findByIdAndIsDeletedFalse(request.getOrderProcessStatusId())
+                    .orElseThrow(() -> new NotFoundException("Order process status not found"));
+            order.setOrderProcessStatusId(processStatus.getId());
         }
 
         if (request.getBusinessNote() != null) {
@@ -315,6 +328,11 @@ public class OrderServiceImpl implements OrderService {
         if (user.getBusinessId() == null) {
             throw new ValidationException("User is not associated with any business");
         }
+    }
+
+    private void assignDefaultProcessStatus(Order order, UUID businessId) {
+        orderProcessStatusRepository.findDefaultByBusinessId(businessId)
+                .ifPresent(defaultStatus -> order.setOrderProcessStatusId(defaultStatus.getId()));
     }
 
     private String generateOrderNumber() {

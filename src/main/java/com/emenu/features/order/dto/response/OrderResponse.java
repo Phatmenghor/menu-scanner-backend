@@ -33,6 +33,7 @@ public class OrderResponse extends BaseAuditResponse {
     
     // Order details
     private OrderStatus status;
+    private OrderProcessStatusResponse orderProcessStatus;
     private String customerNote;
     private String businessNote;
     

@@ -29,6 +29,13 @@ public class OrderStatusHistory extends BaseUUIDEntity {
     @Column(name = "status", nullable = false)
     private OrderStatus status;
 
+    @Column(name = "order_process_status_id")
+    private UUID orderProcessStatusId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_process_status_id", insertable = false, updatable = false)
+    private OrderProcessStatus orderProcessStatus;
+
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
@@ -38,6 +45,14 @@ public class OrderStatusHistory extends BaseUUIDEntity {
     public OrderStatusHistory(UUID orderId, OrderStatus status, String note, String changedBy) {
         this.orderId = orderId;
         this.status = status;
+        this.note = note;
+        this.changedBy = changedBy;
+    }
+
+    public OrderStatusHistory(UUID orderId, OrderStatus status, UUID orderProcessStatusId, String note, String changedBy) {
+        this.orderId = orderId;
+        this.status = status;
+        this.orderProcessStatusId = orderProcessStatusId;
         this.note = note;
         this.changedBy = changedBy;
     }
