@@ -3,7 +3,7 @@ package com.emenu.features.order.service;
 import com.emenu.features.order.dto.filter.OrderFilterRequest;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
-import com.emenu.features.order.dto.update.OrderStatusUpdateRequest;
+import com.emenu.features.order.dto.update.OrderUpdateRequest;
 import com.emenu.shared.dto.PaginationResponse;
 
 import java.util.List;
@@ -18,5 +18,6 @@ public interface OrderService {
 
     // Business Operations
     PaginationResponse<OrderResponse> getAllOrders(OrderFilterRequest filter);
-    OrderResponse updateOrderStatus(UUID orderId, OrderStatusUpdateRequest request);
+    OrderResponse updateOrder(UUID orderId, OrderUpdateRequest request);
+    void deleteOrder(UUID orderId);
 }

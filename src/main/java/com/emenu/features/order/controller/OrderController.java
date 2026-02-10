@@ -4,7 +4,7 @@ import com.emenu.features.auth.models.User;
 import com.emenu.features.order.dto.filter.OrderFilterRequest;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
-import com.emenu.features.order.dto.update.OrderStatusUpdateRequest;
+import com.emenu.features.order.dto.update.OrderUpdateRequest;
 import com.emenu.features.order.service.OrderService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.ApiResponse;
@@ -82,14 +82,24 @@ public class OrderController {
     }
 
     /**
-     * Update order status (business only)
+     * Update order (business only) - update status, delivery, payment, notes
      */
-    @PutMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<OrderResponse>> updateOrder(
             @PathVariable UUID id,
-            @Valid @RequestBody OrderStatusUpdateRequest request) {
-        log.info("Updating order status for order: {}", id);
-        OrderResponse order = orderService.updateOrderStatus(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Order status updated successfully", order));
+            @Valid @RequestBody OrderUpdateRequest request) {
+        log.info("Updating order: {}", id);
+        OrderResponse order = orderService.updateOrder(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Order updated successfully", order));
+    }
+
+    /**
+     * Delete order (business only)
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteOrder(@PathVariable UUID id) {
+        log.info("Deleting order: {}", id);
+        orderService.deleteOrder(id);
+        return ResponseEntity.ok(ApiResponse.success("Order deleted successfully", null));
     }
 }

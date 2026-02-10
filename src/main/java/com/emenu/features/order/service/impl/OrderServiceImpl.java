@@ -9,7 +9,7 @@ import com.emenu.features.order.dto.helper.OrderCreateHelper;
 import com.emenu.features.order.dto.helper.OrderItemCreateHelper;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
-import com.emenu.features.order.dto.update.OrderStatusUpdateRequest;
+import com.emenu.features.order.dto.update.OrderUpdateRequest;
 import com.emenu.features.order.mapper.BusinessOrderPaymentMapper;
 import com.emenu.features.order.mapper.OrderMapper;
 import com.emenu.features.order.models.BusinessOrderPayment;
@@ -115,7 +115,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderResponse updateOrderStatus(UUID orderId, OrderStatusUpdateRequest request) {
+    public OrderResponse updateOrder(UUID orderId, OrderUpdateRequest request) {
         User currentUser = securityUtils.getCurrentUser();
 
         Order order = orderRepository.findByIdWithDetails(orderId)
@@ -125,20 +125,49 @@ public class OrderServiceImpl implements OrderService {
             throw new ValidationException("You can only update orders for your business");
         }
 
-        OrderProcessStatus processStatus = orderProcessStatusRepository
-                .findByNameAndBusinessIdAndIsDeletedFalse(request.getOrderProcessStatusName(), currentUser.getBusinessId())
-                .orElseThrow(() -> new NotFoundException("Order process status not found: " + request.getOrderProcessStatusName()));
-
-        order.updateStatus(processStatus.getId());
-
+        if (request.getOrderProcessStatusName() != null) {
+            OrderProcessStatus processStatus = orderProcessStatusRepository
+                    .findByNameAndBusinessIdAndIsDeletedFalse(request.getOrderProcessStatusName(), currentUser.getBusinessId())
+                    .orElseThrow(() -> new NotFoundException("Order process status not found: " + request.getOrderProcessStatusName()));
+            order.updateStatus(processStatus.getId());
+        }
+        if (request.getDeliveryAddressId() != null) {
+            order.setDeliveryAddressId(request.getDeliveryAddressId());
+        }
+        if (request.getDeliveryOptionId() != null) {
+            order.setDeliveryOptionId(request.getDeliveryOptionId());
+        }
+        if (request.getPaymentMethod() != null) {
+            order.setPaymentMethod(request.getPaymentMethod());
+        }
+        if (request.getCustomerNote() != null) {
+            order.setCustomerNote(request.getCustomerNote());
+        }
         if (request.getBusinessNote() != null) {
             order.setBusinessNote(request.getBusinessNote());
         }
 
         Order updatedOrder = orderRepository.save(order);
 
-        log.info("Order status updated: {} -> {}", orderId, processStatus.getName());
+        log.info("Order updated: {}", orderId);
         return orderMapper.toResponse(updatedOrder);
+    }
+
+    @Override
+    public void deleteOrder(UUID orderId) {
+        User currentUser = securityUtils.getCurrentUser();
+
+        Order order = orderRepository.findByIdWithDetails(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+
+        if (!currentUser.getBusinessId().equals(order.getBusinessId())) {
+            throw new ValidationException("You can only delete orders for your business");
+        }
+
+        order.setIsDeleted(true);
+        orderRepository.save(order);
+
+        log.info("Order deleted: {}", orderId);
     }
 
     private Order createBaseOrder(OrderCreateRequest request, UUID customerId) {
