@@ -233,13 +233,23 @@ public class OrderServiceImpl implements OrderService {
                     .productName(item.getProductName())
                     .productImageUrl(item.getProductImageUrl())
                     .sizeName(item.getSizeName())
-                    .unitPrice(item.getUnitPrice())
+                    // Pricing snapshot from frontend cart (with discounts already applied)
+                    .currentPrice(item.getCurrentPrice())
+                    .finalPrice(item.getFinalPrice())
+                    .unitPrice(item.getFinalPrice()) // unitPrice = finalPrice for backward compat
+                    .hasPromotion(item.getHasPromotion())
+                    // Promotion details
+                    .promotionType(item.getPromotionType())
+                    .promotionValue(item.getPromotionValue())
+                    // Item details
                     .quantity(item.getQuantity())
+                    .specialInstructions(item.getSpecialInstructions())
                     .build();
 
             OrderItem orderItem = orderMapper.createOrderItemFromHelper(helper);
-            orderItem.calculateTotalPrice();
-            subtotal = subtotal.add(orderItem.getTotalPrice());
+            // Use totalPrice from frontend (already calculated with discounts)
+            orderItem.setTotalPrice(item.getTotalPrice());
+            subtotal = subtotal.add(item.getTotalPrice());
         }
 
         Order order = orderRepository.findById(orderId).orElseThrow();

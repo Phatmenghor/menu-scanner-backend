@@ -22,6 +22,19 @@ public class OrderItemCreateHelper {
     private String productName;
     private String productImageUrl;
     private String sizeName;
-    private BigDecimal unitPrice;
+
+    // Pricing snapshot
+    private BigDecimal currentPrice;  // Base price before discount
+    private BigDecimal finalPrice;    // Price after discount
+    private BigDecimal unitPrice;     // Same as finalPrice for backward compat
+    private Boolean hasPromotion;
+
+    // Promotion details
+    private String promotionType;
+    private BigDecimal promotionValue;
+
     private Integer quantity;
+
+    // Customer instructions
+    private String specialInstructions;
 }

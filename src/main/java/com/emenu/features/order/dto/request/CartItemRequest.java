@@ -5,26 +5,54 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Cart item request - matches CartItemResponse structure
+ * Frontend sends complete cart data with all calculations and edits
+ */
 @Data
 public class CartItemRequest {
+    // Cart item ID (optional, for reference)
+    private UUID id;
 
     @NotNull(message = "Product ID is required")
     private UUID productId;
 
-    // Optional - only required for products with sizes
+    @NotNull(message = "Product name is required")
+    private String productName;
+
+    private String productImageUrl;
+
+    // Size info
     private UUID productSizeId;
+    private String sizeName;
+
+    // Pricing snapshot - from frontend cart (already calculated with discounts)
+    @NotNull(message = "Current price is required")
+    private BigDecimal currentPrice;  // Base price before discount
+
+    @NotNull(message = "Final price is required")
+    private BigDecimal finalPrice;    // Price after discount/promotion
+
+    private Boolean hasPromotion;
+
+    // Promotion details snapshot (if applicable)
+    private String promotionType;      // PERCENTAGE or FIXED_AMOUNT
+    private BigDecimal promotionValue;
+    private LocalDateTime promotionEndDate;
 
     @NotNull(message = "Quantity is required")
-    @Min(value = 0, message = "Quantity must be at least 0")
+    @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;
 
-    // Full product snapshot - for checkout to preserve historical data
-    private String productName;
-    private String productDescription;
-    private String productImageUrl;
-    private BigDecimal unitPrice;
-    private String sizeName;
+    @NotNull(message = "Total price is required")
+    private BigDecimal totalPrice;     // finalPrice * quantity
+
+    // Product availability (from frontend)
+    private Boolean isAvailable;
+
+    // Customer instructions for this specific item
     private String specialInstructions;
 }

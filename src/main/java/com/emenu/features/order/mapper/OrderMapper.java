@@ -88,7 +88,13 @@ public interface OrderMapper {
                 .productName(cartItem.getProduct().getName())
                 .productImageUrl(cartItem.getProduct().getMainImageUrl())
                 .sizeName(cartItem.getSizeName())
+                // Pricing snapshot
+                .currentPrice(cartItem.getCurrentPrice())
+                .finalPrice(cartItem.getFinalPrice())
                 .unitPrice(cartItem.getFinalPrice())
+                .hasPromotion(cartItem.hasDiscount())
+                // Note: Promotion details would need to come from Product/ProductSize
+                // For now, we only capture that there IS a promotion
                 .quantity(cartItem.getQuantity())
                 .build();
     }

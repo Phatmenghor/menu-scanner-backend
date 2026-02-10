@@ -51,14 +51,35 @@ public class OrderItem extends BaseUUIDEntity {
     @Column(name = "size_name")
     private String sizeName; // "Standard" if no size
 
+    // Pricing snapshot - preserves discount/promotion at time of order
+    @Column(name = "current_price", precision = 10, scale = 2)
+    private BigDecimal currentPrice; // Base price before discount
+
+    @Column(name = "final_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal finalPrice; // Price after discount (same as unitPrice for backward compat)
+
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal unitPrice; // Price at time of order
+    private BigDecimal unitPrice; // Price at time of order (same as finalPrice)
+
+    @Column(name = "has_promotion")
+    private Boolean hasPromotion;
+
+    // Promotion details snapshot
+    @Column(name = "promotion_type")
+    private String promotionType; // PERCENTAGE or FIXED_AMOUNT
+
+    @Column(name = "promotion_value", precision = 10, scale = 2)
+    private BigDecimal promotionValue;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
     @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalPrice; // unitPrice * quantity
+    private BigDecimal totalPrice; // finalPrice * quantity
+
+    // Customer instructions for this specific item
+    @Column(name = "special_instructions", columnDefinition = "TEXT")
+    private String specialInstructions;
 
     // Business Methods
     public void calculateTotalPrice() {
