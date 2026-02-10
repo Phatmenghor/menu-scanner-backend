@@ -24,7 +24,7 @@ public class OrderDataGeneratorController {
 
         dataGeneratorService.generateOrderStatuses(businessId);
 
-        return ResponseEntity.ok(ApiResponse.success("Order statuses generated successfully"));
+        return ResponseEntity.ok(ApiResponse.success("Order statuses generated successfully", null));
     }
 
     @PostMapping("/generate/{businessId}")
@@ -48,7 +48,7 @@ public class OrderDataGeneratorController {
         dataGeneratorService.generateOrders(businessId, count, start, end);
 
         return ResponseEntity.ok(ApiResponse.success(
-                String.format("Successfully generated %d orders from %s to %s", count, start, end)));
+                String.format("Successfully generated %d orders from %s to %s", count, start, end), null));
     }
 
     @PostMapping("/generate-all/{businessId}")
@@ -67,6 +67,6 @@ public class OrderDataGeneratorController {
         dataGeneratorService.generateOrders(businessId, orderCount, start, end);
 
         return ResponseEntity.ok(ApiResponse.success(
-                String.format("Successfully generated statuses and %d orders", orderCount)));
+                String.format("Successfully generated statuses and %d orders", orderCount), null));
     }
 }

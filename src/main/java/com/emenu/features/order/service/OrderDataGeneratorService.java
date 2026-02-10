@@ -43,14 +43,14 @@ public class OrderDataGeneratorService {
         log.info("Generating order statuses for business: {}", businessId);
 
         List<OrderProcessStatus> statuses = Arrays.asList(
-                createStatus(businessId, "Pending", "Order received, waiting for confirmation", "#FFA500", 1),
-                createStatus(businessId, "Confirmed", "Order confirmed by restaurant", "#4169E1", 2),
-                createStatus(businessId, "Preparing", "Food is being prepared", "#9370DB", 3),
-                createStatus(businessId, "Ready", "Order is ready for pickup/delivery", "#32CD32", 4),
-                createStatus(businessId, "Out for Delivery", "Order is on the way", "#1E90FF", 5),
-                createStatus(businessId, "Delivered", "Order successfully delivered", "#228B22", 6),
-                createStatus(businessId, "Completed", "Order completed", "#008000", 7),
-                createStatus(businessId, "Cancelled", "Order cancelled", "#DC143C", 8)
+                createStatus(businessId, "Pending", "Order received, waiting for confirmation"),
+                createStatus(businessId, "Confirmed", "Order confirmed by restaurant"),
+                createStatus(businessId, "Preparing", "Food is being prepared"),
+                createStatus(businessId, "Ready", "Order is ready for pickup/delivery"),
+                createStatus(businessId, "Out for Delivery", "Order is on the way"),
+                createStatus(businessId, "Delivered", "Order successfully delivered"),
+                createStatus(businessId, "Completed", "Order completed"),
+                createStatus(businessId, "Cancelled", "Order cancelled")
         );
 
         orderProcessStatusRepository.saveAll(statuses);
@@ -86,13 +86,11 @@ public class OrderDataGeneratorService {
         log.info("Successfully generated {} orders", count);
     }
 
-    private OrderProcessStatus createStatus(UUID businessId, String name, String description, String color, int order) {
+    private OrderProcessStatus createStatus(UUID businessId, String name, String description) {
         OrderProcessStatus status = new OrderProcessStatus();
         status.setBusinessId(businessId);
         status.setName(name);
         status.setDescription(description);
-        status.setColor(color);
-        status.setOrder(order);
         status.setStatus(Status.ACTIVE);
         return status;
     }
