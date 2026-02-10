@@ -25,15 +25,9 @@ public interface OrderMapper {
     @Mapping(target = "customerName", expression = "java(order.getCustomerIdentifier())")
     @Mapping(target = "customerPhone", expression = "java(order.getCustomerContact())")
     @Mapping(source = "business.name", target = "businessName")
-    @Mapping(target = "formattedAmount", expression = "java(formatAmount(order.getTotalAmount()))")
     OrderResponse toResponse(Order order);
 
     List<OrderResponse> toResponseList(List<Order> orders);
-
-    default String formatAmount(java.math.BigDecimal amount) {
-        if (amount == null) return "$0.00";
-        return String.format("$%.2f", amount);
-    }
 
     default PaginationResponse<OrderResponse> toPaginationResponse(Page<Order> orderPage, PaginationMapper paginationMapper) {
         return paginationMapper.toPaginationResponse(orderPage, this::toResponseList);

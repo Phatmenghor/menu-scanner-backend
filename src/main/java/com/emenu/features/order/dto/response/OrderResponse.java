@@ -38,11 +38,9 @@ public class OrderResponse extends BaseAuditResponse {
     private BigDecimal subtotal;
     private BigDecimal deliveryFee;
     private BigDecimal totalAmount;
-    private String formattedAmount;
 
     // Payment info
     private PaymentMethod paymentMethod;
-    private String customerPaymentMethod;
     private Boolean isPaid;
 
     // Timestamps
