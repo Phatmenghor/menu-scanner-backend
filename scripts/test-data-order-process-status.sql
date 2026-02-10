@@ -88,8 +88,14 @@ DECLARE
     v_enum_status TEXT;
     v_enum_statuses TEXT[] := ARRAY['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REJECTED'];
     v_default_status_id UUID;
+    v_total_businesses INT;
+    v_pct INT;
     i INT;
 BEGIN
+    -- Count total businesses for progress tracking
+    SELECT COUNT(*) INTO v_total_businesses FROM businesses WHERE is_deleted = false;
+    RAISE NOTICE '=== Starting order generation for % businesses (300 orders each) ===', v_total_businesses;
+
     -- Loop through ALL businesses in the database
     FOR v_biz IN
         SELECT id, name FROM businesses WHERE is_deleted = false ORDER BY name
@@ -110,12 +116,20 @@ BEGIN
         LIMIT 1;
 
         IF v_status_count = 0 THEN
-            RAISE NOTICE 'Business "%" has no statuses, skipping order generation...', v_biz.name;
+            RAISE NOTICE '[%/%] Business "%" has no statuses, skipping...', v_biz_counter, v_total_businesses, v_biz.name;
             CONTINUE;
         END IF;
 
+        RAISE NOTICE '[%/%] Business "%": generating 300 orders...', v_biz_counter, v_total_businesses, v_biz.name;
+
         -- Generate 300 orders for this business
         FOR i IN 1..300 LOOP
+            -- Log progress every 5% (every 15 orders)
+            IF i % 15 = 0 THEN
+                v_pct := (i * 100) / 300;
+                RAISE NOTICE '  -> %% complete (%/300 orders)', v_pct, i;
+            END IF;
+
             v_order_seq := (v_biz_counter - 1) * 300 + i;
             v_order_id := gen_random_uuid();
             v_order_number := 'ORD-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(v_order_seq::TEXT, 6, '0');
@@ -344,11 +358,13 @@ BEGIN
 
         END LOOP;
 
-        RAISE NOTICE 'Generated 300 orders for business: % (id: %)', v_biz.name, v_biz.id;
+        RAISE NOTICE '[%/%] Business "%" DONE (300 orders + payments + history)', v_biz_counter, v_total_businesses, v_biz.name;
     END LOOP;
 
-    RAISE NOTICE '=== DONE === Generated 300 orders per business for % businesses (total: % orders)',
-        v_biz_counter, v_biz_counter * 300;
+    RAISE NOTICE '============================================================';
+    RAISE NOTICE '  COMPLETED: % businesses x 300 orders = % total orders', v_biz_counter, v_biz_counter * 300;
+    RAISE NOTICE '  + % payments + status history records', v_biz_counter * 300;
+    RAISE NOTICE '============================================================';
 END $$;
 
 -- =====================================================================
