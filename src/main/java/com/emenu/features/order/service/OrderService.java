@@ -19,5 +19,5 @@ public interface OrderService {
     // Business Operations
     PaginationResponse<OrderResponse> getAllOrders(OrderFilterRequest filter);
     OrderResponse updateOrder(UUID orderId, OrderUpdateRequest request);
-    void deleteOrder(UUID orderId);
+    OrderResponse deleteOrder(UUID orderId);
 }

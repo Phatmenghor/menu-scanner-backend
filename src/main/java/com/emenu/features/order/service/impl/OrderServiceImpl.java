@@ -154,7 +154,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public void deleteOrder(UUID orderId) {
+    public OrderResponse deleteOrder(UUID orderId) {
         User currentUser = securityUtils.getCurrentUser();
 
         Order order = orderRepository.findByIdWithDetails(orderId)
@@ -165,9 +165,11 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setIsDeleted(true);
-        orderRepository.save(order);
+        order = orderRepository.save(order);
 
         log.info("Order deleted: {}", orderId);
+
+        return orderMapper.toResponse(order);
     }
 
     private Order createBaseOrder(OrderCreateRequest request, UUID customerId) {

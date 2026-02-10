@@ -97,9 +97,9 @@ public class OrderController {
      * Delete order (business only)
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteOrder(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<OrderResponse>> deleteOrder(@PathVariable UUID id) {
         log.info("Deleting order: {}", id);
-        orderService.deleteOrder(id);
-        return ResponseEntity.ok(ApiResponse.success("Order deleted successfully", null));
+        OrderResponse orderResponse = orderService.deleteOrder(id);
+        return ResponseEntity.ok(ApiResponse.success("Order deleted successfully", orderResponse));
     }
 }
