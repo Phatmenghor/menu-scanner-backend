@@ -26,6 +26,8 @@ public interface OrderProcessStatusRepository extends JpaRepository<OrderProcess
 
     boolean existsByNameAndBusinessIdAndIsDeletedFalse(String name, UUID businessId);
 
+    Optional<OrderProcessStatus> findByNameAndBusinessIdAndIsDeletedFalse(String name, UUID businessId);
+
     @Query("SELECT ops FROM OrderProcessStatus ops " +
            "WHERE ops.businessId = :businessId AND ops.isDeleted = false " +
            "ORDER BY ops.createdAt ASC")

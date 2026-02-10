@@ -70,7 +70,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Order order = createBaseOrder(request, currentUser.getId());
-        assignDefaultProcessStatus(order, request.getBusinessId());
+        assignProcessStatus(order, request.getBusinessId(), request.getOrderProcessStatusName());
         Order savedOrder = orderRepository.save(order);
 
         createOrderItemsFromCart(savedOrder.getId(), cart);
@@ -189,11 +189,18 @@ public class OrderServiceImpl implements OrderService {
                 });
     }
 
-    private void assignDefaultProcessStatus(Order order, UUID businessId) {
-        orderProcessStatusRepository.findByBusinessIdOrderByCreatedAtAsc(businessId)
-                .stream()
-                .findFirst()
-                .ifPresent(firstStatus -> order.setOrderProcessStatusId(firstStatus.getId()));
+    private void assignProcessStatus(Order order, UUID businessId, String statusName) {
+        if (statusName != null && !statusName.isBlank()) {
+            OrderProcessStatus status = orderProcessStatusRepository
+                    .findByNameAndBusinessIdAndIsDeletedFalse(statusName, businessId)
+                    .orElseThrow(() -> new NotFoundException("Order process status not found: " + statusName));
+            order.setOrderProcessStatusId(status.getId());
+        } else {
+            orderProcessStatusRepository.findByBusinessIdOrderByCreatedAtAsc(businessId)
+                    .stream()
+                    .findFirst()
+                    .ifPresent(first -> order.setOrderProcessStatusId(first.getId()));
+        }
     }
 
     private String generateOrderNumber() {
