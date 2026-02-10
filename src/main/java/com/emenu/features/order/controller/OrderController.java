@@ -92,20 +92,4 @@ public class OrderController {
         OrderResponse order = orderService.updateOrderStatus(id, request);
         return ResponseEntity.ok(ApiResponse.success("Order status updated successfully", order));
     }
-
-    /**
-     * Get business orders by status (quick filters)
-     */
-    @GetMapping("/business/{businessId}/status/{status}")
-    public ResponseEntity<ApiResponse<List<OrderResponse>>> getBusinessOrdersByStatus(
-            @PathVariable UUID businessId,
-            @PathVariable String status) {
-        log.info("Getting orders for business: {} with status: {}", businessId, status);
-
-        OrderFilterRequest filter = new OrderFilterRequest();
-        filter.setBusinessId(businessId);
-
-        PaginationResponse<OrderResponse> orders = orderService.getAllOrders(filter);
-        return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully", orders.getContent()));
-    }
 }
