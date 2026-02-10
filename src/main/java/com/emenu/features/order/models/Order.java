@@ -42,26 +42,10 @@ public class Order extends BaseUUIDEntity {
     @JoinColumn(name = "business_id", insertable = false, updatable = false)
     private Business business;
 
-    // Delivery info (optional)
-    @Column(name = "delivery_address_id")
-    private UUID deliveryAddressId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "delivery_address_id", insertable = false, updatable = false)
-    private Location deliveryAddress;
-
-    // Delivery Address Snapshot - stores full address at time of order
+    // Delivery info - full snapshots from frontend (no IDs)
     @Column(name = "delivery_address_snapshot", columnDefinition = "TEXT")
     private String deliveryAddressSnapshot;
 
-    @Column(name = "delivery_option_id")
-    private UUID deliveryOptionId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "delivery_option_id", insertable = false, updatable = false)
-    private DeliveryOption deliveryOption;
-
-    // Delivery Option Snapshot - stores full option details at time of order
     @Column(name = "delivery_option_name")
     private String deliveryOptionName;
 

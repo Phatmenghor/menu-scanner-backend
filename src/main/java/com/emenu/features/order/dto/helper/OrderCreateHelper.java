@@ -20,12 +20,10 @@ public class OrderCreateHelper {
     private String orderNumber;
     private UUID customerId;
     private UUID businessId;
-    private UUID deliveryAddressId;
-    private UUID deliveryOptionId;
     private PaymentMethod paymentMethod;
     private String customerNote;
 
-    // Delivery snapshots
+    // Delivery snapshots - full info from frontend
     private String deliveryAddressSnapshot;
     private String deliveryOptionName;
     private String deliveryOptionDescription;

@@ -139,12 +139,30 @@ public class OrderServiceImpl implements OrderService {
                     .orElseThrow(() -> new NotFoundException("Order process status not found: " + request.getOrderProcessStatusName()));
             order.updateStatus(processStatus.getId());
         }
-        if (request.getDeliveryAddressId() != null) {
-            order.setDeliveryAddressId(request.getDeliveryAddressId());
+
+        // Update delivery address snapshot if provided
+        if (request.getDeliveryAddress() != null) {
+            var addr = request.getDeliveryAddress();
+            String addressSnapshot = String.format("%s, %s, %s, %s",
+                    addr.getVillage() != null ? addr.getVillage() : "",
+                    addr.getCommune() != null ? addr.getCommune() : "",
+                    addr.getDistrict() != null ? addr.getDistrict() : "",
+                    addr.getProvince() != null ? addr.getProvince() : "")
+                    .replaceAll("^, |, $", "");
+            order.setDeliveryAddressSnapshot(addressSnapshot);
         }
-        if (request.getDeliveryOptionId() != null) {
-            order.setDeliveryOptionId(request.getDeliveryOptionId());
+
+        // Update delivery option snapshot if provided
+        if (request.getDeliveryOption() != null) {
+            var option = request.getDeliveryOption();
+            order.setDeliveryOptionName(option.getName());
+            order.setDeliveryOptionDescription(option.getDescription());
+            order.setDeliveryFee(option.getPrice());
+
+            // Recalculate total with new delivery fee
+            order.setTotalAmount(order.getSubtotal().add(option.getPrice()));
         }
+
         if (request.getPaymentMethod() != null) {
             order.setPaymentMethod(request.getPaymentMethod());
         }

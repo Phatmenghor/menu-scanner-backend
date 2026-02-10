@@ -51,12 +51,10 @@ public interface OrderMapper {
                 .orderNumber(orderNumber)
                 .customerId(customerId)
                 .businessId(request.getBusinessId())
-                .deliveryAddressId(request.getDeliveryAddressId())
-                .deliveryOptionId(request.getDeliveryOptionId())
                 .paymentMethod(request.getPaymentMethod())
                 .customerNote(request.getCustomerNote());
 
-        // Build delivery address snapshot if provided
+        // Build delivery address snapshot from frontend full object
         if (request.getDeliveryAddress() != null) {
             var addr = request.getDeliveryAddress();
             String addressSnapshot = String.format("%s, %s, %s, %s",
@@ -68,7 +66,7 @@ public interface OrderMapper {
             builder.deliveryAddressSnapshot(addressSnapshot);
         }
 
-        // Build delivery option snapshot if provided
+        // Build delivery option snapshot from frontend full object
         if (request.getDeliveryOption() != null) {
             var option = request.getDeliveryOption();
             builder.deliveryOptionName(option.getName())
