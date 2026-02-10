@@ -14,14 +14,12 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     /**
-     * Finds a non-deleted order by ID with items, products, sizes, delivery details, business, and customer eagerly fetched
+     * Finds a non-deleted order by ID with items, products, sizes, business, and customer eagerly fetched
      */
     @Query("SELECT o FROM Order o " +
            "LEFT JOIN FETCH o.items oi " +
            "LEFT JOIN FETCH oi.product p " +
            "LEFT JOIN FETCH oi.productSize ps " +
-           "LEFT JOIN FETCH o.deliveryAddress " +
-           "LEFT JOIN FETCH o.deliveryOption " +
            "LEFT JOIN FETCH o.business " +
            "LEFT JOIN FETCH o.customer " +
            "LEFT JOIN FETCH o.orderProcessStatus " +
