@@ -90,7 +90,7 @@ DECLARE
     v_default_status_id UUID;
     v_total_businesses INT;
     v_pct INT;
-    v_last_pct INT;
+    v_last_pct INT := 0;
     v_product_ids UUID[];
     v_product_count INT;
     v_prod1_id UUID;
@@ -104,7 +104,6 @@ BEGIN
         SELECT id, name FROM businesses WHERE is_deleted = false ORDER BY name
     LOOP
         v_biz_counter := v_biz_counter + 1;
-        v_last_pct := 0;
 
         SELECT ARRAY_AGG(id ORDER BY sort_order) INTO v_statuses_for_biz
         FROM order_process_statuses
@@ -132,20 +131,10 @@ BEGIN
 
         v_product_count := COALESCE(array_length(v_product_ids, 1), 0);
         IF v_product_count = 0 THEN
-            RAISE NOTICE '[%/%] % - no products found, skipping', v_biz_counter, v_total_businesses, v_biz.name;
             CONTINUE;
         END IF;
 
-        RAISE NOTICE '[%/%] %', v_biz_counter, v_total_businesses, v_biz.name;
-
         FOR i IN 1..300 LOOP
-            -- Log only at every 5% (every 15 orders)
-            v_pct := (i * 100) / 300;
-            IF v_pct >= v_last_pct + 5 THEN
-                v_last_pct := (v_pct / 5) * 5;
-                RAISE NOTICE '  % %%', v_last_pct;
-            END IF;
-
             v_order_seq := (v_biz_counter - 1) * 300 + i;
             v_order_id := gen_random_uuid();
             v_order_number := 'ORD-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(v_order_seq::TEXT, 6, '0');
@@ -378,10 +367,15 @@ BEGIN
 
         END LOOP;
 
-        RAISE NOTICE '  100 %% - Done';
+        -- Log overall progress every 5% of businesses
+        v_pct := (v_biz_counter * 100) / v_total_businesses;
+        IF v_pct >= v_last_pct + 5 THEN
+            v_last_pct := (v_pct / 5) * 5;
+            RAISE NOTICE '% %% (% / % businesses done)', v_last_pct, v_biz_counter, v_total_businesses;
+        END IF;
     END LOOP;
 
-    RAISE NOTICE 'COMPLETED: % businesses x 300 = % orders', v_biz_counter, v_biz_counter * 300;
+    RAISE NOTICE '100 %% - COMPLETED: % businesses x 300 = % orders', v_biz_counter, v_biz_counter * 300;
 END $$;
 
 -- =====================================================================
