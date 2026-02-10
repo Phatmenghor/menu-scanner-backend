@@ -64,7 +64,7 @@ BEGIN
             v_order_id,
             v_order_number,
             '0a32d15e-1da6-4c39-bbe7-eec305035828',
-            gen_random_uuid(), -- random customer
+            NULL, -- no customer for test data
             v_status_id,
             payment_methods[1 + floor(random() * array_length(payment_methods, 1))::INT],
             random() < 0.5, -- 50% paid
