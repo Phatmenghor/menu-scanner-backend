@@ -44,8 +44,6 @@ public class OrderProcessStatusServiceImpl implements OrderProcessStatusService 
         User currentUser = securityUtils.getCurrentUser();
         validateUserBusinessAssociation(currentUser);
 
-        validateStatusType(request.getStatusType());
-
         if (orderProcessStatusRepository.existsByNameAndBusinessIdAndIsDeletedFalse(
                 request.getName(), currentUser.getBusinessId())) {
             throw new ValidationException("Order process status name already exists in your business");
@@ -100,10 +98,6 @@ public class OrderProcessStatusServiceImpl implements OrderProcessStatusService 
     @Override
     public OrderProcessStatusResponse updateOrderProcessStatus(UUID id, OrderProcessStatusUpdateRequest request) {
         OrderProcessStatus orderProcessStatus = findById(id);
-
-        if (request.getStatusType() != null) {
-            validateStatusType(request.getStatusType());
-        }
 
         if (request.getName() != null && !request.getName().equals(orderProcessStatus.getName())) {
             if (orderProcessStatusRepository.existsByNameAndBusinessIdAndIsDeletedFalse(

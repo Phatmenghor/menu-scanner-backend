@@ -14,10 +14,5 @@ public class OrderProcessStatusResponse extends BaseAuditResponse {
     private String businessName;
     private String name;
     private String description;
-    private String color;
-    private Integer sortOrder;
-    private Boolean isDefault;
-    private Boolean isFinal;
-    private String statusType;
     private Status status;
 }

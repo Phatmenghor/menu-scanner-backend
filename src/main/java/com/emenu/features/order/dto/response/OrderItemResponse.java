@@ -20,7 +20,6 @@ public class OrderItemResponse extends BaseAuditResponse {
     private Integer quantity;
     private BigDecimal totalPrice;
     
-    // ✅ ADDED: Formatted fields for display
     private String formattedUnitPrice;
     private String formattedTotalPrice;
 }
