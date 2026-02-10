@@ -30,4 +30,7 @@ public class CartItemResponse {
     private String promotionType; // PERCENTAGE or FIXED_AMOUNT
     private BigDecimal promotionValue;
     private LocalDateTime promotionEndDate;
+
+    // Customer instructions for this specific item
+    private String specialInstructions;
 }

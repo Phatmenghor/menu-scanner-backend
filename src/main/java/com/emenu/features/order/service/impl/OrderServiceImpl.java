@@ -66,12 +66,12 @@ public class OrderServiceImpl implements OrderService {
         assignProcessStatus(order, request.getBusinessId(), request.getOrderProcessStatusName());
         Order savedOrder = orderRepository.save(order);
 
-        // Create order items from request items or cart
-        if (request.getItems() != null && !request.getItems().isEmpty()) {
-            log.info("Creating order items from request body");
-            createOrderItemsFromRequest(savedOrder.getId(), request.getItems());
+        // Create order items from cart summary (frontend) or database cart
+        if (request.getCart() != null && request.getCart().getItems() != null && !request.getCart().getItems().isEmpty()) {
+            log.info("Creating order items from frontend cart summary");
+            createOrderItemsFromCartSummary(savedOrder.getId(), request.getCart());
         } else {
-            log.info("Creating order items from cart");
+            log.info("Creating order items from database cart");
             Cart cart = cartRepository.findByUserIdAndBusinessIdWithItems(currentUser.getId(), request.getBusinessId())
                     .orElseThrow(() -> new ValidationException("Cart is empty or not found"));
 
@@ -222,10 +222,11 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
     }
 
-    private void createOrderItemsFromRequest(UUID orderId, List<com.emenu.features.order.dto.request.CartItemRequest> items) {
-        BigDecimal subtotal = BigDecimal.ZERO;
+    private void createOrderItemsFromCartSummary(UUID orderId, com.emenu.features.order.dto.response.CartSummaryResponse cartSummary) {
+        // Use subtotal from frontend cart summary (already calculated)
+        BigDecimal subtotal = cartSummary.getSubtotal();
 
-        for (var item : items) {
+        for (var item : cartSummary.getItems()) {
             OrderItemCreateHelper helper = OrderItemCreateHelper.builder()
                     .orderId(orderId)
                     .productId(item.getProductId())
@@ -249,7 +250,6 @@ public class OrderServiceImpl implements OrderService {
             OrderItem orderItem = orderMapper.createOrderItemFromHelper(helper);
             // Use totalPrice from frontend (already calculated with discounts)
             orderItem.setTotalPrice(item.getTotalPrice());
-            subtotal = subtotal.add(item.getTotalPrice());
         }
 
         Order order = orderRepository.findById(orderId).orElseThrow();

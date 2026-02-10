@@ -1,10 +1,10 @@
 package com.emenu.features.order.dto.request;
 
 import com.emenu.enums.payment.PaymentMethod;
+import com.emenu.features.order.dto.response.CartSummaryResponse;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -17,8 +17,8 @@ public class OrderCreateRequest {
     private DeliveryAddressRequest deliveryAddress;
     private DeliveryOptionRequest deliveryOption;
 
-    // Cart items (if provided, will be used instead of fetching from cart)
-    private List<CartItemRequest> items;
+    // Cart summary - complete cart data from frontend (can be edited locally before submit)
+    private CartSummaryResponse cart;
 
     @NotNull(message = "Payment method is required")
     private PaymentMethod paymentMethod;
