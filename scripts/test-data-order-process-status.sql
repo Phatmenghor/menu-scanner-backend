@@ -90,44 +90,41 @@ DECLARE
     v_default_status_id UUID;
     v_total_businesses INT;
     v_pct INT;
+    v_last_pct INT;
     i INT;
 BEGIN
-    -- Count total businesses for progress tracking
     SELECT COUNT(*) INTO v_total_businesses FROM businesses WHERE is_deleted = false;
-    RAISE NOTICE '=== Starting order generation for % businesses (300 orders each) ===', v_total_businesses;
+    RAISE NOTICE 'Starting: % businesses x 300 orders each', v_total_businesses;
 
-    -- Loop through ALL businesses in the database
     FOR v_biz IN
         SELECT id, name FROM businesses WHERE is_deleted = false ORDER BY name
     LOOP
         v_biz_counter := v_biz_counter + 1;
+        v_last_pct := 0;
 
-        -- Get all process statuses for this business (sorted by sort_order)
         SELECT ARRAY_AGG(id ORDER BY sort_order) INTO v_statuses_for_biz
         FROM order_process_statuses
         WHERE business_id = v_biz.id AND is_deleted = false;
 
         v_status_count := COALESCE(array_length(v_statuses_for_biz, 1), 0);
 
-        -- Get default status
         SELECT id INTO v_default_status_id
         FROM order_process_statuses
         WHERE business_id = v_biz.id AND is_default = true AND is_deleted = false
         LIMIT 1;
 
         IF v_status_count = 0 THEN
-            RAISE NOTICE '[%/%] Business "%" has no statuses, skipping...', v_biz_counter, v_total_businesses, v_biz.name;
             CONTINUE;
         END IF;
 
-        RAISE NOTICE '[%/%] Business "%": generating 300 orders...', v_biz_counter, v_total_businesses, v_biz.name;
+        RAISE NOTICE '[%/%] %', v_biz_counter, v_total_businesses, v_biz.name;
 
-        -- Generate 300 orders for this business
         FOR i IN 1..300 LOOP
-            -- Log progress every 5% (every 15 orders)
-            IF i % 15 = 0 THEN
-                v_pct := (i * 100) / 300;
-                RAISE NOTICE '  -> %% complete (%/300 orders)', v_pct, i;
+            -- Log only at every 5% (every 15 orders)
+            v_pct := (i * 100) / 300;
+            IF v_pct >= v_last_pct + 5 THEN
+                v_last_pct := (v_pct / 5) * 5;
+                RAISE NOTICE '  % %%', v_last_pct;
             END IF;
 
             v_order_seq := (v_biz_counter - 1) * 300 + i;
@@ -358,13 +355,10 @@ BEGIN
 
         END LOOP;
 
-        RAISE NOTICE '[%/%] Business "%" DONE (300 orders + payments + history)', v_biz_counter, v_total_businesses, v_biz.name;
+        RAISE NOTICE '  100 %% - Done';
     END LOOP;
 
-    RAISE NOTICE '============================================================';
-    RAISE NOTICE '  COMPLETED: % businesses x 300 orders = % total orders', v_biz_counter, v_biz_counter * 300;
-    RAISE NOTICE '  + % payments + status history records', v_biz_counter * 300;
-    RAISE NOTICE '============================================================';
+    RAISE NOTICE 'COMPLETED: % businesses x 300 = % orders', v_biz_counter, v_biz_counter * 300;
 END $$;
 
 -- =====================================================================
