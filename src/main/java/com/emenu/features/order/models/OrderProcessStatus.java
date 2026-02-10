@@ -33,21 +33,6 @@ public class OrderProcessStatus extends BaseUUIDEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "color", length = 20)
-    private String color;
-
-    @Column(name = "sort_order", nullable = false)
-    private Integer sortOrder = 0;
-
-    @Column(name = "is_default", nullable = false)
-    private Boolean isDefault = false;
-
-    @Column(name = "is_final", nullable = false)
-    private Boolean isFinal = false;
-
-    @Column(name = "status_type", nullable = false, length = 20)
-    private String statusType = "ACTIVE";
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private Status status = Status.ACTIVE;
@@ -62,17 +47,5 @@ public class OrderProcessStatus extends BaseUUIDEntity {
 
     public boolean isActive() {
         return Status.ACTIVE.equals(status);
-    }
-
-    public boolean isActiveType() {
-        return "ACTIVE".equals(statusType);
-    }
-
-    public boolean isCompletedType() {
-        return "COMPLETED".equals(statusType);
-    }
-
-    public boolean isCancelledType() {
-        return "CANCELLED".equals(statusType);
     }
 }

@@ -28,32 +28,26 @@ public interface OrderProcessStatusRepository extends JpaRepository<OrderProcess
 
     @Query("SELECT ops FROM OrderProcessStatus ops " +
            "WHERE ops.businessId = :businessId AND ops.isDeleted = false " +
-           "ORDER BY ops.sortOrder ASC")
-    List<OrderProcessStatus> findByBusinessIdOrderBySortOrderAsc(@Param("businessId") UUID businessId);
+           "ORDER BY ops.createdAt ASC")
+    List<OrderProcessStatus> findByBusinessIdOrderByCreatedAtAsc(@Param("businessId") UUID businessId);
 
     @Query("SELECT ops FROM OrderProcessStatus ops " +
            "WHERE ops.businessId = :businessId AND ops.status = :status AND ops.isDeleted = false " +
-           "ORDER BY ops.sortOrder ASC")
-    List<OrderProcessStatus> findByBusinessIdAndStatusOrderBySortOrderAsc(
+           "ORDER BY ops.createdAt ASC")
+    List<OrderProcessStatus> findByBusinessIdAndStatusOrderByCreatedAtAsc(
             @Param("businessId") UUID businessId, @Param("status") Status status);
-
-    @Query("SELECT ops FROM OrderProcessStatus ops " +
-           "WHERE ops.businessId = :businessId AND ops.isDefault = true AND ops.isDeleted = false")
-    Optional<OrderProcessStatus> findDefaultByBusinessId(@Param("businessId") UUID businessId);
 
     @Query("SELECT DISTINCT ops FROM OrderProcessStatus ops " +
            "LEFT JOIN ops.business b " +
            "WHERE ops.isDeleted = false " +
            "AND (:businessId IS NULL OR ops.businessId = :businessId) " +
            "AND (:statuses IS NULL OR ops.status IN :statuses) " +
-           "AND (:statusType IS NULL OR ops.statusType = :statusType) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "     LOWER(ops.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "     LOWER(ops.description) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<OrderProcessStatus> findAllWithFilters(
             @Param("businessId") UUID businessId,
             @Param("statuses") List<Status> statuses,
-            @Param("statusType") String statusType,
             @Param("search") String search,
             Pageable pageable);
 
@@ -62,14 +56,12 @@ public interface OrderProcessStatusRepository extends JpaRepository<OrderProcess
            "WHERE ops.isDeleted = false " +
            "AND (:businessId IS NULL OR ops.businessId = :businessId) " +
            "AND (:statuses IS NULL OR ops.status IN :statuses) " +
-           "AND (:statusType IS NULL OR ops.statusType = :statusType) " +
            "AND (:search IS NULL OR :search = '' OR " +
            "     LOWER(ops.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "     LOWER(ops.description) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<OrderProcessStatus> findAllWithFilters(
             @Param("businessId") UUID businessId,
             @Param("statuses") List<Status> statuses,
-            @Param("statusType") String statusType,
             @Param("search") String search,
             Sort sort);
 }

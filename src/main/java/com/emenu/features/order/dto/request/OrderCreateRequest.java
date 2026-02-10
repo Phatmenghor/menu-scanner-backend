@@ -23,9 +23,12 @@ public class OrderCreateRequest {
     
     @NotNull(message = "Payment method is required")
     private PaymentMethod paymentMethod;
-    
+
     private String customerNote;
-    
+
+    // Order status (selected from frontend)
+    private UUID orderProcessStatusId;
+
     // Order type flags
     private Boolean isPosOrder = false; // true when business creates for customer
     private Boolean isGuestOrder = false; // true when customer orders without login

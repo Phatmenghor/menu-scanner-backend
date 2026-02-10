@@ -129,24 +129,11 @@ public class Order extends BaseUUIDEntity {
     }
 
     public boolean canBeModified() {
-        return orderProcessStatus != null && orderProcessStatus.isActiveType();
+        return orderProcessStatusId != null;
     }
 
     public boolean canBeCancelled() {
-        return orderProcessStatus != null &&
-               (orderProcessStatus.isActiveType() || Boolean.TRUE.equals(orderProcessStatus.getIsDefault()));
-    }
-
-    public boolean isCompleted() {
-        return orderProcessStatus != null && orderProcessStatus.isCompletedType();
-    }
-
-    public boolean isCancelled() {
-        return orderProcessStatus != null && orderProcessStatus.isCancelledType();
-    }
-
-    public boolean isActive() {
-        return orderProcessStatus != null && orderProcessStatus.isActiveType();
+        return orderProcessStatusId != null;
     }
 
     public boolean isGuest() {

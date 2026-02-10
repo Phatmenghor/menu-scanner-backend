@@ -205,13 +205,6 @@ public class OrderServiceImpl implements OrderService {
 
         order.updateStatus(processStatus.getId());
 
-        // Set timestamps based on status type
-        if (Boolean.TRUE.equals(processStatus.getIsDefault()) && order.getConfirmedAt() == null) {
-            order.confirm();
-        } else if (processStatus.isCompletedType() && order.getCompletedAt() == null) {
-            order.complete();
-        }
-
         if (request.getBusinessNote() != null) {
             order.setBusinessNote(request.getBusinessNote());
         }
@@ -334,8 +327,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private void assignDefaultProcessStatus(Order order, UUID businessId) {
-        orderProcessStatusRepository.findDefaultByBusinessId(businessId)
-                .ifPresent(defaultStatus -> order.setOrderProcessStatusId(defaultStatus.getId()));
+        // Get first available status for the business
+        orderProcessStatusRepository.findByBusinessIdOrderByCreatedAtAsc(businessId)
+                .stream()
+                .findFirst()
+                .ifPresent(firstStatus -> order.setOrderProcessStatusId(firstStatus.getId()));
     }
 
     private String generateOrderNumber() {
