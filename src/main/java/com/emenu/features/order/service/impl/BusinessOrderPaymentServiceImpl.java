@@ -58,8 +58,6 @@ public class BusinessOrderPaymentServiceImpl implements BusinessOrderPaymentServ
                 filter.getPaymentMethod(),
                 filter.getCustomerPaymentMethod(),
                 filter.getCustomerPhone(),
-                filter.getIsGuestOrder(),
-                filter.getIsPosOrder(),
                 filter.getCreatedFrom(),
                 filter.getCreatedTo(),
                 filter.getSearch(),

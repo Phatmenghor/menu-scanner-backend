@@ -26,6 +26,4 @@ public class BusinessOrderPaymentResponse extends BaseAuditResponse {
     // Customer info from order
     private String customerName;
     private String customerPhone;
-    private Boolean isGuestOrder;
-    private Boolean isPosOrder;
 }

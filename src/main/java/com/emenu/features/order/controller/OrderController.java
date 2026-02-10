@@ -48,10 +48,6 @@ public class OrderController {
             @Valid @RequestBody OrderCreateRequest request,
             @RequestParam(required = false) List<UUID> cartItemIds) {
         log.info("Creating guest order for business: {}", request.getBusinessId());
-        
-        // Mark as guest order
-        request.setIsGuestOrder(true);
-        
         OrderResponse order = orderService.createGuestOrder(request, cartItemIds);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Guest order created successfully", order));

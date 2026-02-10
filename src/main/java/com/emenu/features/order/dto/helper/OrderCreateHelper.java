@@ -24,8 +24,6 @@ public class OrderCreateHelper {
     private UUID deliveryOptionId;
     private PaymentMethod paymentMethod;
     private String customerNote;
-    private Boolean isPosOrder;
-    private Boolean isGuestOrder;
 
     // For guest orders
     private String guestPhone;

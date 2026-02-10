@@ -17,8 +17,6 @@ public class OrderFilterRequest extends BaseFilterRequest {
     private List<String> statusTypes; // ACTIVE, COMPLETED, CANCELLED
     private PaymentMethod paymentMethod;
     private Boolean isPaid;
-    private Boolean isPosOrder;
-    private Boolean isGuestOrder;
     private String customerPhone;
     private LocalDateTime createdFrom;
     private LocalDateTime createdTo;

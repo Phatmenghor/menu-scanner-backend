@@ -20,8 +20,6 @@ public interface BusinessOrderPaymentMapper {
     @Mapping(target = "formattedAmount", expression = "java(payment.getFormattedAmount())")
     @Mapping(target = "customerName", expression = "java(getCustomerName(payment))")
     @Mapping(target = "customerPhone", expression = "java(getCustomerPhone(payment))")
-    @Mapping(target = "isGuestOrder", expression = "java(payment.getOrder() != null ? payment.getOrder().getIsGuestOrder() : false)")
-    @Mapping(target = "isPosOrder", expression = "java(payment.getOrder() != null ? payment.getOrder().getIsPosOrder() : false)")
     BusinessOrderPaymentResponse toResponse(BusinessOrderPayment payment);
 
     List<BusinessOrderPaymentResponse> toResponseList(List<BusinessOrderPayment> payments);

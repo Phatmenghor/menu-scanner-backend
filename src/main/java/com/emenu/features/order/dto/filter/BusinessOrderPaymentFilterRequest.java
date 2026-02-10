@@ -18,8 +18,6 @@ public class BusinessOrderPaymentFilterRequest extends BaseFilterRequest {
     private PaymentMethod paymentMethod;
     private String customerPaymentMethod;
     private String customerPhone;
-    private Boolean isGuestOrder;
-    private Boolean isPosOrder;
     private LocalDateTime createdFrom;
     private LocalDateTime createdTo;
 }

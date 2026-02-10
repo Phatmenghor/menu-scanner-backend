@@ -63,18 +63,6 @@ public interface BusinessOrderPaymentRepository extends JpaRepository<BusinessOr
     BigDecimal getRevenueByDateRange(@Param("businessId") UUID businessId, @Param("fromDate") LocalDateTime fromDate, @Param("toDate") LocalDateTime toDate);
 
     /**
-     * Counts non-deleted POS order payments for a business
-     */
-    @Query("SELECT COUNT(bop) FROM BusinessOrderPayment bop WHERE bop.businessId = :businessId AND bop.order.isPosOrder = true AND bop.isDeleted = false")
-    long countPosPayments(@Param("businessId") UUID businessId);
-
-    /**
-     * Counts non-deleted guest order payments for a business
-     */
-    @Query("SELECT COUNT(bop) FROM BusinessOrderPayment bop WHERE bop.businessId = :businessId AND bop.order.isGuestOrder = true AND bop.isDeleted = false")
-    long countGuestPayments(@Param("businessId") UUID businessId);
-
-    /**
      * Find all business order payments with dynamic filtering
      */
     @Query("SELECT bop FROM BusinessOrderPayment bop " +
@@ -85,8 +73,6 @@ public interface BusinessOrderPaymentRepository extends JpaRepository<BusinessOr
            "AND (:paymentMethod IS NULL OR bop.paymentMethod = :paymentMethod) " +
            "AND (:customerPaymentMethod IS NULL OR bop.customerPaymentMethod = :customerPaymentMethod) " +
            "AND (:customerPhone IS NULL OR o.guestPhone = :customerPhone) " +
-           "AND (:isGuestOrder IS NULL OR o.isGuestOrder = :isGuestOrder) " +
-           "AND (:isPosOrder IS NULL OR o.isPosOrder = :isPosOrder) " +
            "AND (:createdFrom IS NULL OR bop.createdAt >= :createdFrom) " +
            "AND (:createdTo IS NULL OR bop.createdAt <= :createdTo) " +
            "AND (:search IS NULL OR :search = '' OR " +
@@ -99,8 +85,6 @@ public interface BusinessOrderPaymentRepository extends JpaRepository<BusinessOr
         @Param("paymentMethod") PaymentMethod paymentMethod,
         @Param("customerPaymentMethod") String customerPaymentMethod,
         @Param("customerPhone") String customerPhone,
-        @Param("isGuestOrder") Boolean isGuestOrder,
-        @Param("isPosOrder") Boolean isPosOrder,
         @Param("createdFrom") LocalDateTime createdFrom,
         @Param("createdTo") LocalDateTime createdTo,
         @Param("search") String search,

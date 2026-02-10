@@ -98,13 +98,6 @@ public class Order extends BaseUUIDEntity {
     @Column(name = "is_paid", nullable = false)
     private Boolean isPaid = false;
 
-    // Order type
-    @Column(name = "is_pos_order", nullable = false)
-    private Boolean isPosOrder = false; // true when business creates order for customer
-
-    @Column(name = "is_guest_order", nullable = false)
-    private Boolean isGuestOrder = false; // true when customer orders without login
-
     // Timestamps
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
@@ -134,14 +127,6 @@ public class Order extends BaseUUIDEntity {
 
     public boolean canBeCancelled() {
         return orderProcessStatusId != null;
-    }
-
-    public boolean isGuest() {
-        return Boolean.TRUE.equals(isGuestOrder) || customerId == null;
-    }
-
-    public boolean isPOS() {
-        return Boolean.TRUE.equals(isPosOrder);
     }
 
     public String getCustomerIdentifier() {

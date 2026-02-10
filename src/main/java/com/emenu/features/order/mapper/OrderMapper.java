@@ -67,8 +67,6 @@ public interface OrderMapper {
                 .deliveryOptionId(request.getDeliveryOptionId())
                 .paymentMethod(request.getPaymentMethod())
                 .customerNote(request.getCustomerNote())
-                .isPosOrder(request.getIsPosOrder())
-                .isGuestOrder(request.getIsGuestOrder())
                 .build();
     }
 
@@ -85,8 +83,6 @@ public interface OrderMapper {
                 .paymentMethod(request.getPaymentMethod())
                 .customerNote(request.getCustomerNote())
                 .businessNote(request.getBusinessNote())
-                .isPosOrder(true)
-                .isGuestOrder(true)
                 .isPaid(true)
                 .subtotal(subtotal)
                 .totalAmount(subtotal)
@@ -143,8 +139,6 @@ public interface OrderMapper {
                 .deliveryOptionId(request.getDeliveryOptionId())
                 .paymentMethod(request.getPaymentMethod())
                 .customerNote(request.getCustomerNote())
-                .isPosOrder(request.getIsPosOrder())
-                .isGuestOrder(true)
                 .guestPhone(request.getGuestPhone())
                 .guestName(request.getGuestName())
                 .guestLocation(request.getGuestLocation())

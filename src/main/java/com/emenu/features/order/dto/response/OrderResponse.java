@@ -46,10 +46,6 @@ public class OrderResponse extends BaseAuditResponse {
     private String customerPaymentMethod;
     private Boolean isPaid;
     
-    // Order type
-    private Boolean isPosOrder;
-    private Boolean isGuestOrder;
-    
     // Timestamps
     private LocalDateTime confirmedAt;
     private LocalDateTime completedAt;
