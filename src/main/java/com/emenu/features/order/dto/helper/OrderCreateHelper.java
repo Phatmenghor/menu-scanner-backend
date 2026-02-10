@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -24,15 +23,4 @@ public class OrderCreateHelper {
     private UUID deliveryOptionId;
     private PaymentMethod paymentMethod;
     private String customerNote;
-
-    // For guest orders
-    private String guestPhone;
-    private String guestName;
-    private String guestLocation;
-
-    // For POS orders
-    private String businessNote;
-    private Boolean isPaid;
-    private BigDecimal subtotal;
-    private BigDecimal totalAmount;
 }

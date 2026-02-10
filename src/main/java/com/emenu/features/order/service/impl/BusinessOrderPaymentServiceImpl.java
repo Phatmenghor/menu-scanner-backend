@@ -39,7 +39,6 @@ public class BusinessOrderPaymentServiceImpl implements BusinessOrderPaymentServ
     public PaginationResponse<BusinessOrderPaymentResponse> getAllPayments(BusinessOrderPaymentFilterRequest filter) {
         User currentUser = securityUtils.getCurrentUser();
 
-        // Business users can only see their own payments
         if (currentUser.isBusinessUser() && filter.getBusinessId() == null) {
             filter.setBusinessId(currentUser.getBusinessId());
         }
@@ -48,7 +47,6 @@ public class BusinessOrderPaymentServiceImpl implements BusinessOrderPaymentServ
                 filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
         );
 
-        // Convert empty list to null for proper query handling
         List<PaymentStatus> statuses = filter.getStatuses() != null && !filter.getStatuses().isEmpty()
                 ? filter.getStatuses() : null;
 
@@ -57,7 +55,6 @@ public class BusinessOrderPaymentServiceImpl implements BusinessOrderPaymentServ
                 statuses,
                 filter.getPaymentMethod(),
                 filter.getCustomerPaymentMethod(),
-                filter.getCustomerPhone(),
                 filter.getCreatedFrom(),
                 filter.getCreatedTo(),
                 filter.getSearch(),

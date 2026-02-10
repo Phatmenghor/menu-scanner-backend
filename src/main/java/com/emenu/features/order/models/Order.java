@@ -25,25 +25,15 @@ import java.util.UUID;
 public class Order extends BaseUUIDEntity {
 
     @Column(name = "order_number", nullable = false, unique = true)
-    private String orderNumber; // Generated unique order number
+    private String orderNumber;
 
-    // Customer Info - can be null for guest orders
+    // Customer Info
     @Column(name = "customer_id")
     private UUID customerId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", insertable = false, updatable = false)
     private User customer;
-
-    // Guest customer info (when no login)
-    @Column(name = "guest_phone")
-    private String guestPhone; // Required for guest orders
-
-    @Column(name = "guest_name")
-    private String guestName;
-
-    @Column(name = "guest_location")
-    private String guestLocation; // Simple text location
 
     @Column(name = "business_id", nullable = false)
     private UUID businessId;
@@ -130,17 +120,11 @@ public class Order extends BaseUUIDEntity {
     }
 
     public String getCustomerIdentifier() {
-        if (customerId != null && customer != null) {
-            return customer.getFullName();
-        }
-        return guestName != null ? guestName : "Guest Customer";
+        return customer != null ? customer.getFullName() : null;
     }
 
     public String getCustomerContact() {
-        if (customerId != null && customer != null) {
-            return customer.getPhoneNumber();
-        }
-        return guestPhone;
+        return customer != null ? customer.getPhoneNumber() : null;
     }
 
     public void markAsPaid() {

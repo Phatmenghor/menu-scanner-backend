@@ -17,7 +17,6 @@ public class BusinessOrderPaymentFilterRequest extends BaseFilterRequest {
     private List<PaymentStatus> statuses;
     private PaymentMethod paymentMethod;
     private String customerPaymentMethod;
-    private String customerPhone;
     private LocalDateTime createdFrom;
     private LocalDateTime createdTo;
 }

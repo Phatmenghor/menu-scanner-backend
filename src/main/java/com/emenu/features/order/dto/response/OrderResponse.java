@@ -15,44 +15,43 @@ import java.util.UUID;
 @Data
 public class OrderResponse extends BaseAuditResponse {
     private String orderNumber;
-    
+
     // Customer info
     private UUID customerId;
     private String customerName;
     private String customerPhone;
-    private String customerLocation;
-    
+
     // Business info
     private UUID businessId;
     private String businessName;
-    
+
     // Delivery info
     private LocationResponse deliveryAddress;
     private DeliveryOptionResponse deliveryOption;
-    
+
     // Order details
     private OrderProcessStatusResponse orderProcessStatus;
     private String customerNote;
     private String businessNote;
-    
+
     // Pricing
     private BigDecimal subtotal;
     private BigDecimal deliveryFee;
     private BigDecimal totalAmount;
     private String formattedAmount;
-    
+
     // Payment info
     private PaymentMethod paymentMethod;
     private String customerPaymentMethod;
     private Boolean isPaid;
-    
+
     // Timestamps
     private LocalDateTime confirmedAt;
     private LocalDateTime completedAt;
-    
+
     // Items
     private List<OrderItemResponse> items;
-    
+
     // Business logic
     private Boolean canBeModified;
     private Boolean canBeCancelled;

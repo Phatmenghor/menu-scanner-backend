@@ -1,11 +1,9 @@
 package com.emenu.features.order.mapper;
 
 import com.emenu.features.location.mapper.LocationMapper;
-import com.emenu.features.main.models.Product;
 import com.emenu.features.order.dto.helper.OrderCreateHelper;
 import com.emenu.features.order.dto.helper.OrderItemCreateHelper;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
-import com.emenu.features.order.dto.request.POSOrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.models.CartItem;
 import com.emenu.features.order.models.Order;
@@ -17,7 +15,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.data.domain.Page;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +24,6 @@ public interface OrderMapper {
 
     @Mapping(target = "customerName", expression = "java(order.getCustomerIdentifier())")
     @Mapping(target = "customerPhone", expression = "java(order.getCustomerContact())")
-    @Mapping(source = "guestLocation", target = "customerLocation")
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(target = "canBeModified", expression = "java(order.canBeModified())")
     @Mapping(target = "canBeCancelled", expression = "java(order.canBeCancelled())")
@@ -56,9 +52,9 @@ public interface OrderMapper {
     OrderItem createOrderItemFromHelper(OrderItemCreateHelper helper);
 
     /**
-     * Helper to build OrderCreateHelper for base order
+     * Helper to build OrderCreateHelper for checkout order
      */
-    default OrderCreateHelper buildBaseOrderHelper(OrderCreateRequest request, UUID customerId, String orderNumber) {
+    default OrderCreateHelper buildOrderHelper(OrderCreateRequest request, UUID customerId, String orderNumber) {
         return OrderCreateHelper.builder()
                 .orderNumber(orderNumber)
                 .customerId(customerId)
@@ -67,25 +63,6 @@ public interface OrderMapper {
                 .deliveryOptionId(request.getDeliveryOptionId())
                 .paymentMethod(request.getPaymentMethod())
                 .customerNote(request.getCustomerNote())
-                .build();
-    }
-
-    /**
-     * Helper to build OrderCreateHelper for POS order
-     */
-    default OrderCreateHelper buildPOSOrderHelper(POSOrderCreateRequest request, UUID businessId, String orderNumber, BigDecimal subtotal) {
-        return OrderCreateHelper.builder()
-                .orderNumber(orderNumber)
-                .businessId(businessId)
-                .guestPhone(request.getCustomerPhone())
-                .guestName(request.getCustomerName())
-                .guestLocation(request.getCustomerLocation())
-                .paymentMethod(request.getPaymentMethod())
-                .customerNote(request.getCustomerNote())
-                .businessNote(request.getBusinessNote())
-                .isPaid(true)
-                .subtotal(subtotal)
-                .totalAmount(subtotal)
                 .build();
     }
 
@@ -102,46 +79,6 @@ public interface OrderMapper {
                 .sizeName(cartItem.getSizeName())
                 .unitPrice(cartItem.getFinalPrice())
                 .quantity(cartItem.getQuantity())
-                .build();
-    }
-
-    /**
-     * Helper to build OrderItemCreateHelper from product (for POS orders)
-     */
-    default OrderItemCreateHelper buildOrderItemHelperFromProduct(
-            UUID orderId,
-            Product product,
-            UUID productSizeId,
-            String sizeName,
-            BigDecimal unitPrice,
-            Integer quantity) {
-        return OrderItemCreateHelper.builder()
-                .orderId(orderId)
-                .productId(product.getId())
-                .productSizeId(productSizeId)
-                .productName(product.getName())
-                .productImageUrl(product.getMainImageUrl())
-                .sizeName(sizeName)
-                .unitPrice(unitPrice)
-                .quantity(quantity)
-                .build();
-    }
-
-    /**
-     * Helper to build guest order helper from base order
-     */
-    default OrderCreateHelper buildGuestOrderHelper(OrderCreateRequest request, String orderNumber) {
-        return OrderCreateHelper.builder()
-                .orderNumber(orderNumber)
-                .customerId(null)
-                .businessId(request.getBusinessId())
-                .deliveryAddressId(request.getDeliveryAddressId())
-                .deliveryOptionId(request.getDeliveryOptionId())
-                .paymentMethod(request.getPaymentMethod())
-                .customerNote(request.getCustomerNote())
-                .guestPhone(request.getGuestPhone())
-                .guestName(request.getGuestName())
-                .guestLocation(request.getGuestLocation())
                 .build();
     }
 }

@@ -67,28 +67,6 @@ public class BusinessOrderPaymentController {
     }
 
     /**
-     * Get POS payments only
-     */
-    @PostMapping("/pos/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<BusinessOrderPaymentResponse>>> getPOSPayments(@Valid @RequestBody BusinessOrderPaymentFilterRequest filter) {
-        log.info("Getting POS payments");
-        filter.setIsPosOrder(true);
-        PaginationResponse<BusinessOrderPaymentResponse> payments = paymentService.getAllPayments(filter);
-        return ResponseEntity.ok(ApiResponse.success("POS payments retrieved successfully", payments));
-    }
-
-    /**
-     * Get guest payments only
-     */
-    @PostMapping("/guest/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<BusinessOrderPaymentResponse>>> getGuestPayments(@Valid @RequestBody BusinessOrderPaymentFilterRequest filter) {
-        log.info("Getting guest payments");
-        filter.setIsGuestOrder(true);
-        PaginationResponse<BusinessOrderPaymentResponse> payments = paymentService.getAllPayments(filter);
-        return ResponseEntity.ok(ApiResponse.success("Guest payments retrieved successfully", payments));
-    }
-
-    /**
      * Get cash payments only
      */
     @PostMapping("/cash/all")

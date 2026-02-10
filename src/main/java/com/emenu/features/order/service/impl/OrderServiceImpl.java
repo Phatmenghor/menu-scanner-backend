@@ -8,8 +8,6 @@ import com.emenu.features.order.dto.helper.BusinessOrderPaymentCreateHelper;
 import com.emenu.features.order.dto.helper.OrderCreateHelper;
 import com.emenu.features.order.dto.helper.OrderItemCreateHelper;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
-import com.emenu.features.order.dto.request.POSOrderCreateRequest;
-import com.emenu.features.order.dto.request.POSOrderItemRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.dto.update.OrderStatusUpdateRequest;
 import com.emenu.features.order.mapper.BusinessOrderPaymentMapper;
@@ -24,10 +22,6 @@ import com.emenu.features.order.repository.CartRepository;
 import com.emenu.features.order.repository.OrderProcessStatusRepository;
 import com.emenu.features.order.repository.OrderRepository;
 import com.emenu.features.order.service.OrderService;
-import com.emenu.features.main.models.Product;
-import com.emenu.features.main.models.ProductSize;
-import com.emenu.features.main.repository.ProductRepository;
-import com.emenu.features.main.repository.ProductSizeRepository;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.generate.OrderNumberGenerator;
@@ -53,8 +47,6 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
-    private final ProductRepository productRepository;
-    private final ProductSizeRepository productSizeRepository;
     private final BusinessOrderPaymentRepository paymentRepository;
     private final OrderProcessStatusRepository orderProcessStatusRepository;
     private final OrderMapper orderMapper;
@@ -86,61 +78,6 @@ public class OrderServiceImpl implements OrderService {
         clearCartAfterOrder(currentUser.getId(), request.getBusinessId());
 
         log.info("Order created successfully: {}", savedOrder.getOrderNumber());
-        return getOrderById(savedOrder.getId());
-    }
-
-    @Override
-    public OrderResponse createGuestOrder(OrderCreateRequest request, List<UUID> cartItemIds) {
-        log.info("Creating guest order for business: {}", request.getBusinessId());
-
-        if (request.getGuestPhone() == null || request.getGuestPhone().trim().isEmpty()) {
-            throw new ValidationException("Phone number is required for guest orders");
-        }
-
-        OrderCreateHelper helper = orderMapper.buildGuestOrderHelper(request, generateOrderNumber());
-        Order order = orderMapper.createFromHelper(helper);
-        assignDefaultProcessStatus(order, request.getBusinessId());
-        Order savedOrder = orderRepository.save(order);
-
-        createPaymentRecord(savedOrder);
-
-        log.info("Guest order created successfully: {}", savedOrder.getOrderNumber());
-        return getOrderById(savedOrder.getId());
-    }
-
-    @Override
-    public OrderResponse createPOSOrder(POSOrderCreateRequest request) {
-        log.info("Creating POS order for customer: {}", request.getCustomerPhone());
-
-        User currentUser = securityUtils.getCurrentUser();
-        validateUserBusinessAssociation(currentUser);
-
-        BigDecimal subtotal = calculatePOSOrderTotal(request.getItems());
-        OrderCreateHelper helper = orderMapper.buildPOSOrderHelper(
-                request,
-                currentUser.getBusinessId(),
-                generateOrderNumber(),
-                subtotal
-        );
-
-        Order order = orderMapper.createFromHelper(helper);
-        assignDefaultProcessStatus(order, currentUser.getBusinessId());
-        Order savedOrder = orderRepository.save(order);
-
-        createPOSOrderItems(savedOrder.getId(), request.getItems());
-
-        BusinessOrderPaymentCreateHelper paymentHelper = BusinessOrderPaymentCreateHelper.builder()
-                .businessId(savedOrder.getBusinessId())
-                .orderId(savedOrder.getId())
-                .referenceNumber(paymentReferenceGenerator.generateUniqueReference())
-                .amount(savedOrder.getTotalAmount())
-                .paymentMethod(savedOrder.getPaymentMethod())
-                .customerPaymentMethod(request.getCustomerPaymentMethod())
-                .build();
-        BusinessOrderPayment payment = paymentMapper.createFromHelper(paymentHelper);
-        paymentRepository.save(payment);
-
-        log.info("POS order created successfully: {}", savedOrder.getOrderNumber());
         return getOrderById(savedOrder.getId());
     }
 
@@ -215,15 +152,8 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toResponse(updatedOrder);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<OrderResponse> getGuestOrdersByPhone(String phone) {
-        List<Order> orders = orderRepository.findByGuestPhoneOrderByCreatedAtDesc(phone);
-        return orderMapper.toResponseList(orders);
-    }
-
     private Order createBaseOrder(OrderCreateRequest request, UUID customerId) {
-        OrderCreateHelper helper = orderMapper.buildBaseOrderHelper(request, customerId, generateOrderNumber());
+        OrderCreateHelper helper = orderMapper.buildOrderHelper(request, customerId, generateOrderNumber());
         return orderMapper.createFromHelper(helper);
     }
 
@@ -241,60 +171,6 @@ public class OrderServiceImpl implements OrderService {
         order.setSubtotal(subtotal);
         order.setTotalAmount(subtotal.add(order.getDeliveryFee()));
         orderRepository.save(order);
-    }
-
-    private void createPOSOrderItems(UUID orderId, List<POSOrderItemRequest> itemRequests) {
-        for (POSOrderItemRequest itemRequest : itemRequests) {
-            Product product = productRepository.findByIdAndIsDeletedFalse(itemRequest.getProductId())
-                    .orElseThrow(() -> new NotFoundException("Product not found: " + itemRequest.getProductId()));
-
-            String sizeName;
-            BigDecimal unitPrice;
-
-            if (itemRequest.getProductSizeId() != null) {
-                ProductSize productSize = productSizeRepository.findById(itemRequest.getProductSizeId())
-                        .orElseThrow(() -> new NotFoundException("Product size not found"));
-                sizeName = productSize.getName();
-                unitPrice = productSize.getFinalPrice();
-            } else {
-                sizeName = "Standard";
-                unitPrice = product.getFinalPrice();
-            }
-
-            OrderItemCreateHelper helper = orderMapper.buildOrderItemHelperFromProduct(
-                    orderId,
-                    product,
-                    itemRequest.getProductSizeId(),
-                    sizeName,
-                    unitPrice,
-                    itemRequest.getQuantity()
-            );
-
-            OrderItem orderItem = orderMapper.createOrderItemFromHelper(helper);
-            orderItem.calculateTotalPrice();
-        }
-    }
-
-    private BigDecimal calculatePOSOrderTotal(List<POSOrderItemRequest> items) {
-        BigDecimal total = BigDecimal.ZERO;
-
-        for (POSOrderItemRequest item : items) {
-            Product product = productRepository.findByIdAndIsDeletedFalse(item.getProductId())
-                    .orElseThrow(() -> new NotFoundException("Product not found: " + item.getProductId()));
-
-            BigDecimal itemPrice;
-            if (item.getProductSizeId() != null) {
-                ProductSize productSize = productSizeRepository.findById(item.getProductSizeId())
-                        .orElseThrow(() -> new NotFoundException("Product size not found"));
-                itemPrice = productSize.getFinalPrice();
-            } else {
-                itemPrice = product.getFinalPrice();
-            }
-
-            total = total.add(itemPrice.multiply(BigDecimal.valueOf(item.getQuantity())));
-        }
-
-        return total;
     }
 
     private void createPaymentRecord(Order order) {
@@ -320,14 +196,7 @@ public class OrderServiceImpl implements OrderService {
                 });
     }
 
-    private void validateUserBusinessAssociation(User user) {
-        if (user.getBusinessId() == null) {
-            throw new ValidationException("User is not associated with any business");
-        }
-    }
-
     private void assignDefaultProcessStatus(Order order, UUID businessId) {
-        // Get first available status for the business
         orderProcessStatusRepository.findByBusinessIdOrderByCreatedAtAsc(businessId)
                 .stream()
                 .findFirst()

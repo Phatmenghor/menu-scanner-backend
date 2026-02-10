@@ -66,25 +66,20 @@ public interface BusinessOrderPaymentRepository extends JpaRepository<BusinessOr
      * Find all business order payments with dynamic filtering
      */
     @Query("SELECT bop FROM BusinessOrderPayment bop " +
-           "LEFT JOIN bop.order o " +
            "WHERE bop.isDeleted = false " +
            "AND (:businessId IS NULL OR bop.businessId = :businessId) " +
            "AND (:statuses IS NULL OR bop.status IN :statuses) " +
            "AND (:paymentMethod IS NULL OR bop.paymentMethod = :paymentMethod) " +
            "AND (:customerPaymentMethod IS NULL OR bop.customerPaymentMethod = :customerPaymentMethod) " +
-           "AND (:customerPhone IS NULL OR o.guestPhone = :customerPhone) " +
            "AND (:createdFrom IS NULL OR bop.createdAt >= :createdFrom) " +
            "AND (:createdTo IS NULL OR bop.createdAt <= :createdTo) " +
            "AND (:search IS NULL OR :search = '' OR " +
-           "     LOWER(bop.paymentReference) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "     LOWER(o.guestPhone) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "     LOWER(o.guestName) LIKE LOWER(CONCAT('%', :search, '%')))")
+           "     LOWER(bop.paymentReference) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<BusinessOrderPayment> findAllWithFilters(
         @Param("businessId") UUID businessId,
         @Param("statuses") List<PaymentStatus> statuses,
         @Param("paymentMethod") PaymentMethod paymentMethod,
         @Param("customerPaymentMethod") String customerPaymentMethod,
-        @Param("customerPhone") String customerPhone,
         @Param("createdFrom") LocalDateTime createdFrom,
         @Param("createdTo") LocalDateTime createdTo,
         @Param("search") String search,

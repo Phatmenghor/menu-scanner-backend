@@ -3,7 +3,6 @@ package com.emenu.features.order.controller;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.order.dto.filter.OrderFilterRequest;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
-import com.emenu.features.order.dto.request.POSOrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.dto.update.OrderStatusUpdateRequest;
 import com.emenu.features.order.service.OrderService;
@@ -41,30 +40,6 @@ public class OrderController {
     }
 
     /**
-     * Create guest order (no login required) - Just provide phone number
-     */
-    @PostMapping("/guest/checkout")
-    public ResponseEntity<ApiResponse<OrderResponse>> createGuestOrder(
-            @Valid @RequestBody OrderCreateRequest request,
-            @RequestParam(required = false) List<UUID> cartItemIds) {
-        log.info("Creating guest order for business: {}", request.getBusinessId());
-        OrderResponse order = orderService.createGuestOrder(request, cartItemIds);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Guest order created successfully", order));
-    }
-
-    /**
-     * Create POS order (for business staff) - Like cash register
-     */
-    @PostMapping("/pos")
-    public ResponseEntity<ApiResponse<OrderResponse>> createPOSOrder(@Valid @RequestBody POSOrderCreateRequest request) {
-        log.info("Creating POS order for customer: {}", request.getCustomerPhone());
-        OrderResponse order = orderService.createPOSOrder(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("POS order created successfully", order));
-    }
-
-    /**
      * Get all orders with filtering (Admin/Business view)
      */
     @PostMapping("/all")
@@ -97,16 +72,6 @@ public class OrderController {
     }
 
     /**
-     * Get guest orders by phone number (no login required)
-     */
-    @GetMapping("/guest/{phone}")
-    public ResponseEntity<ApiResponse<List<OrderResponse>>> getGuestOrdersByPhone(@PathVariable String phone) {
-        log.info("Getting guest orders for phone: {}", phone);
-        List<OrderResponse> orders = orderService.getGuestOrdersByPhone(phone);
-        return ResponseEntity.ok(ApiResponse.success("Guest orders retrieved successfully", orders));
-    }
-
-    /**
      * Get order by ID
      */
     @GetMapping("/{id}")
@@ -136,11 +101,10 @@ public class OrderController {
             @PathVariable UUID businessId,
             @PathVariable String status) {
         log.info("Getting orders for business: {} with status: {}", businessId, status);
-        
+
         OrderFilterRequest filter = new OrderFilterRequest();
         filter.setBusinessId(businessId);
-        // Parse status and set filter
-        
+
         PaginationResponse<OrderResponse> orders = orderService.getAllOrders(filter);
         return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully", orders.getContent()));
     }
