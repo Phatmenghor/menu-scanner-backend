@@ -6,7 +6,7 @@
 CREATE TEMP TABLE temp_statuses AS
 SELECT id, name FROM order_process_statuses
 WHERE business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828'
-ORDER BY "order";
+ORDER BY created_at;
 
 -- Step 2: Create helper arrays
 DO $$
@@ -59,7 +59,7 @@ BEGIN
             delivery_address_snapshot, delivery_option_name, delivery_option_description,
             delivery_fee, subtotal, total_amount,
             customer_note, confirmed_at, completed_at,
-            is_deleted, created_at, updated_at
+            is_deleted, version, created_at, updated_at
         ) VALUES (
             v_order_id,
             v_order_number,
@@ -91,6 +91,7 @@ BEGIN
                 ELSE NULL
             END,
             false,
+            0, -- version
             v_order_date,
             v_order_date
         );
@@ -116,7 +117,7 @@ BEGIN
                 current_price, final_price, unit_price,
                 has_promotion, promotion_type, promotion_value,
                 quantity, total_price,
-                is_deleted, created_at, updated_at
+                is_deleted, version, created_at, updated_at
             ) VALUES (
                 gen_random_uuid(),
                 v_order_id,
@@ -132,6 +133,7 @@ BEGIN
                 v_quantity,
                 v_final_price * v_quantity,
                 false,
+                0, -- version
                 v_order_date,
                 v_order_date
             );
