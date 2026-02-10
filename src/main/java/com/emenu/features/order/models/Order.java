@@ -111,14 +111,6 @@ public class Order extends BaseUUIDEntity {
         this.completedAt = LocalDateTime.now();
     }
 
-    public boolean canBeModified() {
-        return orderProcessStatusId != null;
-    }
-
-    public boolean canBeCancelled() {
-        return orderProcessStatusId != null;
-    }
-
     public String getCustomerIdentifier() {
         return customer != null ? customer.getFullName() : null;
     }

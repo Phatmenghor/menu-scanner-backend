@@ -25,8 +25,6 @@ public interface OrderMapper {
     @Mapping(target = "customerName", expression = "java(order.getCustomerIdentifier())")
     @Mapping(target = "customerPhone", expression = "java(order.getCustomerContact())")
     @Mapping(source = "business.name", target = "businessName")
-    @Mapping(target = "canBeModified", expression = "java(order.canBeModified())")
-    @Mapping(target = "canBeCancelled", expression = "java(order.canBeCancelled())")
     @Mapping(target = "formattedAmount", expression = "java(formatAmount(order.getTotalAmount()))")
     OrderResponse toResponse(Order order);
 

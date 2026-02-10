@@ -51,8 +51,4 @@ public class OrderResponse extends BaseAuditResponse {
 
     // Items
     private List<OrderItemResponse> items;
-
-    // Business logic
-    private Boolean canBeModified;
-    private Boolean canBeCancelled;
 }

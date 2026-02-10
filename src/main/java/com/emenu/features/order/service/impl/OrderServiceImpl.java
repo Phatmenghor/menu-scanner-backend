@@ -126,12 +126,8 @@ public class OrderServiceImpl implements OrderService {
         }
 
         OrderProcessStatus processStatus = orderProcessStatusRepository
-                .findByIdAndIsDeletedFalse(request.getOrderProcessStatusId())
-                .orElseThrow(() -> new NotFoundException("Order process status not found"));
-
-        if (!processStatus.getBusinessId().equals(currentUser.getBusinessId())) {
-            throw new ValidationException("Order process status does not belong to your business");
-        }
+                .findByNameAndBusinessIdAndIsDeletedFalse(request.getOrderProcessStatusName(), currentUser.getBusinessId())
+                .orElseThrow(() -> new NotFoundException("Order process status not found: " + request.getOrderProcessStatusName()));
 
         order.updateStatus(processStatus.getId());
 

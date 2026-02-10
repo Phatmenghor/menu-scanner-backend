@@ -1,15 +1,13 @@
 package com.emenu.features.order.dto.update;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-
-import java.util.UUID;
 
 @Data
 public class OrderStatusUpdateRequest {
 
-    @NotNull(message = "Order process status is required")
-    private UUID orderProcessStatusId;
+    @NotBlank(message = "Order process status is required")
+    private String orderProcessStatusName;
 
     private String businessNote;
 }

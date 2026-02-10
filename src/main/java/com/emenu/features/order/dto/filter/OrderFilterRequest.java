@@ -5,21 +5,13 @@ import com.emenu.shared.dto.BaseFilterRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class OrderFilterRequest extends BaseFilterRequest {
     private UUID businessId;
-    private List<UUID> orderProcessStatusIds;
-    private List<String> statusTypes; // ACTIVE, COMPLETED, CANCELLED
+    private String orderProcessStatusName;
     private PaymentMethod paymentMethod;
     private Boolean isPaid;
-    private String customerPhone;
-    private LocalDateTime createdFrom;
-    private LocalDateTime createdTo;
-    private LocalDateTime confirmedFrom;
-    private LocalDateTime confirmedTo;
 }
