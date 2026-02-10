@@ -62,18 +62,26 @@ public class OrderServiceImpl implements OrderService {
 
         User currentUser = securityUtils.getCurrentUser();
 
-        Cart cart = cartRepository.findByUserIdAndBusinessIdWithItems(currentUser.getId(), request.getBusinessId())
-                .orElseThrow(() -> new ValidationException("Cart is empty or not found"));
-
-        if (cart.getItems() == null || cart.getItems().isEmpty()) {
-            throw new ValidationException("Cannot create order from empty cart");
-        }
-
         Order order = createBaseOrder(request, currentUser.getId());
         assignProcessStatus(order, request.getBusinessId(), request.getOrderProcessStatusName());
         Order savedOrder = orderRepository.save(order);
 
-        createOrderItemsFromCart(savedOrder.getId(), cart);
+        // Create order items from request items or cart
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
+            log.info("Creating order items from request body");
+            createOrderItemsFromRequest(savedOrder.getId(), request.getItems());
+        } else {
+            log.info("Creating order items from cart");
+            Cart cart = cartRepository.findByUserIdAndBusinessIdWithItems(currentUser.getId(), request.getBusinessId())
+                    .orElseThrow(() -> new ValidationException("Cart is empty or not found"));
+
+            if (cart.getItems() == null || cart.getItems().isEmpty()) {
+                throw new ValidationException("Cannot create order from empty cart");
+            }
+
+            createOrderItemsFromCart(savedOrder.getId(), cart);
+        }
+
         createPaymentRecord(savedOrder);
         clearCartAfterOrder(currentUser.getId(), request.getBusinessId());
 
@@ -189,7 +197,39 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderRepository.findById(orderId).orElseThrow();
         order.setSubtotal(subtotal);
-        order.setTotalAmount(subtotal.add(order.getDeliveryFee()));
+
+        // Calculate total with delivery fee (use BigDecimal.ZERO if null)
+        BigDecimal deliveryFee = order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO;
+        order.setTotalAmount(subtotal.add(deliveryFee));
+        orderRepository.save(order);
+    }
+
+    private void createOrderItemsFromRequest(UUID orderId, List<com.emenu.features.order.dto.request.CartItemRequest> items) {
+        BigDecimal subtotal = BigDecimal.ZERO;
+
+        for (var item : items) {
+            OrderItemCreateHelper helper = OrderItemCreateHelper.builder()
+                    .orderId(orderId)
+                    .productId(item.getProductId())
+                    .productSizeId(item.getProductSizeId())
+                    .productName(item.getProductName())
+                    .productImageUrl(item.getProductImageUrl())
+                    .sizeName(item.getSizeName())
+                    .unitPrice(item.getUnitPrice())
+                    .quantity(item.getQuantity())
+                    .build();
+
+            OrderItem orderItem = orderMapper.createOrderItemFromHelper(helper);
+            orderItem.calculateTotalPrice();
+            subtotal = subtotal.add(orderItem.getTotalPrice());
+        }
+
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        order.setSubtotal(subtotal);
+
+        // Calculate total with delivery fee (use BigDecimal.ZERO if null)
+        BigDecimal deliveryFee = order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO;
+        order.setTotalAmount(subtotal.add(deliveryFee));
         orderRepository.save(order);
     }
 

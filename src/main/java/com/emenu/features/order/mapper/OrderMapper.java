@@ -47,15 +47,36 @@ public interface OrderMapper {
      * Helper to build OrderCreateHelper for checkout order
      */
     default OrderCreateHelper buildOrderHelper(OrderCreateRequest request, UUID customerId, String orderNumber) {
-        return OrderCreateHelper.builder()
+        var builder = OrderCreateHelper.builder()
                 .orderNumber(orderNumber)
                 .customerId(customerId)
                 .businessId(request.getBusinessId())
                 .deliveryAddressId(request.getDeliveryAddressId())
                 .deliveryOptionId(request.getDeliveryOptionId())
                 .paymentMethod(request.getPaymentMethod())
-                .customerNote(request.getCustomerNote())
-                .build();
+                .customerNote(request.getCustomerNote());
+
+        // Build delivery address snapshot if provided
+        if (request.getDeliveryAddress() != null) {
+            var addr = request.getDeliveryAddress();
+            String addressSnapshot = String.format("%s, %s, %s, %s",
+                    addr.getVillage() != null ? addr.getVillage() : "",
+                    addr.getCommune() != null ? addr.getCommune() : "",
+                    addr.getDistrict() != null ? addr.getDistrict() : "",
+                    addr.getProvince() != null ? addr.getProvince() : "")
+                    .replaceAll("^, |, $", "");
+            builder.deliveryAddressSnapshot(addressSnapshot);
+        }
+
+        // Build delivery option snapshot if provided
+        if (request.getDeliveryOption() != null) {
+            var option = request.getDeliveryOption();
+            builder.deliveryOptionName(option.getName())
+                    .deliveryOptionDescription(option.getDescription())
+                    .deliveryFee(option.getPrice());
+        }
+
+        return builder.build();
     }
 
     /**

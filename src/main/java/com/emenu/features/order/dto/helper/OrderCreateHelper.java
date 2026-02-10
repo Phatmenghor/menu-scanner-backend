@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -23,4 +24,10 @@ public class OrderCreateHelper {
     private UUID deliveryOptionId;
     private PaymentMethod paymentMethod;
     private String customerNote;
+
+    // Delivery snapshots
+    private String deliveryAddressSnapshot;
+    private String deliveryOptionName;
+    private String deliveryOptionDescription;
+    private BigDecimal deliveryFee;
 }
