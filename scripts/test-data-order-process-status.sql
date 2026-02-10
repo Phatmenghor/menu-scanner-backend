@@ -91,6 +91,10 @@ DECLARE
     v_total_businesses INT;
     v_pct INT;
     v_last_pct INT;
+    v_product_ids UUID[];
+    v_product_count INT;
+    v_prod1_id UUID;
+    v_prod2_id UUID;
     i INT;
 BEGIN
     SELECT COUNT(*) INTO v_total_businesses FROM businesses WHERE is_deleted = false;
@@ -114,6 +118,21 @@ BEGIN
         LIMIT 1;
 
         IF v_status_count = 0 THEN
+            CONTINUE;
+        END IF;
+
+        -- Load products for this business (fallback to all products if business has none)
+        SELECT ARRAY_AGG(id) INTO v_product_ids
+        FROM products WHERE business_id = v_biz.id AND is_deleted = false;
+
+        IF v_product_ids IS NULL OR array_length(v_product_ids, 1) IS NULL THEN
+            SELECT ARRAY_AGG(id) INTO v_product_ids
+            FROM (SELECT id FROM products WHERE is_deleted = false LIMIT 20) sub;
+        END IF;
+
+        v_product_count := COALESCE(array_length(v_product_ids, 1), 0);
+        IF v_product_count = 0 THEN
+            RAISE NOTICE '[%/%] % - no products found, skipping', v_biz_counter, v_total_businesses, v_biz.name;
             CONTINUE;
         END IF;
 
@@ -222,6 +241,10 @@ BEGIN
                 false, v_created_at, v_created_at, 'system', 'system'
             );
 
+            -- Pick 2 random products from this business
+            v_prod1_id := v_product_ids[1 + floor(random() * v_product_count)::INT];
+            v_prod2_id := v_product_ids[1 + floor(random() * v_product_count)::INT];
+
             -- Insert 2 order items per order
             INSERT INTO order_items (
                 id, version, order_id, product_id, product_size_id,
@@ -230,7 +253,7 @@ BEGIN
                 is_deleted, created_at, updated_at, created_by, updated_by
             ) VALUES
             (
-                gen_random_uuid(), 0, v_order_id, NULL, NULL,
+                gen_random_uuid(), 0, v_order_id, v_prod1_id, NULL,
                 v_product_names_1[1 + floor(random() * 10)::INT], NULL,
                 v_size_names[1 + floor(random() * 4)::INT],
                 round((v_subtotal * 0.6)::NUMERIC, 2), 1 + floor(random() * 3)::INT,
@@ -238,7 +261,7 @@ BEGIN
                 false, v_created_at, v_created_at, 'system', 'system'
             ),
             (
-                gen_random_uuid(), 0, v_order_id, NULL, NULL,
+                gen_random_uuid(), 0, v_order_id, v_prod2_id, NULL,
                 v_product_names_2[1 + floor(random() * 10)::INT], NULL,
                 v_size_names[1 + floor(random() * 4)::INT],
                 round((v_subtotal * 0.4)::NUMERIC, 2), 1 + floor(random() * 2)::INT,
