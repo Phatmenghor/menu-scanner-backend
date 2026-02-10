@@ -1,7 +1,6 @@
 package com.emenu.features.order.mapper;
 
 import com.emenu.features.order.dto.helper.CartCreateHelper;
-import com.emenu.features.order.dto.request.CartItemRequest;
 import com.emenu.features.order.dto.response.CartItemResponse;
 import com.emenu.features.order.dto.response.CartResponse;
 import com.emenu.features.order.dto.response.CartSummaryResponse;
@@ -18,12 +17,6 @@ import java.util.UUID;
 
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CartMapper {
-
-    @Mapping(target = "cartId", ignore = true)
-    @Mapping(target = "cart", ignore = true)
-    @Mapping(target = "product", ignore = true)
-    @Mapping(target = "productSize", ignore = true)
-    CartItem toEntity(CartItemRequest request);
 
     @Mapping(source = "product.name", target = "productName")
     @Mapping(target = "sizeName", expression = "java(cartItem.getSizeName())")
