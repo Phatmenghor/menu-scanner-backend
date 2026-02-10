@@ -115,13 +115,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<OrderResponse> getBusinessOrders(UUID businessId) {
-        List<Order> orders = orderRepository.findByBusinessIdOrderByCreatedAtDesc(businessId);
-        return orderMapper.toResponseList(orders);
-    }
-
-    @Override
     public OrderResponse updateOrderStatus(UUID orderId, OrderStatusUpdateRequest request) {
         User currentUser = securityUtils.getCurrentUser();
 

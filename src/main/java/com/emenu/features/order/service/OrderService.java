@@ -18,6 +18,5 @@ public interface OrderService {
 
     // Business Operations
     PaginationResponse<OrderResponse> getAllOrders(OrderFilterRequest filter);
-    List<OrderResponse> getBusinessOrders(UUID businessId);
     OrderResponse updateOrderStatus(UUID orderId, OrderStatusUpdateRequest request);
 }
