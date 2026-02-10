@@ -13,5 +13,4 @@ import java.util.UUID;
 public class OrderProcessStatusFilterRequest extends BaseFilterRequest {
     private UUID businessId;
     private List<Status> statuses;
-    private String statusType;
 }

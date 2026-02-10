@@ -75,7 +75,6 @@ public class OrderProcessStatusServiceImpl implements OrderProcessStatusService 
         Page<OrderProcessStatus> page = orderProcessStatusRepository.findAllWithFilters(
                 filter.getBusinessId(),
                 statuses,
-                filter.getStatusType(),
                 filter.getSearch(),
                 pageable
         );
@@ -87,7 +86,7 @@ public class OrderProcessStatusServiceImpl implements OrderProcessStatusService 
     @Transactional(readOnly = true)
     public List<OrderProcessStatusResponse> getBusinessOrderProcessStatuses(UUID businessId) {
         List<OrderProcessStatus> statuses = orderProcessStatusRepository
-                .findByBusinessIdAndStatusOrderBySortOrderAsc(businessId, Status.ACTIVE);
+                .findByBusinessIdAndStatusOrderByCreatedAtAsc(businessId, Status.ACTIVE);
         return orderProcessStatusMapper.toResponseList(statuses);
     }
 
