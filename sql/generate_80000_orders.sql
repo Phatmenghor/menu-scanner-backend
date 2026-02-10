@@ -14,7 +14,7 @@ DECLARE
     product_names TEXT[] := ARRAY['Fried Rice', 'Pad Thai', 'Tom Yum Soup', 'Green Curry', 'Spring Rolls',
                                    'Beef Noodles', 'Chicken Satay', 'Mango Sticky Rice', 'Papaya Salad', 'BBQ Pork'];
     provinces TEXT[] := ARRAY['Phnom Penh', 'Siem Reap', 'Battambang', 'Kampong Cham', 'Kandal'];
-    payment_methods TEXT[] := ARRAY['CASH', 'CREDIT_CARD', 'DEBIT_CARD', 'MOBILE_PAYMENT'];
+    payment_methods TEXT[] := ARRAY['CASH', 'BANK_TRANSFER', 'ONLINE', 'OTHER'];
 
     v_order_id UUID;
     v_order_number TEXT;
