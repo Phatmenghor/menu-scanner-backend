@@ -206,7 +206,7 @@ public class OrderServiceImpl implements OrderService {
         order.updateStatus(processStatus.getId());
 
         // Set timestamps based on status type
-        if (processStatus.isDefault() && order.getConfirmedAt() == null) {
+        if (Boolean.TRUE.equals(processStatus.getIsDefault()) && order.getConfirmedAt() == null) {
             order.confirm();
         } else if (processStatus.isCompletedType() && order.getCompletedAt() == null) {
             order.complete();

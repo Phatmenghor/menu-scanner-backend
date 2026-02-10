@@ -134,7 +134,7 @@ public class Order extends BaseUUIDEntity {
 
     public boolean canBeCancelled() {
         return orderProcessStatus != null &&
-               (orderProcessStatus.isActiveType() || orderProcessStatus.isDefault());
+               (orderProcessStatus.isActiveType() || Boolean.TRUE.equals(orderProcessStatus.getIsDefault()));
     }
 
     public boolean isCompleted() {
