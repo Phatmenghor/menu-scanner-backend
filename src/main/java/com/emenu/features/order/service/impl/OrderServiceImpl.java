@@ -195,18 +195,21 @@ public class OrderServiceImpl implements OrderService {
             throw new ValidationException("You can only update orders for your business");
         }
 
-        switch (request.getStatus()) {
-            case CONFIRMED -> order.confirm();
-            case DELIVERED -> order.complete();
-            case CANCELLED -> order.cancel();
-            case REJECTED -> order.reject();
+        OrderProcessStatus processStatus = orderProcessStatusRepository
+                .findByIdAndIsDeletedFalse(request.getOrderProcessStatusId())
+                .orElseThrow(() -> new NotFoundException("Order process status not found"));
+
+        if (!processStatus.getBusinessId().equals(currentUser.getBusinessId())) {
+            throw new ValidationException("Order process status does not belong to your business");
         }
 
-        if (request.getOrderProcessStatusId() != null) {
-            OrderProcessStatus processStatus = orderProcessStatusRepository
-                    .findByIdAndIsDeletedFalse(request.getOrderProcessStatusId())
-                    .orElseThrow(() -> new NotFoundException("Order process status not found"));
-            order.setOrderProcessStatusId(processStatus.getId());
+        order.updateStatus(processStatus.getId());
+
+        // Set timestamps based on status type
+        if (processStatus.isDefault() && order.getConfirmedAt() == null) {
+            order.confirm();
+        } else if (processStatus.isCompletedType() && order.getCompletedAt() == null) {
+            order.complete();
         }
 
         if (request.getBusinessNote() != null) {
@@ -215,7 +218,7 @@ public class OrderServiceImpl implements OrderService {
 
         Order updatedOrder = orderRepository.save(order);
 
-        log.info("Order status updated: {} -> {}", orderId, request.getStatus());
+        log.info("Order status updated: {} -> {}", orderId, processStatus.getName());
         return orderMapper.toResponse(updatedOrder);
     }
 

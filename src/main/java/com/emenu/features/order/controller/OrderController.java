@@ -127,7 +127,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(
             @PathVariable UUID id,
             @Valid @RequestBody OrderStatusUpdateRequest request) {
-        log.info("Updating order status: {} -> {}", id, request.getStatus());
+        log.info("Updating order status for order: {}", id);
         OrderResponse order = orderService.updateOrderStatus(id, request);
         return ResponseEntity.ok(ApiResponse.success("Order status updated successfully", order));
     }

@@ -1,6 +1,5 @@
 package com.emenu.features.order.dto.response;
 
-import com.emenu.enums.order.OrderStatus;
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.features.location.dto.response.LocationResponse;
 import com.emenu.shared.dto.BaseAuditResponse;
@@ -32,7 +31,6 @@ public class OrderResponse extends BaseAuditResponse {
     private DeliveryOptionResponse deliveryOption;
     
     // Order details
-    private OrderStatus status;
     private OrderProcessStatusResponse orderProcessStatus;
     private String customerNote;
     private String businessNote;

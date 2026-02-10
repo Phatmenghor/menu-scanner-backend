@@ -1,6 +1,5 @@
 package com.emenu.features.order.dto.filter;
 
-import com.emenu.enums.order.OrderStatus;
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.shared.dto.BaseFilterRequest;
 import lombok.Data;
@@ -14,7 +13,8 @@ import java.util.UUID;
 @Data
 public class OrderFilterRequest extends BaseFilterRequest {
     private UUID businessId;
-    private List<OrderStatus> statuses;
+    private List<UUID> orderProcessStatusIds;
+    private List<String> statusTypes; // ACTIVE, COMPLETED, CANCELLED
     private PaymentMethod paymentMethod;
     private Boolean isPaid;
     private Boolean isPosOrder;

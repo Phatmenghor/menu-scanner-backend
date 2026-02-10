@@ -1,6 +1,5 @@
 package com.emenu.features.order.repository;
 
-import com.emenu.enums.order.OrderStatus;
 import com.emenu.features.order.models.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -42,10 +41,10 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     List<Order> findByBusinessIdOrderByCreatedAtDesc(@Param("businessId") UUID businessId);
 
     /**
-     * Finds non-deleted orders by business ID and status, ordered by creation date descending
+     * Finds non-deleted orders by business ID and process status, ordered by creation date descending
      */
-    @Query("SELECT o FROM Order o WHERE o.businessId = :businessId AND o.status = :status AND o.isDeleted = false ORDER BY o.createdAt DESC")
-    List<Order> findByBusinessIdAndStatusOrderByCreatedAtDesc(@Param("businessId") UUID businessId, @Param("status") OrderStatus status);
+    @Query("SELECT o FROM Order o WHERE o.businessId = :businessId AND o.orderProcessStatusId = :orderProcessStatusId AND o.isDeleted = false ORDER BY o.createdAt DESC")
+    List<Order> findByBusinessIdAndOrderProcessStatusIdOrderByCreatedAtDesc(@Param("businessId") UUID businessId, @Param("orderProcessStatusId") UUID orderProcessStatusId);
 
     /**
      * Finds non-deleted orders by guest phone number, ordered by creation date descending
@@ -71,10 +70,10 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     boolean existsByOrderNumber(String orderNumber);
 
     /**
-     * Counts non-deleted orders by business ID and status
+     * Counts non-deleted orders by business ID and process status
      */
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.businessId = :businessId AND o.status = :status AND o.isDeleted = false")
-    long countByBusinessIdAndStatus(@Param("businessId") UUID businessId, @Param("status") OrderStatus status);
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.businessId = :businessId AND o.orderProcessStatusId = :orderProcessStatusId AND o.isDeleted = false")
+    long countByBusinessIdAndOrderProcessStatusId(@Param("businessId") UUID businessId, @Param("orderProcessStatusId") UUID orderProcessStatusId);
 
     /**
      * Counts non-deleted POS orders by business ID

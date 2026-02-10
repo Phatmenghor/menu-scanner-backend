@@ -1,6 +1,5 @@
 package com.emenu.features.order.models;
 
-import com.emenu.enums.order.OrderStatus;
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.User;
@@ -68,11 +67,7 @@ public class Order extends BaseUUIDEntity {
     @JoinColumn(name = "delivery_option_id", insertable = false, updatable = false)
     private DeliveryOption deliveryOption;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private OrderStatus status = OrderStatus.PENDING;
-
-    @Column(name = "order_process_status_id")
+    @Column(name = "order_process_status_id", nullable = false)
     private UUID orderProcessStatusId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -121,30 +116,37 @@ public class Order extends BaseUUIDEntity {
     private List<OrderItem> items;
 
     // Business Methods
+    public void updateStatus(UUID newOrderProcessStatusId) {
+        this.orderProcessStatusId = newOrderProcessStatusId;
+    }
+
     public void confirm() {
-        this.status = OrderStatus.CONFIRMED;
         this.confirmedAt = LocalDateTime.now();
     }
 
     public void complete() {
-        this.status = OrderStatus.DELIVERED;
         this.completedAt = LocalDateTime.now();
     }
 
-    public void cancel() {
-        this.status = OrderStatus.CANCELLED;
-    }
-
-    public void reject() {
-        this.status = OrderStatus.REJECTED;
-    }
-
     public boolean canBeModified() {
-        return status == OrderStatus.PENDING;
+        return orderProcessStatus != null && orderProcessStatus.isActiveType();
     }
 
     public boolean canBeCancelled() {
-        return status == OrderStatus.PENDING || status == OrderStatus.CONFIRMED;
+        return orderProcessStatus != null &&
+               (orderProcessStatus.isActiveType() || orderProcessStatus.isDefault());
+    }
+
+    public boolean isCompleted() {
+        return orderProcessStatus != null && orderProcessStatus.isCompletedType();
+    }
+
+    public boolean isCancelled() {
+        return orderProcessStatus != null && orderProcessStatus.isCancelledType();
+    }
+
+    public boolean isActive() {
+        return orderProcessStatus != null && orderProcessStatus.isActiveType();
     }
 
     public boolean isGuest() {
