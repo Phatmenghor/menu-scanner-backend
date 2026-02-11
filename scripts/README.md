@@ -22,7 +22,7 @@ Generates **7,000 test orders** with:
 - Random order numbers (e.g., `ORD-20260211-000001`)
 - Random pricing (subtotal: $5-$100)
 - Random delivery fees ($0, $2, $3, or $5)
-- Random payment methods (CASH, CARD, BANK_TRANSFER, E_WALLET)
+- Random payment methods (CASH, BANK_TRANSFER, ONLINE, OTHER)
 - Random payment statuses (80% PAID, 15% UNPAID, 5% PARTIALLY_PAID)
 - Random order statuses distributed across all 8 statuses
 - Created dates spread over last 90 days

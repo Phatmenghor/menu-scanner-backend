@@ -19,7 +19,7 @@ DECLARE
     v_payment_status VARCHAR;
     v_status_name VARCHAR;
     v_created_date TIMESTAMP;
-    v_payment_methods VARCHAR[] := ARRAY['CASH', 'CARD', 'BANK_TRANSFER', 'E_WALLET'];
+    v_payment_methods VARCHAR[] := ARRAY['CASH', 'BANK_TRANSFER', 'ONLINE', 'OTHER'];
     v_payment_statuses VARCHAR[] := ARRAY['PAID', 'UNPAID', 'PARTIALLY_PAID'];
     v_order_statuses VARCHAR[] := ARRAY['Pending', 'Confirmed', 'Preparing', 'Ready', 'Out for Delivery', 'Delivered', 'Completed', 'Cancelled'];
 BEGIN
