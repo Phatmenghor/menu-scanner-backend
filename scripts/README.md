@@ -28,16 +28,27 @@ Generates **7,000 test orders** with:
 - Created dates spread over last 90 days
 - Realistic delivery address snapshots
 
-### 3. `03_insert_order_items_sample.sql` (Optional)
-Creates order items for the first 100 orders:
-- 1-5 items per order
-- Random product names
-- Random quantities (1-3)
-- Random pricing
-- 20% chance of promotions
-- Optional special instructions
+### 3. `03_insert_order_related_data.sql`
+Populates all related data for the 7,000 orders:
 
-⚠️ **Note**: This requires actual product IDs from your database. You'll need to update the script with real product IDs.
+**Order Items**:
+- 1-5 items per order (automatically uses products from the business)
+- Random quantities (1-3 per item)
+- 30% have promotions (5-25% off or $1-4 fixed discount)
+- 20% have special instructions (extra sauce, no veggies, less spicy)
+- Realistic pricing with snapshots
+
+**Order Status History**:
+- Tracks complete status progression for each order
+- Realistic timestamps between status changes
+- Changed by system/business/customer/driver
+- Notes for each status change
+
+**Business Order Payments**:
+- One payment record per order (except cancelled)
+- Unique payment references (PAY-YYYYMMDD-XXXXXX)
+- Matches order payment method and status
+- Proper timestamps based on payment status
 
 ## 🚀 How to Use in pgAdmin
 
@@ -59,17 +70,21 @@ Creates order items for the first 100 orders:
    - Total order count (should be 7000)
    - Sample of 20 most recent orders
 
-### Step 3: (Optional) Run Order Items Script
-1. First, get actual product IDs from your database:
-   ```sql
-   SELECT id, name FROM products
-   WHERE business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828'
-   LIMIT 10;
-   ```
-2. Open `03_insert_order_items_sample.sql`
-3. Replace the placeholder UUIDs in `v_product_ids` array with real product IDs
-4. Update `v_product_names` array with actual product names
-5. Click **Execute** (F5)
+### Step 3: Run Order Related Data Script
+1. In the Query Tool, open `03_insert_order_related_data.sql`
+2. Click **Execute** (F5)
+3. Wait for completion (may take 1-2 minutes)
+4. You'll see progress messages every 500 orders
+5. Final statistics will show:
+   - Total order items created (with promotions and special instructions)
+   - Order status history records
+   - Business order payment records
+   - Average items per order
+
+**Requirements**:
+- Script 01 and 02 must be run first
+- Your business must have products in the database
+- Products must be available and not deleted
 
 ## 📊 Verification Queries
 
@@ -101,24 +116,76 @@ WHERE business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828'
 GROUP BY payment_status, payment_method
 ORDER BY payment_status, count DESC;
 
--- Orders created per day (last 30 days)
+-- Order items statistics
 SELECT
-    DATE(created_at) as order_date,
-    COUNT(*) as orders_count,
-    SUM(total_amount) as total_revenue
-FROM orders
+    COUNT(*) as total_items,
+    AVG(quantity) as avg_quantity,
+    COUNT(CASE WHEN has_promotion THEN 1 END) as items_with_promotion,
+    COUNT(CASE WHEN special_instructions IS NOT NULL THEN 1 END) as items_with_instructions
+FROM order_items oi
+JOIN orders o ON oi.order_id = o.id
+WHERE o.business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828';
+
+-- Order status history statistics
+SELECT
+    ops.name as status_name,
+    COUNT(*) as transition_count
+FROM order_status_history osh
+JOIN order_process_statuses ops ON osh.order_process_status_id = ops.id
+JOIN orders o ON osh.order_id = o.id
+WHERE o.business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828'
+GROUP BY ops.name
+ORDER BY transition_count DESC;
+
+-- Payment statistics
+SELECT
+    status,
+    COUNT(*) as payment_count,
+    SUM(amount) as total_amount
+FROM business_order_payments
 WHERE business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828'
-  AND created_at >= NOW() - INTERVAL '30 days'
-GROUP BY DATE(created_at)
-ORDER BY order_date DESC;
+GROUP BY status
+ORDER BY payment_count DESC;
+
+-- Complete order with items
+SELECT
+    o.order_number,
+    o.order_process_status_name,
+    o.total_amount,
+    COUNT(oi.id) as item_count,
+    STRING_AGG(oi.product_name || ' x' || oi.quantity, ', ') as items
+FROM orders o
+LEFT JOIN order_items oi ON o.id = oi.order_id
+WHERE o.business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828'
+GROUP BY o.id, o.order_number, o.order_process_status_name, o.total_amount
+ORDER BY o.created_at DESC
+LIMIT 10;
 ```
 
 ## 🧹 Clean Up (If Needed)
 
-To remove all test orders:
+To remove all test orders and related data:
 
 ```sql
--- Delete order items first (if created)
+-- Delete in reverse order of creation (foreign key constraints)
+
+-- 1. Delete business order payments
+DELETE FROM business_order_payments
+WHERE order_id IN (
+    SELECT id FROM orders
+    WHERE business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828'
+      AND customer_id = 'b00bde3f-5287-4eec-bfe5-1daa2b2a44ba'
+);
+
+-- 2. Delete order status history
+DELETE FROM order_status_history
+WHERE order_id IN (
+    SELECT id FROM orders
+    WHERE business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828'
+      AND customer_id = 'b00bde3f-5287-4eec-bfe5-1daa2b2a44ba'
+);
+
+-- 3. Delete order items
 DELETE FROM order_items
 WHERE order_id IN (
     SELECT id FROM orders
@@ -126,12 +193,12 @@ WHERE order_id IN (
       AND customer_id = 'b00bde3f-5287-4eec-bfe5-1daa2b2a44ba'
 );
 
--- Delete orders
+-- 4. Delete orders
 DELETE FROM orders
 WHERE business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828'
   AND customer_id = 'b00bde3f-5287-4eec-bfe5-1daa2b2a44ba';
 
--- Delete order process statuses (if needed)
+-- 5. Delete order process statuses (if needed)
 DELETE FROM order_process_statuses
 WHERE business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828';
 ```
