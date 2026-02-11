@@ -121,10 +121,6 @@ public class Order extends BaseUUIDEntity {
         this.paymentStatus = PaymentStatus.UNPAID;
     }
 
-    public void markAsPartiallyPaid() {
-        this.paymentStatus = PaymentStatus.PARTIALLY_PAID;
-    }
-
     public void markAsRefunded() {
         this.paymentStatus = PaymentStatus.REFUNDED;
     }

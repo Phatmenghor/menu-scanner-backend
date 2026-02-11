@@ -13,7 +13,6 @@ public enum PaymentStatus {
     // Order payment statuses
     PAID("Paid"),
     UNPAID("Unpaid"),
-    PARTIALLY_PAID("Partially Paid"),
     REFUNDED("Refunded");
 
     private final String description;
@@ -36,10 +35,6 @@ public enum PaymentStatus {
 
     public boolean isUnpaid() {
         return this == UNPAID || this == PENDING;
-    }
-
-    public boolean isPartiallyPaid() {
-        return this == PARTIALLY_PAID;
     }
 
     public boolean isRefunded() {
