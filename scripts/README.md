@@ -4,8 +4,10 @@ This directory contains SQL scripts to populate your database with order process
 
 ## 📋 Scripts Overview
 
-### 1. `01_insert_order_process_statuses.sql`
-Creates 8 order process statuses for your business:
+### 1. `01_insert_base_data.sql` ⭐ **START HERE**
+Creates foundational data needed for orders:
+
+**Order Process Statuses** (8 statuses):
 - **Pending** - Order placed, waiting for confirmation
 - **Confirmed** - Order confirmed by restaurant
 - **Preparing** - Order being prepared in kitchen
@@ -14,6 +16,12 @@ Creates 8 order process statuses for your business:
 - **Delivered** - Order delivered to customer
 - **Completed** - Order completed successfully
 - **Cancelled** - Order cancelled
+
+**Sample Products** (36 products):
+- 15 Main Dishes (burgers, pizza, pasta, chicken, steak, etc.)
+- 8 Sides (fries, salad, garlic bread, wings, etc.)
+- 8 Drinks (sodas, juices, coffee, etc.)
+- 5 Desserts (cake, ice cream, pie, etc.)
 
 ### 2. `02_insert_7000_orders.sql`
 Generates **7,000 test orders** with:
@@ -52,13 +60,17 @@ Populates all related data for the 7,000 orders:
 
 ## 🚀 How to Use in pgAdmin
 
-### Step 1: Run Order Process Statuses Script
+### Step 1: Run Base Data Script ⭐ **REQUIRED**
 1. Open **pgAdmin**
 2. Connect to your database
 3. Right-click on your database → **Query Tool**
-4. Open `01_insert_order_process_statuses.sql`
+4. Open `01_insert_base_data.sql`
 5. Click **Execute** (F5)
-6. Verify: You should see 8 statuses created
+6. Verify output shows:
+   - ✓ 8 order process statuses created
+   - ✓ 36 sample products created
+
+**This creates the foundation (statuses + products) needed for orders!**
 
 ### Step 2: Run Orders Script
 1. In the Query Tool, open `02_insert_7000_orders.sql`
