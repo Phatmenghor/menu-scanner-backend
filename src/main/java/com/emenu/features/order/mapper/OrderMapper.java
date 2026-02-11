@@ -25,6 +25,8 @@ public interface OrderMapper {
     @Mapping(target = "customerName", expression = "java(order.getCustomerIdentifier())")
     @Mapping(target = "customerPhone", expression = "java(order.getCustomerContact())")
     @Mapping(source = "business.name", target = "businessName")
+    @Mapping(target = "deliveryAddress", expression = "java(mapDeliveryAddress(order))")
+    @Mapping(target = "deliveryOption", expression = "java(mapDeliveryOption(order))")
     OrderResponse toResponse(Order order);
 
     List<OrderResponse> toResponseList(List<Order> orders);
@@ -97,5 +99,46 @@ public interface OrderMapper {
                 // For now, we only capture that there IS a promotion
                 .quantity(cartItem.getQuantity())
                 .build();
+    }
+
+    /**
+     * Map delivery address snapshot string to LocationResponse
+     */
+    default com.emenu.features.location.dto.response.LocationResponse mapDeliveryAddress(Order order) {
+        if (order.getDeliveryAddressSnapshot() == null || order.getDeliveryAddressSnapshot().isBlank()) {
+            return null;
+        }
+
+        var response = new com.emenu.features.location.dto.response.LocationResponse();
+        response.setFullAddress(order.getDeliveryAddressSnapshot());
+
+        // Parse the snapshot back to individual fields if needed
+        // Format is: "village, commune, district, province"
+        String[] parts = order.getDeliveryAddressSnapshot().split(",\\s*");
+        if (parts.length >= 4) {
+            response.setVillage(parts[0].isEmpty() ? null : parts[0]);
+            response.setCommune(parts[1].isEmpty() ? null : parts[1]);
+            response.setDistrict(parts[2].isEmpty() ? null : parts[2]);
+            response.setProvince(parts[3].isEmpty() ? null : parts[3]);
+        }
+
+        return response;
+    }
+
+    /**
+     * Map delivery option fields to DeliveryOptionResponse
+     */
+    default com.emenu.features.order.dto.response.DeliveryOptionResponse mapDeliveryOption(Order order) {
+        if (order.getDeliveryOptionName() == null || order.getDeliveryOptionName().isBlank()) {
+            return null;
+        }
+
+        var response = new com.emenu.features.order.dto.response.DeliveryOptionResponse();
+        response.setName(order.getDeliveryOptionName());
+        response.setDescription(order.getDeliveryOptionDescription());
+        response.setPrice(order.getDeliveryFee());
+        response.setBusinessId(order.getBusinessId());
+
+        return response;
     }
 }

@@ -63,7 +63,7 @@ public class OrderServiceImpl implements OrderService {
         User currentUser = securityUtils.getCurrentUser();
 
         Order order = createBaseOrder(request, currentUser.getId());
-        assignProcessStatus(order, request.getBusinessId(), request.getOrderProcessStatusName());
+        assignProcessStatus(order, request.getBusinessId(), request.getOrderProcessStatusId());
         Order savedOrder = orderRepository.save(order);
 
         // Create order items from cart summary (frontend) or database cart
@@ -133,11 +133,17 @@ public class OrderServiceImpl implements OrderService {
             throw new ValidationException("You can only update orders for your business");
         }
 
-        if (request.getOrderProcessStatusName() != null) {
+        if (request.getOrderProcessStatusId() != null) {
+            // Validate that the status exists and belongs to the business
             OrderProcessStatus processStatus = orderProcessStatusRepository
-                    .findByNameAndBusinessIdAndIsDeletedFalse(request.getOrderProcessStatusName(), currentUser.getBusinessId())
-                    .orElseThrow(() -> new NotFoundException("Order process status not found: " + request.getOrderProcessStatusName()));
-            order.updateStatus(processStatus.getId());
+                    .findById(request.getOrderProcessStatusId())
+                    .orElseThrow(() -> new NotFoundException("Order process status not found"));
+
+            if (!processStatus.getBusinessId().equals(currentUser.getBusinessId())) {
+                throw new ValidationException("Order process status does not belong to your business");
+            }
+
+            order.updateStatus(request.getOrderProcessStatusId());
         }
 
         // Update delivery address snapshot if provided
@@ -284,13 +290,20 @@ public class OrderServiceImpl implements OrderService {
                 });
     }
 
-    private void assignProcessStatus(Order order, UUID businessId, String statusName) {
-        if (statusName != null && !statusName.isBlank()) {
+    private void assignProcessStatus(Order order, UUID businessId, UUID statusId) {
+        if (statusId != null) {
+            // Validate that the status exists and belongs to the business
             OrderProcessStatus status = orderProcessStatusRepository
-                    .findByNameAndBusinessIdAndIsDeletedFalse(statusName, businessId)
-                    .orElseThrow(() -> new NotFoundException("Order process status not found: " + statusName));
-            order.setOrderProcessStatusId(status.getId());
+                    .findById(statusId)
+                    .orElseThrow(() -> new NotFoundException("Order process status not found"));
+
+            if (!status.getBusinessId().equals(businessId)) {
+                throw new ValidationException("Order process status does not belong to the specified business");
+            }
+
+            order.setOrderProcessStatusId(statusId);
         } else {
+            // If no status provided, use the first status for the business
             orderProcessStatusRepository.findByBusinessIdOrderByCreatedAtAsc(businessId)
                     .stream()
                     .findFirst()

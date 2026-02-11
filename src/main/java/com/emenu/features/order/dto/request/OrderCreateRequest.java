@@ -25,5 +25,5 @@ public class OrderCreateRequest {
 
     private String customerNote;
 
-    private String orderProcessStatusName;
+    private UUID orderProcessStatusId;
 }
