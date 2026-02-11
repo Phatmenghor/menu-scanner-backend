@@ -1,6 +1,7 @@
 package com.emenu.features.order.dto.filter;
 
 import com.emenu.enums.payment.PaymentMethod;
+import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.shared.dto.BaseFilterRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -13,5 +14,5 @@ public class OrderFilterRequest extends BaseFilterRequest {
     private UUID businessId;
     private String orderProcessStatusName;
     private PaymentMethod paymentMethod;
-    private String paymentStatus;
+    private PaymentStatus paymentStatus;
 }

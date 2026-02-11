@@ -1,6 +1,7 @@
 package com.emenu.features.order.models;
 
 import com.emenu.enums.payment.PaymentMethod;
+import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.features.auth.models.Business;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.location.models.Location;
@@ -76,8 +77,10 @@ public class Order extends BaseUUIDEntity {
     @Column(name = "payment_method", nullable = false)
     private PaymentMethod paymentMethod;
 
-    @Column(name = "payment_status")
-    private String paymentStatus = "UNPAID";
+    // Payment status - using enum for type safety (PAID, UNPAID, PARTIALLY_PAID, REFUNDED, etc.)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
 
     // Timestamps
     @Column(name = "confirmed_at")
@@ -111,18 +114,18 @@ public class Order extends BaseUUIDEntity {
     }
 
     public void markAsPaid() {
-        this.paymentStatus = "PAID";
+        this.paymentStatus = PaymentStatus.PAID;
     }
 
     public void markAsUnpaid() {
-        this.paymentStatus = "UNPAID";
+        this.paymentStatus = PaymentStatus.UNPAID;
     }
 
     public void markAsPartiallyPaid() {
-        this.paymentStatus = "PARTIALLY_PAID";
+        this.paymentStatus = PaymentStatus.PARTIALLY_PAID;
     }
 
     public void markAsRefunded() {
-        this.paymentStatus = "REFUNDED";
+        this.paymentStatus = PaymentStatus.REFUNDED;
     }
 }

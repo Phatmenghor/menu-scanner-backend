@@ -1,6 +1,7 @@
 package com.emenu.features.order.dto.response;
 
 import com.emenu.enums.payment.PaymentMethod;
+import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.features.location.dto.response.LocationResponse;
 import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
@@ -41,7 +42,7 @@ public class OrderResponse extends BaseAuditResponse {
 
     // Payment info
     private PaymentMethod paymentMethod;
-    private String paymentStatus;
+    private PaymentStatus paymentStatus;
 
     // Timestamps
     private LocalDateTime confirmedAt;
