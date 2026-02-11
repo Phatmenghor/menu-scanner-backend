@@ -52,7 +52,6 @@ public class Order extends BaseUUIDEntity {
     @Column(name = "delivery_option_description", columnDefinition = "TEXT")
     private String deliveryOptionDescription;
 
-    // Order process status - snapshot (not relationship) for history preservation
     @Column(name = "order_process_status_name")
     private String orderProcessStatusName;
 
@@ -77,7 +76,6 @@ public class Order extends BaseUUIDEntity {
     @Column(name = "payment_method", nullable = false)
     private PaymentMethod paymentMethod;
 
-    // Payment status - using String for flexibility (PAID, UNPAID, PARTIALLY_PAID, REFUNDED, etc.)
     @Column(name = "payment_status")
     private String paymentStatus = "UNPAID";
 
