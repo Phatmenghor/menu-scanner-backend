@@ -103,66 +103,62 @@ public interface OrderMapper {
     }
 
     /**
-     * Map delivery address snapshot string to LocationResponse
+     * Map delivery address snapshot JSON to OrderDeliveryAddressDto
      */
-    default com.emenu.features.location.dto.response.LocationResponse mapDeliveryAddress(Order order) {
+    default com.emenu.features.order.dto.response.OrderDeliveryAddressDto mapDeliveryAddress(Order order) {
         if (order.getDeliveryAddressSnapshot() == null || order.getDeliveryAddressSnapshot().isBlank()) {
             return null;
         }
 
-        var response = new com.emenu.features.location.dto.response.LocationResponse();
-        response.setFullAddress(order.getDeliveryAddressSnapshot());
+        try {
+            // Parse JSON string to Map
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> addressMap = objectMapper.readValue(
+                    order.getDeliveryAddressSnapshot(),
+                    java.util.Map.class
+            );
 
-        // Parse the snapshot back to individual fields if needed
-        // Format is: "village, commune, district, province" (but may have fewer parts)
-        String[] parts = order.getDeliveryAddressSnapshot().split(",\\s*");
-
-        // Assign parts based on what's available (from right to left: province, district, commune, village)
-        if (parts.length >= 1) {
-            response.setProvince(parts[parts.length - 1].isEmpty() ? null : parts[parts.length - 1]);
+            // Build clean DTO with only the fields we need
+            return com.emenu.features.order.dto.response.OrderDeliveryAddressDto.builder()
+                    .street((String) addressMap.get("street"))
+                    .city((String) addressMap.get("city"))
+                    .district((String) addressMap.get("district"))
+                    .commune((String) addressMap.get("commune"))
+                    .postalCode((String) addressMap.get("postalCode"))
+                    .country((String) addressMap.get("country"))
+                    .build();
+        } catch (Exception e) {
+            // If JSON parsing fails, return null (backward compatibility with old data)
+            return null;
         }
-        if (parts.length >= 2) {
-            response.setDistrict(parts[parts.length - 2].isEmpty() ? null : parts[parts.length - 2]);
-        }
-        if (parts.length >= 3) {
-            response.setCommune(parts[parts.length - 3].isEmpty() ? null : parts[parts.length - 3]);
-        }
-        if (parts.length >= 4) {
-            response.setVillage(parts[parts.length - 4].isEmpty() ? null : parts[parts.length - 4]);
-        }
-
-        return response;
     }
 
     /**
-     * Map delivery option fields to DeliveryOptionResponse
+     * Map delivery option fields to OrderDeliveryOptionDto
      */
-    default com.emenu.features.order.dto.response.DeliveryOptionResponse mapDeliveryOption(Order order) {
+    default com.emenu.features.order.dto.response.OrderDeliveryOptionDto mapDeliveryOption(Order order) {
         if (order.getDeliveryOptionName() == null || order.getDeliveryOptionName().isBlank()) {
             return null;
         }
 
-        var response = new com.emenu.features.order.dto.response.DeliveryOptionResponse();
-        response.setName(order.getDeliveryOptionName());
-        response.setDescription(order.getDeliveryOptionDescription());
-        response.setPrice(order.getDeliveryFee());
-        response.setBusinessId(order.getBusinessId());
-
-        return response;
+        return com.emenu.features.order.dto.response.OrderDeliveryOptionDto.builder()
+                .name(order.getDeliveryOptionName())
+                .description(order.getDeliveryOptionDescription())
+                .price(order.getDeliveryFee())
+                .build();
     }
 
     /**
-     * Map order process status name snapshot to OrderProcessStatusResponse
+     * Map order process status name snapshot to OrderStatusDto
      */
-    default com.emenu.features.order.dto.response.OrderProcessStatusResponse mapOrderProcessStatus(Order order) {
+    default com.emenu.features.order.dto.response.OrderStatusDto mapOrderProcessStatus(Order order) {
         if (order.getOrderProcessStatusName() == null || order.getOrderProcessStatusName().isBlank()) {
             return null;
         }
 
-        var response = new com.emenu.features.order.dto.response.OrderProcessStatusResponse();
-        response.setName(order.getOrderProcessStatusName());
-        response.setBusinessId(order.getBusinessId());
-
-        return response;
+        return com.emenu.features.order.dto.response.OrderStatusDto.builder()
+                .name(order.getOrderProcessStatusName())
+                .build();
     }
 }

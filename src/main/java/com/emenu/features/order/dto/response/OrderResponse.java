@@ -2,7 +2,6 @@ package com.emenu.features.order.dto.response;
 
 import com.emenu.enums.payment.PaymentMethod;
 import com.emenu.enums.payment.PaymentStatus;
-import com.emenu.features.location.dto.response.LocationResponse;
 import com.emenu.shared.dto.BaseAuditResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,11 +26,11 @@ public class OrderResponse extends BaseAuditResponse {
     private String businessName;
 
     // Delivery info
-    private LocationResponse deliveryAddress;
-    private DeliveryOptionResponse deliveryOption;
+    private OrderDeliveryAddressDto deliveryAddress;
+    private OrderDeliveryOptionDto deliveryOption;
 
     // Order details
-    private OrderProcessStatusResponse orderProcessStatus;
+    private OrderStatusDto orderProcessStatus;
     private String customerNote;
     private String businessNote;
 
