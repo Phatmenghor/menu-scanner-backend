@@ -41,7 +41,7 @@ public class OrderResponse extends BaseAuditResponse {
 
     // Payment info
     private PaymentMethod paymentMethod;
-    private Boolean isPaid;
+    private String paymentStatus;
 
     // Timestamps
     private LocalDateTime confirmedAt;

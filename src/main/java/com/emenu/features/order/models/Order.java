@@ -77,8 +77,9 @@ public class Order extends BaseUUIDEntity {
     @Column(name = "payment_method", nullable = false)
     private PaymentMethod paymentMethod;
 
-    @Column(name = "is_paid", nullable = false)
-    private Boolean isPaid = false;
+    // Payment status - using String for flexibility (PAID, UNPAID, PARTIALLY_PAID, REFUNDED, etc.)
+    @Column(name = "payment_status")
+    private String paymentStatus = "UNPAID";
 
     // Timestamps
     @Column(name = "confirmed_at")
@@ -112,6 +113,18 @@ public class Order extends BaseUUIDEntity {
     }
 
     public void markAsPaid() {
-        this.isPaid = true;
+        this.paymentStatus = "PAID";
+    }
+
+    public void markAsUnpaid() {
+        this.paymentStatus = "UNPAID";
+    }
+
+    public void markAsPartiallyPaid() {
+        this.paymentStatus = "PARTIALLY_PAID";
+    }
+
+    public void markAsRefunded() {
+        this.paymentStatus = "REFUNDED";
     }
 }

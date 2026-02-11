@@ -13,5 +13,5 @@ public class OrderFilterRequest extends BaseFilterRequest {
     private UUID businessId;
     private String orderProcessStatusName;
     private PaymentMethod paymentMethod;
-    private Boolean isPaid;
+    private String paymentStatus;
 }
