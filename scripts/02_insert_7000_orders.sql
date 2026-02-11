@@ -20,7 +20,7 @@ DECLARE
     v_status_name VARCHAR;
     v_created_date TIMESTAMP;
     v_payment_methods VARCHAR[] := ARRAY['CASH', 'BANK_TRANSFER', 'ONLINE', 'OTHER'];
-    v_payment_statuses VARCHAR[] := ARRAY['PAID', 'UNPAID', 'PARTIALLY_PAID'];
+    v_payment_statuses VARCHAR[] := ARRAY['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'];
     v_order_statuses VARCHAR[] := ARRAY['Pending', 'Confirmed', 'Preparing', 'Ready', 'Out for Delivery', 'Delivered', 'Completed', 'Cancelled'];
 BEGIN
     -- Loop to insert 7000 orders
@@ -41,11 +41,12 @@ BEGIN
         -- Random payment method
         v_payment_method := v_payment_methods[FLOOR(RANDOM() * 4 + 1)];
 
-        -- Random payment status (80% PAID, 15% UNPAID, 5% PARTIALLY_PAID)
+        -- Random payment status (70% COMPLETED, 20% PENDING, 5% FAILED, 5% CANCELLED)
         CASE
-            WHEN RANDOM() < 0.80 THEN v_payment_status := 'PAID';
-            WHEN RANDOM() < 0.95 THEN v_payment_status := 'UNPAID';
-            ELSE v_payment_status := 'PARTIALLY_PAID';
+            WHEN RANDOM() < 0.70 THEN v_payment_status := 'COMPLETED';
+            WHEN RANDOM() < 0.90 THEN v_payment_status := 'PENDING';
+            WHEN RANDOM() < 0.95 THEN v_payment_status := 'FAILED';
+            ELSE v_payment_status := 'CANCELLED';
         END CASE;
 
         -- Random order status

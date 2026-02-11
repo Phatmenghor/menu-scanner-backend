@@ -23,7 +23,7 @@ Generates **7,000 test orders** with:
 - Random pricing (subtotal: $5-$100)
 - Random delivery fees ($0, $2, $3, or $5)
 - Random payment methods (CASH, BANK_TRANSFER, ONLINE, OTHER)
-- Random payment statuses (80% PAID, 15% UNPAID, 5% PARTIALLY_PAID)
+- Random payment statuses (70% COMPLETED, 20% PENDING, 5% FAILED, 5% CANCELLED)
 - Random order statuses distributed across all 8 statuses
 - Created dates spread over last 90 days
 - Realistic delivery address snapshots
@@ -140,9 +140,10 @@ WHERE business_id = '0a32d15e-1da6-4c39-bbe7-eec305035828';
 
 - **Order Numbers**: Generated in format `ORD-YYYYMMDD-XXXXXX` (e.g., `ORD-20260211-000001`)
 - **Payment Status Distribution**:
-  - 80% PAID
-  - 15% UNPAID
-  - 5% PARTIALLY_PAID
+  - 70% COMPLETED
+  - 20% PENDING
+  - 5% FAILED
+  - 5% CANCELLED
 - **Date Range**: Orders spread randomly over last 90 days
 - **Delivery Fees**:
   - $0 = Pickup
