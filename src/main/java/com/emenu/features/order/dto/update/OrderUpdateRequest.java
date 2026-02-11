@@ -5,11 +5,9 @@ import com.emenu.features.order.dto.request.DeliveryAddressRequest;
 import com.emenu.features.order.dto.request.DeliveryOptionRequest;
 import lombok.Data;
 
-import java.util.UUID;
-
 @Data
 public class OrderUpdateRequest {
-    private UUID orderProcessStatusId;
+    private String orderProcessStatusName;
     private DeliveryAddressRequest deliveryAddress;
     private DeliveryOptionRequest deliveryOption;
     private PaymentMethod paymentMethod;

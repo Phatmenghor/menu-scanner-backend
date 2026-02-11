@@ -22,7 +22,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
            "LEFT JOIN FETCH oi.productSize ps " +
            "LEFT JOIN FETCH o.business " +
            "LEFT JOIN FETCH o.customer " +
-           "LEFT JOIN FETCH o.orderProcessStatus " +
            "WHERE o.id = :id AND o.isDeleted = false")
     Optional<Order> findByIdWithDetails(@Param("id") UUID id);
 
@@ -41,8 +40,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     /**
      * Finds non-deleted orders by business ID and process status, ordered by creation date descending
      */
-    @Query("SELECT o FROM Order o WHERE o.businessId = :businessId AND o.orderProcessStatusId = :orderProcessStatusId AND o.isDeleted = false ORDER BY o.createdAt DESC")
-    List<Order> findByBusinessIdAndOrderProcessStatusIdOrderByCreatedAtDesc(@Param("businessId") UUID businessId, @Param("orderProcessStatusId") UUID orderProcessStatusId);
+    @Query("SELECT o FROM Order o WHERE o.businessId = :businessId AND o.orderProcessStatusName = :orderProcessStatusName AND o.isDeleted = false ORDER BY o.createdAt DESC")
+    List<Order> findByBusinessIdAndOrderProcessStatusNameOrderByCreatedAtDesc(@Param("businessId") UUID businessId, @Param("orderProcessStatusName") String orderProcessStatusName);
 
     /**
      * Checks if an order exists with the given order number
@@ -52,6 +51,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     /**
      * Counts non-deleted orders by business ID and process status
      */
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.businessId = :businessId AND o.orderProcessStatusId = :orderProcessStatusId AND o.isDeleted = false")
-    long countByBusinessIdAndOrderProcessStatusId(@Param("businessId") UUID businessId, @Param("orderProcessStatusId") UUID orderProcessStatusId);
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.businessId = :businessId AND o.orderProcessStatusName = :orderProcessStatusName AND o.isDeleted = false")
+    long countByBusinessIdAndOrderProcessStatusName(@Param("businessId") UUID businessId, @Param("orderProcessStatusName") String orderProcessStatusName);
 }

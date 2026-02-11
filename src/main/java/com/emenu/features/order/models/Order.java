@@ -52,12 +52,9 @@ public class Order extends BaseUUIDEntity {
     @Column(name = "delivery_option_description", columnDefinition = "TEXT")
     private String deliveryOptionDescription;
 
-    @Column(name = "order_process_status_id", nullable = false)
-    private UUID orderProcessStatusId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_process_status_id", insertable = false, updatable = false)
-    private OrderProcessStatus orderProcessStatus;
+    // Order process status - snapshot (not relationship) for history preservation
+    @Column(name = "order_process_status_name")
+    private String orderProcessStatusName;
 
     @Column(name = "customer_note", columnDefinition = "TEXT")
     private String customerNote;
@@ -94,8 +91,8 @@ public class Order extends BaseUUIDEntity {
     private List<OrderItem> items;
 
     // Business Methods
-    public void updateStatus(UUID newOrderProcessStatusId) {
-        this.orderProcessStatusId = newOrderProcessStatusId;
+    public void updateStatus(String newOrderProcessStatusName) {
+        this.orderProcessStatusName = newOrderProcessStatusName;
     }
 
     public void confirm() {

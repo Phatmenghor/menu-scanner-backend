@@ -27,6 +27,7 @@ public interface OrderMapper {
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(target = "deliveryAddress", expression = "java(mapDeliveryAddress(order))")
     @Mapping(target = "deliveryOption", expression = "java(mapDeliveryOption(order))")
+    @Mapping(target = "orderProcessStatus", expression = "java(mapOrderProcessStatus(order))")
     OrderResponse toResponse(Order order);
 
     List<OrderResponse> toResponseList(List<Order> orders);
@@ -113,13 +114,21 @@ public interface OrderMapper {
         response.setFullAddress(order.getDeliveryAddressSnapshot());
 
         // Parse the snapshot back to individual fields if needed
-        // Format is: "village, commune, district, province"
+        // Format is: "village, commune, district, province" (but may have fewer parts)
         String[] parts = order.getDeliveryAddressSnapshot().split(",\\s*");
+
+        // Assign parts based on what's available (from right to left: province, district, commune, village)
+        if (parts.length >= 1) {
+            response.setProvince(parts[parts.length - 1].isEmpty() ? null : parts[parts.length - 1]);
+        }
+        if (parts.length >= 2) {
+            response.setDistrict(parts[parts.length - 2].isEmpty() ? null : parts[parts.length - 2]);
+        }
+        if (parts.length >= 3) {
+            response.setCommune(parts[parts.length - 3].isEmpty() ? null : parts[parts.length - 3]);
+        }
         if (parts.length >= 4) {
-            response.setVillage(parts[0].isEmpty() ? null : parts[0]);
-            response.setCommune(parts[1].isEmpty() ? null : parts[1]);
-            response.setDistrict(parts[2].isEmpty() ? null : parts[2]);
-            response.setProvince(parts[3].isEmpty() ? null : parts[3]);
+            response.setVillage(parts[parts.length - 4].isEmpty() ? null : parts[parts.length - 4]);
         }
 
         return response;
@@ -137,6 +146,21 @@ public interface OrderMapper {
         response.setName(order.getDeliveryOptionName());
         response.setDescription(order.getDeliveryOptionDescription());
         response.setPrice(order.getDeliveryFee());
+        response.setBusinessId(order.getBusinessId());
+
+        return response;
+    }
+
+    /**
+     * Map order process status name snapshot to OrderProcessStatusResponse
+     */
+    default com.emenu.features.order.dto.response.OrderProcessStatusResponse mapOrderProcessStatus(Order order) {
+        if (order.getOrderProcessStatusName() == null || order.getOrderProcessStatusName().isBlank()) {
+            return null;
+        }
+
+        var response = new com.emenu.features.order.dto.response.OrderProcessStatusResponse();
+        response.setName(order.getOrderProcessStatusName());
         response.setBusinessId(order.getBusinessId());
 
         return response;
