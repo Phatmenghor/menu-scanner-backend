@@ -9,6 +9,7 @@ import com.emenu.features.location.models.Province;
 import com.emenu.features.location.repository.ProvinceRepository;
 import com.emenu.features.location.service.ProvinceService;
 import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -28,7 +28,7 @@ public class ProvinceServiceImpl implements ProvinceService {
 
     private final ProvinceRepository provinceRepository;
     private final ProvinceMapper provinceMapper;
-    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
+    private final PaginationMapper paginationMapper;
 
     @Override
     public ProvinceResponse createProvince(ProvinceRequest request) {
