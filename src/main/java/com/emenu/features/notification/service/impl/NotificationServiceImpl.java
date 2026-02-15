@@ -15,6 +15,7 @@ import com.emenu.features.notification.repository.NotificationRepository;
 import com.emenu.features.notification.service.NotificationService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +41,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationFactory notificationFactory;
     private final SecurityUtils securityUtils;
     private final UserRepository userRepository;
-    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
+    private final PaginationMapper paginationMapper;
     
     // ===== CREATE =====
     @Override
