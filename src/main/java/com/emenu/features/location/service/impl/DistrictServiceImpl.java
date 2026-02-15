@@ -10,6 +10,7 @@ import com.emenu.features.location.repository.DistrictRepository;
 import com.emenu.features.location.repository.ProvinceRepository;
 import com.emenu.features.location.service.DistrictService;
 import com.emenu.shared.dto.PaginationResponse;
+import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +29,7 @@ public class DistrictServiceImpl implements DistrictService {
     private final DistrictRepository districtRepository;
     private final DistrictMapper districtMapper;
     private final ProvinceRepository provinceRepository;
-    private final com.emenu.shared.mapper.PaginationMapper paginationMapper;
+    private final PaginationMapper paginationMapper;
 
     @Override
     @Transactional  // Keep transaction open during mapping
