@@ -43,15 +43,12 @@ public class Order extends BaseUUIDEntity {
     @JoinColumn(name = "business_id", insertable = false, updatable = false)
     private Business business;
 
-    // Delivery info - full snapshots from frontend (no IDs)
+    // Delivery info - full JSON snapshots from frontend (no IDs)
     @Column(name = "delivery_address_snapshot", columnDefinition = "TEXT")
     private String deliveryAddressSnapshot;
 
-    @Column(name = "delivery_option_name")
-    private String deliveryOptionName;
-
-    @Column(name = "delivery_option_description", columnDefinition = "TEXT")
-    private String deliveryOptionDescription;
+    @Column(name = "delivery_option_snapshot", columnDefinition = "TEXT")
+    private String deliveryOptionSnapshot;
 
     @Column(name = "order_process_status_name")
     private String orderProcessStatusName;

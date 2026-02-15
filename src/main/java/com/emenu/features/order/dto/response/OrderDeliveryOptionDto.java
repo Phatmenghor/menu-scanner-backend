@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * Clean DTO for order delivery option snapshot - no inheritance, no nulls
+ * Clean DTO for order delivery option snapshot - mirrors DeliveryOptionRequest exactly
  */
 @Data
 @Builder
@@ -17,5 +17,6 @@ import java.math.BigDecimal;
 public class OrderDeliveryOptionDto {
     private String name;
     private String description;
+    private String imageUrl;
     private BigDecimal price;
 }

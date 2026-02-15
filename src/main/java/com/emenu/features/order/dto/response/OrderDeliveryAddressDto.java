@@ -5,18 +5,23 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 /**
- * Clean DTO for order delivery address snapshot - no inheritance, no nulls
+ * Clean DTO for order delivery address snapshot - mirrors DeliveryAddressRequest exactly
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderDeliveryAddressDto {
-    private String street;
-    private String city;
-    private String district;
+    private String village;
     private String commune;
-    private String postalCode;
-    private String country;
+    private String district;
+    private String province;
+    private String streetNumber;
+    private String houseNumber;
+    private String note;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
 }

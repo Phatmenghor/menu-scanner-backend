@@ -28,6 +28,7 @@ import com.emenu.shared.generate.OrderNumberGenerator;
 import com.emenu.shared.generate.PaymentReferenceGenerator;
 import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -143,27 +144,28 @@ public class OrderServiceImpl implements OrderService {
             order.updateStatus(request.getOrderProcessStatusName());
         }
 
+        ObjectMapper objectMapper = new ObjectMapper();
+
         // Update delivery address snapshot if provided
         if (request.getDeliveryAddress() != null) {
-            var addr = request.getDeliveryAddress();
-            String addressSnapshot = String.format("%s, %s, %s, %s",
-                    addr.getVillage() != null ? addr.getVillage() : "",
-                    addr.getCommune() != null ? addr.getCommune() : "",
-                    addr.getDistrict() != null ? addr.getDistrict() : "",
-                    addr.getProvince() != null ? addr.getProvince() : "")
-                    .replaceAll("^, |, $", "");
-            order.setDeliveryAddressSnapshot(addressSnapshot);
+            try {
+                order.setDeliveryAddressSnapshot(objectMapper.writeValueAsString(request.getDeliveryAddress()));
+            } catch (Exception e) {
+                log.warn("Failed to serialize delivery address snapshot", e);
+            }
         }
 
         // Update delivery option snapshot if provided
         if (request.getDeliveryOption() != null) {
-            var option = request.getDeliveryOption();
-            order.setDeliveryOptionName(option.getName());
-            order.setDeliveryOptionDescription(option.getDescription());
-            order.setDeliveryFee(option.getPrice());
+            try {
+                order.setDeliveryOptionSnapshot(objectMapper.writeValueAsString(request.getDeliveryOption()));
+            } catch (Exception e) {
+                log.warn("Failed to serialize delivery option snapshot", e);
+            }
+            order.setDeliveryFee(request.getDeliveryOption().getPrice());
 
             // Recalculate total with new delivery fee
-            order.setTotalAmount(order.getSubtotal().add(option.getPrice()));
+            order.setTotalAmount(order.getSubtotal().add(request.getDeliveryOption().getPrice()));
         }
 
         if (request.getPaymentMethod() != null) {

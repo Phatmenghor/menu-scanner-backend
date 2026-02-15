@@ -23,9 +23,8 @@ public class OrderCreateHelper {
     private PaymentMethod paymentMethod;
     private String customerNote;
 
-    // Delivery snapshots - full info from frontend
+    // Delivery snapshots - full JSON from frontend
     private String deliveryAddressSnapshot;
-    private String deliveryOptionName;
-    private String deliveryOptionDescription;
+    private String deliveryOptionSnapshot;
     private BigDecimal deliveryFee;
 }
