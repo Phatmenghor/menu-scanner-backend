@@ -49,6 +49,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/v1/users/admin-token").permitAll()
                         .requestMatchers("/api/v1/users/business-token").permitAll()
+                        .requestMatchers("/api/v1/users/customer-token").permitAll()
 
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
