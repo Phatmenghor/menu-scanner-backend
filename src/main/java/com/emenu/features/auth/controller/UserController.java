@@ -43,6 +43,15 @@ public class UserController {
     @PostMapping("business-token")
     public ResponseEntity<String> getMyBusinessToken() {
         log.info("Get my business token");
+        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIwQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9CVVNJTkVTU19PV05FUiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzE5OTMwMzIsImV4cCI6MTc3MzEwNDE0M30.-sdyeTDA2LlA85oEwTp491RbYGULYWPP8hDQmwNEUqDCUtUWE2uR5dk6XskgXu-mChfP7reeuc-S8LZ8MA6NjQ");
+    }
+
+    /**
+     * Retrieves a test business owner token for development purposes
+     */
+    @PostMapping("customer-token")
+    public ResponseEntity<String> getMyCustomerToken() {
+        log.info("Get my customer token");
         return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIwQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9CVVNJTkVTU19PV05FUiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzAyNzA5NjcsImV4cCI6MTc3MTM4MjA3OH0.k6jy4mQIhV33XWUTl_tEDIDjQIBv69esxtm13kb1sDVf36EtQyotgR7qXH-G-B7iOuBJslDULUT09ec4qTxelw");
     }
 
