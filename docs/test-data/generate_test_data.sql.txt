@@ -1,0 +1,1020 @@
+-- ============================================================
+-- MENU SCANNER BACKEND - FULL TEST DATA GENERATION SCRIPT
+-- ============================================================
+-- Run this in pgAdmin Query Tool on your database
+--
+-- Test Users Created:
+--   Platform : phatmenghor19@gmail.com  (password: password)
+--   Business : phatmenghor20@gmail.com  (password: password)
+--   Customer : phatmenghor21@gmail.com  (password: password)
+--
+-- Data Summary:
+--   - 1  Business
+--   - 30 Users  (1 platform + 11 business staff + 18 customers)
+--   - 20 Categories
+--   - 10 Brands
+--   - 4000 Products  (great for pagination testing)
+--   - 50 Orders with items
+--   - All supporting tables populated
+--
+-- BCrypt password hash for "password":
+--   $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh9q
+-- ============================================================
+
+-- Enable pgcrypto for gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+DO $$
+DECLARE
+    -- ── Core entity IDs ──────────────────────────────────────
+    v_business_id              UUID := gen_random_uuid();
+    v_platform_user_id         UUID := gen_random_uuid();
+    v_business_user_id         UUID := gen_random_uuid();
+    v_customer_user_id         UUID := gen_random_uuid();
+
+    -- ── Role IDs ─────────────────────────────────────────────
+    v_role_platform_admin      UUID := gen_random_uuid();
+    v_role_business_admin      UUID := gen_random_uuid();
+    v_role_customer            UUID := gen_random_uuid();
+
+    -- ── Subscription ─────────────────────────────────────────
+    v_plan_premium_id          UUID := gen_random_uuid();
+    v_subscription_id          UUID := gen_random_uuid();
+
+    -- ── Order helpers ────────────────────────────────────────
+    v_order_process_pending_id UUID := gen_random_uuid();
+    v_delivery_dine_in_id      UUID := gen_random_uuid();
+    v_cart_id                  UUID := gen_random_uuid();
+
+    -- ── Loop helpers ─────────────────────────────────────────
+    v_i                        INTEGER;
+    v_cat_ids                  UUID[];
+    v_brand_ids                UUID[];
+    v_cat_id                   UUID;
+    v_brand_id                 UUID;
+    v_product_id               UUID;
+    v_order_id                 UUID;
+    v_extra_user_id            UUID;
+    v_leave_type_id            UUID;
+    v_ws_type_id               UUID;
+
+    -- ── Shared constants ─────────────────────────────────────
+    v_pwd  TEXT := '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh9q';
+    v_now  TIMESTAMPTZ := NOW();
+BEGIN
+
+-- ============================================================
+-- 1. BUSINESS
+-- ============================================================
+INSERT INTO businesses (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    name, email, phone, address, description,
+    owner_id, status, is_subscription_active
+) VALUES (
+    v_business_id, 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    'Phat Restaurant & Café',
+    'phatmenghor20@gmail.com',
+    '+855 12 345 678',
+    'Street 271, Sangkat Toul Tom Poung, Phnom Penh, Cambodia',
+    'A modern restaurant offering Cambodian and international cuisine with a digital menu experience.',
+    v_business_user_id, 'ACTIVE', true
+);
+
+-- ============================================================
+-- 2. ROLES
+-- ============================================================
+INSERT INTO roles (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    name, description, business_id, user_type
+) VALUES
+    (v_role_platform_admin, 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'PLATFORM_ADMIN',  'Platform administrator with full system access', NULL, 'PLATFORM_USER'),
+    (v_role_business_admin, 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'BUSINESS_ADMIN',  'Business administrator',                          v_business_id, 'BUSINESS_USER'),
+    (v_role_customer,       0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'CUSTOMER',        'Regular customer',                                NULL, 'CUSTOMER');
+
+-- ============================================================
+-- 3. THREE MAIN USERS
+-- ============================================================
+
+-- 3a. Platform User
+INSERT INTO users (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_identifier, email, password,
+    first_name, last_name, phone_number, profile_image_url,
+    user_type, account_status, business_id, position, address, notes,
+    last_login_at, last_active_at, active_sessions_count
+) VALUES (
+    v_platform_user_id, 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    'phatmenghor19@gmail.com', 'phatmenghor19@gmail.com', v_pwd,
+    'Phat', 'Menghor', '+855 12 000 001', NULL,
+    'PLATFORM_USER', 'ACTIVE', NULL,
+    'Platform Administrator', 'Phnom Penh, Cambodia', 'Main platform admin account',
+    v_now, v_now, 0
+);
+
+-- 3b. Business User (Owner)
+INSERT INTO users (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_identifier, email, password,
+    first_name, last_name, phone_number, profile_image_url,
+    user_type, account_status, business_id, position, address, notes,
+    last_login_at, last_active_at, active_sessions_count
+) VALUES (
+    v_business_user_id, 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    'phatmenghor20@gmail.com', 'phatmenghor20@gmail.com', v_pwd,
+    'Menghor', 'Business', '+855 12 000 002', NULL,
+    'BUSINESS_USER', 'ACTIVE', v_business_id,
+    'Business Owner', 'Phnom Penh, Cambodia', 'Business owner test account',
+    v_now, v_now, 0
+);
+
+-- 3c. Customer User
+INSERT INTO users (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_identifier, email, password,
+    first_name, last_name, phone_number, profile_image_url,
+    user_type, account_status, business_id, position, address, notes,
+    last_login_at, last_active_at, active_sessions_count
+) VALUES (
+    v_customer_user_id, 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    'phatmenghor21@gmail.com', 'phatmenghor21@gmail.com', v_pwd,
+    'Menghor', 'Customer', '+855 12 000 003', NULL,
+    'CUSTOMER', 'ACTIVE', NULL,
+    NULL, 'Phnom Penh, Cambodia', 'Customer test account',
+    v_now, v_now, 0
+);
+
+-- ============================================================
+-- 4. USER ROLES  (main 3)
+-- ============================================================
+INSERT INTO user_roles (user_id, role_id) VALUES
+    (v_platform_user_id,  v_role_platform_admin),
+    (v_business_user_id,  v_role_business_admin),
+    (v_customer_user_id,  v_role_customer);
+
+-- ============================================================
+-- 5. BUSINESS SETTINGS
+-- ============================================================
+INSERT INTO business_settings (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    business_id,
+    logo_url, banner_url, business_type,
+    opening_time, closing_time, is_open_24_hours,
+    working_days, timezone, currency, language, usd_to_khr_rate,
+    contact_email, contact_phone, whatsapp_number,
+    facebook_url, instagram_url, telegram_url, website_url,
+    primary_color, secondary_color,
+    email_notifications_enabled, sms_notifications_enabled, order_notifications_enabled,
+    tax_rate, service_charge_percentage, min_order_amount,
+    delivery_radius_km, estimated_delivery_time,
+    terms_and_conditions, privacy_policy, refund_policy
+) VALUES (
+    gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    v_business_id,
+    NULL, NULL, 'Restaurant',
+    '08:00', '22:00', false,
+    'MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,SUNDAY',
+    'Asia/Phnom_Penh', 'USD', 'en', 4100.0,
+    'phatmenghor20@gmail.com', '+855 12 345 678', '+855 12 345 678',
+    'https://facebook.com/phatrestaurant',
+    'https://instagram.com/phatrestaurant',
+    'https://t.me/phatrestaurant',
+    'https://phatrestaurant.com',
+    '#FF6B35', '#F7C59F',
+    true, false, true,
+    10.0, 5.0, 5.0,
+    10.0, '30-45 minutes',
+    'Standard terms and conditions apply.',
+    'We respect your privacy and protect your data.',
+    'Refunds accepted within 24 hours of order placement.'
+);
+
+-- ============================================================
+-- 6. EXCHANGE RATES
+-- ============================================================
+INSERT INTO exchange_rates (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    usd_to_khr_rate, is_active, notes
+) VALUES
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     4100.0, true, 'Current USD to KHR rate');
+
+INSERT INTO business_exchange_rates (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    business_id, usd_to_khr_rate, usd_to_cny_rate, usd_to_thb_rate, usd_to_vnd_rate,
+    is_active, notes
+) VALUES (
+    gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    v_business_id, 4100.0, 7.24, 35.50, 25300.0,
+    true, 'Business custom exchange rates'
+);
+
+-- ============================================================
+-- 7. SUBSCRIPTION PLANS
+-- ============================================================
+INSERT INTO subscription_plans (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    name, description, price, duration_days, status
+) VALUES
+    (v_plan_premium_id,  0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'Premium Monthly',  'Full access to all features for 30 days',            29.99, 30,  'PUBLIC'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'Basic Monthly',    'Core features for small businesses',                   9.99, 30,  'PUBLIC'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'Annual Premium',   'Full access for 365 days at a discounted price',     299.99, 365, 'PUBLIC'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'Free Trial',       'Try all features free for 14 days',                    0.00, 14,  'PUBLIC');
+
+-- ============================================================
+-- 8. SUBSCRIPTION (active for the business)
+-- ============================================================
+INSERT INTO subscriptions (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    business_id, plan_id, start_date, end_date, auto_renew
+) VALUES (
+    v_subscription_id, 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    v_business_id, v_plan_premium_id,
+    v_now, v_now + INTERVAL '30 days', false
+);
+
+-- ============================================================
+-- 9. DELIVERY OPTIONS
+-- ============================================================
+INSERT INTO delivery_options (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    business_id, name, description, image_url, price, status
+) VALUES
+    (v_delivery_dine_in_id, 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'Dine In',          'Eat at the restaurant',             NULL, 0.00,  'ACTIVE'),
+    (gen_random_uuid(),      0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'Takeaway',         'Pick up your order',                NULL, 0.00,  'ACTIVE'),
+    (gen_random_uuid(),      0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'Standard Delivery','Home delivery within 30–45 min',    NULL, 2.50,  'ACTIVE'),
+    (gen_random_uuid(),      0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'Express Delivery', 'Priority delivery within 15–20 min',NULL, 5.00,  'ACTIVE');
+
+-- ============================================================
+-- 10. ORDER PROCESS STATUSES
+-- ============================================================
+INSERT INTO order_process_statuses (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    business_id, name, description, status
+) VALUES
+    (v_order_process_pending_id, 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'Pending',    'Order received, awaiting confirmation', 'ACTIVE'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'Confirmed',  'Order confirmed by business',           'ACTIVE'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'Preparing',  'Order is being prepared',               'ACTIVE'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'Ready',      'Order ready for pickup or delivery',    'ACTIVE'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'Delivered',  'Order successfully delivered',          'ACTIVE'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'Cancelled',  'Order has been cancelled',              'ACTIVE');
+
+-- ============================================================
+-- 11. BANNERS
+-- ============================================================
+INSERT INTO banners (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    business_id, image_url, link_url, status
+) VALUES
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'https://via.placeholder.com/1200x400?text=Welcome+to+Phat+Restaurant', NULL, 'ACTIVE'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'https://via.placeholder.com/1200x400?text=Special+Weekend+Offers',     NULL, 'ACTIVE'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'https://via.placeholder.com/1200x400?text=New+Menu+Items',             NULL, 'ACTIVE');
+
+-- ============================================================
+-- 12. CATEGORIES  (20 categories)
+-- ============================================================
+v_cat_ids := ARRAY[]::UUID[];
+
+FOR v_i IN 1..20 LOOP
+    v_cat_id := gen_random_uuid();
+    v_cat_ids := array_append(v_cat_ids, v_cat_id);
+
+    INSERT INTO categories (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, name, image_url, status
+    ) VALUES (
+        v_cat_id, 0,
+        v_now - ((21 - v_i) || ' days')::INTERVAL, v_now,
+        'system', 'system', false, NULL, NULL,
+        v_business_id,
+        CASE v_i
+            WHEN  1 THEN 'Cambodian Cuisine'
+            WHEN  2 THEN 'Thai Cuisine'
+            WHEN  3 THEN 'Vietnamese Cuisine'
+            WHEN  4 THEN 'Chinese Cuisine'
+            WHEN  5 THEN 'Western Food'
+            WHEN  6 THEN 'Breakfast'
+            WHEN  7 THEN 'Lunch Specials'
+            WHEN  8 THEN 'Dinner Menu'
+            WHEN  9 THEN 'Beverages'
+            WHEN 10 THEN 'Fresh Juices'
+            WHEN 11 THEN 'Coffee & Tea'
+            WHEN 12 THEN 'Desserts'
+            WHEN 13 THEN 'Snacks & Starters'
+            WHEN 14 THEN 'Salads'
+            WHEN 15 THEN 'Soups'
+            WHEN 16 THEN 'Grilled & BBQ'
+            WHEN 17 THEN 'Seafood'
+            WHEN 18 THEN 'Vegetarian'
+            WHEN 19 THEN 'Rice Dishes'
+            WHEN 20 THEN 'Noodle Dishes'
+        END,
+        'https://via.placeholder.com/200x200?text=Category+' || v_i,
+        'ACTIVE'
+    );
+END LOOP;
+
+-- ============================================================
+-- 13. BRANDS  (10 brands)
+-- ============================================================
+v_brand_ids := ARRAY[]::UUID[];
+
+FOR v_i IN 1..10 LOOP
+    v_brand_id := gen_random_uuid();
+    v_brand_ids := array_append(v_brand_ids, v_brand_id);
+
+    INSERT INTO brands (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, name, image_url, description, status
+    ) VALUES (
+        v_brand_id, 0,
+        v_now - ((11 - v_i) || ' days')::INTERVAL, v_now,
+        'system', 'system', false, NULL, NULL,
+        v_business_id,
+        CASE v_i
+            WHEN  1 THEN 'Chef''s Special'
+            WHEN  2 THEN 'Angkor Brand'
+            WHEN  3 THEN 'Mekong Fresh'
+            WHEN  4 THEN 'Royal Kitchen'
+            WHEN  5 THEN 'Heritage Foods'
+            WHEN  6 THEN 'Golden Lotus'
+            WHEN  7 THEN 'Phnom Penh Select'
+            WHEN  8 THEN 'Tonle Sap Fresh'
+            WHEN  9 THEN 'Bayon Spice'
+            WHEN 10 THEN 'Sunrise Premium'
+        END,
+        'https://via.placeholder.com/200x200?text=Brand+' || v_i,
+        'Quality brand ' || v_i || ' sourced from trusted suppliers.',
+        'ACTIVE'
+    );
+END LOOP;
+
+-- ============================================================
+-- 14. PRODUCTS  (4000 products — great for pagination testing)
+-- ============================================================
+FOR v_i IN 1..4000 LOOP
+    v_product_id := gen_random_uuid();
+
+    INSERT INTO products (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, category_id, brand_id,
+        name, description, status, price,
+        promotion_type, promotion_value, promotion_from_date, promotion_to_date,
+        display_price, display_origin_price,
+        display_promotion_type, display_promotion_value,
+        display_promotion_from_date, display_promotion_to_date,
+        has_sizes, has_active_promotion,
+        view_count, favorite_count, main_image_url
+    ) VALUES (
+        v_product_id, 0,
+        v_now - ((4001 - v_i) || ' minutes')::INTERVAL,
+        v_now - ((4001 - v_i) || ' minutes')::INTERVAL,
+        'system', 'system', false, NULL, NULL,
+        v_business_id,
+
+        -- Cycle through 20 categories
+        v_cat_ids[((v_i - 1) % 20) + 1],
+
+        -- ~33% of products have a brand
+        CASE WHEN v_i % 3 = 0 THEN v_brand_ids[((v_i - 1) % 10) + 1] ELSE NULL END,
+
+        -- Product name (50 dish names cycling with index suffix)
+        CASE ((v_i - 1) % 50)
+            WHEN  0 THEN 'Amok Trey'
+            WHEN  1 THEN 'Lok Lak'
+            WHEN  2 THEN 'Bai Sach Chrouk'
+            WHEN  3 THEN 'Kuy Teav'
+            WHEN  4 THEN 'Num Banh Chok'
+            WHEN  5 THEN 'Samlor Korko'
+            WHEN  6 THEN 'Prahok Ktiss'
+            WHEN  7 THEN 'Beef Lok Lak'
+            WHEN  8 THEN 'Spring Rolls'
+            WHEN  9 THEN 'Tom Yum Soup'
+            WHEN 10 THEN 'Pad Thai'
+            WHEN 11 THEN 'Green Curry'
+            WHEN 12 THEN 'Fried Rice'
+            WHEN 13 THEN 'Pho Bo'
+            WHEN 14 THEN 'Banh Mi'
+            WHEN 15 THEN 'Dim Sum'
+            WHEN 16 THEN 'Congee'
+            WHEN 17 THEN 'Burger'
+            WHEN 18 THEN 'Pizza'
+            WHEN 19 THEN 'Pasta'
+            WHEN 20 THEN 'Grilled Chicken'
+            WHEN 21 THEN 'BBQ Pork Ribs'
+            WHEN 22 THEN 'Steamed Fish'
+            WHEN 23 THEN 'Seafood Platter'
+            WHEN 24 THEN 'Mango Salad'
+            WHEN 25 THEN 'Papaya Salad'
+            WHEN 26 THEN 'Fresh Coconut'
+            WHEN 27 THEN 'Sugarcane Juice'
+            WHEN 28 THEN 'Mango Smoothie'
+            WHEN 29 THEN 'Iced Coffee'
+            WHEN 30 THEN 'Cambodian Milk Tea'
+            WHEN 31 THEN 'Green Tea'
+            WHEN 32 THEN 'Mango Sticky Rice'
+            WHEN 33 THEN 'Fried Banana'
+            WHEN 34 THEN 'Coconut Ice Cream'
+            WHEN 35 THEN 'Egg Roll'
+            WHEN 36 THEN 'Wonton Soup'
+            WHEN 37 THEN 'Crispy Tofu'
+            WHEN 38 THEN 'Vegetable Stir Fry'
+            WHEN 39 THEN 'Mushroom Rice'
+            WHEN 40 THEN 'Laksa Noodles'
+            WHEN 41 THEN 'Beef Noodle Soup'
+            WHEN 42 THEN 'Crab Fried Rice'
+            WHEN 43 THEN 'Prawn Tempura'
+            WHEN 44 THEN 'Salmon Sashimi'
+            WHEN 45 THEN 'Chicken Wings'
+            WHEN 46 THEN 'Caesar Salad'
+            WHEN 47 THEN 'French Fries'
+            WHEN 48 THEN 'Onion Rings'
+            WHEN 49 THEN 'Chocolate Cake'
+        END || ' #' || v_i,
+
+        -- Description
+        'Delicious ' ||
+        CASE (v_i % 5)
+            WHEN 0 THEN 'traditional'
+            WHEN 1 THEN 'freshly prepared'
+            WHEN 2 THEN 'chef-special'
+            WHEN 3 THEN 'signature'
+            WHEN 4 THEN 'authentic'
+        END ||
+        ' dish made with the finest ingredients. Perfect for any occasion.',
+
+        -- Status: 80% ACTIVE, 10% INACTIVE, 10% OUT_OF_STOCK
+        CASE (v_i % 10)
+            WHEN 0 THEN 'INACTIVE'
+            WHEN 5 THEN 'OUT_OF_STOCK'
+            ELSE 'ACTIVE'
+        END,
+
+        -- Price $1.50 – $25.00
+        ROUND((1.50 + (RANDOM() * 23.50))::NUMERIC, 2),
+
+        -- Promotion (~20% of products)
+        CASE WHEN v_i % 5 = 0 THEN 'PERCENTAGE' ELSE NULL END,
+        CASE WHEN v_i % 5 = 0 THEN ROUND((5 + RANDOM() * 25)::NUMERIC, 2)  ELSE NULL END,
+        CASE WHEN v_i % 5 = 0 THEN v_now - INTERVAL '7 days'               ELSE NULL END,
+        CASE WHEN v_i % 5 = 0 THEN v_now + INTERVAL '23 days'              ELSE NULL END,
+
+        -- display_price (same as base price for simplicity)
+        ROUND((1.50 + (RANDOM() * 23.50))::NUMERIC, 2),
+        NULL, NULL, NULL, NULL, NULL,
+
+        -- has_sizes (~33%), has_active_promotion (~20%)
+        (v_i % 3 = 0),
+        (v_i % 5 = 0),
+
+        -- view_count, favorite_count
+        (RANDOM() * 1000)::BIGINT,
+        (RANDOM() * 100)::BIGINT,
+
+        'https://via.placeholder.com/400x300?text=Product+' || v_i
+    );
+
+    -- Product images  (every product gets 1 image; even-numbered get 2)
+    INSERT INTO product_images (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        product_id, image_url
+    ) VALUES (
+        gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+        v_product_id,
+        'https://via.placeholder.com/400x300?text=Product+' || v_i || '_img1'
+    );
+
+    IF v_i % 2 = 0 THEN
+        INSERT INTO product_images (
+            id, version, created_at, updated_at, created_by, updated_by,
+            is_deleted, deleted_at, deleted_by,
+            product_id, image_url
+        ) VALUES (
+            gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+            v_product_id,
+            'https://via.placeholder.com/400x300?text=Product+' || v_i || '_img2'
+        );
+    END IF;
+
+    -- Product sizes  (for ~33% of products: Small / Medium / Large)
+    IF v_i % 3 = 0 THEN
+        INSERT INTO product_sizes (
+            id, version, created_at, updated_at, created_by, updated_by,
+            is_deleted, deleted_at, deleted_by,
+            product_id, name, price,
+            promotion_type, promotion_value, promotion_from_date, promotion_to_date
+        ) VALUES
+            (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+             v_product_id, 'Small',  ROUND((1.50 + RANDOM() * 4.00)::NUMERIC, 2), NULL, NULL, NULL, NULL),
+            (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+             v_product_id, 'Medium', ROUND((4.00 + RANDOM() * 5.00)::NUMERIC, 2), NULL, NULL, NULL, NULL),
+            (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+             v_product_id, 'Large',  ROUND((7.00 + RANDOM() * 8.00)::NUMERIC, 2), NULL, NULL, NULL, NULL);
+    END IF;
+
+END LOOP;
+
+-- ============================================================
+-- 15. EXTRA USERS  (10 business staff + 17 customers = 27 more)
+-- ============================================================
+
+-- 15a. Business Staff Users (10)
+FOR v_i IN 1..10 LOOP
+    v_extra_user_id := gen_random_uuid();
+
+    INSERT INTO users (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        user_identifier, email, password,
+        first_name, last_name, phone_number, profile_image_url,
+        user_type, account_status, business_id, position, address, notes,
+        last_login_at, last_active_at, active_sessions_count
+    ) VALUES (
+        v_extra_user_id, 0,
+        v_now - (v_i || ' days')::INTERVAL, v_now,
+        'system', 'system', false, NULL, NULL,
+        'staff' || v_i || '@phatrestaurant.com',
+        'staff' || v_i || '@phatrestaurant.com',
+        v_pwd,
+        CASE (v_i % 5)
+            WHEN 0 THEN 'Dara'   WHEN 1 THEN 'Srey'
+            WHEN 2 THEN 'Rith'   WHEN 3 THEN 'Kosal'
+            WHEN 4 THEN 'Vanna'
+        END,
+        'Staff' || v_i,
+        '+855 12 ' || LPAD((10000 + v_i)::TEXT, 6, '0'),
+        NULL,
+        'BUSINESS_USER', 'ACTIVE', v_business_id,
+        CASE (v_i % 3)
+            WHEN 0 THEN 'Chef' WHEN 1 THEN 'Waiter' ELSE 'Cashier'
+        END,
+        'Phnom Penh, Cambodia',
+        'Staff member #' || v_i,
+        v_now - (v_i || ' hours')::INTERVAL,
+        v_now - (v_i || ' hours')::INTERVAL,
+        0
+    );
+
+    INSERT INTO user_roles (user_id, role_id) VALUES (v_extra_user_id, v_role_business_admin);
+END LOOP;
+
+-- 15b. Customer Users (17)
+FOR v_i IN 1..17 LOOP
+    v_extra_user_id := gen_random_uuid();
+
+    INSERT INTO users (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        user_identifier, email, password,
+        first_name, last_name, phone_number, profile_image_url,
+        user_type, account_status, business_id, position, address, notes,
+        last_login_at, last_active_at, active_sessions_count
+    ) VALUES (
+        v_extra_user_id, 0,
+        v_now - (v_i || ' days')::INTERVAL, v_now,
+        'system', 'system', false, NULL, NULL,
+        'customer' || v_i || '@test.com',
+        'customer' || v_i || '@test.com',
+        v_pwd,
+        CASE (v_i % 10)
+            WHEN 0 THEN 'Bopha'    WHEN 1 THEN 'Sokha'
+            WHEN 2 THEN 'Dary'     WHEN 3 THEN 'Rachana'
+            WHEN 4 THEN 'Pisey'    WHEN 5 THEN 'Sopheap'
+            WHEN 6 THEN 'Theary'   WHEN 7 THEN 'Channary'
+            WHEN 8 THEN 'Kunthea'  WHEN 9 THEN 'Sreynov'
+        END,
+        'Customer' || v_i,
+        '+855 17 ' || LPAD((10000 + v_i)::TEXT, 6, '0'),
+        NULL,
+        'CUSTOMER', 'ACTIVE', NULL,
+        NULL, 'Phnom Penh, Cambodia', 'Customer test account #' || v_i,
+        v_now - (v_i * 2 || ' hours')::INTERVAL,
+        v_now - (v_i * 2 || ' hours')::INTERVAL,
+        0
+    );
+
+    INSERT INTO user_roles (user_id, role_id) VALUES (v_extra_user_id, v_role_customer);
+
+    -- Address for each extra customer
+    INSERT INTO customer_addresses (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        user_id, village, commune, district, province, country,
+        street_number, house_number, note,
+        latitude, longitude, is_default
+    ) VALUES (
+        gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+        v_extra_user_id,
+        'Phum ' || v_i,
+        'Sangkat ' || CASE (v_i % 5)
+            WHEN 0 THEN 'Tonle Bassac' WHEN 1 THEN 'Olympic'
+            WHEN 2 THEN 'Boeung Keng Kang' WHEN 3 THEN 'Toul Tom Poung'
+            WHEN 4 THEN 'Phsar Thmei'
+        END,
+        CASE (v_i % 4)
+            WHEN 0 THEN 'Daun Penh'    WHEN 1 THEN 'Chamkar Mon'
+            WHEN 2 THEN 'Toul Kork'    ELSE     'Sen Sok'
+        END,
+        'Phnom Penh', 'Cambodia',
+        v_i::TEXT, (100 + v_i)::TEXT,
+        'Near market ' || v_i,
+        11.5564 + (RANDOM() * 0.1 - 0.05),
+        104.9282 + (RANDOM() * 0.1 - 0.05),
+        true
+    );
+END LOOP;
+
+-- Address for main customer user (phatmenghor21@gmail.com)
+INSERT INTO customer_addresses (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, village, commune, district, province, country,
+    street_number, house_number, note,
+    latitude, longitude, is_default
+) VALUES (
+    gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    v_customer_user_id,
+    'Phum 7', 'Sangkat Tonle Bassac', 'Chamkar Mon',
+    'Phnom Penh', 'Cambodia',
+    '15', '25B', 'Near Lucky Market',
+    11.5564, 104.9282, true
+);
+
+-- ============================================================
+-- 16. PRODUCT FAVORITES (10 favourites for main customer)
+-- ============================================================
+INSERT INTO product_favorites (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, product_id
+)
+SELECT
+    gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    v_customer_user_id, id
+FROM products
+WHERE business_id = v_business_id AND is_deleted = false
+ORDER BY RANDOM()
+LIMIT 10;
+
+-- ============================================================
+-- 17. CART + CART ITEMS (for main customer)
+-- ============================================================
+INSERT INTO carts (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, business_id
+) VALUES (
+    v_cart_id, 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    v_customer_user_id, v_business_id
+);
+
+INSERT INTO cart_items (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    cart_id, product_id, product_size_id, quantity
+)
+SELECT
+    gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    v_cart_id, id, NULL, (RANDOM() * 4 + 1)::INTEGER
+FROM products
+WHERE business_id = v_business_id AND status = 'ACTIVE' AND is_deleted = false
+ORDER BY RANDOM()
+LIMIT 5;
+
+-- ============================================================
+-- 18. ORDERS  (50 orders)
+-- ============================================================
+FOR v_i IN 1..50 LOOP
+    v_order_id := gen_random_uuid();
+
+    INSERT INTO orders (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        order_number, customer_id, business_id,
+        delivery_address_snapshot, delivery_option_snapshot,
+        order_process_status_name, customer_note, business_note,
+        subtotal, delivery_fee, total_amount,
+        payment_method, payment_status,
+        confirmed_at, completed_at
+    ) VALUES (
+        v_order_id, 0,
+        v_now - (v_i || ' hours')::INTERVAL, v_now,
+        'system', 'system', false, NULL, NULL,
+        'ORD-2024-' || LPAD(v_i::TEXT, 5, '0'),
+        v_customer_user_id,
+        v_business_id,
+        '{"district":"Chamkar Mon","province":"Phnom Penh","houseNumber":"25B","streetNumber":"15"}',
+        '{"name":"Standard Delivery","price":2.50}',
+        CASE (v_i % 6)
+            WHEN 0 THEN 'Cancelled' WHEN 1 THEN 'Delivered'
+            WHEN 2 THEN 'Preparing' WHEN 3 THEN 'Confirmed'
+            WHEN 4 THEN 'Ready'     ELSE     'Pending'
+        END,
+        CASE WHEN v_i % 3 = 0 THEN 'Please make it less spicy' ELSE NULL END,
+        NULL,
+        ROUND((5.00 + RANDOM() * 45)::NUMERIC, 2),
+        2.50,
+        ROUND((7.50 + RANDOM() * 45)::NUMERIC, 2),
+        CASE (v_i % 4)
+            WHEN 0 THEN 'CASH' WHEN 1 THEN 'BANK_TRANSFER'
+            WHEN 2 THEN 'ONLINE' ELSE 'CASH'
+        END,
+        CASE (v_i % 3)
+            WHEN 0 THEN 'PAID' WHEN 1 THEN 'UNPAID' ELSE 'PAID'
+        END,
+        CASE WHEN v_i % 2 = 0 THEN v_now - (v_i || ' hours')::INTERVAL + INTERVAL '30 minutes' ELSE NULL END,
+        CASE WHEN v_i % 6 = 1  THEN v_now - (v_i || ' hours')::INTERVAL + INTERVAL '2 hours'   ELSE NULL END
+    );
+
+    -- Order items (2–5 products per order)
+    INSERT INTO order_items (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        order_id, product_id, product_size_id,
+        product_name, product_image_url, size_name,
+        current_price, final_price, unit_price,
+        has_promotion, promotion_type, promotion_value,
+        quantity, total_price, special_instructions
+    )
+    SELECT
+        gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+        v_order_id, p.id, NULL,
+        p.name, p.main_image_url, NULL,
+        p.price, p.price, p.price,
+        false, NULL, NULL,
+        (RANDOM() * 3 + 1)::INTEGER,
+        p.price * (RANDOM() * 3 + 1)::INTEGER,
+        NULL
+    FROM products p
+    WHERE p.business_id = v_business_id
+      AND p.status      = 'ACTIVE'
+      AND p.is_deleted  = false
+    ORDER BY RANDOM()
+    LIMIT (2 + v_i % 4);
+
+    -- Order status history
+    INSERT INTO order_status_history (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        order_id, order_process_status_id, note, changed_by
+    ) VALUES (
+        gen_random_uuid(), 0,
+        v_now - (v_i || ' hours')::INTERVAL, v_now,
+        'system', 'system', false, NULL, NULL,
+        v_order_id, v_order_process_pending_id,
+        'Order placed by customer', v_customer_user_id::TEXT
+    );
+
+END LOOP;
+
+-- ============================================================
+-- 19. PAYMENTS (subscription payments)
+-- ============================================================
+INSERT INTO payments (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    image_url, business_id, plan_id, subscription_id,
+    amount, amount_khr, payment_method, status, payment_type,
+    reference_number, notes
+) VALUES
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     NULL, v_business_id, v_plan_premium_id, v_subscription_id,
+     29.99, 122959.00, 'BANK_TRANSFER', 'COMPLETED', 'SUBSCRIPTION',
+     'PAY-2024-001', 'Monthly subscription payment'),
+    (gen_random_uuid(), 0, v_now - INTERVAL '30 days', v_now, 'system', 'system', false, NULL, NULL,
+     NULL, v_business_id, v_plan_premium_id, v_subscription_id,
+     29.99, 122959.00, 'ONLINE', 'COMPLETED', 'SUBSCRIPTION',
+     'PAY-2024-002', 'Previous month subscription payment');
+
+-- ============================================================
+-- 20. LEAVE TYPES
+-- ============================================================
+v_leave_type_id := gen_random_uuid();
+
+INSERT INTO leave_type_enum (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    business_id, enum_name, description
+) VALUES
+    (v_leave_type_id,   0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'ANNUAL',    'Annual leave entitlement'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'SICK',      'Sick leave'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'EMERGENCY', 'Emergency or personal leave'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'MATERNITY', 'Maternity or paternity leave'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'UNPAID',    'Unpaid leave');
+
+-- ============================================================
+-- 21. WORK SCHEDULE TYPES
+-- ============================================================
+v_ws_type_id := gen_random_uuid();
+
+INSERT INTO work_schedule_type_enum (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    business_id, enum_name, description
+) VALUES
+    (v_ws_type_id,      0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'MORNING_SHIFT',   'Morning shift 06:00 – 14:00'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'AFTERNOON_SHIFT', 'Afternoon shift 14:00 – 22:00'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'FULL_DAY',        'Full day 08:00 – 17:00'),
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     v_business_id, 'SPLIT_SHIFT',     'Split shift with break period');
+
+-- ============================================================
+-- 22. WORK SCHEDULES (for business owner)
+-- ============================================================
+INSERT INTO work_schedules (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, business_id, name, schedule_type_enum,
+    start_time, end_time, break_start_time, break_end_time
+) VALUES (
+    gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+    v_business_user_id, v_business_id,
+    'Owner Full Day', 'FULL_DAY',
+    '08:00:00', '17:00:00', '12:00:00', '13:00:00'
+);
+
+-- ============================================================
+-- 23. ATTENDANCES (last 7 days for business owner)
+-- ============================================================
+FOR v_i IN 1..7 LOOP
+    INSERT INTO attendances (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        user_id, business_id, work_schedule_id,
+        attendance_date, status, remarks
+    )
+    SELECT
+        gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+        v_business_user_id, v_business_id, ws.id,
+        CURRENT_DATE - (v_i - 1),
+        CASE (v_i % 4)
+            WHEN 0 THEN 'LATE' WHEN 1 THEN 'PRESENT'
+            WHEN 2 THEN 'PRESENT' ELSE 'PRESENT'
+        END,
+        NULL
+    FROM work_schedules ws
+    WHERE ws.user_id = v_business_user_id AND ws.is_deleted = false
+    LIMIT 1;
+END LOOP;
+
+-- ============================================================
+-- 24. LEAVES (sample leave requests)
+-- ============================================================
+INSERT INTO leaves (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, business_id, leave_type_enum,
+    start_date, end_date, total_days,
+    reason, status, action_by, action_at, action_note
+) VALUES
+    (gen_random_uuid(), 0, v_now - INTERVAL '10 days', v_now, 'system', 'system', false, NULL, NULL,
+     v_business_user_id, v_business_id, v_leave_type_id,
+     CURRENT_DATE + 7, CURRENT_DATE + 9, 3,
+     'Family vacation', 'APPROVED',
+     v_platform_user_id, v_now - INTERVAL '9 days', 'Approved for family vacation'),
+    (gen_random_uuid(), 0, v_now - INTERVAL '5 days', v_now, 'system', 'system', false, NULL, NULL,
+     v_business_user_id, v_business_id, v_leave_type_id,
+     CURRENT_DATE + 20, CURRENT_DATE + 21, 2,
+     'Medical appointment', 'PENDING',
+     NULL, NULL, NULL);
+
+-- ============================================================
+-- 25. NOTIFICATIONS
+-- ============================================================
+INSERT INTO notifications (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    title, message, message_type, priority, status, recipient_type,
+    user_id, user_name, business_id, group_id,
+    is_seen, seen_at, is_read, read_at
+) VALUES
+    -- Platform user
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'Welcome to Menu Scanner!',
+     'Your platform admin account has been created. You have full system access.',
+     'WELCOME_MESSAGE', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+     v_platform_user_id, 'Phat Menghor', NULL, NULL,
+     false, NULL, false, NULL),
+
+    (gen_random_uuid(), 0, v_now - INTERVAL '1 hour', v_now, 'system', 'system', false, NULL, NULL,
+     'System Alert',
+     'Platform health check completed successfully. All services running normally.',
+     'SYSTEM_ALERT', 'HIGH', 'DELIVERED', 'INDIVIDUAL_USER',
+     v_platform_user_id, 'Phat Menghor', NULL, NULL,
+     true, v_now - INTERVAL '30 minutes', true, v_now - INTERVAL '20 minutes'),
+
+    -- Business user
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'Business Account Activated',
+     'Your business "Phat Restaurant & Café" is now active and ready to accept orders.',
+     'BUSINESS_APPROVED', 'HIGH', 'DELIVERED', 'INDIVIDUAL_USER',
+     v_business_user_id, 'Menghor Business', v_business_id, NULL,
+     false, NULL, false, NULL),
+
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'Subscription Active',
+     'Premium Monthly subscription is active until ' || (v_now + INTERVAL '30 days')::DATE::TEXT || '.',
+     'SUBSCRIPTION_RENEWAL', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+     v_business_user_id, 'Menghor Business', v_business_id, NULL,
+     false, NULL, false, NULL),
+
+    (gen_random_uuid(), 0, v_now - INTERVAL '30 minutes', v_now, 'system', 'system', false, NULL, NULL,
+     'New Order Received!',
+     'Order #ORD-2024-00001 has been placed. Please confirm within 10 minutes.',
+     'ORDER_NEW', 'HIGH', 'DELIVERED', 'INDIVIDUAL_USER',
+     v_business_user_id, 'Menghor Business', v_business_id, NULL,
+     false, NULL, false, NULL),
+
+    (gen_random_uuid(), 0, v_now - INTERVAL '2 hours', v_now, 'system', 'system', false, NULL, NULL,
+     'Daily Report Ready',
+     'Your daily sales report for ' || CURRENT_DATE::TEXT || ' is ready to view.',
+     'DAILY_REPORT', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+     v_business_user_id, 'Menghor Business', v_business_id, NULL,
+     true, v_now - INTERVAL '1 hour', true, v_now - INTERVAL '45 minutes'),
+
+    -- Customer user
+    (gen_random_uuid(), 0, v_now, v_now, 'system', 'system', false, NULL, NULL,
+     'Welcome!',
+     'Welcome to Menu Scanner! Browse menus and place your first order.',
+     'WELCOME_MESSAGE', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+     v_customer_user_id, 'Menghor Customer', NULL, NULL,
+     false, NULL, false, NULL),
+
+    (gen_random_uuid(), 0, v_now - INTERVAL '2 hours', v_now, 'system', 'system', false, NULL, NULL,
+     'Order Confirmed',
+     'Your order #ORD-2024-00001 has been confirmed and is being prepared. ETA: 30 mins.',
+     'ORDER_CONFIRMED', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+     v_customer_user_id, 'Menghor Customer', v_business_id, NULL,
+     true, v_now - INTERVAL '1 hour', true, v_now - INTERVAL '30 minutes'),
+
+    (gen_random_uuid(), 0, v_now - INTERVAL '1 hour', v_now, 'system', 'system', false, NULL, NULL,
+     'Order Delivered!',
+     'Your order #ORD-2024-00002 has been delivered. Enjoy your meal!',
+     'ORDER_DELIVERED', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+     v_customer_user_id, 'Menghor Customer', v_business_id, NULL,
+     false, NULL, false, NULL);
+
+-- ============================================================
+-- DONE
+-- ============================================================
+RAISE NOTICE '=========================================';
+RAISE NOTICE 'Test data generated successfully!';
+RAISE NOTICE '=========================================';
+RAISE NOTICE 'Users (30 total):';
+RAISE NOTICE '  Platform : phatmenghor19@gmail.com';
+RAISE NOTICE '  Business : phatmenghor20@gmail.com';
+RAISE NOTICE '  Customer : phatmenghor21@gmail.com';
+RAISE NOTICE '  + 10 staff  (staff1-10@phatrestaurant.com)';
+RAISE NOTICE '  + 17 customers (customer1-17@test.com)';
+RAISE NOTICE 'Password for all: password';
+RAISE NOTICE '-----------------------------------------';
+RAISE NOTICE 'Products : 4000 (20 categories, 10 brands)';
+RAISE NOTICE 'Orders   : 50 with items & status history';
+RAISE NOTICE 'All other tables populated.';
+RAISE NOTICE '=========================================';
+
+END $$;
