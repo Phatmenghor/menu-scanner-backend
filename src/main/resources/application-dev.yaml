@@ -7,9 +7,9 @@
 # ============================================================
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:174.138.17.214}:${DB_PORT:5432}/${DB_NAME:e_menu_platform_dev}
-    username: ${DB_USERNAME:kithya}
-    password: ${DB_PASSWORD:DE6Y6S30XO3KPTH}
+    url: jdbc:postgresql://${DB_HOST:192.168.103.106}:${DB_PORT:5432}/${DB_NAME:e_menu_platform_dev}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:123cp!@#}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 15
