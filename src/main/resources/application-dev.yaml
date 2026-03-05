@@ -1,0 +1,35 @@
+# ============================================================
+# application-dev.yaml  –  DEVELOPMENT SERVER
+# ============================================================
+# Points to the shared dev server database.
+# Override any value with environment variables:
+#   DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD
+# ============================================================
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:174.138.17.214}:${DB_PORT:5432}/${DB_NAME:e_menu_platform_dev}
+    username: ${DB_USERNAME:kithya}
+    password: ${DB_PASSWORD:DE6Y6S30XO3KPTH}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 3
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    root: INFO
+    com.emenu: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type: WARN
