@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -18,6 +19,12 @@ public class UserBasicInfo {
     private String email;
     private String phoneNumber;
     private String profileImageUrl;
+
+    // Telegram
+    private Long telegramId;
+    private String telegramUsername;
+    private LocalDateTime telegramSyncedAt;
+    private boolean telegramSynced;
 
     public String getFullName() {
         if (firstName == null && lastName == null) {

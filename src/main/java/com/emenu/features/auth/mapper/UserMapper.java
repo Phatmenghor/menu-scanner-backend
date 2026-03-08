@@ -25,6 +25,7 @@ public interface UserMapper {
     @Mapping(target = "telegramSynced", expression = "java(user.getTelegramId() != null)")
     UserResponse toResponse(User user);
 
+    @Mapping(target = "telegramSynced", expression = "java(user.getTelegramId() != null)")
     UserBasicInfo toUserBasicInfo(User user);
 
     @Mapping(target = "userId", source = "user.id")
@@ -33,6 +34,7 @@ public interface UserMapper {
     @Mapping(target = "businessName", source = "user.business.name")
     @Mapping(target = "accessToken", source = "token")
     @Mapping(target = "tokenType", constant = "Bearer")
+    @Mapping(target = "telegramSynced", expression = "java(user.getTelegramId() != null)")
     LoginResponse toLoginResponse(User user, String token);
 
     List<UserResponse> toResponseList(List<User> users);
