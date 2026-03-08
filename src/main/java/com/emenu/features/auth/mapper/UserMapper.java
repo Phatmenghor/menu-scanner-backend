@@ -22,6 +22,7 @@ public interface UserMapper {
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     @Mapping(target = "businessName", source = "business.name")
     @Mapping(target = "roles", source = "roles", qualifiedByName = "rolesToEnums")
+    @Mapping(target = "telegramSynced", expression = "java(user.getTelegramId() != null)")
     UserResponse toResponse(User user);
 
     UserBasicInfo toUserBasicInfo(User user);
