@@ -3,6 +3,7 @@ package com.emenu.features.auth.dto.response;
 import com.emenu.enums.user.UserType;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,4 +24,12 @@ public class LoginResponse {
     private String businessName;
     private String businessStatus;
     private Boolean isSubscriptionActive;
+
+    // Telegram
+    private Long telegramId;
+    private String telegramUsername;
+    private String telegramFirstName;
+    private String telegramLastName;
+    private LocalDateTime telegramSyncedAt;
+    private boolean telegramSynced;
 }

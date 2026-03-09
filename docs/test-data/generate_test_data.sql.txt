@@ -1,0 +1,1405 @@
+-- ============================================================
+-- MENU SCANNER BACKEND - FULL TEST DATA (x10 SCALE)
+-- ============================================================
+-- Run this entire script in pgAdmin Query Tool (F5)
+--
+-- Scale  :  300 users  |  40,000 products  |  500 orders
+-- Subscription: 1 YEAR Annual Premium ($299.99)
+--
+-- Test Accounts (password: password)
+--   Platform  phatmenghor19@gmail.com
+--   Business  phatmenghor20@gmail.com
+--   Customer  phatmenghor21@gmail.com
+--   Staff     staff1-100@phatrestaurant.com
+--   Customers customer1-197@test.com
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================================
+-- PHASE 0  –  CLEANUP  (idempotent — safe on empty or existing DB)
+--             Deletes all previous test data in FK-safe order
+-- ============================================================
+DO $$
+DECLARE
+    v_bid  UUID;
+    v_puid UUID;
+    v_buid UUID;
+    v_cuid UUID;
+BEGIN
+    -- Locate existing test records (NULL on first run)
+    SELECT id INTO v_puid FROM users
+        WHERE user_identifier = 'phatmenghor19@gmail.com' AND user_type = 'PLATFORM_USER';
+    SELECT id INTO v_buid FROM users
+        WHERE user_identifier = 'phatmenghor20@gmail.com' AND user_type = 'BUSINESS_USER';
+    SELECT id INTO v_cuid FROM users
+        WHERE user_identifier = 'phatmenghor21@gmail.com' AND user_type = 'CUSTOMER';
+    SELECT id INTO v_bid  FROM businesses WHERE email = 'phatmenghor20@gmail.com';
+
+    -- ── Auth / session data (delete BEFORE users) ─────────────
+    DELETE FROM user_sessions WHERE user_id IN (
+        SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com'
+           OR email LIKE 'customer%@test.com'
+           OR user_identifier IN ('phatmenghor19@gmail.com','phatmenghor20@gmail.com','phatmenghor21@gmail.com'));
+    DELETE FROM refresh_tokens WHERE user_id IN (
+        SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com'
+           OR email LIKE 'customer%@test.com'
+           OR user_identifier IN ('phatmenghor19@gmail.com','phatmenghor20@gmail.com','phatmenghor21@gmail.com'));
+    DELETE FROM blacklisted_tokens
+        WHERE user_identifier LIKE '%@phatrestaurant.com'
+           OR user_identifier LIKE '%@test.com'
+           OR user_identifier IN ('phatmenghor19@gmail.com','phatmenghor20@gmail.com','phatmenghor21@gmail.com');
+    DELETE FROM audit_logs
+        WHERE user_identifier LIKE '%@phatrestaurant.com'
+           OR user_identifier LIKE '%@test.com'
+           OR user_identifier IN ('phatmenghor19@gmail.com','phatmenghor20@gmail.com','phatmenghor21@gmail.com');
+
+    -- ── Extra bulk users (staff + customers) ──────────────────
+    DELETE FROM user_roles      WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com' OR email LIKE 'customer%@test.com');
+    DELETE FROM customer_addresses WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'customer%@test.com');
+    DELETE FROM users           WHERE email LIKE 'staff%@phatrestaurant.com' OR email LIKE 'customer%@test.com';
+
+    -- ── Business-scoped data ───────────────────────────────────
+    IF v_bid IS NOT NULL THEN
+        -- cart items for any cart belonging to this business
+        DELETE FROM cart_items  WHERE cart_id IN (SELECT id FROM carts WHERE business_id = v_bid);
+        DELETE FROM carts       WHERE business_id = v_bid;
+
+        -- favourites, order detail, orders
+        DELETE FROM product_favorites    WHERE product_id IN (SELECT id FROM products WHERE business_id = v_bid);
+        DELETE FROM order_items          WHERE order_id   IN (SELECT id FROM orders   WHERE business_id = v_bid);
+        DELETE FROM order_status_history WHERE order_id   IN (SELECT id FROM orders   WHERE business_id = v_bid);
+        DELETE FROM orders               WHERE business_id = v_bid;
+
+        -- product images / sizes / products
+        DELETE FROM product_images WHERE product_id IN (SELECT id FROM products WHERE business_id = v_bid);
+        DELETE FROM product_sizes  WHERE product_id IN (SELECT id FROM products WHERE business_id = v_bid);
+        DELETE FROM products        WHERE business_id = v_bid;
+
+        -- attendance check-ins, work days, order payments (before parent rows)
+        DELETE FROM attendance_check_ins WHERE attendance_id IN (SELECT id FROM attendances  WHERE business_id = v_bid);
+        DELETE FROM schedule_work_days   WHERE schedule_id   IN (SELECT id FROM work_schedules WHERE business_id = v_bid);
+        DELETE FROM business_order_payments WHERE business_id = v_bid;
+
+        -- HR data
+        DELETE FROM attendances  WHERE business_id = v_bid;
+        DELETE FROM leaves       WHERE business_id = v_bid;
+        DELETE FROM work_schedules          WHERE business_id = v_bid;
+        DELETE FROM work_schedule_type_enum WHERE business_id = v_bid;
+        DELETE FROM leave_type_enum         WHERE business_id = v_bid;
+
+        -- setup tables
+        DELETE FROM banners                WHERE business_id = v_bid;
+        DELETE FROM delivery_options       WHERE business_id = v_bid;
+        DELETE FROM order_process_statuses WHERE business_id = v_bid;
+        DELETE FROM business_settings      WHERE business_id = v_bid;
+        DELETE FROM business_exchange_rates WHERE business_id = v_bid;
+        DELETE FROM categories             WHERE business_id = v_bid;
+        DELETE FROM brands                 WHERE business_id = v_bid;
+        DELETE FROM notifications          WHERE business_id = v_bid;
+
+        -- payments → subscriptions → plans (must be in this order)
+        DELETE FROM payments       WHERE business_id = v_bid;
+        DELETE FROM subscriptions  WHERE business_id = v_bid;
+    END IF;
+
+    -- global subscription plans (deleted after subscriptions)
+    DELETE FROM subscription_plans
+        WHERE name IN ('Annual Premium', 'Premium Monthly', 'Basic Monthly', 'Free Trial');
+
+    -- global exchange rate seeded by this script
+    DELETE FROM exchange_rates WHERE notes = 'Current USD to KHR rate';
+
+    -- location reference data (deleted by code prefix)
+    DELETE FROM location_village_cbc WHERE village_code  LIKE 'KH%';
+    DELETE FROM location_commune_cbc  WHERE commune_code  LIKE 'KH%';
+    DELETE FROM location_district_cbc WHERE district_code LIKE 'KH%';
+    DELETE FROM location_province_cbc WHERE province_code LIKE 'KH%';
+
+    -- seed placeholder images
+    DELETE FROM images WHERE created_by = 'seed_script';
+
+    -- ── Main customer cart / address / notifications ───────────
+    IF v_cuid IS NOT NULL THEN
+        DELETE FROM cart_items         WHERE cart_id IN (SELECT id FROM carts WHERE user_id = v_cuid);
+        DELETE FROM carts              WHERE user_id = v_cuid;
+        DELETE FROM customer_addresses WHERE user_id = v_cuid;
+        DELETE FROM notifications      WHERE user_id = v_cuid;
+    END IF;
+    IF v_puid IS NOT NULL THEN DELETE FROM notifications WHERE user_id = v_puid; END IF;
+    IF v_buid IS NOT NULL THEN DELETE FROM notifications WHERE user_id = v_buid; END IF;
+
+    -- ── Business itself ────────────────────────────────────────
+    IF v_bid IS NOT NULL THEN DELETE FROM businesses WHERE id = v_bid; END IF;
+
+    -- ── Roles ─────────────────────────────────────────────────
+    DELETE FROM user_roles WHERE user_id IN (v_puid, v_buid, v_cuid);
+    DELETE FROM roles WHERE name = 'PLATFORM_ADMIN' AND user_type = 'PLATFORM_USER';
+    DELETE FROM roles WHERE name = 'CUSTOMER'       AND user_type = 'CUSTOMER';
+    IF v_bid IS NOT NULL THEN
+        DELETE FROM roles WHERE name = 'BUSINESS_ADMIN' AND business_id = v_bid;
+    END IF;
+
+    -- ── Main 3 users ──────────────────────────────────────────
+    DELETE FROM users WHERE id IN (v_puid, v_buid, v_cuid);
+
+    RAISE NOTICE 'Cleanup complete — starting fresh seed.';
+END $$;
+
+-- Temp tables to pass IDs between script sections
+DROP TABLE IF EXISTS _seed_ids;
+DROP TABLE IF EXISTS _seed_cats;
+DROP TABLE IF EXISTS _seed_brands;
+DROP TABLE IF EXISTS _seed_xusr;
+DROP TABLE IF EXISTS _seed_orders;
+
+CREATE TEMP TABLE _seed_ids    (key TEXT PRIMARY KEY, val UUID);
+CREATE TEMP TABLE _seed_cats   (rn  INTEGER PRIMARY KEY, id UUID);
+CREATE TEMP TABLE _seed_brands (rn  INTEGER PRIMARY KEY, id UUID);
+CREATE TEMP TABLE _seed_xusr   (rn  INTEGER, id UUID, utype TEXT, email TEXT);
+CREATE TEMP TABLE _seed_orders (rn  INTEGER PRIMARY KEY, id UUID);
+
+-- ============================================================
+-- PHASE 1  –  CORE ENTITIES  (business, roles, 3 main users,
+--             categories, brands, settings, subscription …)
+-- ============================================================
+DO $$
+DECLARE
+    bid   UUID := gen_random_uuid();  -- business
+    puid  UUID := gen_random_uuid();  -- platform user
+    buid  UUID := gen_random_uuid();  -- business user
+    cuid  UUID := gen_random_uuid();  -- customer user
+    rp    UUID := gen_random_uuid();  -- role: PLATFORM_ADMIN
+    rb    UUID := gen_random_uuid();  -- role: BUSINESS_ADMIN
+    rc    UUID := gen_random_uuid();  -- role: CUSTOMER
+    plan1 UUID := gen_random_uuid();  -- Annual Premium  (MAIN)
+    plan2 UUID := gen_random_uuid();  -- Premium Monthly
+    plan3 UUID := gen_random_uuid();  -- Basic Monthly
+    plan4 UUID := gen_random_uuid();  -- Free Trial
+    subid UUID := gen_random_uuid();  -- active subscription
+    opid  UUID := gen_random_uuid();  -- order-process: Pending
+    ctid  UUID := gen_random_uuid();  -- cart id
+    ltid  UUID := gen_random_uuid();  -- leave type id
+    wsid  UUID := gen_random_uuid();  -- work schedule id
+    pwd   TEXT := '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh9q';
+    t     TIMESTAMPTZ := NOW();
+    cid   UUID;
+    brid  UUID;
+    i     INTEGER;
+BEGIN
+    -- ── Persist IDs for later phases ─────────────────────────
+    INSERT INTO _seed_ids VALUES
+        ('business_id',      bid),
+        ('platform_user_id', puid),
+        ('business_user_id', buid),
+        ('customer_user_id', cuid),
+        ('role_platform',    rp),
+        ('role_business',    rb),
+        ('role_customer',    rc),
+        ('order_pending_id', opid),
+        ('cart_id',          ctid);
+
+    -- ── Business ─────────────────────────────────────────────
+    INSERT INTO businesses (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        name, email, phone, address, description,
+        owner_id, status, is_subscription_active
+    ) VALUES (
+        bid, 0, t, t, 'system', 'system', false, NULL, NULL,
+        'Phat Restaurant & Café', 'phatmenghor20@gmail.com', '+855 12 345 678',
+        'Street 271, Sangkat Toul Tom Poung, Phnom Penh, Cambodia',
+        'Modern restaurant with Cambodian and international cuisine — fully digital menu experience.',
+        buid, 'ACTIVE', true
+    );
+
+    -- ── Roles ─────────────────────────────────────────────────
+    INSERT INTO roles (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        name, description, business_id, user_type
+    ) VALUES
+        (rp, 0, t, t, 'system', 'system', false, NULL, NULL,
+         'PLATFORM_ADMIN', 'Full platform access',  NULL, 'PLATFORM_USER'),
+        (rb, 0, t, t, 'system', 'system', false, NULL, NULL,
+         'BUSINESS_ADMIN', 'Business administrator', bid, 'BUSINESS_USER'),
+        (rc, 0, t, t, 'system', 'system', false, NULL, NULL,
+         'CUSTOMER',       'Regular customer',       NULL, 'CUSTOMER');
+
+    -- ── 3 Main Users ─────────────────────────────────────────
+    INSERT INTO users (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        user_identifier, email, password,
+        first_name, last_name, phone_number, profile_image_url,
+        user_type, account_status, business_id, position, address, notes,
+        last_login_at, last_active_at, active_sessions_count
+    ) VALUES
+        (puid, 0, t, t, 'system', 'system', false, NULL, NULL,
+         'phatmenghor19@gmail.com', 'phatmenghor19@gmail.com', pwd,
+         'Phat', 'Menghor', '+855 12 000 001', NULL,
+         'PLATFORM_USER', 'ACTIVE', NULL,
+         'Platform Administrator', 'Phnom Penh, Cambodia', 'Main platform admin account',
+         t, t, 0),
+        (buid, 0, t, t, 'system', 'system', false, NULL, NULL,
+         'phatmenghor20@gmail.com', 'phatmenghor20@gmail.com', pwd,
+         'Menghor', 'Business', '+855 12 000 002', NULL,
+         'BUSINESS_USER', 'ACTIVE', bid,
+         'Business Owner', 'Phnom Penh, Cambodia', 'Business owner test account',
+         t, t, 0),
+        (cuid, 0, t, t, 'system', 'system', false, NULL, NULL,
+         'phatmenghor21@gmail.com', 'phatmenghor21@gmail.com', pwd,
+         'Menghor', 'Customer', '+855 12 000 003', NULL,
+         'CUSTOMER', 'ACTIVE', NULL,
+         NULL, 'Phnom Penh, Cambodia', 'Customer test account',
+         t, t, 0);
+
+    INSERT INTO user_roles (user_id, role_id)
+    VALUES (puid, rp), (buid, rb), (cuid, rc);
+
+    -- ── Business Settings ─────────────────────────────────────
+    INSERT INTO business_settings (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, logo_url, banner_url, business_type,
+        opening_time, closing_time, is_open_24_hours,
+        working_days, timezone, currency, language, usd_to_khr_rate,
+        contact_email, contact_phone, whatsapp_number,
+        facebook_url, instagram_url, telegram_url, website_url,
+        primary_color, secondary_color,
+        email_notifications_enabled, sms_notifications_enabled, order_notifications_enabled,
+        tax_rate, service_charge_percentage, min_order_amount,
+        delivery_radius_km, estimated_delivery_time,
+        terms_and_conditions, privacy_policy, refund_policy
+    ) VALUES (
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        bid, NULL, NULL, 'Restaurant',
+        '08:00', '22:00', false,
+        'MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,SUNDAY',
+        'Asia/Phnom_Penh', 'USD', 'en', 4100.0,
+        'phatmenghor20@gmail.com', '+855 12 345 678', '+855 12 345 678',
+        'https://facebook.com/phatrestaurant',
+        'https://instagram.com/phatrestaurant',
+        'https://t.me/phatrestaurant',
+        'https://phatrestaurant.com',
+        '#FF6B35', '#F7C59F', true, false, true,
+        10.0, 5.0, 5.0, 10.0, '30-45 minutes',
+        'Standard terms and conditions apply.',
+        'We respect your privacy and protect your data.',
+        'Refunds accepted within 24 hours of order placement.'
+    );
+
+    -- ── Exchange Rates ────────────────────────────────────────
+    INSERT INTO exchange_rates (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        usd_to_khr_rate, is_active, notes
+    ) VALUES (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+              4100.0, true, 'Current USD to KHR rate');
+
+    INSERT INTO business_exchange_rates (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, usd_to_khr_rate, usd_to_cny_rate, usd_to_thb_rate, usd_to_vnd_rate,
+        is_active, notes
+    ) VALUES (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+              bid, 4100.0, 7.24, 35.50, 25300.0, true, 'Business custom exchange rates');
+
+    -- ── Subscription Plans ────────────────────────────────────
+    -- ★ Annual Premium is the MAIN plan used by this business
+    INSERT INTO subscription_plans (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        name, description, price, duration_days, status
+    ) VALUES
+        (plan1, 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Annual Premium',  'Full access for 365 days — best value!',        299.99, 365, 'PUBLIC'),
+        (plan2, 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Premium Monthly', 'Full access to all features for 30 days',        29.99,  30,  'PUBLIC'),
+        (plan3, 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Basic Monthly',   'Core features for small businesses',              9.99,   30,  'PUBLIC'),
+        (plan4, 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Free Trial',      'Try all features free for 14 days',               0.00,   14,  'PUBLIC');
+
+    -- ── Active Subscription  (1 YEAR) ────────────────────────
+    INSERT INTO subscriptions (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, plan_id, start_date, end_date, auto_renew
+    ) VALUES (
+        subid, 0, t, t, 'system', 'system', false, NULL, NULL,
+        bid, plan1, t, t + INTERVAL '1 year', true
+    );
+
+    -- ── Delivery Options ──────────────────────────────────────
+    INSERT INTO delivery_options (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, name, description, image_url, price, status
+    ) VALUES
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Dine In',          'Eat at the restaurant',              NULL, 0.00, 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Takeaway',         'Pick up your order',                 NULL, 0.00, 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Standard Delivery','Home delivery within 30–45 min',     NULL, 2.50, 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Express Delivery', 'Priority delivery within 15–20 min', NULL, 5.00, 'ACTIVE');
+
+    -- ── Order Process Statuses ────────────────────────────────
+    INSERT INTO order_process_statuses (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, name, description, status
+    ) VALUES
+        (opid,              0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Pending',   'Order received, awaiting confirmation', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Confirmed', 'Order confirmed by business',           'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Preparing', 'Order is being prepared',               'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Ready',     'Order ready for pickup or delivery',    'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Delivered', 'Order successfully delivered',          'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Cancelled', 'Order has been cancelled',              'ACTIVE');
+
+    -- ── Banners ───────────────────────────────────────────────
+    INSERT INTO banners (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, image_url, link_url, status
+    ) VALUES
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid,
+         'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80', NULL, 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid,
+         'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80', NULL, 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid,
+         'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80', NULL, 'ACTIVE');
+
+    -- ── Categories (20) ───────────────────────────────────────
+    FOR i IN 1..20 LOOP
+        cid := gen_random_uuid();
+        INSERT INTO _seed_cats VALUES (i, cid);
+        INSERT INTO categories (
+            id, version, created_at, updated_at, created_by, updated_by,
+            is_deleted, deleted_at, deleted_by,
+            business_id, name, image_url, status
+        ) VALUES (
+            cid, 0, t - ((21-i)||' days')::INTERVAL, t,
+            'system', 'system', false, NULL, NULL, bid,
+            CASE i
+                WHEN  1 THEN 'Cambodian Cuisine'   WHEN  2 THEN 'Thai Cuisine'
+                WHEN  3 THEN 'Vietnamese Cuisine'  WHEN  4 THEN 'Chinese Cuisine'
+                WHEN  5 THEN 'Western Food'        WHEN  6 THEN 'Breakfast'
+                WHEN  7 THEN 'Lunch Specials'      WHEN  8 THEN 'Dinner Menu'
+                WHEN  9 THEN 'Beverages'           WHEN 10 THEN 'Fresh Juices'
+                WHEN 11 THEN 'Coffee & Tea'        WHEN 12 THEN 'Desserts'
+                WHEN 13 THEN 'Snacks & Starters'   WHEN 14 THEN 'Salads'
+                WHEN 15 THEN 'Soups'               WHEN 16 THEN 'Grilled & BBQ'
+                WHEN 17 THEN 'Seafood'             WHEN 18 THEN 'Vegetarian'
+                WHEN 19 THEN 'Rice Dishes'         WHEN 20 THEN 'Noodle Dishes'
+            END,
+            'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80', 'ACTIVE'
+        );
+    END LOOP;
+
+    -- ── Brands (10) ───────────────────────────────────────────
+    FOR i IN 1..10 LOOP
+        brid := gen_random_uuid();
+        INSERT INTO _seed_brands VALUES (i, brid);
+        INSERT INTO brands (
+            id, version, created_at, updated_at, created_by, updated_by,
+            is_deleted, deleted_at, deleted_by,
+            business_id, name, image_url, description, status
+        ) VALUES (
+            brid, 0, t - ((11-i)||' days')::INTERVAL, t,
+            'system', 'system', false, NULL, NULL, bid,
+            CASE i
+                WHEN  1 THEN 'Chef''s Special'    WHEN  2 THEN 'Angkor Brand'
+                WHEN  3 THEN 'Mekong Fresh'        WHEN  4 THEN 'Royal Kitchen'
+                WHEN  5 THEN 'Heritage Foods'      WHEN  6 THEN 'Golden Lotus'
+                WHEN  7 THEN 'Phnom Penh Select'   WHEN  8 THEN 'Tonle Sap Fresh'
+                WHEN  9 THEN 'Bayon Spice'         WHEN 10 THEN 'Sunrise Premium'
+            END,
+            'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80',
+            'Quality brand ' || i || ' sourced from trusted suppliers.', 'ACTIVE'
+        );
+    END LOOP;
+
+    -- ── Leave Types ───────────────────────────────────────────
+    ltid := gen_random_uuid();
+    INSERT INTO leave_type_enum (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, enum_name, description
+    ) VALUES
+        (ltid,              0, t, t, 'system', 'system', false, NULL, NULL, bid, 'ANNUAL',    'Annual leave entitlement'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'SICK',      'Sick leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'EMERGENCY', 'Emergency / personal leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'MATERNITY', 'Maternity or paternity leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'UNPAID',    'Unpaid leave');
+
+    -- ── Work Schedule Types ───────────────────────────────────
+    INSERT INTO work_schedule_type_enum (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        business_id, enum_name, description
+    ) VALUES
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'MORNING_SHIFT',   'Morning shift 06:00–14:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'AFTERNOON_SHIFT', 'Afternoon shift 14:00–22:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'FULL_DAY',        'Full day 08:00–17:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'SPLIT_SHIFT',     'Split shift with break');
+
+    -- ── Work Schedule (business owner) ───────────────────────
+    INSERT INTO work_schedules (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        user_id, business_id, name, schedule_type_enum,
+        start_time, end_time, break_start_time, break_end_time
+    ) VALUES (
+        wsid, 0, t, t, 'system', 'system', false, NULL, NULL,
+        buid, bid, 'Owner Full Day', 'FULL_DAY',
+        '08:00:00', '17:00:00', '12:00:00', '13:00:00'
+    );
+
+    -- ── Attendances (last 14 days for business owner) ─────────
+    FOR i IN 1..14 LOOP
+        INSERT INTO attendances (
+            id, version, created_at, updated_at, created_by, updated_by,
+            is_deleted, deleted_at, deleted_by,
+            user_id, business_id, work_schedule_id,
+            attendance_date, status, remarks
+        ) VALUES (
+            gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+            buid, bid, wsid,
+            CURRENT_DATE - (i - 1),
+            CASE (i % 5) WHEN 0 THEN 'LATE' WHEN 1 THEN 'ABSENT' ELSE 'PRESENT' END,
+            NULL
+        );
+    END LOOP;
+
+    -- ── Leaves ────────────────────────────────────────────────
+    INSERT INTO leaves (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        user_id, business_id, leave_type_enum,
+        start_date, end_date, total_days,
+        reason, status, action_by, action_at, action_note
+    ) VALUES
+        (gen_random_uuid(), 0, t - INTERVAL '10 days', t, 'system', 'system', false, NULL, NULL,
+         buid, bid, ltid, CURRENT_DATE + 7, CURRENT_DATE + 9, 3,
+         'Family vacation', 'APPROVED', puid, t - INTERVAL '9 days', 'Approved'),
+        (gen_random_uuid(), 0, t - INTERVAL '3 days', t, 'system', 'system', false, NULL, NULL,
+         buid, bid, ltid, CURRENT_DATE + 20, CURRENT_DATE + 21, 2,
+         'Medical appointment', 'PENDING', NULL, NULL, NULL);
+
+    -- ── Customer Address (main customer) ─────────────────────
+    INSERT INTO customer_addresses (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        user_id, village, commune, district, province, country,
+        street_number, house_number, note, latitude, longitude, is_default
+    ) VALUES (
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        cuid, 'Phum 7', 'Sangkat Tonle Bassac', 'Chamkar Mon',
+        'Phnom Penh', 'Cambodia', '15', '25B', 'Near Lucky Market',
+        11.5564, 104.9282, true
+    );
+
+    -- ── Cart (main customer) ──────────────────────────────────
+    INSERT INTO carts (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by, user_id, business_id
+    ) VALUES (ctid, 0, t, t, 'system', 'system', false, NULL, NULL, cuid, bid);
+
+    -- ── Payments (subscription) ───────────────────────────────
+    INSERT INTO payments (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        image_url, business_id, plan_id, subscription_id,
+        amount, amount_khr, payment_method, status, payment_type,
+        reference_number, notes
+    ) VALUES
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan1, subid, 299.99, 1229959.00,
+         'BANK_TRANSFER', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-001', 'Annual subscription payment — Year 2025'),
+        (gen_random_uuid(), 0, t - INTERVAL '1 year', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan1, subid, 299.99, 1229959.00,
+         'ONLINE', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2024-001', 'Annual subscription payment — Year 2024');
+
+    -- ── Notifications (main users) ────────────────────────────
+    INSERT INTO notifications (
+        id, version, created_at, updated_at, created_by, updated_by,
+        is_deleted, deleted_at, deleted_by,
+        title, message, message_type, priority, status, recipient_type,
+        user_id, user_name, business_id, group_id,
+        is_seen, seen_at, is_read, read_at
+    ) VALUES
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Welcome to Menu Scanner!',
+         'Your platform admin account is ready. Full system access granted.',
+         'WELCOME_MESSAGE', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+         puid, 'Phat Menghor', NULL, NULL, false, NULL, false, NULL),
+
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Business Account Activated',
+         '"Phat Restaurant & Café" is now live and ready to accept orders!',
+         'BUSINESS_APPROVED', 'HIGH', 'DELIVERED', 'INDIVIDUAL_USER',
+         buid, 'Menghor Business', bid, NULL, false, NULL, false, NULL),
+
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         '🎉 1-Year Subscription Activated',
+         'Annual Premium activated. Valid until ' || (t + INTERVAL '1 year')::DATE::TEXT || '. Enjoy unlimited access all year!',
+         'SUBSCRIPTION_RENEWAL', 'HIGH', 'DELIVERED', 'INDIVIDUAL_USER',
+         buid, 'Menghor Business', bid, NULL, false, NULL, false, NULL),
+
+        (gen_random_uuid(), 0, t - INTERVAL '30 minutes', t, 'system', 'system', false, NULL, NULL,
+         'New Order Received!',
+         'Order #ORD-2025-000001 has been placed. Please confirm promptly.',
+         'ORDER_NEW', 'HIGH', 'DELIVERED', 'INDIVIDUAL_USER',
+         buid, 'Menghor Business', bid, NULL, false, NULL, false, NULL),
+
+        (gen_random_uuid(), 0, t - INTERVAL '2 hours', t, 'system', 'system', false, NULL, NULL,
+         'Daily Report Ready',
+         'Your daily sales report for ' || CURRENT_DATE::TEXT || ' is ready.',
+         'DAILY_REPORT', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+         buid, 'Menghor Business', bid, NULL,
+         true, t - INTERVAL '1 hour', true, t - INTERVAL '45 minutes'),
+
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Welcome!',
+         'Welcome to Menu Scanner! Browse menus and place your first order.',
+         'WELCOME_MESSAGE', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+         cuid, 'Menghor Customer', NULL, NULL, false, NULL, false, NULL),
+
+        (gen_random_uuid(), 0, t - INTERVAL '2 hours', t, 'system', 'system', false, NULL, NULL,
+         'Order Confirmed',
+         'Order #ORD-2025-000001 confirmed and being prepared. ETA: 30 mins.',
+         'ORDER_CONFIRMED', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+         cuid, 'Menghor Customer', bid, NULL,
+         true, t - INTERVAL '1 hour', true, t - INTERVAL '30 minutes'),
+
+        (gen_random_uuid(), 0, t - INTERVAL '1 hour', t, 'system', 'system', false, NULL, NULL,
+         'Special Offer!',
+         'Flash sale: 20% off all beverages today only! Order now.',
+         'PROMOTION_ANNOUNCEMENT', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
+         cuid, 'Menghor Customer', bid, NULL, false, NULL, false, NULL);
+
+    RAISE NOTICE 'Phase 1 complete — core entities created.';
+END $$;
+
+-- ============================================================
+-- PHASE 2  –  BULK EXTRA USERS
+--             100 business staff  +  197 customers  =  297
+--             Total users: 300 (including 3 main)
+-- ============================================================
+
+-- Pre-generate stable UUIDs for all extra users
+INSERT INTO _seed_xusr (rn, id, utype, email)
+SELECT i, gen_random_uuid(), 'BUSINESS_USER', 'staff' || i || '@phatrestaurant.com'
+FROM generate_series(1, 100) gs(i)
+UNION ALL
+SELECT 100 + i, gen_random_uuid(), 'CUSTOMER', 'customer' || i || '@test.com'
+FROM generate_series(1, 197) gs(i);
+
+-- Insert all extra users
+INSERT INTO users (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_identifier, email, password,
+    first_name, last_name, phone_number, profile_image_url,
+    user_type, account_status, business_id, position, address, notes,
+    last_login_at, last_active_at, active_sessions_count
+)
+SELECT
+    eu.id, 0,
+    NOW() - (eu.rn || ' hours')::INTERVAL, NOW(),
+    'system', 'system', false, NULL, NULL,
+    eu.email, eu.email,
+    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh9q',
+    CASE (eu.rn % 20)
+        WHEN  0 THEN 'Dara'      WHEN  1 THEN 'Srey'     WHEN  2 THEN 'Rith'
+        WHEN  3 THEN 'Kosal'     WHEN  4 THEN 'Vanna'    WHEN  5 THEN 'Bopha'
+        WHEN  6 THEN 'Sokha'     WHEN  7 THEN 'Dary'     WHEN  8 THEN 'Rachana'
+        WHEN  9 THEN 'Pisey'     WHEN 10 THEN 'Sopheap'  WHEN 11 THEN 'Theary'
+        WHEN 12 THEN 'Channary'  WHEN 13 THEN 'Kunthea'  WHEN 14 THEN 'Sreynov'
+        WHEN 15 THEN 'Makara'    WHEN 16 THEN 'Sovann'   WHEN 17 THEN 'Chenda'
+        WHEN 18 THEN 'Ratana'    WHEN 19 THEN 'Visna'
+    END,
+    CASE eu.utype WHEN 'BUSINESS_USER' THEN 'Staff' ELSE 'Customer' END || eu.rn,
+    '+855 ' || (10 + eu.rn % 80) || ' '
+        || LPAD((eu.rn * 1234 % 9000 + 1000)::TEXT, 4, '0') || ' '
+        || LPAD((eu.rn * 5678 % 9000 + 1000)::TEXT, 4, '0'),
+    NULL,
+    eu.utype, 'ACTIVE',
+    CASE eu.utype
+        WHEN 'BUSINESS_USER' THEN (SELECT val FROM _seed_ids WHERE key = 'business_id')
+        ELSE NULL
+    END,
+    CASE eu.utype
+        WHEN 'BUSINESS_USER' THEN
+            CASE (eu.rn % 5)
+                WHEN 0 THEN 'Chef'    WHEN 1 THEN 'Waiter'
+                WHEN 2 THEN 'Cashier' WHEN 3 THEN 'Manager'
+                WHEN 4 THEN 'Barista'
+            END
+        ELSE NULL
+    END,
+    'Phnom Penh, Cambodia',
+    eu.utype || ' account #' || eu.rn,
+    NOW() - (eu.rn * 2 || ' hours')::INTERVAL,
+    NOW() - (eu.rn * 2 || ' hours')::INTERVAL,
+    0
+FROM _seed_xusr eu;
+
+-- User roles for all extra users
+INSERT INTO user_roles (user_id, role_id)
+SELECT
+    eu.id,
+    CASE eu.utype
+        WHEN 'BUSINESS_USER' THEN (SELECT val FROM _seed_ids WHERE key = 'role_business')
+        ELSE                      (SELECT val FROM _seed_ids WHERE key = 'role_customer')
+    END
+FROM _seed_xusr eu;
+
+-- Customer addresses (one per extra customer)
+INSERT INTO customer_addresses (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, village, commune, district, province, country,
+    street_number, house_number, note, latitude, longitude, is_default
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    eu.id,
+    'Phum ' || eu.rn,
+    'Sangkat ' || CASE (eu.rn % 5)
+        WHEN 0 THEN 'Tonle Bassac'      WHEN 1 THEN 'Olympic'
+        WHEN 2 THEN 'Boeung Keng Kang'  WHEN 3 THEN 'Toul Tom Poung'
+        WHEN 4 THEN 'Phsar Thmei'
+    END,
+    CASE (eu.rn % 4)
+        WHEN 0 THEN 'Daun Penh' WHEN 1 THEN 'Chamkar Mon'
+        WHEN 2 THEN 'Toul Kork' ELSE     'Sen Sok'
+    END,
+    'Phnom Penh', 'Cambodia',
+    eu.rn::TEXT, (100 + eu.rn)::TEXT,
+    'Near market ' || eu.rn,
+    11.5564 + (eu.rn % 100 - 50) * 0.001,
+    104.9282 + (eu.rn % 100 - 50) * 0.001,
+    true
+FROM _seed_xusr eu
+WHERE eu.utype = 'CUSTOMER';
+
+-- ============================================================
+-- PHASE 3  –  BULK PRODUCTS  (40,000)
+--             Set-based insert using generate_series — fast!
+-- ============================================================
+INSERT INTO products (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    business_id, category_id, brand_id,
+    name, description, status, price,
+    promotion_type, promotion_value, promotion_from_date, promotion_to_date,
+    display_price, display_origin_price,
+    display_promotion_type, display_promotion_value,
+    display_promotion_from_date, display_promotion_to_date,
+    has_sizes, has_active_promotion,
+    view_count, favorite_count, main_image_url
+)
+WITH
+dish_names(rn, dname) AS (VALUES
+    (0,'Amok Trey'),         (1,'Lok Lak'),            (2,'Bai Sach Chrouk'),
+    (3,'Kuy Teav'),          (4,'Num Banh Chok'),      (5,'Samlor Korko'),
+    (6,'Prahok Ktiss'),      (7,'Beef Lok Lak'),       (8,'Spring Rolls'),
+    (9,'Tom Yum Soup'),      (10,'Pad Thai'),           (11,'Green Curry'),
+    (12,'Fried Rice'),       (13,'Pho Bo'),             (14,'Banh Mi'),
+    (15,'Dim Sum'),          (16,'Congee'),             (17,'Burger'),
+    (18,'Pizza'),            (19,'Pasta'),              (20,'Grilled Chicken'),
+    (21,'BBQ Pork Ribs'),    (22,'Steamed Fish'),       (23,'Seafood Platter'),
+    (24,'Mango Salad'),      (25,'Papaya Salad'),       (26,'Fresh Coconut'),
+    (27,'Sugarcane Juice'),  (28,'Mango Smoothie'),     (29,'Iced Coffee'),
+    (30,'Cambodian Milk Tea'),(31,'Green Tea'),         (32,'Mango Sticky Rice'),
+    (33,'Fried Banana'),     (34,'Coconut Ice Cream'),  (35,'Egg Roll'),
+    (36,'Wonton Soup'),      (37,'Crispy Tofu'),        (38,'Vegetable Stir Fry'),
+    (39,'Mushroom Rice'),    (40,'Laksa Noodles'),      (41,'Beef Noodle Soup'),
+    (42,'Crab Fried Rice'),  (43,'Prawn Tempura'),      (44,'Salmon Sashimi'),
+    (45,'Chicken Wings'),    (46,'Caesar Salad'),       (47,'French Fries'),
+    (48,'Onion Rings'),      (49,'Chocolate Cake')
+),
+adj(rn, aname) AS (VALUES
+    (0,'traditional'), (1,'freshly prepared'), (2,'chef-special'),
+    (3,'signature'),   (4,'authentic')
+)
+SELECT
+    gen_random_uuid(), 0,
+    NOW() - ((40001 - i) || ' seconds')::INTERVAL,
+    NOW() - ((40001 - i) || ' seconds')::INTERVAL,
+    'system', 'system', false, NULL, NULL,
+
+    b.val,                                                     -- business_id
+    c.id,                                                      -- category_id (cycles 1-20)
+    CASE WHEN i % 3 = 0 THEN br.id ELSE NULL END,             -- brand_id (~33%)
+
+    -- name
+    dn.dname || ' #' || i,
+
+    -- description
+    'Delicious ' || a.aname
+        || ' dish made with the finest ingredients. Perfect for any occasion.',
+
+    -- status: 80% ACTIVE | 10% INACTIVE | 10% OUT_OF_STOCK
+    CASE (i % 10) WHEN 0 THEN 'INACTIVE' WHEN 5 THEN 'OUT_OF_STOCK' ELSE 'ACTIVE' END,
+
+    -- price  $1.50 – $25.00  (deterministic hash, no RANDOM() for speed)
+    ROUND((1.50 + (ABS(HASHTEXT(i::TEXT)) % 2351) / 100.0)::NUMERIC, 2),
+
+    -- promotion (~20% of products)
+    CASE WHEN i % 5 = 0 THEN 'PERCENTAGE'::TEXT              ELSE NULL END,
+    CASE WHEN i % 5 = 0 THEN (5 + ABS(HASHTEXT((i*7)::TEXT)) % 26)::NUMERIC ELSE NULL END,
+    CASE WHEN i % 5 = 0 THEN NOW() - INTERVAL '7 days'       ELSE NULL END,
+    CASE WHEN i % 5 = 0 THEN NOW() + INTERVAL '23 days'      ELSE NULL END,
+
+    -- display_price = same as price for test data
+    ROUND((1.50 + (ABS(HASHTEXT(i::TEXT)) % 2351) / 100.0)::NUMERIC, 2),
+    NULL, NULL, NULL, NULL, NULL,           -- display_origin & promotion mirrors
+
+    (i % 3 = 0),                            -- has_sizes   (~33%)
+    (i % 5 = 0),                            -- has_active_promotion (~20%)
+
+    (ABS(HASHTEXT((i*3)::TEXT))  % 1001)::BIGINT,   -- view_count  0-1000
+    (ABS(HASHTEXT((i*11)::TEXT)) % 101)::BIGINT,    -- favorite_count 0-100
+
+    'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80'
+
+FROM generate_series(1, 40000) gs(i)
+CROSS JOIN (SELECT val FROM _seed_ids WHERE key = 'business_id') b
+JOIN  _seed_cats   c  ON c.rn  = ((i - 1) % 20) + 1
+LEFT JOIN _seed_brands br ON br.rn = ((i - 1) % 10) + 1
+JOIN  dish_names   dn ON dn.rn = ((i - 1) % 50)
+JOIN  adj          a  ON a.rn  = ((i - 1) % 5);
+
+-- ============================================================
+-- PHASE 4  –  PRODUCT IMAGES
+--             Image 1 : every product   (~40,000 rows)
+--             Image 2 : even row-number (~20,000 rows)
+-- ============================================================
+
+-- Image 1 — all products
+INSERT INTO product_images (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    product_id, image_url
+)
+SELECT
+    gen_random_uuid(), 0, p.created_at, p.created_at, 'system', 'system', false, NULL, NULL,
+    p.id, p.main_image_url
+FROM products p
+WHERE p.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
+  AND p.is_deleted = false;
+
+-- Image 2 — even-numbered products (by creation order)
+INSERT INTO product_images (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    product_id, image_url
+)
+SELECT
+    gen_random_uuid(), 0, p.created_at, p.created_at, 'system', 'system', false, NULL, NULL,
+    p.id,
+    'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80'
+FROM (
+    SELECT id, created_at, main_image_url,
+           ROW_NUMBER() OVER (ORDER BY created_at) AS rn
+    FROM products
+    WHERE business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
+      AND is_deleted = false
+) p
+WHERE p.rn % 2 = 0;
+
+-- ============================================================
+-- PHASE 5  –  PRODUCT SIZES
+--             Small / Medium / Large for products with has_sizes=true
+--             (~13,333 products × 3 sizes = ~40,000 rows)
+-- ============================================================
+INSERT INTO product_sizes (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    product_id, name, price,
+    promotion_type, promotion_value, promotion_from_date, promotion_to_date
+)
+SELECT
+    gen_random_uuid(), 0, p.created_at, p.created_at, 'system', 'system', false, NULL, NULL,
+    p.id, sz.size_name,
+    ROUND((p.price * sz.multiplier)::NUMERIC, 2),
+    NULL, NULL, NULL, NULL
+FROM products p
+CROSS JOIN (VALUES ('Small', 0.7), ('Medium', 1.0), ('Large', 1.4)) sz(size_name, multiplier)
+WHERE p.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
+  AND p.has_sizes   = true
+  AND p.is_deleted  = false;
+
+-- ============================================================
+-- PHASE 6  –  BULK ORDERS (500)
+-- ============================================================
+
+-- Pre-generate order IDs
+INSERT INTO _seed_orders (rn, id)
+SELECT i, gen_random_uuid()
+FROM generate_series(1, 500) gs(i);
+
+-- Insert orders
+INSERT INTO orders (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    order_number, customer_id, business_id,
+    delivery_address_snapshot, delivery_option_snapshot,
+    order_process_status_name, customer_note, business_note,
+    subtotal, delivery_fee, total_amount,
+    payment_method, payment_status,
+    confirmed_at, completed_at
+)
+SELECT
+    so.id, 0,
+    NOW() - (so.rn || ' hours')::INTERVAL, NOW(),
+    'system', 'system', false, NULL, NULL,
+    'ORD-2025-' || LPAD(so.rn::TEXT, 6, '0'),
+    (SELECT val FROM _seed_ids WHERE key = 'customer_user_id'),
+    (SELECT val FROM _seed_ids WHERE key = 'business_id'),
+    '{"district":"Chamkar Mon","province":"Phnom Penh","houseNumber":"25B","streetNumber":"15"}',
+    '{"name":"Standard Delivery","price":2.50}',
+    CASE (so.rn % 6)
+        WHEN 0 THEN 'Cancelled' WHEN 1 THEN 'Delivered'
+        WHEN 2 THEN 'Preparing' WHEN 3 THEN 'Confirmed'
+        WHEN 4 THEN 'Ready'     ELSE     'Pending'
+    END,
+    CASE WHEN so.rn % 4 = 0 THEN 'Please make it less spicy' ELSE NULL END,
+    NULL,
+    ROUND((5.00 + (ABS(HASHTEXT(so.rn::TEXT)) % 4501) / 100.0)::NUMERIC, 2),
+    2.50,
+    ROUND((7.50 + (ABS(HASHTEXT(so.rn::TEXT)) % 4501) / 100.0)::NUMERIC, 2),
+    CASE (so.rn % 4)
+        WHEN 0 THEN 'CASH'          WHEN 1 THEN 'BANK_TRANSFER'
+        WHEN 2 THEN 'ONLINE'        ELSE     'CASH'
+    END,
+    CASE (so.rn % 3) WHEN 0 THEN 'PAID' WHEN 1 THEN 'UNPAID' ELSE 'PAID' END,
+    CASE WHEN so.rn % 2 = 0 THEN NOW() - (so.rn || ' hours')::INTERVAL + INTERVAL '30 min' ELSE NULL END,
+    CASE WHEN so.rn % 6 = 1 THEN NOW() - (so.rn || ' hours')::INTERVAL + INTERVAL '2 hours' ELSE NULL END
+FROM _seed_orders so;
+
+-- ============================================================
+-- PHASE 7  –  ORDER ITEMS
+--             2-5 random ACTIVE products per order via LATERAL
+-- ============================================================
+INSERT INTO order_items (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    order_id, product_id, product_size_id,
+    product_name, product_image_url, size_name,
+    current_price, final_price, unit_price,
+    has_promotion, promotion_type, promotion_value,
+    quantity, total_price, special_instructions
+)
+SELECT
+    gen_random_uuid(), 0, o.created_at, o.created_at,
+    'system', 'system', false, NULL, NULL,
+    o.id, p.id, NULL,
+    p.name, p.main_image_url, NULL,
+    p.price, p.price, p.price,
+    p.has_active_promotion,
+    CASE p.has_active_promotion WHEN true THEN p.promotion_type ELSE NULL END,
+    CASE p.has_active_promotion WHEN true THEN p.promotion_value ELSE NULL END,
+    qty.q,
+    ROUND((p.price * qty.q)::NUMERIC, 2),
+    NULL
+FROM _seed_orders so
+JOIN orders o ON o.id = so.id
+CROSS JOIN LATERAL (
+    SELECT id, name, main_image_url, price, has_active_promotion,
+           promotion_type, promotion_value
+    FROM products
+    WHERE business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
+      AND status      = 'ACTIVE'
+      AND is_deleted  = false
+    ORDER BY RANDOM()
+    LIMIT (2 + so.rn % 4)
+) p
+CROSS JOIN LATERAL (
+    SELECT (1 + ABS(HASHTEXT(o.id::TEXT || p.id::TEXT)) % 4)::INTEGER AS q
+) qty;
+
+-- ============================================================
+-- PHASE 8  –  ORDER STATUS HISTORY  (one entry per order)
+-- ============================================================
+INSERT INTO order_status_history (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    order_id, order_process_status_id, note, changed_by
+)
+SELECT
+    gen_random_uuid(), 0, o.created_at, o.created_at,
+    'system', 'system', false, NULL, NULL,
+    o.id,
+    (SELECT val FROM _seed_ids WHERE key = 'order_pending_id'),
+    'Order placed by customer',
+    (SELECT val FROM _seed_ids WHERE key = 'customer_user_id')::TEXT
+FROM _seed_orders so
+JOIN orders o ON o.id = so.id;
+
+-- ============================================================
+-- PHASE 9  –  CART ITEMS  (5 items for main customer)
+-- ============================================================
+INSERT INTO cart_items (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    cart_id, product_id, product_size_id, quantity
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    (SELECT val FROM _seed_ids WHERE key = 'cart_id'),
+    p.id, NULL,
+    (1 + ABS(HASHTEXT(p.id::TEXT)) % 4)::INTEGER
+FROM products p
+WHERE p.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
+  AND p.status      = 'ACTIVE'
+  AND p.is_deleted  = false
+ORDER BY RANDOM()
+LIMIT 5;
+
+-- ============================================================
+-- PHASE 10  –  PRODUCT FAVORITES  (20 for main customer)
+-- ============================================================
+INSERT INTO product_favorites (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, product_id
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    (SELECT val FROM _seed_ids WHERE key = 'customer_user_id'),
+    p.id
+FROM products p
+WHERE p.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
+  AND p.is_deleted  = false
+ORDER BY RANDOM()
+LIMIT 20;
+
+-- ============================================================
+-- PHASE 11  –  REMAINING 12 TABLES
+--             images | location hierarchy | schedule_work_days
+--             attendance_check_ins | business_order_payments
+--             refresh_tokens | user_sessions | blacklisted_tokens
+--             audit_logs          (all 43 tables now seeded)
+-- ============================================================
+
+-- ── 11a: IMAGES  (2 base64 PNG records) ──────────────────────
+-- Served via GET http://192.168.103.106:8080/api/images/{id}
+INSERT INTO images (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by, type, data
+) VALUES
+    (gen_random_uuid(), 0, NOW(), NOW(), 'seed_script', 'seed_script', false, NULL, NULL,
+     'image/png',
+     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='),
+    (gen_random_uuid(), 0, NOW(), NOW(), 'seed_script', 'seed_script', false, NULL, NULL,
+     'image/png',
+     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII=');
+
+-- ── 11b: LOCATION PROVINCE  (40) ─────────────────────────────
+INSERT INTO location_province_cbc (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    province_code, province_en, province_kh
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    'KH' || LPAD(i::TEXT, 2, '0'),
+    CASE i
+        WHEN  1 THEN 'Phnom Penh'          WHEN  2 THEN 'Siem Reap'
+        WHEN  3 THEN 'Battambang'          WHEN  4 THEN 'Kampong Cham'
+        WHEN  5 THEN 'Kandal'              WHEN  6 THEN 'Prey Veng'
+        WHEN  7 THEN 'Svay Rieng'          WHEN  8 THEN 'Takeo'
+        WHEN  9 THEN 'Kampot'              WHEN 10 THEN 'Kep'
+        WHEN 11 THEN 'Sihanoukville'       WHEN 12 THEN 'Kampong Speu'
+        WHEN 13 THEN 'Kampong Thom'        WHEN 14 THEN 'Kampong Chhnang'
+        WHEN 15 THEN 'Pursat'              WHEN 16 THEN 'Pailin'
+        WHEN 17 THEN 'Koh Kong'            WHEN 18 THEN 'Kratie'
+        WHEN 19 THEN 'Mondulkiri'          WHEN 20 THEN 'Ratanakiri'
+        WHEN 21 THEN 'Stung Treng'         WHEN 22 THEN 'Preah Vihear'
+        WHEN 23 THEN 'Oddar Meanchey'      WHEN 24 THEN 'Tbong Khmum'
+        WHEN 25 THEN 'Banteay Meanchey'    WHEN 26 THEN 'Preah Sihanouk'
+        WHEN 27 THEN 'Angkor Province'     WHEN 28 THEN 'Mekong Province'
+        WHEN 29 THEN 'Bassac Province'     WHEN 30 THEN 'Tonle Sap Province'
+        WHEN 31 THEN 'Cardamom Province'   WHEN 32 THEN 'Eastern Hills Province'
+        WHEN 33 THEN 'Kulen Province'      WHEN 34 THEN 'Baray Province'
+        WHEN 35 THEN 'Sambor Province'     WHEN 36 THEN 'Khmer Plains Province'
+        WHEN 37 THEN 'Northern Province'   WHEN 38 THEN 'Southern Province'
+        WHEN 39 THEN 'Eastern Province'    WHEN 40 THEN 'Western Province'
+    END,
+    CASE i
+        WHEN  1 THEN 'ភ្នំពេញ'           WHEN  2 THEN 'សៀមរាប'
+        WHEN  3 THEN 'បាត់ដំបង'          WHEN  4 THEN 'កំពង់ចាម'
+        WHEN  5 THEN 'កណ្ដាល'            WHEN  6 THEN 'ព្រៃវែង'
+        WHEN  7 THEN 'ស្វាយរៀង'         WHEN  8 THEN 'តាកែវ'
+        WHEN  9 THEN 'កំពត'              WHEN 10 THEN 'កែប'
+        WHEN 11 THEN 'ខេត្តព្រះសីហនុ'   WHEN 12 THEN 'កំពង់ស្ពឺ'
+        WHEN 13 THEN 'កំពង់ធំ'           WHEN 14 THEN 'កំពង់ឆ្នាំង'
+        WHEN 15 THEN 'ពោធ៍សាត់'         WHEN 16 THEN 'ប៉ៃលិន'
+        WHEN 17 THEN 'កោះកុង'           WHEN 18 THEN 'ក្រចេះ'
+        WHEN 19 THEN 'មណ្ឌលគិរី'        WHEN 20 THEN 'រតនគិរី'
+        WHEN 21 THEN 'ស្ទឹងត្រែង'       WHEN 22 THEN 'ព្រះវិហារ'
+        WHEN 23 THEN 'អូដ្ឋមានជ័យ'     WHEN 24 THEN 'ត្បូងឃ្មុំ'
+        WHEN 25 THEN 'បន្ទាយមានជ័យ'    ELSE 'ខេត្ត ' || i
+    END
+FROM generate_series(1, 40) gs(i);
+
+-- ── 11c: LOCATION DISTRICT  (80 — 2 per province) ────────────
+INSERT INTO location_district_cbc (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    district_code, district_en, district_kh, province_code
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    'KH' || LPAD(p.i::TEXT, 2, '0') || LPAD(d.j::TEXT, 2, '0'),
+    'District ' || d.j || ' of Province KH' || LPAD(p.i::TEXT, 2, '0'),
+    'ស្រុក ' || d.j || ' ខេត្ត ' || p.i,
+    'KH' || LPAD(p.i::TEXT, 2, '0')
+FROM generate_series(1, 40) p(i)
+CROSS JOIN generate_series(1, 2)  d(j);
+
+-- ── 11d: LOCATION COMMUNE  (160 — 2 per district) ────────────
+INSERT INTO location_commune_cbc (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    commune_code, commune_en, commune_kh, district_code
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    'KH' || LPAD(p.i::TEXT, 2, '0') || LPAD(d.j::TEXT, 2, '0') || LPAD(c.k::TEXT, 2, '0'),
+    'Commune ' || c.k || ' — Dist. ' || d.j || '-' || p.i,
+    'ឃុំ ' || c.k || ' ស្រុក ' || d.j,
+    'KH' || LPAD(p.i::TEXT, 2, '0') || LPAD(d.j::TEXT, 2, '0')
+FROM generate_series(1, 40) p(i)
+CROSS JOIN generate_series(1, 2)  d(j)
+CROSS JOIN generate_series(1, 2)  c(k);
+
+-- ── 11e: LOCATION VILLAGE  (320 — 2 per commune) ─────────────
+INSERT INTO location_village_cbc (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    village_code, village_en, village_kh, commune_code
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    'KH' || LPAD(p.i::TEXT, 2, '0') || LPAD(d.j::TEXT, 2, '0') || LPAD(c.k::TEXT, 2, '0') || LPAD(v.l::TEXT, 2, '0'),
+    'Village ' || v.l || ' — Commune ' || c.k || '-' || d.j || '-' || p.i,
+    'ភូមិ ' || v.l || ' ឃុំ ' || c.k,
+    'KH' || LPAD(p.i::TEXT, 2, '0') || LPAD(d.j::TEXT, 2, '0') || LPAD(c.k::TEXT, 2, '0')
+FROM generate_series(1, 40) p(i)
+CROSS JOIN generate_series(1, 2)  d(j)
+CROSS JOIN generate_series(1, 2)  c(k)
+CROSS JOIN generate_series(1, 2)  v(l);
+
+-- ── 11f: WORK SCHEDULES for first 20 staff ───────────────────
+INSERT INTO work_schedules (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, business_id, name, schedule_type_enum,
+    start_time, end_time, break_start_time, break_end_time
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    eu.id,
+    (SELECT val FROM _seed_ids WHERE key = 'business_id'),
+    CASE (eu.rn % 4)
+        WHEN 0 THEN 'Morning Shift'   WHEN 1 THEN 'Afternoon Shift'
+        WHEN 2 THEN 'Full Day'        ELSE     'Split Shift'
+    END || ' — Staff ' || eu.rn,
+    CASE (eu.rn % 4)
+        WHEN 0 THEN 'MORNING_SHIFT'   WHEN 1 THEN 'AFTERNOON_SHIFT'
+        WHEN 2 THEN 'FULL_DAY'        ELSE     'SPLIT_SHIFT'
+    END,
+    CASE (eu.rn % 4) WHEN 0 THEN '06:00:00'::TIME WHEN 1 THEN '14:00:00'::TIME ELSE '08:00:00'::TIME END,
+    CASE (eu.rn % 4) WHEN 0 THEN '14:00:00'::TIME WHEN 1 THEN '22:00:00'::TIME ELSE '17:00:00'::TIME END,
+    '12:00:00'::TIME,
+    '13:00:00'::TIME
+FROM _seed_xusr eu
+WHERE eu.utype = 'BUSINESS_USER' AND eu.rn <= 20;
+
+-- ── 11g: SCHEDULE WORK DAYS  (Mon–Sun × all schedules) ───────
+INSERT INTO schedule_work_days (schedule_id, day_of_week)
+SELECT
+    ws.id,
+    CASE d.n
+        WHEN 1 THEN 'MONDAY'    WHEN 2 THEN 'TUESDAY'   WHEN 3 THEN 'WEDNESDAY'
+        WHEN 4 THEN 'THURSDAY'  WHEN 5 THEN 'FRIDAY'    WHEN 6 THEN 'SATURDAY'
+        WHEN 7 THEN 'SUNDAY'
+    END
+FROM work_schedules ws
+CROSS JOIN generate_series(1, 7) d(n)
+WHERE ws.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
+  AND ws.is_deleted  = false;
+
+-- ── 11h: EXTRA ATTENDANCES for 20 staff  (7 days each = 140) ─
+INSERT INTO attendances (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, business_id, work_schedule_id,
+    attendance_date, status, remarks
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    eu.id,
+    (SELECT val FROM _seed_ids WHERE key = 'business_id'),
+    ws.id,
+    CURRENT_DATE - (d.n - 1),
+    CASE (ABS(HASHTEXT(eu.id::TEXT || d.n::TEXT)) % 5)
+        WHEN 0 THEN 'LATE' WHEN 1 THEN 'ABSENT' ELSE 'PRESENT'
+    END,
+    NULL
+FROM _seed_xusr eu
+JOIN work_schedules ws ON ws.user_id = eu.id AND ws.is_deleted = false
+CROSS JOIN generate_series(1, 7) d(n)
+WHERE eu.utype = 'BUSINESS_USER' AND eu.rn <= 20;
+
+-- ── 11i: ATTENDANCE CHECK-INS  (CLOCK_IN + CLOCK_OUT) ────────
+-- CLOCK_IN — all non-ABSENT attendances
+INSERT INTO attendance_check_ins (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    attendance_id, check_in_type, check_in_time,
+    latitude, longitude, remarks
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    a.id, 'CLOCK_IN',
+    a.attendance_date::TIMESTAMP + INTERVAL '8 hours'
+        + ((ABS(HASHTEXT(a.id::TEXT)) % 30) || ' minutes')::INTERVAL,
+    11.5564 + (ABS(HASHTEXT(a.id::TEXT))        % 100 - 50) * 0.0001,
+    104.9282 + (ABS(HASHTEXT(a.id::TEXT || '1')) % 100 - 50) * 0.0001,
+    NULL
+FROM attendances a
+WHERE a.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
+  AND a.status IN ('PRESENT', 'LATE')
+  AND a.is_deleted  = false;
+
+-- CLOCK_OUT — PRESENT attendances only
+INSERT INTO attendance_check_ins (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    attendance_id, check_in_type, check_in_time,
+    latitude, longitude, remarks
+)
+SELECT
+    gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
+    a.id, 'CLOCK_OUT',
+    a.attendance_date::TIMESTAMP + INTERVAL '17 hours'
+        + ((ABS(HASHTEXT(a.id::TEXT || 'out')) % 60) || ' minutes')::INTERVAL,
+    11.5564  + (ABS(HASHTEXT(a.id::TEXT || '2')) % 100 - 50) * 0.0001,
+    104.9282 + (ABS(HASHTEXT(a.id::TEXT || '3')) % 100 - 50) * 0.0001,
+    NULL
+FROM attendances a
+WHERE a.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
+  AND a.status    = 'PRESENT'
+  AND a.is_deleted = false;
+
+-- ── 11j: BUSINESS ORDER PAYMENTS  (50 records) ───────────────
+INSERT INTO business_order_payments (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    business_id, order_id, payment_reference,
+    amount, payment_method, status, customer_payment_method
+)
+SELECT
+    gen_random_uuid(), 0, o.created_at, o.created_at, 'system', 'system', false, NULL, NULL,
+    o.business_id,
+    o.id,
+    'BOP-' || TO_CHAR(o.created_at, 'YYYYMMDD') || '-' || LPAD(ROW_NUMBER() OVER (ORDER BY o.created_at)::TEXT, 4, '0'),
+    o.total_amount,
+    o.payment_method,
+    'COMPLETED',
+    o.payment_method
+FROM orders o
+WHERE o.business_id  = (SELECT val FROM _seed_ids WHERE key = 'business_id')
+  AND o.payment_status = 'PAID'
+  AND o.is_deleted    = false
+ORDER BY o.created_at
+LIMIT 50;
+
+-- ── 11k: REFRESH TOKENS  (50 records) ────────────────────────
+INSERT INTO refresh_tokens (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    token, user_id, expiry_date,
+    is_revoked, revoked_at, revocation_reason,
+    device_info, ip_address
+)
+SELECT
+    gen_random_uuid(), 0, NOW() - (i || ' hours')::INTERVAL, NOW(),
+    'system', 'system', false, NULL, NULL,
+    gen_random_uuid()::TEXT || '-rt-' || i,
+    CASE (i % 3)
+        WHEN 0 THEN (SELECT val FROM _seed_ids WHERE key = 'platform_user_id')
+        WHEN 1 THEN (SELECT val FROM _seed_ids WHERE key = 'business_user_id')
+        ELSE         (SELECT val FROM _seed_ids WHERE key = 'customer_user_id')
+    END,
+    NOW() + INTERVAL '30 days',
+    (i % 5 = 0),
+    CASE WHEN i % 5 = 0 THEN NOW() - (i || ' minutes')::INTERVAL ELSE NULL END,
+    CASE WHEN i % 5 = 0 THEN 'User logged out' ELSE NULL END,
+    CASE (i % 3) WHEN 0 THEN 'Chrome/Desktop/Windows' WHEN 1 THEN 'Safari/iPhone/iOS' ELSE 'App/Android' END,
+    '192.168.' || (i % 4) || '.' || (10 + i % 245)
+FROM generate_series(1, 50) gs(i);
+
+-- ── 11l: USER SESSIONS  (50 records) ─────────────────────────
+INSERT INTO user_sessions (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, refresh_token_id,
+    device_id, device_name, device_type,
+    user_agent, browser, operating_system, ip_address, location,
+    status, login_at, last_active_at, expires_at, logged_out_at,
+    is_current_session, logout_reason
+)
+SELECT
+    gen_random_uuid(), 0, NOW() - (i || ' hours')::INTERVAL, NOW(),
+    'system', 'system', false, NULL, NULL,
+    CASE (i % 3)
+        WHEN 0 THEN (SELECT val FROM _seed_ids WHERE key = 'platform_user_id')
+        WHEN 1 THEN (SELECT val FROM _seed_ids WHERE key = 'business_user_id')
+        ELSE         (SELECT val FROM _seed_ids WHERE key = 'customer_user_id')
+    END,
+    NULL,
+    md5(i::TEXT),
+    CASE (i % 4) WHEN 0 THEN 'iPhone 15' WHEN 1 THEN 'Samsung Galaxy S23' WHEN 2 THEN 'MacBook Pro' ELSE 'Desktop PC' END,
+    CASE (i % 3) WHEN 0 THEN 'MOBILE' WHEN 1 THEN 'TABLET' ELSE 'DESKTOP' END,
+    'Mozilla/5.0 (seed-bot/1.0)',
+    CASE (i % 3) WHEN 0 THEN 'Chrome' WHEN 1 THEN 'Safari' ELSE 'Firefox' END,
+    CASE (i % 3) WHEN 0 THEN 'Android 14' WHEN 1 THEN 'iOS 17' ELSE 'Windows 11' END,
+    '192.168.' || (i % 4) || '.' || (10 + i % 245),
+    'Phnom Penh, Cambodia',
+    CASE (i % 4) WHEN 0 THEN 'EXPIRED' WHEN 1 THEN 'LOGGED_OUT' ELSE 'ACTIVE' END,
+    NOW() - (i || ' hours')::INTERVAL,
+    NOW() - ((i / 2) || ' hours')::INTERVAL,
+    NOW() + INTERVAL '7 days',
+    CASE WHEN i % 4 = 1 THEN NOW() - ((i / 3) || ' hours')::INTERVAL ELSE NULL END,
+    (i % 10 = 0),
+    CASE WHEN i % 4 = 1 THEN 'User logged out manually' ELSE NULL END
+FROM generate_series(1, 50) gs(i);
+
+-- ── 11m: BLACKLISTED TOKENS  (50 records) ────────────────────
+INSERT INTO blacklisted_tokens (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    token, user_identifier, blacklisted_at, expiry_date, reason
+)
+SELECT
+    gen_random_uuid(), 0, NOW() - (i || ' hours')::INTERVAL, NOW(),
+    'system', 'system', false, NULL, NULL,
+    gen_random_uuid()::TEXT || '-bl-' || i,
+    CASE (i % 3)
+        WHEN 0 THEN 'phatmenghor19@gmail.com'
+        WHEN 1 THEN 'phatmenghor20@gmail.com'
+        ELSE         'phatmenghor21@gmail.com'
+    END,
+    NOW() - (i || ' hours')::INTERVAL,
+    NOW() + ((30 - i % 29) || ' days')::INTERVAL,
+    CASE (i % 4)
+        WHEN 0 THEN 'Token expired'       WHEN 1 THEN 'User logged out'
+        WHEN 2 THEN 'Security rotation'   ELSE     'Password changed'
+    END
+FROM generate_series(1, 50) gs(i);
+
+-- ── 11n: AUDIT LOGS  (100 records) ───────────────────────────
+INSERT INTO audit_logs (
+    id, version, created_at, updated_at, created_by, updated_by,
+    is_deleted, deleted_at, deleted_by,
+    user_id, user_identifier, user_type,
+    http_method, endpoint, ip_address, user_agent,
+    status_code, response_time_ms, error_message,
+    session_id, request_params, request_body
+)
+SELECT
+    gen_random_uuid(), 0, NOW() - (i || ' minutes')::INTERVAL, NOW(),
+    'system', 'system', false, NULL, NULL,
+    CASE (i % 3)
+        WHEN 0 THEN (SELECT val FROM _seed_ids WHERE key = 'platform_user_id')
+        WHEN 1 THEN (SELECT val FROM _seed_ids WHERE key = 'business_user_id')
+        ELSE         (SELECT val FROM _seed_ids WHERE key = 'customer_user_id')
+    END,
+    CASE (i % 3)
+        WHEN 0 THEN 'phatmenghor19@gmail.com'
+        WHEN 1 THEN 'phatmenghor20@gmail.com'
+        ELSE         'phatmenghor21@gmail.com'
+    END,
+    CASE (i % 3) WHEN 0 THEN 'PLATFORM_USER' WHEN 1 THEN 'BUSINESS_USER' ELSE 'CUSTOMER' END,
+    CASE (i % 4) WHEN 0 THEN 'GET' WHEN 1 THEN 'POST' WHEN 2 THEN 'PUT' ELSE 'DELETE' END,
+    CASE (i % 12)
+        WHEN  0 THEN '/api/v1/products'       WHEN  1 THEN '/api/v1/orders'
+        WHEN  2 THEN '/api/v1/users'           WHEN  3 THEN '/api/v1/categories'
+        WHEN  4 THEN '/api/v1/brands'          WHEN  5 THEN '/api/v1/auth/login'
+        WHEN  6 THEN '/api/v1/businesses'      WHEN  7 THEN '/api/v1/notifications'
+        WHEN  8 THEN '/api/v1/cart'            WHEN  9 THEN '/api/v1/payments'
+        WHEN 10 THEN '/api/v1/subscriptions'   ELSE       '/api/v1/dashboard'
+    END,
+    '192.168.' || (i % 4) || '.' || (10 + i % 245),
+    'Mozilla/5.0 (seed-audit-bot/1.0)',
+    CASE (i % 6) WHEN 0 THEN 400 WHEN 1 THEN 401 WHEN 2 THEN 403 WHEN 3 THEN 404 WHEN 4 THEN 500 ELSE 200 END,
+    (5 + ABS(HASHTEXT(i::TEXT)) % 2000)::BIGINT,
+    CASE WHEN i % 6 < 5 THEN 'Audit entry error ' || i ELSE NULL END,
+    md5(i::TEXT || 'sess'),
+    CASE WHEN i % 2 = 0 THEN '{"page":' || i || ',"size":20}' ELSE NULL END,
+    CASE WHEN i % 4 IN (1, 2) THEN '{"action":"seed_' || i || '"}' ELSE NULL END
+FROM generate_series(1, 100) gs(i);
+
+-- ============================================================
+-- CLEANUP
+-- ============================================================
+DROP TABLE IF EXISTS _seed_ids;
+DROP TABLE IF EXISTS _seed_cats;
+DROP TABLE IF EXISTS _seed_brands;
+DROP TABLE IF EXISTS _seed_xusr;
+DROP TABLE IF EXISTS _seed_orders;
+
+-- ============================================================
+-- DONE  –  Summary
+-- ============================================================
+DO $$
+BEGIN
+  RAISE NOTICE '=============================================';
+  RAISE NOTICE 'TEST DATA GENERATION COMPLETE';
+  RAISE NOTICE '=============================================';
+  RAISE NOTICE 'Users       : 300';
+  RAISE NOTICE '  Platform  : phatmenghor19@gmail.com';
+  RAISE NOTICE '  Business  : phatmenghor20@gmail.com';
+  RAISE NOTICE '  Customer  : phatmenghor21@gmail.com';
+  RAISE NOTICE '  Staff     : staff1-100@phatrestaurant.com';
+  RAISE NOTICE '  Customers : customer1-197@test.com';
+  RAISE NOTICE 'Password for all accounts : password';
+  RAISE NOTICE '---------------------------------------------';
+  RAISE NOTICE 'Products    : 40,000  (20 cats | 10 brands)';
+  RAISE NOTICE 'Img / Sizes : ~60,000 images | ~40,000 sizes';
+  RAISE NOTICE 'Orders      : 500  (items + history + payments)';
+  RAISE NOTICE 'Subscription: Annual Premium — 1 YEAR ($299.99)';
+  RAISE NOTICE '---------------------------------------------';
+  RAISE NOTICE 'ALL 43 TABLES SEEDED (min 40 rows each):';
+  RAISE NOTICE '  location_province_cbc  : 40';
+  RAISE NOTICE '  location_district_cbc  : 80';
+  RAISE NOTICE '  location_commune_cbc   : 160';
+  RAISE NOTICE '  location_village_cbc   : 320';
+  RAISE NOTICE '  schedule_work_days     : 147  (21 schedules x 7 days)';
+  RAISE NOTICE '  attendance_check_ins   : 300+ (clock-in + clock-out)';
+  RAISE NOTICE '  business_order_payments: 50';
+  RAISE NOTICE '  refresh_tokens         : 50';
+  RAISE NOTICE '  user_sessions          : 50';
+  RAISE NOTICE '  blacklisted_tokens     : 50';
+  RAISE NOTICE '  audit_logs             : 100';
+  RAISE NOTICE '  images (base64 PNG)    : 2';
+  RAISE NOTICE '  All image URLs → freepik public image';
+  RAISE NOTICE '=============================================';
+END $$;
