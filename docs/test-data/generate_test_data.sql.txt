@@ -1035,18 +1035,18 @@ SELECT
     -- price  $1.50 – $25.00  (deterministic hash, no RANDOM() for speed)
     ROUND((1.50 + (ABS(HASHTEXT(i::TEXT)) % 2351) / 100.0)::NUMERIC, 2),
 
-    -- promotion (~20% of products)
-    CASE WHEN i % 5 = 0 THEN 'PERCENTAGE'::TEXT              ELSE NULL END,
-    CASE WHEN i % 5 = 0 THEN (5 + ABS(HASHTEXT((i*7)::TEXT)) % 26)::NUMERIC ELSE NULL END,
-    CASE WHEN i % 5 = 0 THEN NOW() - INTERVAL '7 days'       ELSE NULL END,
-    CASE WHEN i % 5 = 0 THEN NOW() + INTERVAL '23 days'      ELSE NULL END,
+    -- promotion (~14% of products, i%7 avoids collision with status i%10)
+    CASE WHEN i % 7 = 0 THEN 'PERCENTAGE'::TEXT              ELSE NULL END,
+    CASE WHEN i % 7 = 0 THEN (5 + ABS(HASHTEXT((i*7)::TEXT)) % 26)::NUMERIC ELSE NULL END,
+    CASE WHEN i % 7 = 0 THEN NOW() - INTERVAL '7 days'       ELSE NULL END,
+    CASE WHEN i % 7 = 0 THEN NOW() + INTERVAL '23 days'      ELSE NULL END,
 
     -- display_price = same as price for test data
     ROUND((1.50 + (ABS(HASHTEXT(i::TEXT)) % 2351) / 100.0)::NUMERIC, 2),
     NULL, NULL, NULL, NULL, NULL,           -- display_origin & promotion mirrors
 
     (i % 3 = 0),                            -- has_sizes   (~33%)
-    (i % 5 = 0),                            -- has_active_promotion (~20%)
+    (i % 7 = 0),                            -- has_active_promotion (~14%, aligns with promotion above)
 
     (ABS(HASHTEXT((i*3)::TEXT))  % 1001)::BIGINT,   -- view_count  0-1000
     (ABS(HASHTEXT((i*11)::TEXT)) % 101)::BIGINT,    -- favorite_count 0-100
