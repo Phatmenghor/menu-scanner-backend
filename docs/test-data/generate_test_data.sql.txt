@@ -643,26 +643,26 @@ BEGIN
         street_number, house_number, note, latitude, longitude, is_default
     )
     SELECT
-        gen_random_uuid(), 0, t - ((i - 1) || ' hours')::INTERVAL, t,
+        gen_random_uuid(), 0, t - ((j - 1) || ' hours')::INTERVAL, t,
         'system', 'system', false, NULL, NULL,
         cuid,
-        'Phum ' || i,
-        CASE (i % 5)
+        'Phum ' || j,
+        CASE (j % 5)
             WHEN 0 THEN 'Sangkat Tonle Bassac'    WHEN 1 THEN 'Sangkat Olympic'
             WHEN 2 THEN 'Sangkat Boeung Keng Kang' WHEN 3 THEN 'Sangkat Toul Tom Poung'
             ELSE        'Sangkat Phsar Thmei'
         END,
-        CASE (i % 4)
+        CASE (j % 4)
             WHEN 0 THEN 'Daun Penh' WHEN 1 THEN 'Chamkar Mon'
             WHEN 2 THEN 'Toul Kork' ELSE     'Sen Sok'
         END,
         'Phnom Penh', 'Cambodia',
-        i::TEXT, (100 + i)::TEXT,
-        'Address note ' || i,
-        11.5564 + (i % 20 - 10) * 0.002,
-        104.9282 + (i % 20 - 10) * 0.002,
-        (i = 1)
-    FROM generate_series(1, 40) gs(i);
+        j::TEXT, (100 + j)::TEXT,
+        'Address note ' || j,
+        11.5564 + (j % 20 - 10) * 0.002,
+        104.9282 + (j % 20 - 10) * 0.002,
+        (j = 1)
+    FROM generate_series(1, 40) gs(j);
 
     -- ── Cart (main customer) ──────────────────────────────────
     INSERT INTO carts (
