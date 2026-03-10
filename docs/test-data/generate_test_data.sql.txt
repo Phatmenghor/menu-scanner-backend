@@ -1337,7 +1337,7 @@ SELECT
     END
 FROM generate_series(1, 40) gs(i);
 
--- ── 11c: LOCATION DISTRICT  (80 — 2 per province) ────────────
+-- ── 11c: LOCATION DISTRICT  (400 — 10 per province) ──────────
 INSERT INTO location_district_cbc (
     id, version, created_at, updated_at, created_by, updated_by,
     is_deleted, deleted_at, deleted_by,
@@ -1350,9 +1350,9 @@ SELECT
     'ស្រុក ' || d.j || ' ខេត្ត ' || p.i,
     'KH' || LPAD(p.i::TEXT, 2, '0')
 FROM generate_series(1, 40) p(i)
-CROSS JOIN generate_series(1, 2)  d(j);
+CROSS JOIN generate_series(1, 10) d(j);
 
--- ── 11d: LOCATION COMMUNE  (160 — 2 per district) ────────────
+-- ── 11d: LOCATION COMMUNE  (4,000 — 10 per district) ─────────
 INSERT INTO location_commune_cbc (
     id, version, created_at, updated_at, created_by, updated_by,
     is_deleted, deleted_at, deleted_by,
@@ -1364,11 +1364,11 @@ SELECT
     'Commune ' || c.k || ' — Dist. ' || d.j || '-' || p.i,
     'ឃុំ ' || c.k || ' ស្រុក ' || d.j,
     'KH' || LPAD(p.i::TEXT, 2, '0') || LPAD(d.j::TEXT, 2, '0')
-FROM generate_series(1, 40) p(i)
-CROSS JOIN generate_series(1, 2)  d(j)
-CROSS JOIN generate_series(1, 2)  c(k);
+FROM generate_series(1, 40)  p(i)
+CROSS JOIN generate_series(1, 10) d(j)
+CROSS JOIN generate_series(1, 10) c(k);
 
--- ── 11e: LOCATION VILLAGE  (320 — 2 per commune) ─────────────
+-- ── 11e: LOCATION VILLAGE  (40,000 — 10 per commune) ─────────
 INSERT INTO location_village_cbc (
     id, version, created_at, updated_at, created_by, updated_by,
     is_deleted, deleted_at, deleted_by,
@@ -1380,10 +1380,10 @@ SELECT
     'Village ' || v.l || ' — Commune ' || c.k || '-' || d.j || '-' || p.i,
     'ភូមិ ' || v.l || ' ឃុំ ' || c.k,
     'KH' || LPAD(p.i::TEXT, 2, '0') || LPAD(d.j::TEXT, 2, '0') || LPAD(c.k::TEXT, 2, '0')
-FROM generate_series(1, 40) p(i)
-CROSS JOIN generate_series(1, 2)  d(j)
-CROSS JOIN generate_series(1, 2)  c(k)
-CROSS JOIN generate_series(1, 2)  v(l);
+FROM generate_series(1, 40)  p(i)
+CROSS JOIN generate_series(1, 10) d(j)
+CROSS JOIN generate_series(1, 10) c(k)
+CROSS JOIN generate_series(1, 10) v(l);
 
 -- ── 11f: WORK SCHEDULES for first 20 staff ───────────────────
 INSERT INTO work_schedules (
@@ -1684,9 +1684,9 @@ BEGIN
   RAISE NOTICE '  product_favorites      : 50  (main customer)';
   RAISE NOTICE '  images (base64)        : 20';
   RAISE NOTICE '  location_province_cbc  : 40';
-  RAISE NOTICE '  location_district_cbc  : 80';
-  RAISE NOTICE '  location_commune_cbc   : 160';
-  RAISE NOTICE '  location_village_cbc   : 320';
+  RAISE NOTICE '  location_district_cbc  : 400';
+  RAISE NOTICE '  location_commune_cbc   : 4,000';
+  RAISE NOTICE '  location_village_cbc   : 40,000';
   RAISE NOTICE '  schedule_work_days     : 147+  (21 schedules x 7 days)';
   RAISE NOTICE '  attendance_check_ins   : 300+  (clock-in + clock-out)';
   RAISE NOTICE '  business_order_payments: 50';
