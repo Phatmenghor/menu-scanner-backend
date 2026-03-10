@@ -3,7 +3,7 @@
 -- ============================================================
 -- Run this entire script in pgAdmin Query Tool (F5)
 --
--- Scale  :  300 users  |  40,000 products  |  1,000 orders
+-- Scale  :  300 users  |  100,000 products  |  1,000 orders
 -- Subscription: 1 YEAR Annual Premium ($299.99)
 --
 -- Test Accounts (password: password)
@@ -181,7 +181,7 @@ DECLARE
     ctid  UUID := gen_random_uuid();  -- cart id
     ltid  UUID := gen_random_uuid();  -- leave type id
     wsid  UUID := gen_random_uuid();  -- work schedule id
-    pwd   TEXT := '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh9q';
+    pwd   TEXT := '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK';
     t     TIMESTAMPTZ := NOW();
     cid   UUID;
     brid  UUID;
@@ -606,8 +606,8 @@ BEGIN
         );
     END LOOP;
 
-    -- ── Leaves (20 for business owner) ───────────────────────
-    FOR i IN 1..20 LOOP
+    -- ── Leaves (60 for business owner) ───────────────────────
+    FOR i IN 1..60 LOOP
         INSERT INTO leaves (
             id, version, created_at, updated_at, created_by, updated_by,
             is_deleted, deleted_at, deleted_by,
@@ -635,33 +635,34 @@ BEGIN
         );
     END LOOP;
 
-    -- ── Customer Addresses (5 for main customer) ─────────────
+    -- ── Customer Addresses (40 for main customer) ────────────
     INSERT INTO customer_addresses (
         id, version, created_at, updated_at, created_by, updated_by,
         is_deleted, deleted_at, deleted_by,
         user_id, village, commune, district, province, country,
         street_number, house_number, note, latitude, longitude, is_default
-    ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         cuid, 'Phum 7', 'Sangkat Tonle Bassac', 'Chamkar Mon',
-         'Phnom Penh', 'Cambodia', '15', '25B', 'Near Lucky Market',
-         11.5564, 104.9282, true),
-        (gen_random_uuid(), 0, t - INTERVAL '1 day', t, 'system', 'system', false, NULL, NULL,
-         cuid, 'Phum 3', 'Sangkat Olympic', 'Daun Penh',
-         'Phnom Penh', 'Cambodia', '8', '12A', 'Beside BKK Pagoda',
-         11.5580, 104.9310, false),
-        (gen_random_uuid(), 0, t - INTERVAL '2 days', t, 'system', 'system', false, NULL, NULL,
-         cuid, 'Phum 5', 'Sangkat Boeung Keng Kang', 'Chamkar Mon',
-         'Phnom Penh', 'Cambodia', '23', '4C', 'Near Aeon Mall 1',
-         11.5502, 104.9248, false),
-        (gen_random_uuid(), 0, t - INTERVAL '3 days', t, 'system', 'system', false, NULL, NULL,
-         cuid, 'Phum 1', 'Sangkat Toul Tom Poung', 'Chamkar Mon',
-         'Phnom Penh', 'Cambodia', '37', '7', 'Russian Market area',
-         11.5449, 104.9190, false),
-        (gen_random_uuid(), 0, t - INTERVAL '4 days', t, 'system', 'system', false, NULL, NULL,
-         cuid, 'Phum 9', 'Sangkat Phsar Thmei', 'Daun Penh',
-         'Phnom Penh', 'Cambodia', '55', '101', 'Near Central Market',
-         11.5695, 104.9240, false);
+    )
+    SELECT
+        gen_random_uuid(), 0, t - ((i - 1) || ' hours')::INTERVAL, t,
+        'system', 'system', false, NULL, NULL,
+        cuid,
+        'Phum ' || i,
+        CASE (i % 5)
+            WHEN 0 THEN 'Sangkat Tonle Bassac'    WHEN 1 THEN 'Sangkat Olympic'
+            WHEN 2 THEN 'Sangkat Boeung Keng Kang' WHEN 3 THEN 'Sangkat Toul Tom Poung'
+            ELSE        'Sangkat Phsar Thmei'
+        END,
+        CASE (i % 4)
+            WHEN 0 THEN 'Daun Penh' WHEN 1 THEN 'Chamkar Mon'
+            WHEN 2 THEN 'Toul Kork' ELSE     'Sen Sok'
+        END,
+        'Phnom Penh', 'Cambodia',
+        i::TEXT, (100 + i)::TEXT,
+        'Address note ' || i,
+        11.5564 + (i % 20 - 10) * 0.002,
+        104.9282 + (i % 20 - 10) * 0.002,
+        (i = 1)
+    FROM generate_series(1, 40) gs(i);
 
     -- ── Cart (main customer) ──────────────────────────────────
     INSERT INTO carts (
@@ -896,7 +897,7 @@ SELECT
     NOW() - (eu.rn || ' hours')::INTERVAL, NOW(),
     'system', 'system', false, NULL, NULL,
     eu.email, eu.email,
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh9q',
+    '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
     CASE (eu.rn % 20)
         WHEN  0 THEN 'Dara'      WHEN  1 THEN 'Srey'     WHEN  2 THEN 'Rith'
         WHEN  3 THEN 'Kosal'     WHEN  4 THEN 'Vanna'    WHEN  5 THEN 'Bopha'
@@ -972,7 +973,7 @@ FROM _seed_xusr eu
 WHERE eu.utype = 'CUSTOMER';
 
 -- ============================================================
--- PHASE 3  –  BULK PRODUCTS  (40,000)
+-- PHASE 3  –  BULK PRODUCTS  (100,000)
 --             Set-based insert using generate_series — fast!
 -- ============================================================
 INSERT INTO products (
@@ -1052,7 +1053,7 @@ SELECT
 
     'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80'
 
-FROM generate_series(1, 40000) gs(i)
+FROM generate_series(1, 100000) gs(i)
 CROSS JOIN (SELECT val FROM _seed_ids WHERE key = 'business_id') b
 JOIN  _seed_cats   c  ON c.rn  = ((i - 1) % 20) + 1
 LEFT JOIN _seed_brands br ON br.rn = ((i - 1) % 20) + 1
@@ -1662,8 +1663,8 @@ BEGIN
   RAISE NOTICE '  Customers : customer1-197@test.com';
   RAISE NOTICE 'Password for all accounts : password';
   RAISE NOTICE '---------------------------------------------';
-  RAISE NOTICE 'Products    : 40,000  (20 cats | 20 brands)';
-  RAISE NOTICE 'Img / Sizes : ~60,000 images | ~40,000 sizes';
+  RAISE NOTICE 'Products    : 100,000  (20 cats | 20 brands)';
+  RAISE NOTICE 'Img / Sizes : ~150,000 images | ~100,000 sizes';
   RAISE NOTICE 'Orders      : 1,000  (items + history + payments)';
   RAISE NOTICE 'Subscription: Annual Premium — 1 YEAR ($299.99)';
   RAISE NOTICE '---------------------------------------------';
@@ -1676,10 +1677,10 @@ BEGIN
   RAISE NOTICE '  banners                : 20';
   RAISE NOTICE '  categories             : 20';
   RAISE NOTICE '  brands                 : 20';
-  RAISE NOTICE '  leaves                 : 20  (business owner)';
+  RAISE NOTICE '  leaves                 : 60  (business owner)';
   RAISE NOTICE '  payments               : 20';
   RAISE NOTICE '  notifications          : 50  (16 platform | 17 business | 17 customer)';
-  RAISE NOTICE '  customer_addresses     : 5   (main customer)';
+  RAISE NOTICE '  customer_addresses     : 40  (main customer)';
   RAISE NOTICE '  cart_items             : 20  (main customer)';
   RAISE NOTICE '  product_favorites      : 50  (main customer)';
   RAISE NOTICE '  images (base64)        : 20';
