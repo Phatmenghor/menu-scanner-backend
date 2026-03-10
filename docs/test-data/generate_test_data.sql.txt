@@ -3,7 +3,7 @@
 -- ============================================================
 -- Run this entire script in pgAdmin Query Tool (F5)
 --
--- Scale  :  300 users  |  40,000 products  |  500 orders
+-- Scale  :  300 users  |  40,000 products  |  1,000 orders
 -- Subscription: 1 YEAR Annual Premium ($299.99)
 --
 -- Test Accounts (password: password)
@@ -365,18 +365,20 @@ BEGIN
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Cancelled', 'Order has been cancelled',              'ACTIVE');
 
-    -- ── Banners ───────────────────────────────────────────────
-    INSERT INTO banners (
-        id, version, created_at, updated_at, created_by, updated_by,
-        is_deleted, deleted_at, deleted_by,
-        business_id, image_url, link_url, status
-    ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid,
-         'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80', NULL, 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid,
-         'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80', NULL, 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid,
-         'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80', NULL, 'ACTIVE');
+    -- ── Banners (20) ──────────────────────────────────────────
+    FOR i IN 1..20 LOOP
+        INSERT INTO banners (
+            id, version, created_at, updated_at, created_by, updated_by,
+            is_deleted, deleted_at, deleted_by,
+            business_id, image_url, link_url, status
+        ) VALUES (
+            gen_random_uuid(), 0, t - ((21-i)||' hours')::INTERVAL, t,
+            'system', 'system', false, NULL, NULL, bid,
+            'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80',
+            NULL,
+            CASE WHEN i <= 16 THEN 'ACTIVE' ELSE 'INACTIVE' END
+        );
+    END LOOP;
 
     -- ── Categories (20) ───────────────────────────────────────
     FOR i IN 1..20 LOOP
@@ -405,8 +407,8 @@ BEGIN
         );
     END LOOP;
 
-    -- ── Brands (10) ───────────────────────────────────────────
-    FOR i IN 1..10 LOOP
+    -- ── Brands (20) ───────────────────────────────────────────
+    FOR i IN 1..20 LOOP
         brid := gen_random_uuid();
         INSERT INTO _seed_brands VALUES (i, brid);
         INSERT INTO brands (
@@ -414,7 +416,7 @@ BEGIN
             is_deleted, deleted_at, deleted_by,
             business_id, name, image_url, description, status
         ) VALUES (
-            brid, 0, t - ((11-i)||' days')::INTERVAL, t,
+            brid, 0, t - ((21-i)||' days')::INTERVAL, t,
             'system', 'system', false, NULL, NULL, bid,
             CASE i
                 WHEN  1 THEN 'Chef''s Special'    WHEN  2 THEN 'Angkor Brand'
@@ -422,6 +424,11 @@ BEGIN
                 WHEN  5 THEN 'Heritage Foods'      WHEN  6 THEN 'Golden Lotus'
                 WHEN  7 THEN 'Phnom Penh Select'   WHEN  8 THEN 'Tonle Sap Fresh'
                 WHEN  9 THEN 'Bayon Spice'         WHEN 10 THEN 'Sunrise Premium'
+                WHEN 11 THEN 'Khmer Kitchen'       WHEN 12 THEN 'Riverside Select'
+                WHEN 13 THEN 'Temple Garden'       WHEN 14 THEN 'Lotus Leaf'
+                WHEN 15 THEN 'Mango House'         WHEN 16 THEN 'Bamboo Table'
+                WHEN 17 THEN 'Pepper Coast'        WHEN 18 THEN 'Silk Road Spice'
+                WHEN 19 THEN 'Jasmine Pearl'       WHEN 20 THEN 'Cardamom Hills'
             END,
             'https://img.freepik.com/free-photo/lavender-field-sunset-near-valensole_268835-3911.jpg?semt=ais_rp_progressive&w=740&q=80',
             'Quality brand ' || i || ' sourced from trusted suppliers.', 'ACTIVE'
@@ -779,7 +786,7 @@ SELECT
 FROM generate_series(1, 40000) gs(i)
 CROSS JOIN (SELECT val FROM _seed_ids WHERE key = 'business_id') b
 JOIN  _seed_cats   c  ON c.rn  = ((i - 1) % 20) + 1
-LEFT JOIN _seed_brands br ON br.rn = ((i - 1) % 10) + 1
+LEFT JOIN _seed_brands br ON br.rn = ((i - 1) % 20) + 1
 JOIN  dish_names   dn ON dn.rn = ((i - 1) % 50)
 JOIN  adj          a  ON a.rn  = ((i - 1) % 5);
 
@@ -850,7 +857,7 @@ WHERE p.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
 -- Pre-generate order IDs
 INSERT INTO _seed_orders (rn, id)
 SELECT i, gen_random_uuid()
-FROM generate_series(1, 500) gs(i);
+FROM generate_series(1, 1000) gs(i);
 
 -- Insert orders
 INSERT INTO orders (
@@ -951,7 +958,7 @@ FROM _seed_orders so
 JOIN orders o ON o.id = so.id;
 
 -- ============================================================
--- PHASE 9  –  CART ITEMS  (5 items for main customer)
+-- PHASE 9  –  CART ITEMS  (20 items for main customer)
 -- ============================================================
 INSERT INTO cart_items (
     id, version, created_at, updated_at, created_by, updated_by,
@@ -968,10 +975,10 @@ WHERE p.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
   AND p.status      = 'ACTIVE'
   AND p.is_deleted  = false
 ORDER BY RANDOM()
-LIMIT 5;
+LIMIT 20;
 
 -- ============================================================
--- PHASE 10  –  PRODUCT FAVORITES  (20 for main customer)
+-- PHASE 10  –  PRODUCT FAVORITES  (50 for main customer)
 -- ============================================================
 INSERT INTO product_favorites (
     id, version, created_at, updated_at, created_by, updated_by,
@@ -986,7 +993,7 @@ FROM products p
 WHERE p.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
   AND p.is_deleted  = false
 ORDER BY RANDOM()
-LIMIT 20;
+LIMIT 50;
 
 -- ============================================================
 -- PHASE 11  –  REMAINING 12 TABLES
