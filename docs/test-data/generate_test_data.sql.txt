@@ -1447,8 +1447,8 @@ JOIN work_schedules ws ON ws.user_id = eu.id AND ws.is_deleted = false
 CROSS JOIN generate_series(1, 7) d(n)
 WHERE eu.utype = 'BUSINESS_USER' AND eu.rn <= 20;
 
--- ── 11i: ATTENDANCE CHECK-INS  (CLOCK_IN + CLOCK_OUT) ────────
--- CLOCK_IN — all non-ABSENT attendances
+-- ── 11i: ATTENDANCE CHECK-INS  (START + END) ─────────────────
+-- START — all non-ABSENT attendances
 INSERT INTO attendance_check_ins (
     id, version, created_at, updated_at, created_by, updated_by,
     is_deleted, deleted_at, deleted_by,
@@ -1457,7 +1457,7 @@ INSERT INTO attendance_check_ins (
 )
 SELECT
     gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
-    a.id, 'CLOCK_IN',
+    a.id, 'START',
     a.attendance_date::TIMESTAMP + INTERVAL '8 hours'
         + ((ABS(HASHTEXT(a.id::TEXT)) % 30) || ' minutes')::INTERVAL,
     11.5564 + (ABS(HASHTEXT(a.id::TEXT))        % 100 - 50) * 0.0001,
@@ -1468,7 +1468,7 @@ WHERE a.business_id = (SELECT val FROM _seed_ids WHERE key = 'business_id')
   AND a.status IN ('PRESENT', 'LATE')
   AND a.is_deleted  = false;
 
--- CLOCK_OUT — PRESENT attendances only
+-- END — PRESENT attendances only
 INSERT INTO attendance_check_ins (
     id, version, created_at, updated_at, created_by, updated_by,
     is_deleted, deleted_at, deleted_by,
@@ -1477,7 +1477,7 @@ INSERT INTO attendance_check_ins (
 )
 SELECT
     gen_random_uuid(), 0, NOW(), NOW(), 'system', 'system', false, NULL, NULL,
-    a.id, 'CLOCK_OUT',
+    a.id, 'END',
     a.attendance_date::TIMESTAMP + INTERVAL '17 hours'
         + ((ABS(HASHTEXT(a.id::TEXT || 'out')) % 60) || ' minutes')::INTERVAL,
     11.5564  + (ABS(HASHTEXT(a.id::TEXT || '2')) % 100 - 50) * 0.0001,
