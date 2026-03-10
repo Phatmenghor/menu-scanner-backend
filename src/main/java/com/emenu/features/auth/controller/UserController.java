@@ -34,7 +34,7 @@ public class UserController {
     @PostMapping("admin-token")
     public ResponseEntity<String> getMyAdminToken() {
         log.info("Get my admin token");
-        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjE5QGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9QTEFURk9STV9PV05FUiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NjkxNDIzNzksImV4cCI6MTc3MDI1MzQ5MH0.DDIFoUmOSCsiymW-565oReXGU5_VIRL6Soiige94oL39PKLb3ZhdDdxyoxAtwinq2qHAo_LzLzEyenJqjz21qA");
+        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjE5QGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9QTEFURk9STV9BRE1JTiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzMxMTgzMTMsImV4cCI6MTc4MzExODMxM30.PO2yMdaf19selSkF6OEnNz2By45iEdOmV0fZKOAYcSA9LTtD_QP4t7X5IjsPTh5DCBDyEvA449GuAoidwPTQnw");
     }
 
     /**
@@ -43,7 +43,7 @@ public class UserController {
     @PostMapping("business-token")
     public ResponseEntity<String> getMyBusinessToken() {
         log.info("Get my business token");
-        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIwQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9CVVNJTkVTU19PV05FUiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzE5OTMwMzIsImV4cCI6MTc3MzEwNDE0M30.-sdyeTDA2LlA85oEwTp491RbYGULYWPP8hDQmwNEUqDCUtUWE2uR5dk6XskgXu-mChfP7reeuc-S8LZ8MA6NjQ");
+        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIwQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9CVVNJTkVTU19BRE1JTiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzMxMTg0MDQsImV4cCI6MTc4MzExODQwNH0.YwU5olhCcnrys0nWji0gdYk9eG6pEwH0iZFwpyBtpPxIr8d9WrXNdDi3S9Lskz643aJGhnjc3irdEHmyFQUMzw");
     }
 
     /**
@@ -52,7 +52,7 @@ public class UserController {
     @PostMapping("customer-token")
     public ResponseEntity<String> getMyCustomerToken() {
         log.info("Get my customer token");
-        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIxQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9DVVNUT01FUiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzIwMDQ0ODgsImV4cCI6MTc4MjAwNDQ4OH0.0TJk2r0wecYohziHzqQh39Qx1h5PG5GKDLfakaONQXviGI7q1XNQFwKFmTKu8IH5U5TRck9JEsV-X0RazMFDtw");
+        return ResponseEntity.ok("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwaGF0bWVuZ2hvcjIxQGdtYWlsLmNvbSIsInJvbGVzIjoiUk9MRV9DVVNUT01FUiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NzMxMTg0MzIsImV4cCI6MTc4MzExODQzMn0.lrRnOEivbKoGZhxFsetAGM2ejHz_HHXmZ7PO3gboSyNwi709MsIEhkIeNZwF53klOkA52LdsQhBmvcwr8u3vpA");
     }
 
     /**
