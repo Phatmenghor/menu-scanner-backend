@@ -124,6 +124,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductListDto> getAllDataProducts(ProductFilterDto filter) {
         Optional<User> currentUser = securityUtils.getCurrentUserOptional();
 
@@ -284,6 +285,7 @@ public class ProductServiceImpl implements ProductService {
                 );
             }
         } else {
+            dto.setIsFavorited(false);
             dto.setQuantityInCart(0);
             if (dto.getSizes() != null) {
                 dto.getSizes().forEach(size -> size.setQuantityInCart(0));

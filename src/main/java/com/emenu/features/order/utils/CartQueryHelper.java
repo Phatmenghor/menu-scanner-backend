@@ -1,5 +1,7 @@
 package com.emenu.features.order.utils;
 
+import com.emenu.features.order.dto.CartQuantityProjection;
+import com.emenu.features.order.dto.SizeCartQuantityProjection;
 import com.emenu.features.order.repository.CartItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -33,7 +35,7 @@ public class CartQueryHelper {
             return Map.of();
         }
 
-        List<Map<String, Object>> results;
+        List<CartQuantityProjection> results;
         if (businessId != null) {
             results = cartItemRepository.getProductQuantitiesInCart(userId, businessId, productIds);
         } else {
@@ -41,10 +43,12 @@ public class CartQueryHelper {
         }
 
         Map<UUID, Integer> quantityMap = new HashMap<>();
-        for (Map<String, Object> result : results) {
-            UUID productId = (UUID) result.get("productId");
-            Number totalQuantity = (Number) result.get("totalQuantity");
-            quantityMap.put(productId, totalQuantity.intValue());
+        for (CartQuantityProjection result : results) {
+            UUID productId = result.getProductId();
+            Long totalQuantity = result.getTotalQuantity();
+            if (productId != null && totalQuantity != null) {
+                quantityMap.put(productId, totalQuantity.intValue());
+            }
         }
 
         return quantityMap;
@@ -62,13 +66,15 @@ public class CartQueryHelper {
             return Map.of();
         }
 
-        List<Map<String, Object>> results = cartItemRepository.getSizeQuantitiesInCart(userId, productId);
+        List<SizeCartQuantityProjection> results = cartItemRepository.getSizeQuantitiesInCart(userId, productId);
 
         Map<UUID, Integer> quantityMap = new HashMap<>();
-        for (Map<String, Object> result : results) {
-            UUID sizeId = (UUID) result.get("productSizeId");
-            Number quantity = (Number) result.get("quantity");
-            quantityMap.put(sizeId, quantity.intValue());
+        for (SizeCartQuantityProjection result : results) {
+            UUID sizeId = result.getProductSizeId();
+            Integer quantity = result.getQuantity();
+            if (sizeId != null && quantity != null) {
+                quantityMap.put(sizeId, quantity);
+            }
         }
 
         return quantityMap;

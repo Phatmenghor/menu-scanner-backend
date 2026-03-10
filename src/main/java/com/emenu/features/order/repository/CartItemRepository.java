@@ -1,5 +1,7 @@
 package com.emenu.features.order.repository;
 
+import com.emenu.features.order.dto.CartQuantityProjection;
+import com.emenu.features.order.dto.SizeCartQuantityProjection;
 import com.emenu.features.order.models.CartItem;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,7 +13,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -83,7 +84,7 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
 
     /**
      * Get total quantities for products in user's cart for a specific business.
-     * Returns a map of productId to total quantity across all cart items for that product.
+     * Uses interface projection for reliable field mapping with Hibernate 6.
      */
     @Query("""
             SELECT ci.productId as productId, SUM(ci.quantity) as totalQuantity
@@ -96,12 +97,13 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
             AND c.isDeleted = false
             GROUP BY ci.productId
             """)
-    List<Map<String, Object>> getProductQuantitiesInCart(@Param("userId") UUID userId,
-                                                          @Param("businessId") UUID businessId,
-                                                          @Param("productIds") List<UUID> productIds);
+    List<CartQuantityProjection> getProductQuantitiesInCart(@Param("userId") UUID userId,
+                                                             @Param("businessId") UUID businessId,
+                                                             @Param("productIds") List<UUID> productIds);
 
     /**
      * Get total quantities for products in user's cart across all businesses.
+     * Uses interface projection for reliable field mapping with Hibernate 6.
      */
     @Query("""
             SELECT ci.productId as productId, SUM(ci.quantity) as totalQuantity
@@ -113,11 +115,12 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
             AND c.isDeleted = false
             GROUP BY ci.productId
             """)
-    List<Map<String, Object>> getProductQuantitiesInCartAllBusinesses(@Param("userId") UUID userId,
-                                                                       @Param("productIds") List<UUID> productIds);
+    List<CartQuantityProjection> getProductQuantitiesInCartAllBusinesses(@Param("userId") UUID userId,
+                                                                          @Param("productIds") List<UUID> productIds);
 
     /**
      * Get per-size quantities for a specific product in user's cart.
+     * Uses interface projection for reliable field mapping with Hibernate 6.
      */
     @Query("""
             SELECT ci.productSizeId as productSizeId, ci.quantity as quantity
@@ -129,6 +132,6 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
             AND ci.isDeleted = false
             AND c.isDeleted = false
             """)
-    List<Map<String, Object>> getSizeQuantitiesInCart(@Param("userId") UUID userId,
-                                                       @Param("productId") UUID productId);
+    List<SizeCartQuantityProjection> getSizeQuantitiesInCart(@Param("userId") UUID userId,
+                                                              @Param("productId") UUID productId);
 }
