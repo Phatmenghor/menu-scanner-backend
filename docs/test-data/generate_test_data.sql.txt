@@ -305,7 +305,7 @@ BEGIN
     ) VALUES (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
               bid, 4100.0, 7.24, 35.50, 25300.0, true, 'Business custom exchange rates');
 
-    -- ── Subscription Plans ────────────────────────────────────
+    -- ── Subscription Plans (20) ──────────────────────────────
     -- ★ Annual Premium is the MAIN plan used by this business
     INSERT INTO subscription_plans (
         id, version, created_at, updated_at, created_by, updated_by,
@@ -313,13 +313,45 @@ BEGIN
         name, description, price, duration_days, status
     ) VALUES
         (plan1, 0, t, t, 'system', 'system', false, NULL, NULL,
-         'Annual Premium',  'Full access for 365 days — best value!',        299.99, 365, 'PUBLIC'),
+         'Annual Premium',      'Full access for 365 days — best value!',       299.99, 365, 'PUBLIC'),
         (plan2, 0, t, t, 'system', 'system', false, NULL, NULL,
-         'Premium Monthly', 'Full access to all features for 30 days',        29.99,  30,  'PUBLIC'),
+         'Premium Monthly',     'Full access to all features for 30 days',       29.99,  30,  'PUBLIC'),
         (plan3, 0, t, t, 'system', 'system', false, NULL, NULL,
-         'Basic Monthly',   'Core features for small businesses',              9.99,   30,  'PUBLIC'),
+         'Basic Monthly',       'Core features for small businesses',              9.99,  30,  'PUBLIC'),
         (plan4, 0, t, t, 'system', 'system', false, NULL, NULL,
-         'Free Trial',      'Try all features free for 14 days',               0.00,   14,  'PUBLIC');
+         'Free Trial',          'Try all features free for 14 days',               0.00,  14,  'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Starter Monthly',     'Entry-level plan for new businesses',             4.99,  30,  'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Pro Monthly',         'Professional plan with advanced analytics',      49.99,  30,  'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Enterprise Monthly',  'Unlimited everything for large chains',           99.99,  30,  'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Starter Annual',      'Entry-level annual plan — save 20%%',            47.99, 365, 'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Basic Annual',        'Core features for 1 year',                        99.99, 365, 'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Pro Annual',          'Professional annual plan — best value',          499.99, 365, 'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Enterprise Annual',   'Unlimited annual plan for enterprises',          999.99, 365, 'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Quarterly Basic',     'Basic plan billed every 3 months',               24.99,  90,  'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Quarterly Premium',   'Premium plan billed every 3 months',             79.99,  90,  'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Semi-Annual Basic',   'Basic plan for 6 months',                        49.99, 180, 'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Semi-Annual Premium', 'Premium plan for 6 months',                      149.99, 180, 'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Weekend Trial',       'Try all features free for 3 days',                0.00,   3,  'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Student Plan',        'Discounted plan for educational institutions',     4.99,  30,  'PUBLIC'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'NGO Plan',            'Subsidised plan for non-profits',                  0.99,  30,  'PRIVATE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Legacy Basic',        'Grandfathered basic plan — no new sign-ups',       7.99,  30,  'PRIVATE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         'Legacy Premium',      'Grandfathered premium plan — no new sign-ups',   19.99,  30,  'PRIVATE');
 
     -- ── Active Subscription  (1 YEAR) ────────────────────────
     INSERT INTO subscriptions (
@@ -331,39 +363,99 @@ BEGIN
         bid, plan1, t, t + INTERVAL '1 year', true
     );
 
-    -- ── Delivery Options ──────────────────────────────────────
+    -- ── Delivery Options (20) ─────────────────────────────────
     INSERT INTO delivery_options (
         id, version, created_at, updated_at, created_by, updated_by,
         is_deleted, deleted_at, deleted_by,
         business_id, name, description, image_url, price, status
     ) VALUES
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Dine In',          'Eat at the restaurant',              NULL, 0.00, 'ACTIVE'),
+         bid, 'Dine In',              'Eat at the restaurant',                  NULL, 0.00,  'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Takeaway',         'Pick up your order',                 NULL, 0.00, 'ACTIVE'),
+         bid, 'Takeaway',             'Pick up your order',                     NULL, 0.00,  'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Standard Delivery','Home delivery within 30–45 min',     NULL, 2.50, 'ACTIVE'),
+         bid, 'Standard Delivery',    'Home delivery within 30–45 min',         NULL, 2.50,  'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Express Delivery', 'Priority delivery within 15–20 min', NULL, 5.00, 'ACTIVE');
+         bid, 'Express Delivery',     'Priority delivery within 15–20 min',     NULL, 5.00,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Same Day Delivery',    'Delivered same day within 60–90 min',    NULL, 3.50,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Scheduled Delivery',   'Choose your preferred delivery time',    NULL, 2.00,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Curbside Pickup',      'Order online, pick up at the curb',      NULL, 0.00,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Drive-Thru',           'Quick pickup without leaving your car',  NULL, 0.00,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Room Service',         'Delivered to your hotel room',           NULL, 4.00,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Office Delivery',      'Delivered to your workplace',            NULL, 3.00,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Event Catering',       'Bulk delivery for events and parties',   NULL, 10.00, 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Pre-Order Pickup',     'Order ahead, skip the queue',            NULL, 0.00,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Night Delivery',       'Late-night delivery after 22:00',        NULL, 6.00,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Breakfast Delivery',   'Early morning delivery before 10:00',    NULL, 2.50,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Eco Delivery',         'Eco-friendly delivery by bicycle',       NULL, 1.50,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Premium Delivery',     'White-glove delivery with packaging',    NULL, 8.00,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Contactless Delivery', 'Left at door, no contact required',      NULL, 2.50,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Group Order',          'Combined delivery for multiple orders',  NULL, 1.00,  'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Party Pack Delivery',  'Special packaging for celebrations',     NULL, 5.00,  'INACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'International Ship',   'Cross-border shipping (packed items)',   NULL, 20.00, 'INACTIVE');
 
-    -- ── Order Process Statuses ────────────────────────────────
+    -- ── Order Process Statuses (20) ──────────────────────────
     INSERT INTO order_process_statuses (
         id, version, created_at, updated_at, created_by, updated_by,
         is_deleted, deleted_at, deleted_by,
         business_id, name, description, status
     ) VALUES
         (opid,              0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Pending',   'Order received, awaiting confirmation', 'ACTIVE'),
+         bid, 'Pending',          'Order received, awaiting confirmation',          'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Confirmed', 'Order confirmed by business',           'ACTIVE'),
+         bid, 'Confirmed',        'Order confirmed by business',                    'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Preparing', 'Order is being prepared',               'ACTIVE'),
+         bid, 'Preparing',        'Order is being prepared',                        'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Ready',     'Order ready for pickup or delivery',    'ACTIVE'),
+         bid, 'Ready',            'Order ready for pickup or delivery',             'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Delivered', 'Order successfully delivered',          'ACTIVE'),
+         bid, 'Delivered',        'Order successfully delivered',                   'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Cancelled', 'Order has been cancelled',              'ACTIVE');
+         bid, 'Cancelled',        'Order has been cancelled',                       'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'On The Way',       'Driver is on the way to customer',               'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Picked Up',        'Order picked up by delivery rider',              'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Refunded',         'Payment refunded to customer',                   'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Rejected',         'Order rejected by business',                     'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Waiting Payment',  'Awaiting customer payment confirmation',         'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Payment Received', 'Payment confirmed, processing order',            'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'On Hold',          'Order temporarily placed on hold',               'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Scheduled',        'Order scheduled for future delivery',            'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'At Counter',       'Customer collecting order at counter',           'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Quality Check',    'Order undergoing quality check before dispatch', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Packed',           'Order packaged and ready for dispatch',          'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Dispatched',       'Order dispatched from kitchen / warehouse',      'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Return Requested', 'Customer requested return of order',             'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'Completed',        'Order fully completed and closed',               'ACTIVE');
 
     -- ── Banners (20) ──────────────────────────────────────────
     FOR i IN 1..20 LOOP
@@ -435,29 +527,56 @@ BEGIN
         );
     END LOOP;
 
-    -- ── Leave Types ───────────────────────────────────────────
+    -- ── Leave Types (20) ──────────────────────────────────────
     ltid := gen_random_uuid();
     INSERT INTO leave_type_enum (
         id, version, created_at, updated_at, created_by, updated_by,
         is_deleted, deleted_at, deleted_by,
         business_id, enum_name, description
     ) VALUES
-        (ltid,              0, t, t, 'system', 'system', false, NULL, NULL, bid, 'ANNUAL',    'Annual leave entitlement'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'SICK',      'Sick leave'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'EMERGENCY', 'Emergency / personal leave'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'MATERNITY', 'Maternity or paternity leave'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'UNPAID',    'Unpaid leave');
+        (ltid,              0, t, t, 'system', 'system', false, NULL, NULL, bid, 'ANNUAL',       'Annual leave entitlement'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'SICK',         'Sick leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'EMERGENCY',    'Emergency / personal leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'MATERNITY',    'Maternity or paternity leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'UNPAID',       'Unpaid leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'PATERNITY',    'Paternity leave for new fathers'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'BEREAVEMENT',  'Bereavement leave for family loss'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'STUDY',        'Study or exam leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'MILITARY',     'Military service leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'MARRIAGE',     'Marriage / wedding leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'COMPENSATORY', 'Compensatory leave for overtime'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'SABBATICAL',   'Extended sabbatical leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'MEDICAL',      'Medical treatment leave with certificate'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'QUARANTINE',   'Quarantine or isolation leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'HALF_DAY',     'Half-day leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'WORK_FROM_HOME','Approved remote work day'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'TRAINING',     'External training or conference leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'PILGRIMAGE',   'Religious pilgrimage leave'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'RELOCATION',   'Relocation leave for house move'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'SPECIAL',      'Special leave approved by management');
 
-    -- ── Work Schedule Types ───────────────────────────────────
+    -- ── Work Schedule Types (16) ──────────────────────────────
     INSERT INTO work_schedule_type_enum (
         id, version, created_at, updated_at, created_by, updated_by,
         is_deleted, deleted_at, deleted_by,
         business_id, enum_name, description
     ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'MORNING_SHIFT',   'Morning shift 06:00–14:00'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'AFTERNOON_SHIFT', 'Afternoon shift 14:00–22:00'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'FULL_DAY',        'Full day 08:00–17:00'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'SPLIT_SHIFT',     'Split shift with break');
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'MORNING_SHIFT',    'Morning shift 06:00–14:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'AFTERNOON_SHIFT',  'Afternoon shift 14:00–22:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'FULL_DAY',         'Full day 08:00–17:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'SPLIT_SHIFT',      'Split shift with break'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'NIGHT_SHIFT',      'Night shift 22:00–06:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'EARLY_MORNING',    'Early morning shift 04:00–12:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'EVENING_SHIFT',    'Evening shift 17:00–01:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'PART_TIME_AM',     'Part-time morning 08:00–12:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'PART_TIME_PM',     'Part-time afternoon 13:00–17:00'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'WEEKEND_ONLY',     'Weekend shifts Saturday–Sunday'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'ROTATING_SHIFT',   'Rotating shift — changes weekly'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'ON_CALL',          'On-call standby shift'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'FLEXIBLE',         'Flexible hours — self-managed'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'OVERTIME',         'Overtime beyond regular hours'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'SEASONAL',         'Seasonal peak period schedule'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'PROBATION',        'Probation period schedule');
 
     -- ── Work Schedule (business owner) ───────────────────────
     INSERT INTO work_schedules (
@@ -487,33 +606,62 @@ BEGIN
         );
     END LOOP;
 
-    -- ── Leaves ────────────────────────────────────────────────
-    INSERT INTO leaves (
-        id, version, created_at, updated_at, created_by, updated_by,
-        is_deleted, deleted_at, deleted_by,
-        user_id, business_id, leave_type_enum,
-        start_date, end_date, total_days,
-        reason, status, action_by, action_at, action_note
-    ) VALUES
-        (gen_random_uuid(), 0, t - INTERVAL '10 days', t, 'system', 'system', false, NULL, NULL,
-         buid, bid, ltid, CURRENT_DATE + 7, CURRENT_DATE + 9, 3,
-         'Family vacation', 'APPROVED', puid, t - INTERVAL '9 days', 'Approved'),
-        (gen_random_uuid(), 0, t - INTERVAL '3 days', t, 'system', 'system', false, NULL, NULL,
-         buid, bid, ltid, CURRENT_DATE + 20, CURRENT_DATE + 21, 2,
-         'Medical appointment', 'PENDING', NULL, NULL, NULL);
+    -- ── Leaves (20 for business owner) ───────────────────────
+    FOR i IN 1..20 LOOP
+        INSERT INTO leaves (
+            id, version, created_at, updated_at, created_by, updated_by,
+            is_deleted, deleted_at, deleted_by,
+            user_id, business_id, leave_type_enum,
+            start_date, end_date, total_days,
+            reason, status, action_by, action_at, action_note
+        ) VALUES (
+            gen_random_uuid(), 0, t - (i || ' days')::INTERVAL, t,
+            'system', 'system', false, NULL, NULL,
+            buid, bid, ltid,
+            CURRENT_DATE + (i * 3),
+            CURRENT_DATE + (i * 3) + (1 + i % 4),
+            (2 + i % 4),
+            CASE (i % 5)
+                WHEN 0 THEN 'Family vacation'
+                WHEN 1 THEN 'Medical appointment'
+                WHEN 2 THEN 'Personal emergency'
+                WHEN 3 THEN 'Annual rest leave'
+                ELSE         'Training & development'
+            END,
+            CASE (i % 3) WHEN 0 THEN 'APPROVED' WHEN 1 THEN 'PENDING' ELSE 'REJECTED' END,
+            CASE WHEN i % 3 = 0 THEN puid ELSE NULL END,
+            CASE WHEN i % 3 = 0 THEN t - ((i - 1) || ' days')::INTERVAL ELSE NULL END,
+            CASE WHEN i % 3 = 0 THEN 'Approved by admin' WHEN i % 3 = 2 THEN 'Insufficient balance' ELSE NULL END
+        );
+    END LOOP;
 
-    -- ── Customer Address (main customer) ─────────────────────
+    -- ── Customer Addresses (5 for main customer) ─────────────
     INSERT INTO customer_addresses (
         id, version, created_at, updated_at, created_by, updated_by,
         is_deleted, deleted_at, deleted_by,
         user_id, village, commune, district, province, country,
         street_number, house_number, note, latitude, longitude, is_default
-    ) VALUES (
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        cuid, 'Phum 7', 'Sangkat Tonle Bassac', 'Chamkar Mon',
-        'Phnom Penh', 'Cambodia', '15', '25B', 'Near Lucky Market',
-        11.5564, 104.9282, true
-    );
+    ) VALUES
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         cuid, 'Phum 7', 'Sangkat Tonle Bassac', 'Chamkar Mon',
+         'Phnom Penh', 'Cambodia', '15', '25B', 'Near Lucky Market',
+         11.5564, 104.9282, true),
+        (gen_random_uuid(), 0, t - INTERVAL '1 day', t, 'system', 'system', false, NULL, NULL,
+         cuid, 'Phum 3', 'Sangkat Olympic', 'Daun Penh',
+         'Phnom Penh', 'Cambodia', '8', '12A', 'Beside BKK Pagoda',
+         11.5580, 104.9310, false),
+        (gen_random_uuid(), 0, t - INTERVAL '2 days', t, 'system', 'system', false, NULL, NULL,
+         cuid, 'Phum 5', 'Sangkat Boeung Keng Kang', 'Chamkar Mon',
+         'Phnom Penh', 'Cambodia', '23', '4C', 'Near Aeon Mall 1',
+         11.5502, 104.9248, false),
+        (gen_random_uuid(), 0, t - INTERVAL '3 days', t, 'system', 'system', false, NULL, NULL,
+         cuid, 'Phum 1', 'Sangkat Toul Tom Poung', 'Chamkar Mon',
+         'Phnom Penh', 'Cambodia', '37', '7', 'Russian Market area',
+         11.5449, 104.9190, false),
+        (gen_random_uuid(), 0, t - INTERVAL '4 days', t, 'system', 'system', false, NULL, NULL,
+         cuid, 'Phum 9', 'Sangkat Phsar Thmei', 'Daun Penh',
+         'Phnom Penh', 'Cambodia', '55', '101', 'Near Central Market',
+         11.5695, 104.9240, false);
 
     -- ── Cart (main customer) ──────────────────────────────────
     INSERT INTO carts (
@@ -521,7 +669,7 @@ BEGIN
         is_deleted, deleted_at, deleted_by, user_id, business_id
     ) VALUES (ctid, 0, t, t, 'system', 'system', false, NULL, NULL, cuid, bid);
 
-    -- ── Payments (subscription) ───────────────────────────────
+    -- ── Payments (20 records — subscription + order payments) ─
     INSERT INTO payments (
         id, version, created_at, updated_at, created_by, updated_by,
         is_deleted, deleted_at, deleted_by,
@@ -536,65 +684,186 @@ BEGIN
         (gen_random_uuid(), 0, t - INTERVAL '1 year', t, 'system', 'system', false, NULL, NULL,
          NULL, bid, plan1, subid, 299.99, 1229959.00,
          'ONLINE', 'COMPLETED', 'SUBSCRIPTION',
-         'PAY-2024-001', 'Annual subscription payment — Year 2024');
+         'PAY-2024-001', 'Annual subscription payment — Year 2024'),
+        (gen_random_uuid(), 0, t - INTERVAL '2 years', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan1, subid, 249.99, 1024959.00,
+         'BANK_TRANSFER', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2023-001', 'Annual subscription payment — Year 2023'),
+        (gen_random_uuid(), 0, t - INTERVAL '2 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan2, subid, 29.99, 122959.00,
+         'ONLINE', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-002', 'Premium monthly top-up'),
+        (gen_random_uuid(), 0, t - INTERVAL '3 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan3, subid, 9.99, 40959.00,
+         'CASH', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-003', 'Basic monthly add-on'),
+        (gen_random_uuid(), 0, t - INTERVAL '4 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan2, subid, 29.99, 122959.00,
+         'BANK_TRANSFER', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-004', 'Premium monthly renewal'),
+        (gen_random_uuid(), 0, t - INTERVAL '5 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan1, subid, 299.99, 1229959.00,
+         'ONLINE', 'PENDING', 'SUBSCRIPTION',
+         'PAY-2025-005', 'Renewal attempt — pending bank confirmation'),
+        (gen_random_uuid(), 0, t - INTERVAL '6 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan2, subid, 29.99, 122959.00,
+         'CASH', 'FAILED', 'SUBSCRIPTION',
+         'PAY-2025-006', 'Payment failed — retry required'),
+        (gen_random_uuid(), 0, t - INTERVAL '7 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan3, subid, 9.99, 40959.00,
+         'ONLINE', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-007', 'Basic plan trial conversion'),
+        (gen_random_uuid(), 0, t - INTERVAL '8 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan1, subid, 299.99, 1229959.00,
+         'BANK_TRANSFER', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-008', 'Early renewal with discount'),
+        (gen_random_uuid(), 0, t - INTERVAL '9 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan2, subid, 29.99, 122959.00,
+         'ONLINE', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-009', 'Auto-renewal charge'),
+        (gen_random_uuid(), 0, t - INTERVAL '10 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan3, subid, 9.99, 40959.00,
+         'CASH', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-010', 'Downgrade to basic plan'),
+        (gen_random_uuid(), 0, t - INTERVAL '11 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan1, subid, 299.99, 1229959.00,
+         'BANK_TRANSFER', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-011', 'Upgrade to annual plan'),
+        (gen_random_uuid(), 0, t - INTERVAL '12 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan2, subid, 29.99, 122959.00,
+         'ONLINE', 'REFUNDED', 'SUBSCRIPTION',
+         'PAY-2025-012', 'Refund issued for double charge'),
+        (gen_random_uuid(), 0, t - INTERVAL '13 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan3, subid, 9.99, 40959.00,
+         'CASH', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-013', 'Monthly plan payment'),
+        (gen_random_uuid(), 0, t - INTERVAL '14 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan1, subid, 299.99, 1229959.00,
+         'BANK_TRANSFER', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-014', 'Annual plan payment Q4'),
+        (gen_random_uuid(), 0, t - INTERVAL '15 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan2, subid, 29.99, 122959.00,
+         'ONLINE', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-015', 'Premium plan payment'),
+        (gen_random_uuid(), 0, t - INTERVAL '16 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan3, subid, 9.99, 40959.00,
+         'CASH', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-016', 'Basic plan Q3 payment'),
+        (gen_random_uuid(), 0, t - INTERVAL '17 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan1, subid, 299.99, 1229959.00,
+         'BANK_TRANSFER', 'PENDING', 'SUBSCRIPTION',
+         'PAY-2025-017', 'Annual renewal — awaiting confirmation'),
+        (gen_random_uuid(), 0, t - INTERVAL '18 months', t, 'system', 'system', false, NULL, NULL,
+         NULL, bid, plan2, subid, 29.99, 122959.00,
+         'ONLINE', 'COMPLETED', 'SUBSCRIPTION',
+         'PAY-2025-018', 'Historic premium payment');
 
-    -- ── Notifications (main users) ────────────────────────────
-    INSERT INTO notifications (
-        id, version, created_at, updated_at, created_by, updated_by,
-        is_deleted, deleted_at, deleted_by,
-        title, message, message_type, priority, status, recipient_type,
-        user_id, user_name, business_id, group_id,
-        is_seen, seen_at, is_read, read_at
-    ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         'Welcome to Menu Scanner!',
-         'Your platform admin account is ready. Full system access granted.',
-         'WELCOME_MESSAGE', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
-         puid, 'Phat Menghor', NULL, NULL, false, NULL, false, NULL),
+    -- ── Notifications (50 for all 3 main users) ───────────────
+    -- Platform user notifications (16)
+    FOR i IN 1..16 LOOP
+        INSERT INTO notifications (
+            id, version, created_at, updated_at, created_by, updated_by,
+            is_deleted, deleted_at, deleted_by,
+            title, message, message_type, priority, status, recipient_type,
+            user_id, user_name, business_id, group_id,
+            is_seen, seen_at, is_read, read_at
+        ) VALUES (
+            gen_random_uuid(), 0, t - (i || ' hours')::INTERVAL, t,
+            'system', 'system', false, NULL, NULL,
+            CASE (i % 4)
+                WHEN 0 THEN 'New Business Registered'
+                WHEN 1 THEN 'System Alert'
+                WHEN 2 THEN 'Platform Report Ready'
+                ELSE         'Welcome to Menu Scanner!'
+            END,
+            CASE (i % 4)
+                WHEN 0 THEN 'Business #' || i || ' registered and awaiting approval.'
+                WHEN 1 THEN 'System resource usage is at ' || (60 + i * 2) || '%%.'
+                WHEN 2 THEN 'Daily platform report for ' || (CURRENT_DATE - i)::TEXT || ' is ready.'
+                ELSE         'Platform admin account is fully active. Notification #' || i
+            END,
+            CASE (i % 4) WHEN 0 THEN 'BUSINESS_APPROVED' WHEN 1 THEN 'SYSTEM_ALERT' WHEN 2 THEN 'DAILY_REPORT' ELSE 'WELCOME_MESSAGE' END,
+            CASE (i % 3) WHEN 0 THEN 'HIGH' WHEN 1 THEN 'NORMAL' ELSE 'LOW' END,
+            'DELIVERED', 'INDIVIDUAL_USER',
+            puid, 'Phat Menghor', NULL, NULL,
+            (i % 2 = 0),
+            CASE WHEN i % 2 = 0 THEN t - ((i - 1) || ' hours')::INTERVAL ELSE NULL END,
+            (i % 3 = 0),
+            CASE WHEN i % 3 = 0 THEN t - ((i - 1) || ' hours')::INTERVAL ELSE NULL END
+        );
+    END LOOP;
 
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         'Business Account Activated',
-         '"Phat Restaurant & Café" is now live and ready to accept orders!',
-         'BUSINESS_APPROVED', 'HIGH', 'DELIVERED', 'INDIVIDUAL_USER',
-         buid, 'Menghor Business', bid, NULL, false, NULL, false, NULL),
+    -- Business user notifications (17)
+    FOR i IN 1..17 LOOP
+        INSERT INTO notifications (
+            id, version, created_at, updated_at, created_by, updated_by,
+            is_deleted, deleted_at, deleted_by,
+            title, message, message_type, priority, status, recipient_type,
+            user_id, user_name, business_id, group_id,
+            is_seen, seen_at, is_read, read_at
+        ) VALUES (
+            gen_random_uuid(), 0, t - (i || ' hours')::INTERVAL, t,
+            'system', 'system', false, NULL, NULL,
+            CASE (i % 5)
+                WHEN 0 THEN 'New Order Received!'
+                WHEN 1 THEN 'Daily Report Ready'
+                WHEN 2 THEN 'Subscription Reminder'
+                WHEN 3 THEN 'Staff Check-In Alert'
+                ELSE         'Low Stock Warning'
+            END,
+            CASE (i % 5)
+                WHEN 0 THEN 'Order #ORD-2025-' || LPAD(i::TEXT, 6, '0') || ' placed. Please confirm promptly.'
+                WHEN 1 THEN 'Your sales report for ' || (CURRENT_DATE - i)::TEXT || ' is ready to view.'
+                WHEN 2 THEN 'Your subscription renews in ' || (30 - i) || ' days.'
+                WHEN 3 THEN 'Staff member checked in late today at ' || (8 + i % 3) || ':' || LPAD((i * 7 % 60)::TEXT, 2, '0') || '.'
+                ELSE         'Product inventory running low for ' || i || ' items.'
+            END,
+            CASE (i % 5) WHEN 0 THEN 'ORDER_NEW' WHEN 1 THEN 'DAILY_REPORT' WHEN 2 THEN 'SUBSCRIPTION_RENEWAL' WHEN 3 THEN 'SYSTEM_ALERT' ELSE 'SYSTEM_ALERT' END,
+            CASE (i % 3) WHEN 0 THEN 'HIGH' WHEN 1 THEN 'NORMAL' ELSE 'LOW' END,
+            'DELIVERED', 'INDIVIDUAL_USER',
+            buid, 'Menghor Business', bid, NULL,
+            (i % 2 = 0),
+            CASE WHEN i % 2 = 0 THEN t - ((i - 1) || ' hours')::INTERVAL ELSE NULL END,
+            (i % 3 = 0),
+            CASE WHEN i % 3 = 0 THEN t - ((i - 1) || ' hours')::INTERVAL ELSE NULL END
+        );
+    END LOOP;
 
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         '🎉 1-Year Subscription Activated',
-         'Annual Premium activated. Valid until ' || (t + INTERVAL '1 year')::DATE::TEXT || '. Enjoy unlimited access all year!',
-         'SUBSCRIPTION_RENEWAL', 'HIGH', 'DELIVERED', 'INDIVIDUAL_USER',
-         buid, 'Menghor Business', bid, NULL, false, NULL, false, NULL),
-
-        (gen_random_uuid(), 0, t - INTERVAL '30 minutes', t, 'system', 'system', false, NULL, NULL,
-         'New Order Received!',
-         'Order #ORD-2025-000001 has been placed. Please confirm promptly.',
-         'ORDER_NEW', 'HIGH', 'DELIVERED', 'INDIVIDUAL_USER',
-         buid, 'Menghor Business', bid, NULL, false, NULL, false, NULL),
-
-        (gen_random_uuid(), 0, t - INTERVAL '2 hours', t, 'system', 'system', false, NULL, NULL,
-         'Daily Report Ready',
-         'Your daily sales report for ' || CURRENT_DATE::TEXT || ' is ready.',
-         'DAILY_REPORT', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
-         buid, 'Menghor Business', bid, NULL,
-         true, t - INTERVAL '1 hour', true, t - INTERVAL '45 minutes'),
-
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         'Welcome!',
-         'Welcome to Menu Scanner! Browse menus and place your first order.',
-         'WELCOME_MESSAGE', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
-         cuid, 'Menghor Customer', NULL, NULL, false, NULL, false, NULL),
-
-        (gen_random_uuid(), 0, t - INTERVAL '2 hours', t, 'system', 'system', false, NULL, NULL,
-         'Order Confirmed',
-         'Order #ORD-2025-000001 confirmed and being prepared. ETA: 30 mins.',
-         'ORDER_CONFIRMED', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
-         cuid, 'Menghor Customer', bid, NULL,
-         true, t - INTERVAL '1 hour', true, t - INTERVAL '30 minutes'),
-
-        (gen_random_uuid(), 0, t - INTERVAL '1 hour', t, 'system', 'system', false, NULL, NULL,
-         'Special Offer!',
-         'Flash sale: 20% off all beverages today only! Order now.',
-         'PROMOTION_ANNOUNCEMENT', 'NORMAL', 'DELIVERED', 'INDIVIDUAL_USER',
-         cuid, 'Menghor Customer', bid, NULL, false, NULL, false, NULL);
+    -- Customer notifications (17)
+    FOR i IN 1..17 LOOP
+        INSERT INTO notifications (
+            id, version, created_at, updated_at, created_by, updated_by,
+            is_deleted, deleted_at, deleted_by,
+            title, message, message_type, priority, status, recipient_type,
+            user_id, user_name, business_id, group_id,
+            is_seen, seen_at, is_read, read_at
+        ) VALUES (
+            gen_random_uuid(), 0, t - (i || ' hours')::INTERVAL, t,
+            'system', 'system', false, NULL, NULL,
+            CASE (i % 5)
+                WHEN 0 THEN 'Order Confirmed'
+                WHEN 1 THEN 'Order Delivered!'
+                WHEN 2 THEN 'Special Offer!'
+                WHEN 3 THEN 'Your Review Request'
+                ELSE         'Welcome!'
+            END,
+            CASE (i % 5)
+                WHEN 0 THEN 'Order #ORD-2025-' || LPAD(i::TEXT, 6, '0') || ' confirmed. ETA: 30 mins.'
+                WHEN 1 THEN 'Your order #ORD-2025-' || LPAD(i::TEXT, 6, '0') || ' has been delivered. Enjoy!'
+                WHEN 2 THEN (10 + i * 2) || '%% off your next order! Use code SAVE' || i || '. Valid today only.'
+                WHEN 3 THEN 'How was your last order? Tap to leave a review and earn points.'
+                ELSE         'Welcome to Menu Scanner! Browse and order notification #' || i
+            END,
+            CASE (i % 5) WHEN 0 THEN 'ORDER_CONFIRMED' WHEN 1 THEN 'ORDER_NEW' WHEN 2 THEN 'PROMOTION_ANNOUNCEMENT' WHEN 3 THEN 'SYSTEM_ALERT' ELSE 'WELCOME_MESSAGE' END,
+            CASE (i % 3) WHEN 0 THEN 'HIGH' WHEN 1 THEN 'NORMAL' ELSE 'LOW' END,
+            'DELIVERED', 'INDIVIDUAL_USER',
+            cuid, 'Menghor Customer', bid, NULL,
+            (i % 2 = 0),
+            CASE WHEN i % 2 = 0 THEN t - ((i - 1) || ' hours')::INTERVAL ELSE NULL END,
+            (i % 3 = 0),
+            CASE WHEN i % 3 = 0 THEN t - ((i - 1) || ' hours')::INTERVAL ELSE NULL END
+        );
+    END LOOP;
 
     RAISE NOTICE 'Phase 1 complete — core entities created.';
 END $$;
@@ -1003,18 +1272,22 @@ LIMIT 50;
 --             audit_logs          (all 43 tables now seeded)
 -- ============================================================
 
--- ── 11a: IMAGES  (2 base64 PNG records) ──────────────────────
+-- ── 11a: IMAGES  (20 base64 PNG records) ─────────────────────
 -- Served via GET http://192.168.103.106:8080/api/images/{id}
 INSERT INTO images (
     id, version, created_at, updated_at, created_by, updated_by,
     is_deleted, deleted_at, deleted_by, type, data
-) VALUES
-    (gen_random_uuid(), 0, NOW(), NOW(), 'seed_script', 'seed_script', false, NULL, NULL,
-     'image/png',
-     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='),
-    (gen_random_uuid(), 0, NOW(), NOW(), 'seed_script', 'seed_script', false, NULL, NULL,
-     'image/png',
-     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII=');
+)
+SELECT
+    gen_random_uuid(), 0,
+    NOW() - (i || ' hours')::INTERVAL, NOW(),
+    'seed_script', 'seed_script', false, NULL, NULL,
+    CASE WHEN i % 2 = 0 THEN 'image/png' ELSE 'image/jpeg' END,
+    CASE WHEN i % 2 = 0
+        THEN 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+        ELSE 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII='
+    END
+FROM generate_series(1, 20) gs(i);
 
 -- ── 11b: LOCATION PROVINCE  (40) ─────────────────────────────
 INSERT INTO location_province_cbc (
@@ -1389,24 +1662,38 @@ BEGIN
   RAISE NOTICE '  Customers : customer1-197@test.com';
   RAISE NOTICE 'Password for all accounts : password';
   RAISE NOTICE '---------------------------------------------';
-  RAISE NOTICE 'Products    : 40,000  (20 cats | 10 brands)';
+  RAISE NOTICE 'Products    : 40,000  (20 cats | 20 brands)';
   RAISE NOTICE 'Img / Sizes : ~60,000 images | ~40,000 sizes';
-  RAISE NOTICE 'Orders      : 500  (items + history + payments)';
+  RAISE NOTICE 'Orders      : 1,000  (items + history + payments)';
   RAISE NOTICE 'Subscription: Annual Premium — 1 YEAR ($299.99)';
   RAISE NOTICE '---------------------------------------------';
-  RAISE NOTICE 'ALL 43 TABLES SEEDED (min 40 rows each):';
+  RAISE NOTICE 'ALL TABLES SEEDED — min 16 rows each (pagination-ready):';
+  RAISE NOTICE '  subscription_plans     : 20';
+  RAISE NOTICE '  delivery_options       : 20';
+  RAISE NOTICE '  order_process_statuses : 20';
+  RAISE NOTICE '  leave_type_enum        : 20';
+  RAISE NOTICE '  work_schedule_type_enum: 16';
+  RAISE NOTICE '  banners                : 20';
+  RAISE NOTICE '  categories             : 20';
+  RAISE NOTICE '  brands                 : 20';
+  RAISE NOTICE '  leaves                 : 20  (business owner)';
+  RAISE NOTICE '  payments               : 20';
+  RAISE NOTICE '  notifications          : 50  (16 platform | 17 business | 17 customer)';
+  RAISE NOTICE '  customer_addresses     : 5   (main customer)';
+  RAISE NOTICE '  cart_items             : 20  (main customer)';
+  RAISE NOTICE '  product_favorites      : 50  (main customer)';
+  RAISE NOTICE '  images (base64)        : 20';
   RAISE NOTICE '  location_province_cbc  : 40';
   RAISE NOTICE '  location_district_cbc  : 80';
   RAISE NOTICE '  location_commune_cbc   : 160';
   RAISE NOTICE '  location_village_cbc   : 320';
-  RAISE NOTICE '  schedule_work_days     : 147  (21 schedules x 7 days)';
-  RAISE NOTICE '  attendance_check_ins   : 300+ (clock-in + clock-out)';
+  RAISE NOTICE '  schedule_work_days     : 147+  (21 schedules x 7 days)';
+  RAISE NOTICE '  attendance_check_ins   : 300+  (clock-in + clock-out)';
   RAISE NOTICE '  business_order_payments: 50';
   RAISE NOTICE '  refresh_tokens         : 50';
   RAISE NOTICE '  user_sessions          : 50';
   RAISE NOTICE '  blacklisted_tokens     : 50';
   RAISE NOTICE '  audit_logs             : 100';
-  RAISE NOTICE '  images (base64 PNG)    : 2';
-  RAISE NOTICE '  All image URLs → freepik public image';
+  RAISE NOTICE '  All product image URLs → freepik public image';
   RAISE NOTICE '=============================================';
 END $$;
