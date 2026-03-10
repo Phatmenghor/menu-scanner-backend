@@ -21,15 +21,16 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
 
 logging:
   level:
     root: INFO
-    com.emenu: DEBUG
-    org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
+    com.emenu: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+    org.hibernate.SQL: WARN
     org.hibernate.type: WARN
