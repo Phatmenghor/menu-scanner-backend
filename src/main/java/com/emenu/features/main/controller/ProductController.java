@@ -89,9 +89,23 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductDetailDto>> deleteProduct(@PathVariable UUID id) {
         log.info("Delete product: {}", id);
-        
+
         ProductDetailDto product = productService.deleteProduct(id);
-        
+
         return ResponseEntity.ok(ApiResponse.success("Product deleted successfully", product));
+    }
+
+    @PostMapping("/admin/sync-promotions")
+    public ResponseEntity<ApiResponse<String>> syncExpiredPromotions() {
+        log.info("Manual sync: clearing expired promotion display fields");
+
+        int[] result = productService.syncExpiredPromotions();
+        String message = String.format(
+            "Sync complete. Updated %d products without sizes, %d products with sizes. Total: %d",
+            result[0], result[1], result[0] + result[1]
+        );
+
+        log.info(message);
+        return ResponseEntity.ok(ApiResponse.success(message, null));
     }
 }

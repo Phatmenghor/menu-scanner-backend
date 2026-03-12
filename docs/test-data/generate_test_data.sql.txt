@@ -1041,9 +1041,22 @@ SELECT
     CASE WHEN i % 7 = 0 THEN NOW() - INTERVAL '7 days'       ELSE NULL END,
     CASE WHEN i % 7 = 0 THEN NOW() + INTERVAL '23 days'      ELSE NULL END,
 
-    -- display_price = same as price for test data
+    -- display_price (discounted for promoted products, base price otherwise)
+    CASE WHEN i % 7 = 0 THEN
+        ROUND(
+            ROUND((1.50 + (ABS(HASHTEXT(i::TEXT)) % 2351) / 100.0)::NUMERIC, 2)
+            * (1 - (5 + ABS(HASHTEXT((i*7)::TEXT)) % 26)::NUMERIC / 100.0)
+        , 2)
+    ELSE
+        ROUND((1.50 + (ABS(HASHTEXT(i::TEXT)) % 2351) / 100.0)::NUMERIC, 2)
+    END,
+    -- display_origin_price = base price always
     ROUND((1.50 + (ABS(HASHTEXT(i::TEXT)) % 2351) / 100.0)::NUMERIC, 2),
-    NULL, NULL, NULL, NULL, NULL,           -- display_origin & promotion mirrors
+    -- display_promotion_type, display_promotion_value, display_promotion_from_date, display_promotion_to_date
+    CASE WHEN i % 7 = 0 THEN 'PERCENTAGE' ELSE NULL END,
+    CASE WHEN i % 7 = 0 THEN (5 + ABS(HASHTEXT((i*7)::TEXT)) % 26)::NUMERIC ELSE NULL END,
+    CASE WHEN i % 7 = 0 THEN NOW() - INTERVAL '7 days'  ELSE NULL END,
+    CASE WHEN i % 7 = 0 THEN NOW() + INTERVAL '23 days' ELSE NULL END,
 
     (i % 3 = 0),                            -- has_sizes   (~33%)
     (i % 7 = 0),                            -- has_active_promotion (~14%, aligns with promotion above)

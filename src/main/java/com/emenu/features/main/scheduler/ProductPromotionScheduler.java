@@ -1,6 +1,6 @@
 package com.emenu.features.main.scheduler;
 
-import com.emenu.features.main.repository.ProductRepository;
+import com.emenu.features.main.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ProductPromotionScheduler {
 
-    private final ProductRepository productRepository;
+    private final ProductService productService;
 
     /**
      * Runs every day at 00:05 to clear display fields for products
@@ -21,12 +21,9 @@ public class ProductPromotionScheduler {
     public void clearExpiredPromotions() {
         log.info("[Scheduler] Clearing expired product promotions...");
 
-        int noSizesUpdated = productRepository.clearExpiredPromotionsForProductsWithoutSizes();
-        log.info("[Scheduler] Products without sizes updated: {}", noSizesUpdated);
+        int[] result = productService.syncExpiredPromotions();
 
-        int withSizesUpdated = productRepository.clearExpiredPromotionsForProductsWithSizes();
-        log.info("[Scheduler] Products with sizes updated: {}", withSizesUpdated);
-
-        log.info("[Scheduler] Done. Total updated: {}", noSizesUpdated + withSizesUpdated);
+        log.info("[Scheduler] Done. Products without sizes: {}, with sizes: {}, total: {}",
+                result[0], result[1], result[0] + result[1]);
     }
 }
