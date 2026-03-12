@@ -14,12 +14,12 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "business_order_payments")
+@Table(name = "order_payments")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class BusinessOrderPayment extends BaseUUIDEntity {
+public class OrderPayment extends BaseUUIDEntity {
 
     @Column(name = "business_id", nullable = false)
     private UUID businessId;
@@ -38,8 +38,21 @@ public class BusinessOrderPayment extends BaseUUIDEntity {
     @Column(name = "payment_reference", nullable = false, unique = true)
     private String paymentReference; // Generated reference
 
-    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
-    private BigDecimal amount;
+    // Pricing breakdown for easy payment records/download
+    @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
+    private BigDecimal subtotal;          // Items total before discounts
+
+    @Column(name = "discount_amount", precision = 10, scale = 2)
+    private BigDecimal discountAmount = BigDecimal.ZERO; // Total discount applied
+
+    @Column(name = "delivery_fee", precision = 10, scale = 2)
+    private BigDecimal deliveryFee = BigDecimal.ZERO;    // Delivery cost
+
+    @Column(name = "tax_amount", precision = 10, scale = 2)
+    private BigDecimal taxAmount = BigDecimal.ZERO;      // Tax (reserved for future use)
+
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalAmount;       // Final = subtotal - discount + delivery + tax
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false)
@@ -47,7 +60,7 @@ public class BusinessOrderPayment extends BaseUUIDEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private PaymentStatus status = PaymentStatus.COMPLETED; // Auto-completed for POS orders
+    private PaymentStatus status = PaymentStatus.COMPLETED;
 
     // Customer payment method for POS orders (e.g., "Cash", "Card", "Mobile Payment")
     @Column(name = "customer_payment_method")
@@ -75,18 +88,6 @@ public class BusinessOrderPayment extends BaseUUIDEntity {
     }
 
     public String getFormattedAmount() {
-        return amount != null ? String.format("$%.2f", amount) : "$0.00";
-    }
-
-    // Constructor for creating payment
-    public BusinessOrderPayment(UUID businessId, UUID orderId, String paymentReference, 
-                              BigDecimal amount, PaymentMethod paymentMethod, String customerPaymentMethod) {
-        this.businessId = businessId;
-        this.orderId = orderId;
-        this.paymentReference = paymentReference;
-        this.amount = amount;
-        this.paymentMethod = paymentMethod;
-        this.customerPaymentMethod = customerPaymentMethod;
-        this.status = PaymentStatus.COMPLETED; // Auto-complete for POS orders
+        return totalAmount != null ? String.format("$%.2f", totalAmount) : "$0.00";
     }
 }

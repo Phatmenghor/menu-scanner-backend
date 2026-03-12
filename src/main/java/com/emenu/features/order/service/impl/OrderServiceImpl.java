@@ -4,20 +4,20 @@ import com.emenu.exception.custom.NotFoundException;
 import com.emenu.exception.custom.ValidationException;
 import com.emenu.features.auth.models.User;
 import com.emenu.features.order.dto.filter.OrderFilterRequest;
-import com.emenu.features.order.dto.helper.BusinessOrderPaymentCreateHelper;
+import com.emenu.features.order.dto.helper.OrderPaymentCreateHelper;
 import com.emenu.features.order.dto.helper.OrderCreateHelper;
 import com.emenu.features.order.dto.helper.OrderItemCreateHelper;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.dto.update.OrderUpdateRequest;
-import com.emenu.features.order.mapper.BusinessOrderPaymentMapper;
+import com.emenu.features.order.mapper.OrderPaymentMapper;
 import com.emenu.features.order.mapper.OrderMapper;
-import com.emenu.features.order.models.BusinessOrderPayment;
+import com.emenu.features.order.models.OrderPayment;
 import com.emenu.features.order.models.Cart;
 import com.emenu.features.order.models.Order;
 import com.emenu.features.order.models.OrderItem;
 import com.emenu.features.order.models.OrderProcessStatus;
-import com.emenu.features.order.repository.BusinessOrderPaymentRepository;
+import com.emenu.features.order.repository.OrderPaymentRepository;
 import com.emenu.features.order.repository.CartRepository;
 import com.emenu.features.order.repository.OrderProcessStatusRepository;
 import com.emenu.features.order.repository.OrderRepository;
@@ -48,10 +48,10 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
-    private final BusinessOrderPaymentRepository paymentRepository;
+    private final OrderPaymentRepository paymentRepository;
     private final OrderProcessStatusRepository orderProcessStatusRepository;
     private final OrderMapper orderMapper;
-    private final BusinessOrderPaymentMapper paymentMapper;
+    private final OrderPaymentMapper paymentMapper;
     private final SecurityUtils securityUtils;
     private final OrderNumberGenerator orderNumberGenerator;
     private final PaymentReferenceGenerator paymentReferenceGenerator;
@@ -210,26 +210,34 @@ public class OrderServiceImpl implements OrderService {
 
     private void createOrderItemsFromCart(UUID orderId, Cart cart) {
         BigDecimal subtotal = BigDecimal.ZERO;
+        BigDecimal discountAmount = BigDecimal.ZERO;
 
         for (var cartItem : cart.getItems()) {
             OrderItemCreateHelper helper = orderMapper.buildOrderItemHelperFromCartItem(cartItem, orderId);
             OrderItem orderItem = orderMapper.createOrderItemFromHelper(helper);
             orderItem.calculateTotalPrice();
             subtotal = subtotal.add(orderItem.getTotalPrice());
+            // Accumulate discount = base price - final price per item * quantity
+            BigDecimal itemDiscount = cartItem.getCurrentPrice().subtract(cartItem.getFinalPrice())
+                    .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+            if (itemDiscount.compareTo(BigDecimal.ZERO) > 0) {
+                discountAmount = discountAmount.add(itemDiscount);
+            }
         }
 
         Order order = orderRepository.findById(orderId).orElseThrow();
         order.setSubtotal(subtotal);
+        order.setDiscountAmount(discountAmount);
 
-        // Calculate total with delivery fee (use BigDecimal.ZERO if null)
         BigDecimal deliveryFee = order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO;
-        order.setTotalAmount(subtotal.add(deliveryFee));
+        BigDecimal taxAmount = order.getTaxAmount() != null ? order.getTaxAmount() : BigDecimal.ZERO;
+        order.setTotalAmount(subtotal.subtract(discountAmount).add(deliveryFee).add(taxAmount));
         orderRepository.save(order);
     }
 
     private void createOrderItemsFromCartSummary(UUID orderId, com.emenu.features.order.dto.response.CartSummaryResponse cartSummary) {
-        // Use subtotal from frontend cart summary (already calculated)
-        BigDecimal subtotal = cartSummary.getSubtotal();
+        BigDecimal subtotal = cartSummary.getSubtotal() != null ? cartSummary.getSubtotal() : BigDecimal.ZERO;
+        BigDecimal discountAmount = cartSummary.getTotalDiscount() != null ? cartSummary.getTotalDiscount() : BigDecimal.ZERO;
 
         for (var item : cartSummary.getItems()) {
             OrderItemCreateHelper helper = OrderItemCreateHelper.builder()
@@ -239,42 +247,48 @@ public class OrderServiceImpl implements OrderService {
                     .productName(item.getProduct() != null ? item.getProduct().getName() : null)
                     .productImageUrl(item.getProduct() != null ? item.getProduct().getImageUrl() : null)
                     .sizeName(item.getProduct() != null ? item.getProduct().getSizeName() : null)
-                    // Pricing snapshot from frontend cart (with discounts already applied)
                     .currentPrice(item.getCurrentPrice())
                     .finalPrice(item.getFinalPrice())
-                    .unitPrice(item.getFinalPrice()) // unitPrice = finalPrice for backward compat
+                    .unitPrice(item.getFinalPrice())
                     .hasPromotion(item.getHasActivePromotion())
-                    // Promotion details
                     .promotionType(item.getPromotionType())
                     .promotionValue(item.getPromotionValue())
-                    // Item details
                     .quantity(item.getQuantity())
                     .build();
 
             OrderItem orderItem = orderMapper.createOrderItemFromHelper(helper);
-            // Use totalPrice from frontend (already calculated with discounts)
             orderItem.setTotalPrice(item.getTotalPrice());
         }
 
         Order order = orderRepository.findById(orderId).orElseThrow();
         order.setSubtotal(subtotal);
+        order.setDiscountAmount(discountAmount);
 
-        // Calculate total with delivery fee (use BigDecimal.ZERO if null)
         BigDecimal deliveryFee = order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO;
-        order.setTotalAmount(subtotal.add(deliveryFee));
+        BigDecimal taxAmount = order.getTaxAmount() != null ? order.getTaxAmount() : BigDecimal.ZERO;
+        order.setTotalAmount(subtotal.subtract(discountAmount).add(deliveryFee).add(taxAmount));
         orderRepository.save(order);
     }
 
     private void createPaymentRecord(Order order) {
-        BusinessOrderPaymentCreateHelper helper = BusinessOrderPaymentCreateHelper.builder()
+        BigDecimal subtotal = order.getSubtotal() != null ? order.getSubtotal() : BigDecimal.ZERO;
+        BigDecimal discountAmount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal deliveryFee = order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO;
+        BigDecimal taxAmount = order.getTaxAmount() != null ? order.getTaxAmount() : BigDecimal.ZERO;
+
+        OrderPaymentCreateHelper helper = OrderPaymentCreateHelper.builder()
                 .businessId(order.getBusinessId())
                 .orderId(order.getId())
                 .referenceNumber(paymentReferenceGenerator.generateUniqueReference())
-                .amount(order.getTotalAmount())
+                .subtotal(subtotal)
+                .discountAmount(discountAmount)
+                .deliveryFee(deliveryFee)
+                .taxAmount(taxAmount)
+                .totalAmount(order.getTotalAmount())
                 .paymentMethod(order.getPaymentMethod())
                 .customerPaymentMethod(null)
                 .build();
-        BusinessOrderPayment payment = paymentMapper.createFromHelper(helper);
+        OrderPayment payment = paymentMapper.createFromHelper(helper);
         paymentRepository.save(payment);
     }
 

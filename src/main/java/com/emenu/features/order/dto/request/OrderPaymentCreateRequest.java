@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
-public class BusinessOrderPaymentCreateRequest {
+public class OrderPaymentCreateRequest {
     
     @NotNull(message = "Order ID is required")
     private UUID orderId;

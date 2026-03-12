@@ -10,17 +10,24 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
- * Helper DTO for creating BusinessOrderPayment via MapStruct
+ * Helper DTO for creating OrderPayment via MapStruct
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BusinessOrderPaymentCreateHelper {
+public class OrderPaymentCreateHelper {
     private UUID businessId;
     private UUID orderId;
     private String referenceNumber;
-    private BigDecimal amount;
+
+    // Pricing breakdown
+    private BigDecimal subtotal;
+    private BigDecimal discountAmount;
+    private BigDecimal deliveryFee;
+    private BigDecimal taxAmount;
+    private BigDecimal totalAmount;
+
     private PaymentMethod paymentMethod;
     private String customerPaymentMethod;
 }

@@ -56,7 +56,7 @@ public interface OrderMapper {
                 .orderNumber(orderNumber)
                 .customerId(customerId)
                 .businessId(request.getBusinessId())
-                .paymentMethod(request.getPaymentMethod())
+                .paymentMethod(request.getPayment() != null ? request.getPayment().getPaymentMethod() : null)
                 .customerNote(request.getCustomerNote());
 
         // Serialize full delivery address object as JSON snapshot
