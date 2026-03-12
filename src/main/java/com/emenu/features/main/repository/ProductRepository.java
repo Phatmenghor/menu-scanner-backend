@@ -103,23 +103,22 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
            "AND (:brandId IS NULL OR p.brandId = :brandId) " +
            "AND (:statuses IS NULL OR p.status IN :statuses) " +
-           "AND (:hasPromotion IS NULL OR " +
-           "     (:hasPromotion = true AND (" +
-           "        (p.promotionValue IS NOT NULL AND p.promotionType IS NOT NULL " +
-           "         AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= CURRENT_TIMESTAMP) " +
-           "         AND (p.promotionToDate IS NULL OR p.promotionToDate >= CURRENT_TIMESTAMP)) " +
-           "        OR EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
-           "           AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
-           "           AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
-           "           AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP)))) " +
-           "     OR (:hasPromotion = false AND NOT (" +
-           "        (p.promotionValue IS NOT NULL AND p.promotionType IS NOT NULL " +
-           "         AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= CURRENT_TIMESTAMP) " +
-           "         AND (p.promotionToDate IS NULL OR p.promotionToDate >= CURRENT_TIMESTAMP)) " +
-           "        OR EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
-           "           AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
-           "           AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
-           "           AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP))))) " +
+           "AND (:needsPromotion IS NULL OR (" +
+           "     (p.promotionValue IS NOT NULL AND p.promotionType IS NOT NULL " +
+           "      AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "      AND (p.promotionToDate IS NULL OR p.promotionToDate >= CURRENT_TIMESTAMP)) " +
+           "     OR EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
+           "        AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
+           "        AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "        AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP)))) " +
+           "AND (:needsNoPromotion IS NULL OR (" +
+           "     (p.promotionValue IS NULL OR p.promotionType IS NULL " +
+           "      OR (p.promotionFromDate IS NOT NULL AND p.promotionFromDate > CURRENT_TIMESTAMP) " +
+           "      OR (p.promotionToDate IS NOT NULL AND p.promotionToDate < CURRENT_TIMESTAMP)) " +
+           "     AND NOT EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
+           "        AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
+           "        AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "        AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP)))) " +
            "AND (:minPrice IS NULL OR p.displayPrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.displayPrice <= :maxPrice) " +
            "AND (:search IS NULL OR :search = '' OR " +
@@ -132,7 +131,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         @Param("categoryId") UUID categoryId,
         @Param("brandId") UUID brandId,
         @Param("statuses") List<ProductStatus> statuses,
-        @Param("hasPromotion") Boolean hasPromotion,
+        @Param("needsPromotion") Boolean needsPromotion,
+        @Param("needsNoPromotion") Boolean needsNoPromotion,
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,
         @Param("search") String search,
@@ -151,23 +151,22 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
            "AND (:brandId IS NULL OR p.brandId = :brandId) " +
            "AND (:statuses IS NULL OR p.status IN :statuses) " +
-           "AND (:hasPromotion IS NULL OR " +
-           "     (:hasPromotion = true AND (" +
-           "        (p.promotionValue IS NOT NULL AND p.promotionType IS NOT NULL " +
-           "         AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= CURRENT_TIMESTAMP) " +
-           "         AND (p.promotionToDate IS NULL OR p.promotionToDate >= CURRENT_TIMESTAMP)) " +
-           "        OR EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
-           "           AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
-           "           AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
-           "           AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP)))) " +
-           "     OR (:hasPromotion = false AND NOT (" +
-           "        (p.promotionValue IS NOT NULL AND p.promotionType IS NOT NULL " +
-           "         AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= CURRENT_TIMESTAMP) " +
-           "         AND (p.promotionToDate IS NULL OR p.promotionToDate >= CURRENT_TIMESTAMP)) " +
-           "        OR EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
-           "           AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
-           "           AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
-           "           AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP))))) " +
+           "AND (:needsPromotion IS NULL OR (" +
+           "     (p.promotionValue IS NOT NULL AND p.promotionType IS NOT NULL " +
+           "      AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "      AND (p.promotionToDate IS NULL OR p.promotionToDate >= CURRENT_TIMESTAMP)) " +
+           "     OR EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
+           "        AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
+           "        AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "        AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP)))) " +
+           "AND (:needsNoPromotion IS NULL OR (" +
+           "     (p.promotionValue IS NULL OR p.promotionType IS NULL " +
+           "      OR (p.promotionFromDate IS NOT NULL AND p.promotionFromDate > CURRENT_TIMESTAMP) " +
+           "      OR (p.promotionToDate IS NOT NULL AND p.promotionToDate < CURRENT_TIMESTAMP)) " +
+           "     AND NOT EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
+           "        AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
+           "        AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "        AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP)))) " +
            "AND (:minPrice IS NULL OR p.displayPrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.displayPrice <= :maxPrice) " +
            "AND (:search IS NULL OR :search = '' OR " +
@@ -180,7 +179,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         @Param("categoryId") UUID categoryId,
         @Param("brandId") UUID brandId,
         @Param("statuses") List<ProductStatus> statuses,
-        @Param("hasPromotion") Boolean hasPromotion,
+        @Param("needsPromotion") Boolean needsPromotion,
+        @Param("needsNoPromotion") Boolean needsNoPromotion,
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,
         @Param("search") String search,
