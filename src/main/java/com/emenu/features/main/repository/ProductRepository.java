@@ -103,7 +103,23 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
            "AND (:brandId IS NULL OR p.brandId = :brandId) " +
            "AND (:statuses IS NULL OR p.status IN :statuses) " +
-           "AND (:hasPromotion IS NULL OR p.hasActivePromotion = :hasPromotion) " +
+           "AND (:hasPromotion IS NULL OR " +
+           "     (:hasPromotion = true AND (" +
+           "        (p.promotionValue IS NOT NULL AND p.promotionType IS NOT NULL " +
+           "         AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "         AND (p.promotionToDate IS NULL OR p.promotionToDate >= CURRENT_TIMESTAMP)) " +
+           "        OR EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
+           "           AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
+           "           AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "           AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP)))) " +
+           "     OR (:hasPromotion = false AND NOT (" +
+           "        (p.promotionValue IS NOT NULL AND p.promotionType IS NOT NULL " +
+           "         AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "         AND (p.promotionToDate IS NULL OR p.promotionToDate >= CURRENT_TIMESTAMP)) " +
+           "        OR EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
+           "           AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
+           "           AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "           AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP))))) " +
            "AND (:minPrice IS NULL OR p.displayPrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.displayPrice <= :maxPrice) " +
            "AND (:search IS NULL OR :search = '' OR " +
@@ -135,7 +151,23 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
            "AND (:brandId IS NULL OR p.brandId = :brandId) " +
            "AND (:statuses IS NULL OR p.status IN :statuses) " +
-           "AND (:hasPromotion IS NULL OR p.hasActivePromotion = :hasPromotion) " +
+           "AND (:hasPromotion IS NULL OR " +
+           "     (:hasPromotion = true AND (" +
+           "        (p.promotionValue IS NOT NULL AND p.promotionType IS NOT NULL " +
+           "         AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "         AND (p.promotionToDate IS NULL OR p.promotionToDate >= CURRENT_TIMESTAMP)) " +
+           "        OR EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
+           "           AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
+           "           AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "           AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP)))) " +
+           "     OR (:hasPromotion = false AND NOT (" +
+           "        (p.promotionValue IS NOT NULL AND p.promotionType IS NOT NULL " +
+           "         AND (p.promotionFromDate IS NULL OR p.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "         AND (p.promotionToDate IS NULL OR p.promotionToDate >= CURRENT_TIMESTAMP)) " +
+           "        OR EXISTS (SELECT sz FROM ProductSize sz WHERE sz.productId = p.id AND sz.isDeleted = false " +
+           "           AND sz.promotionValue IS NOT NULL AND sz.promotionType IS NOT NULL " +
+           "           AND (sz.promotionFromDate IS NULL OR sz.promotionFromDate <= CURRENT_TIMESTAMP) " +
+           "           AND (sz.promotionToDate IS NULL OR sz.promotionToDate >= CURRENT_TIMESTAMP))))) " +
            "AND (:minPrice IS NULL OR p.displayPrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.displayPrice <= :maxPrice) " +
            "AND (:search IS NULL OR :search = '' OR " +
