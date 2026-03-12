@@ -23,7 +23,7 @@ public interface CartMapper {
     @Mapping(target = "currentPrice", expression = "java(cartItem.getCurrentPrice())")
     @Mapping(target = "finalPrice", expression = "java(cartItem.getFinalPrice())")
     @Mapping(target = "totalPrice", expression = "java(cartItem.getTotalPrice())")
-    @Mapping(target = "hasPromotion", expression = "java(cartItem.hasDiscount())")
+    @Mapping(target = "hasActivePromotion", expression = "java(cartItem.hasDiscount())")
     CartItemResponse toItemResponse(CartItem cartItem);
 
     @AfterMapping
@@ -47,12 +47,14 @@ public interface CartMapper {
             response.setPromotionType(cartItem.getProductSize().getPromotionType() != null ?
                     cartItem.getProductSize().getPromotionType().name() : null);
             response.setPromotionValue(cartItem.getProductSize().getPromotionValue());
-            response.setPromotionEndDate(cartItem.getProductSize().getPromotionToDate());
+            response.setPromotionFromDate(cartItem.getProductSize().getPromotionFromDate());
+            response.setPromotionToDate(cartItem.getProductSize().getPromotionToDate());
         } else if (cartItem.getProduct() != null && cartItem.getProduct().isPromotionActive()) {
             response.setPromotionType(cartItem.getProduct().getPromotionType() != null ?
                     cartItem.getProduct().getPromotionType().name() : null);
             response.setPromotionValue(cartItem.getProduct().getPromotionValue());
-            response.setPromotionEndDate(cartItem.getProduct().getPromotionToDate());
+            response.setPromotionFromDate(cartItem.getProduct().getPromotionFromDate());
+            response.setPromotionToDate(cartItem.getProduct().getPromotionToDate());
         }
     }
 
