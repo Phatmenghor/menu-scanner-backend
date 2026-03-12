@@ -234,22 +234,21 @@ public class OrderServiceImpl implements OrderService {
         for (var item : cartSummary.getItems()) {
             OrderItemCreateHelper helper = OrderItemCreateHelper.builder()
                     .orderId(orderId)
-                    .productId(item.getProductId())
-                    .productSizeId(item.getProductSizeId())
-                    .productName(item.getProductName())
-                    .productImageUrl(item.getProductImageUrl())
-                    .sizeName(item.getSizeName())
+                    .productId(item.getProduct() != null ? item.getProduct().getId() : null)
+                    .productSizeId(item.getProduct() != null ? item.getProduct().getSizeId() : null)
+                    .productName(item.getProduct() != null ? item.getProduct().getName() : null)
+                    .productImageUrl(item.getProduct() != null ? item.getProduct().getImageUrl() : null)
+                    .sizeName(item.getProduct() != null ? item.getProduct().getSizeName() : null)
                     // Pricing snapshot from frontend cart (with discounts already applied)
                     .currentPrice(item.getCurrentPrice())
                     .finalPrice(item.getFinalPrice())
                     .unitPrice(item.getFinalPrice()) // unitPrice = finalPrice for backward compat
-                    .hasPromotion(item.getHasPromotion())
+                    .hasPromotion(item.getHasActivePromotion())
                     // Promotion details
                     .promotionType(item.getPromotionType())
                     .promotionValue(item.getPromotionValue())
                     // Item details
                     .quantity(item.getQuantity())
-                    .specialInstructions(item.getSpecialInstructions())
                     .build();
 
             OrderItem orderItem = orderMapper.createOrderItemFromHelper(helper);
