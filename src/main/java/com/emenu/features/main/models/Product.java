@@ -124,13 +124,21 @@ public class Product extends BaseUUIDEntity {
         if (activeSizes.isEmpty()) {
             // No active sizes - use product's own fields
             this.hasSizes = false;
-            this.displayPrice = getFinalPrice();
-            this.displayOriginPrice = this.price;
-            this.displayPromotionType = this.promotionType;
-            this.displayPromotionValue = this.promotionValue;
-            this.displayPromotionFromDate = this.promotionFromDate;
-            this.displayPromotionToDate = this.promotionToDate;
             this.hasActivePromotion = isPromotionActive();
+            this.displayOriginPrice = this.price;
+            if (this.hasActivePromotion) {
+                this.displayPrice = getFinalPrice();
+                this.displayPromotionType = this.promotionType;
+                this.displayPromotionValue = this.promotionValue;
+                this.displayPromotionFromDate = this.promotionFromDate;
+                this.displayPromotionToDate = this.promotionToDate;
+            } else {
+                this.displayPrice = this.price != null ? this.price : BigDecimal.ZERO;
+                this.displayPromotionType = null;
+                this.displayPromotionValue = null;
+                this.displayPromotionFromDate = null;
+                this.displayPromotionToDate = null;
+            }
         } else {
             // Has active sizes - use size fields
             this.hasSizes = true;
@@ -148,11 +156,19 @@ public class Product extends BaseUUIDEntity {
 
             if (displaySize != null) {
                 this.displayOriginPrice = displaySize.getPrice();
-                this.displayPromotionType = displaySize.getPromotionType();
-                this.displayPromotionValue = displaySize.getPromotionValue();
-                this.displayPromotionFromDate = displaySize.getPromotionFromDate();
-                this.displayPromotionToDate = displaySize.getPromotionToDate();
-                this.displayPrice = displaySize.getFinalPrice();
+                if (this.hasActivePromotion) {
+                    this.displayPromotionType = displaySize.getPromotionType();
+                    this.displayPromotionValue = displaySize.getPromotionValue();
+                    this.displayPromotionFromDate = displaySize.getPromotionFromDate();
+                    this.displayPromotionToDate = displaySize.getPromotionToDate();
+                    this.displayPrice = displaySize.getFinalPrice();
+                } else {
+                    this.displayPromotionType = null;
+                    this.displayPromotionValue = null;
+                    this.displayPromotionFromDate = null;
+                    this.displayPromotionToDate = null;
+                    this.displayPrice = displaySize.getPrice();
+                }
             }
         }
     }
