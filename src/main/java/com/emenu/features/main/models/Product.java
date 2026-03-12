@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -195,16 +196,16 @@ public class Product extends BaseUUIDEntity {
             return false;
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        
-        if (promotionFromDate != null && now.isBefore(promotionFromDate)) {
+        LocalDateTime today = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS);
+
+        if (promotionFromDate != null && today.isBefore(promotionFromDate.truncatedTo(ChronoUnit.DAYS))) {
             return false;
         }
-        
-        if (promotionToDate != null && now.isAfter(promotionToDate)) {
+
+        if (promotionToDate != null && today.isAfter(promotionToDate.truncatedTo(ChronoUnit.DAYS))) {
             return false;
         }
-        
+
         return true;
     }
 
