@@ -100,7 +100,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "AND (:businessId IS NULL OR p.businessId = :businessId) " +
            "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
            "AND (:brandId IS NULL OR p.brandId = :brandId) " +
-           "AND (:status IS NULL OR CAST(p.status AS string) = :status) " +
+           "AND (:#{#statuses == null || #statuses.isEmpty()} = true OR CAST(p.status AS string) IN :statuses) " +
            "AND (:hasPromotion IS NULL OR p.hasActivePromotion = :hasPromotion) " +
            "AND (:minPrice IS NULL OR p.displayPrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.displayPrice <= :maxPrice) " +
@@ -113,7 +113,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         @Param("businessId") UUID businessId,
         @Param("categoryId") UUID categoryId,
         @Param("brandId") UUID brandId,
-        @Param("status") String status,
+        @Param("statuses") List<String> statuses,
         @Param("hasPromotion") Boolean hasPromotion,
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,
@@ -132,7 +132,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "AND (:businessId IS NULL OR p.businessId = :businessId) " +
            "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
            "AND (:brandId IS NULL OR p.brandId = :brandId) " +
-           "AND (:status IS NULL OR CAST(p.status AS string) = :status) " +
+           "AND (:#{#statuses == null || #statuses.isEmpty()} = true OR CAST(p.status AS string) IN :statuses) " +
            "AND (:hasPromotion IS NULL OR p.hasActivePromotion = :hasPromotion) " +
            "AND (:minPrice IS NULL OR p.displayPrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.displayPrice <= :maxPrice) " +
@@ -145,7 +145,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         @Param("businessId") UUID businessId,
         @Param("categoryId") UUID categoryId,
         @Param("brandId") UUID brandId,
-        @Param("status") String status,
+        @Param("statuses") List<String> statuses,
         @Param("hasPromotion") Boolean hasPromotion,
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,

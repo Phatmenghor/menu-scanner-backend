@@ -73,7 +73,9 @@ public class ProductServiceImpl implements ProductService {
                 filter.getBusinessId(),
                 filter.getCategoryId(),
                 filter.getBrandId(),
-                filter.getStatus() != null ? filter.getStatus().name() : null,
+                filter.getStatuses() != null && !filter.getStatuses().isEmpty()
+                        ? filter.getStatuses().stream().map(Enum::name).toList()
+                        : null,
                 filter.getHasPromotion(),
                 filter.getMinPrice(),
                 filter.getMaxPrice(),
@@ -136,7 +138,9 @@ public class ProductServiceImpl implements ProductService {
                 filter.getBusinessId(),
                 filter.getCategoryId(),
                 filter.getBrandId(),
-                filter.getStatus() != null ? filter.getStatus().name() : null,
+                filter.getStatuses() != null && !filter.getStatuses().isEmpty()
+                        ? filter.getStatuses().stream().map(Enum::name).toList()
+                        : null,
                 filter.getHasPromotion(),
                 filter.getMinPrice(),
                 filter.getMaxPrice(),
@@ -206,7 +210,9 @@ public class ProductServiceImpl implements ProductService {
                 filter.getBusinessId(),
                 filter.getCategoryId(),
                 filter.getBrandId(),
-                filter.getStatus() != null ? filter.getStatus().name() : null,
+                filter.getStatuses() != null && !filter.getStatuses().isEmpty()
+                        ? filter.getStatuses().stream().map(Enum::name).toList()
+                        : null,
                 filter.getHasPromotion(),
                 filter.getMinPrice(),
                 filter.getMaxPrice(),

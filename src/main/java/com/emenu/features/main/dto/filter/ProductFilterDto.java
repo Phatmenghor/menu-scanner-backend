@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
@@ -14,7 +15,7 @@ public class ProductFilterDto extends BaseFilterRequest {
     private UUID businessId;
     private UUID categoryId;
     private UUID brandId;
-    private ProductStatus status;
+    private List<ProductStatus> statuses;
     private Boolean hasPromotion;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
