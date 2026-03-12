@@ -186,4 +186,57 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         @Param("search") String search,
         Sort sort
     );
+
+    /**
+     * Clear display promotion fields for products WITHOUT sizes whose promotion has expired
+     */
+    @Modifying
+    @Transactional
+    @Query(nativeQuery = true, value =
+        "UPDATE products SET " +
+        "    has_active_promotion = false, " +
+        "    display_promotion_type = NULL, " +
+        "    display_promotion_value = NULL, " +
+        "    display_promotion_from_date = NULL, " +
+        "    display_promotion_to_date = NULL, " +
+        "    display_price = price, " +
+        "    display_origin_price = price " +
+        "WHERE is_deleted = false " +
+        "  AND has_sizes = false " +
+        "  AND has_active_promotion = true " +
+        "  AND ( " +
+        "      promotion_value IS NULL " +
+        "      OR promotion_type IS NULL " +
+        "      OR (promotion_from_date IS NOT NULL AND promotion_from_date::date > CURRENT_DATE) " +
+        "      OR (promotion_to_date   IS NOT NULL AND promotion_to_date::date   < CURRENT_DATE) " +
+        "  )")
+    int clearExpiredPromotionsForProductsWithoutSizes();
+
+    /**
+     * Clear display promotion fields for products WITH sizes where no size has an active promotion
+     */
+    @Modifying
+    @Transactional
+    @Query(nativeQuery = true, value =
+        "UPDATE products p SET " +
+        "    has_active_promotion = false, " +
+        "    display_promotion_type = NULL, " +
+        "    display_promotion_value = NULL, " +
+        "    display_promotion_from_date = NULL, " +
+        "    display_promotion_to_date = NULL, " +
+        "    display_price        = (SELECT MIN(ps.price) FROM product_sizes ps WHERE ps.product_id = p.id AND ps.is_deleted = false), " +
+        "    display_origin_price = (SELECT MIN(ps.price) FROM product_sizes ps WHERE ps.product_id = p.id AND ps.is_deleted = false) " +
+        "WHERE p.is_deleted = false " +
+        "  AND p.has_sizes = true " +
+        "  AND p.has_active_promotion = true " +
+        "  AND NOT EXISTS ( " +
+        "      SELECT 1 FROM product_sizes ps " +
+        "      WHERE ps.product_id = p.id " +
+        "        AND ps.is_deleted = false " +
+        "        AND ps.promotion_value IS NOT NULL " +
+        "        AND ps.promotion_type  IS NOT NULL " +
+        "        AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date::date <= CURRENT_DATE) " +
+        "        AND (ps.promotion_to_date   IS NULL OR ps.promotion_to_date::date   >= CURRENT_DATE) " +
+        "  )")
+    int clearExpiredPromotionsForProductsWithSizes();
 }
