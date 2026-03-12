@@ -40,6 +40,7 @@ public interface ProductSizeMapper {
     @Mapping(target = "product", ignore = true)
     void updateEntity(ProductSizeUpdateDto dto, @MappingTarget ProductSize entity);
 
+    @Named("truncateSizeToDay")
     default LocalDateTime truncateSizeToDay(LocalDateTime dt) {
         return dt != null ? dt.truncatedTo(ChronoUnit.DAYS) : null;
     }

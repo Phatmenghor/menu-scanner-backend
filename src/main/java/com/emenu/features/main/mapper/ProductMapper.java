@@ -77,6 +77,7 @@ public interface ProductMapper {
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
     void updateEntity(ProductUpdateDto dto, @MappingTarget Product entity);
 
+    @Named("truncateToDay")
     default LocalDateTime truncateToDay(LocalDateTime dt) {
         return dt != null ? dt.truncatedTo(ChronoUnit.DAYS) : null;
     }
