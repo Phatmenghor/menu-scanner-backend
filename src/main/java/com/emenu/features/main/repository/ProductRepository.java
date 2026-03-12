@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.data.domain.Sort;
 
+import com.emenu.enums.product.ProductStatus;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -100,7 +102,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "AND (:businessId IS NULL OR p.businessId = :businessId) " +
            "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
            "AND (:brandId IS NULL OR p.brandId = :brandId) " +
-           "AND (:#{#statuses == null || #statuses.isEmpty()} = true OR CAST(p.status AS string) IN :statuses) " +
+           "AND (:statuses IS NULL OR p.status IN :statuses) " +
            "AND (:hasPromotion IS NULL OR p.hasActivePromotion = :hasPromotion) " +
            "AND (:minPrice IS NULL OR p.displayPrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.displayPrice <= :maxPrice) " +
@@ -113,7 +115,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         @Param("businessId") UUID businessId,
         @Param("categoryId") UUID categoryId,
         @Param("brandId") UUID brandId,
-        @Param("statuses") List<String> statuses,
+        @Param("statuses") List<ProductStatus> statuses,
         @Param("hasPromotion") Boolean hasPromotion,
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,
@@ -132,7 +134,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "AND (:businessId IS NULL OR p.businessId = :businessId) " +
            "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
            "AND (:brandId IS NULL OR p.brandId = :brandId) " +
-           "AND (:#{#statuses == null || #statuses.isEmpty()} = true OR CAST(p.status AS string) IN :statuses) " +
+           "AND (:statuses IS NULL OR p.status IN :statuses) " +
            "AND (:hasPromotion IS NULL OR p.hasActivePromotion = :hasPromotion) " +
            "AND (:minPrice IS NULL OR p.displayPrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.displayPrice <= :maxPrice) " +
@@ -145,7 +147,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         @Param("businessId") UUID businessId,
         @Param("categoryId") UUID categoryId,
         @Param("brandId") UUID brandId,
-        @Param("statuses") List<String> statuses,
+        @Param("statuses") List<ProductStatus> statuses,
         @Param("hasPromotion") Boolean hasPromotion,
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,
