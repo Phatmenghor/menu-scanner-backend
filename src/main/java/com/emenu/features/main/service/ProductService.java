@@ -20,4 +20,5 @@ public interface ProductService {
     ProductDetailDto deleteProduct(UUID id);
     ProductDetailDto getProductByIdPublic(UUID id);
     int[] syncExpiredPromotions();
+    int[] syncStartedPromotions();
 }

@@ -175,13 +175,21 @@ public class Product extends BaseUUIDEntity {
 
     public void initializeDisplayFields() {
         this.hasSizes = false;
-        this.displayPrice = getFinalPrice();
-        this.displayOriginPrice = this.price;
-        this.displayPromotionType = this.promotionType;
-        this.displayPromotionValue = this.promotionValue;
-        this.displayPromotionFromDate = this.promotionFromDate;
-        this.displayPromotionToDate = this.promotionToDate;
         this.hasActivePromotion = isPromotionActive();
+        this.displayOriginPrice = this.price;
+        if (this.hasActivePromotion) {
+            this.displayPrice = getFinalPrice();
+            this.displayPromotionType = this.promotionType;
+            this.displayPromotionValue = this.promotionValue;
+            this.displayPromotionFromDate = this.promotionFromDate;
+            this.displayPromotionToDate = this.promotionToDate;
+        } else {
+            this.displayPrice = this.price != null ? this.price : BigDecimal.ZERO;
+            this.displayPromotionType = null;
+            this.displayPromotionValue = null;
+            this.displayPromotionFromDate = null;
+            this.displayPromotionToDate = null;
+        }
     }
 
     public BigDecimal getFinalPrice() {

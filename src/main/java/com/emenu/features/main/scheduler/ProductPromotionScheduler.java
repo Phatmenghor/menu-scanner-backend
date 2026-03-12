@@ -26,4 +26,18 @@ public class ProductPromotionScheduler {
         log.info("[Scheduler] Done. Products without sizes: {}, with sizes: {}, total: {}",
                 result[0], result[1], result[0] + result[1]);
     }
+
+    /**
+     * Runs every day at 00:10 to activate display fields for products
+     * whose promotions have just started (fromDate <= today and not yet active).
+     */
+    @Scheduled(cron = "0 10 0 * * *")
+    public void activateStartedPromotions() {
+        log.info("[Scheduler] Activating newly started product promotions...");
+
+        int[] result = productService.syncStartedPromotions();
+
+        log.info("[Scheduler] Done. Products without sizes: {}, with sizes: {}, total: {}",
+                result[0], result[1], result[0] + result[1]);
+    }
 }

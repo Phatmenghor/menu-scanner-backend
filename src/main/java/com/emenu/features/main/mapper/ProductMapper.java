@@ -57,11 +57,6 @@ public interface ProductMapper {
         entity.setPromotionToDate(truncateToDay(entity.getPromotionToDate()));
     }
 
-    @Mapping(target = "viewCount", ignore = true)
-    @Mapping(target = "favoriteCount", ignore = true)
-    @Mapping(target = "images", ignore = true)
-    @Mapping(target = "sizes", ignore = true)
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
     @AfterMapping
     default void afterUpdate(ProductUpdateDto dto, @MappingTarget Product entity) {
         if (!dto.hasPromotionData()) {
@@ -74,6 +69,12 @@ public interface ProductMapper {
             entity.setPromotionToDate(truncateToDay(entity.getPromotionToDate()));
         }
     }
+
+    @Mapping(target = "viewCount", ignore = true)
+    @Mapping(target = "favoriteCount", ignore = true)
+    @Mapping(target = "images", ignore = true)
+    @Mapping(target = "sizes", ignore = true)
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
     void updateEntity(ProductUpdateDto dto, @MappingTarget Product entity);
 
     default LocalDateTime truncateToDay(LocalDateTime dt) {

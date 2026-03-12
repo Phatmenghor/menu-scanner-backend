@@ -217,6 +217,105 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     int clearExpiredPromotionsForProductsWithoutSizes();
 
     /**
+     * Sync display promotion fields for products WITHOUT sizes whose promotion has just become active
+     */
+    @Modifying
+    @Transactional
+    @Query(nativeQuery = true, value =
+        "UPDATE products SET " +
+        "    has_active_promotion = true, " +
+        "    display_promotion_type = promotion_type, " +
+        "    display_promotion_value = promotion_value, " +
+        "    display_promotion_from_date = promotion_from_date, " +
+        "    display_promotion_to_date = promotion_to_date, " +
+        "    display_origin_price = price, " +
+        "    display_price = CASE " +
+        "        WHEN promotion_type = 'PERCENTAGE' " +
+        "            THEN ROUND(price - (price * promotion_value / 100), 2) " +
+        "        WHEN promotion_type = 'FIXED_AMOUNT' " +
+        "            THEN GREATEST(0, price - promotion_value) " +
+        "        ELSE price " +
+        "    END " +
+        "WHERE is_deleted = false " +
+        "  AND has_sizes = false " +
+        "  AND has_active_promotion = false " +
+        "  AND promotion_value IS NOT NULL " +
+        "  AND promotion_type  IS NOT NULL " +
+        "  AND (promotion_from_date IS NULL OR promotion_from_date::date <= CURRENT_DATE) " +
+        "  AND (promotion_to_date   IS NULL OR promotion_to_date::date   >= CURRENT_DATE)")
+    int syncStartedPromotionsForProductsWithoutSizes();
+
+    /**
+     * Sync display promotion fields for products WITH sizes where at least one size has a newly active promotion
+     */
+    @Modifying
+    @Transactional
+    @Query(nativeQuery = true, value =
+        "UPDATE products p SET " +
+        "    has_active_promotion = true, " +
+        "    display_promotion_type = (" +
+        "        SELECT ps.promotion_type FROM product_sizes ps " +
+        "        WHERE ps.product_id = p.id AND ps.is_deleted = false " +
+        "          AND ps.promotion_value IS NOT NULL AND ps.promotion_type IS NOT NULL " +
+        "          AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date::date <= CURRENT_DATE) " +
+        "          AND (ps.promotion_to_date   IS NULL OR ps.promotion_to_date::date   >= CURRENT_DATE) " +
+        "        ORDER BY ps.price ASC LIMIT 1), " +
+        "    display_promotion_value = (" +
+        "        SELECT ps.promotion_value FROM product_sizes ps " +
+        "        WHERE ps.product_id = p.id AND ps.is_deleted = false " +
+        "          AND ps.promotion_value IS NOT NULL AND ps.promotion_type IS NOT NULL " +
+        "          AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date::date <= CURRENT_DATE) " +
+        "          AND (ps.promotion_to_date   IS NULL OR ps.promotion_to_date::date   >= CURRENT_DATE) " +
+        "        ORDER BY ps.price ASC LIMIT 1), " +
+        "    display_promotion_from_date = (" +
+        "        SELECT ps.promotion_from_date FROM product_sizes ps " +
+        "        WHERE ps.product_id = p.id AND ps.is_deleted = false " +
+        "          AND ps.promotion_value IS NOT NULL AND ps.promotion_type IS NOT NULL " +
+        "          AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date::date <= CURRENT_DATE) " +
+        "          AND (ps.promotion_to_date   IS NULL OR ps.promotion_to_date::date   >= CURRENT_DATE) " +
+        "        ORDER BY ps.price ASC LIMIT 1), " +
+        "    display_promotion_to_date = (" +
+        "        SELECT ps.promotion_to_date FROM product_sizes ps " +
+        "        WHERE ps.product_id = p.id AND ps.is_deleted = false " +
+        "          AND ps.promotion_value IS NOT NULL AND ps.promotion_type IS NOT NULL " +
+        "          AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date::date <= CURRENT_DATE) " +
+        "          AND (ps.promotion_to_date   IS NULL OR ps.promotion_to_date::date   >= CURRENT_DATE) " +
+        "        ORDER BY ps.price ASC LIMIT 1), " +
+        "    display_origin_price = (" +
+        "        SELECT ps.price FROM product_sizes ps " +
+        "        WHERE ps.product_id = p.id AND ps.is_deleted = false " +
+        "          AND ps.promotion_value IS NOT NULL AND ps.promotion_type IS NOT NULL " +
+        "          AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date::date <= CURRENT_DATE) " +
+        "          AND (ps.promotion_to_date   IS NULL OR ps.promotion_to_date::date   >= CURRENT_DATE) " +
+        "        ORDER BY ps.price ASC LIMIT 1), " +
+        "    display_price = (" +
+        "        SELECT CASE " +
+        "            WHEN ps.promotion_type = 'PERCENTAGE' " +
+        "                THEN ROUND(ps.price - (ps.price * ps.promotion_value / 100), 2) " +
+        "            WHEN ps.promotion_type = 'FIXED_AMOUNT' " +
+        "                THEN GREATEST(0, ps.price - ps.promotion_value) " +
+        "            ELSE ps.price " +
+        "        END FROM product_sizes ps " +
+        "        WHERE ps.product_id = p.id AND ps.is_deleted = false " +
+        "          AND ps.promotion_value IS NOT NULL AND ps.promotion_type IS NOT NULL " +
+        "          AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date::date <= CURRENT_DATE) " +
+        "          AND (ps.promotion_to_date   IS NULL OR ps.promotion_to_date::date   >= CURRENT_DATE) " +
+        "        ORDER BY ps.price ASC LIMIT 1) " +
+        "WHERE p.is_deleted = false " +
+        "  AND p.has_sizes = true " +
+        "  AND p.has_active_promotion = false " +
+        "  AND EXISTS ( " +
+        "      SELECT 1 FROM product_sizes ps " +
+        "      WHERE ps.product_id = p.id " +
+        "        AND ps.is_deleted = false " +
+        "        AND ps.promotion_value IS NOT NULL " +
+        "        AND ps.promotion_type  IS NOT NULL " +
+        "        AND (ps.promotion_from_date IS NULL OR ps.promotion_from_date::date <= CURRENT_DATE) " +
+        "        AND (ps.promotion_to_date   IS NULL OR ps.promotion_to_date::date   >= CURRENT_DATE) " +
+        "  )")
+    int syncStartedPromotionsForProductsWithSizes();
+
+    /**
      * Clear display promotion fields for products WITH sizes where no size has an active promotion
      */
     @Modifying

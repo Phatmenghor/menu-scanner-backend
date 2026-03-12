@@ -25,9 +25,6 @@ public interface ProductSizeMapper {
         entity.setPromotionToDate(truncateSizeToDay(entity.getPromotionToDate()));
     }
 
-    @Mapping(target = "productId", ignore = true)
-    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizeStringToPromotionType")
-    @Mapping(target = "product", ignore = true)
     @AfterMapping
     default void afterSizeUpdate(ProductSizeUpdateDto dto, @MappingTarget ProductSize entity) {
         if (!dto.hasPromotionData()) {
@@ -37,6 +34,10 @@ public interface ProductSizeMapper {
             entity.setPromotionToDate(truncateSizeToDay(entity.getPromotionToDate()));
         }
     }
+
+    @Mapping(target = "productId", ignore = true)
+    @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizeStringToPromotionType")
+    @Mapping(target = "product", ignore = true)
     void updateEntity(ProductSizeUpdateDto dto, @MappingTarget ProductSize entity);
 
     default LocalDateTime truncateSizeToDay(LocalDateTime dt) {

@@ -305,6 +305,14 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
+    public int[] syncStartedPromotions() {
+        int noSizes = productRepository.syncStartedPromotionsForProductsWithoutSizes();
+        int withSizes = productRepository.syncStartedPromotionsForProductsWithSizes();
+        return new int[]{noSizes, withSizes};
+    }
+
+    @Override
     public ProductDetailDto createProduct(ProductCreateDto request) {
         User currentUser = securityUtils.getCurrentUser();
         validateUserBusinessAssociation(currentUser);
