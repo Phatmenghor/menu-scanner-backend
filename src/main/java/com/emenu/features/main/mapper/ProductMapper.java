@@ -12,6 +12,8 @@ import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,6 +51,12 @@ public interface ProductMapper {
         return product;
     }
 
+    @AfterMapping
+    default void truncateProductPromotionDates(ProductCreateDto dto, @MappingTarget Product entity) {
+        entity.setPromotionFromDate(truncateToDay(entity.getPromotionFromDate()));
+        entity.setPromotionToDate(truncateToDay(entity.getPromotionToDate()));
+    }
+
     @Mapping(target = "viewCount", ignore = true)
     @Mapping(target = "favoriteCount", ignore = true)
     @Mapping(target = "images", ignore = true)
@@ -56,14 +64,21 @@ public interface ProductMapper {
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "stringToPromotionType")
     @AfterMapping
     default void afterUpdate(ProductUpdateDto dto, @MappingTarget Product entity) {
-if (!dto.hasPromotionData()) {
-    entity.setPromotionType(null);
-    entity.setPromotionValue(null);
-    entity.setPromotionFromDate(null);
-    entity.setPromotionToDate(null);
-}
+        if (!dto.hasPromotionData()) {
+            entity.setPromotionType(null);
+            entity.setPromotionValue(null);
+            entity.setPromotionFromDate(null);
+            entity.setPromotionToDate(null);
+        } else {
+            entity.setPromotionFromDate(truncateToDay(entity.getPromotionFromDate()));
+            entity.setPromotionToDate(truncateToDay(entity.getPromotionToDate()));
+        }
     }
     void updateEntity(ProductUpdateDto dto, @MappingTarget Product entity);
+
+    default LocalDateTime truncateToDay(LocalDateTime dt) {
+        return dt != null ? dt.truncatedTo(ChronoUnit.DAYS) : null;
+    }
 
     @Mapping(source = "displayPromotionType", target = "displayPromotionType", qualifiedByName = "promotionTypeToString")
     @Mapping(target = "isFavorited", constant = "false")

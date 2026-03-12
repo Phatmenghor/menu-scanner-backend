@@ -6,6 +6,9 @@ import com.emenu.features.main.dto.response.ProductSizeDto;
 import com.emenu.features.main.dto.update.ProductSizeUpdateDto;
 import com.emenu.features.main.models.ProductSize;
 import org.mapstruct.*;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -16,16 +19,29 @@ public interface ProductSizeMapper {
     @Mapping(target = "product", ignore = true)
     ProductSize toEntity(ProductSizeCreateDto dto);
 
+    @AfterMapping
+    default void truncateSizePromotionDatesOnCreate(ProductSizeCreateDto dto, @MappingTarget ProductSize entity) {
+        entity.setPromotionFromDate(truncateSizeToDay(entity.getPromotionFromDate()));
+        entity.setPromotionToDate(truncateSizeToDay(entity.getPromotionToDate()));
+    }
+
     @Mapping(target = "productId", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizeStringToPromotionType")
     @Mapping(target = "product", ignore = true)
     @AfterMapping
     default void afterSizeUpdate(ProductSizeUpdateDto dto, @MappingTarget ProductSize entity) {
-if (!dto.hasPromotionData()) {
-    entity.removePromotion();
-}
+        if (!dto.hasPromotionData()) {
+            entity.removePromotion();
+        } else {
+            entity.setPromotionFromDate(truncateSizeToDay(entity.getPromotionFromDate()));
+            entity.setPromotionToDate(truncateSizeToDay(entity.getPromotionToDate()));
+        }
     }
     void updateEntity(ProductSizeUpdateDto dto, @MappingTarget ProductSize entity);
+
+    default LocalDateTime truncateSizeToDay(LocalDateTime dt) {
+        return dt != null ? dt.truncatedTo(ChronoUnit.DAYS) : null;
+    }
 
     @Mapping(target = "productId", ignore = true)
     @Mapping(source = "promotionType", target = "promotionType", qualifiedByName = "sizeStringToPromotionType")
