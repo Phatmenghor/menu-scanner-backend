@@ -1,6 +1,7 @@
 package com.emenu.features.order.mapper;
 
 import com.emenu.features.order.dto.helper.CartCreateHelper;
+import com.emenu.features.order.dto.response.CartItemProductInfo;
 import com.emenu.features.order.dto.response.CartItemResponse;
 import com.emenu.features.order.dto.response.CartResponse;
 import com.emenu.features.order.dto.response.CartSummaryResponse;
@@ -18,29 +19,41 @@ import java.util.UUID;
 @Mapper(componentModel = "spring", uses = {PaginationMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CartMapper {
 
-    @Mapping(source = "product.name", target = "productName")
-    @Mapping(target = "sizeName", expression = "java(cartItem.getSizeName())")
-    @Mapping(target = "productImageUrl", expression = "java(cartItem.getProduct() != null ? cartItem.getProduct().getMainImageUrl() : null)")
+    @Mapping(target = "product", ignore = true)
     @Mapping(target = "currentPrice", expression = "java(cartItem.getCurrentPrice())")
     @Mapping(target = "finalPrice", expression = "java(cartItem.getFinalPrice())")
     @Mapping(target = "totalPrice", expression = "java(cartItem.getTotalPrice())")
     @Mapping(target = "hasPromotion", expression = "java(cartItem.hasDiscount())")
-    @Mapping(target = "isAvailable", expression = "java(cartItem.isAvailable())")
     CartItemResponse toItemResponse(CartItem cartItem);
 
     @AfterMapping
+    default void setProductInfo(@MappingTarget CartItemResponse response, CartItem cartItem) {
+        CartItemProductInfo productInfo = new CartItemProductInfo();
+        productInfo.setId(cartItem.getProductId());
+        productInfo.setSizeId(cartItem.getProductSizeId());
+        productInfo.setSizeName(cartItem.getSizeName());
+        if (cartItem.getProduct() != null) {
+            productInfo.setName(cartItem.getProduct().getName());
+            productInfo.setImageUrl(cartItem.getProduct().getMainImageUrl());
+            productInfo.setStatus(cartItem.getProduct().getStatus() != null
+                    ? cartItem.getProduct().getStatus().name() : null);
+        }
+        response.setProduct(productInfo);
+    }
+
+    @AfterMapping
     default void setPromotionDetails(@MappingTarget CartItemResponse response, CartItem cartItem) {
-if (cartItem.getProductSize() != null && cartItem.getProductSize().isPromotionActive()) {
-    response.setPromotionType(cartItem.getProductSize().getPromotionType() != null ?
-        cartItem.getProductSize().getPromotionType().name() : null);
-    response.setPromotionValue(cartItem.getProductSize().getPromotionValue());
-    response.setPromotionEndDate(cartItem.getProductSize().getPromotionToDate());
-} else if (cartItem.getProduct() != null && cartItem.getProduct().isPromotionActive()) {
-    response.setPromotionType(cartItem.getProduct().getPromotionType() != null ?
-        cartItem.getProduct().getPromotionType().name() : null);
-    response.setPromotionValue(cartItem.getProduct().getPromotionValue());
-    response.setPromotionEndDate(cartItem.getProduct().getPromotionToDate());
-}
+        if (cartItem.getProductSize() != null && cartItem.getProductSize().isPromotionActive()) {
+            response.setPromotionType(cartItem.getProductSize().getPromotionType() != null ?
+                    cartItem.getProductSize().getPromotionType().name() : null);
+            response.setPromotionValue(cartItem.getProductSize().getPromotionValue());
+            response.setPromotionEndDate(cartItem.getProductSize().getPromotionToDate());
+        } else if (cartItem.getProduct() != null && cartItem.getProduct().isPromotionActive()) {
+            response.setPromotionType(cartItem.getProduct().getPromotionType() != null ?
+                    cartItem.getProduct().getPromotionType().name() : null);
+            response.setPromotionValue(cartItem.getProduct().getPromotionValue());
+            response.setPromotionEndDate(cartItem.getProduct().getPromotionToDate());
+        }
     }
 
     List<CartItemResponse> toItemResponseList(List<CartItem> cartItems);
