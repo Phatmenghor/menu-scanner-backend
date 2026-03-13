@@ -284,6 +284,8 @@ public class OrderServiceImpl implements OrderService {
                     .hasPromotion(item.getHasActivePromotion())
                     .promotionType(item.getPromotionType())
                     .promotionValue(item.getPromotionValue())
+                    .promotionFromDate(item.getPromotionFromDate())
+                    .promotionToDate(item.getPromotionToDate())
                     .quantity(item.getQuantity())
                     .build();
 

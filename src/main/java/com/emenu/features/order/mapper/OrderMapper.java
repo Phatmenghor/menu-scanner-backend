@@ -17,6 +17,8 @@ import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.data.domain.Page;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -92,6 +94,20 @@ public interface OrderMapper {
      * Helper to build OrderItemCreateHelper from cart item
      */
     default OrderItemCreateHelper buildOrderItemHelperFromCartItem(CartItem cartItem, UUID orderId) {
+        // Get promotion details from product or productSize
+        String promotionType = null;
+        BigDecimal promotionValue = null;
+        LocalDateTime promotionFromDate = null;
+        LocalDateTime promotionToDate = null;
+
+        if (cartItem.getProduct() != null && cartItem.getProduct().getHasActivePromotion()) {
+            promotionType = cartItem.getProduct().getPromotionType() != null ?
+                    cartItem.getProduct().getPromotionType().toString() : null;
+            promotionValue = cartItem.getProduct().getPromotionValue();
+            promotionFromDate = cartItem.getProduct().getPromotionFromDate();
+            promotionToDate = cartItem.getProduct().getPromotionToDate();
+        }
+
         return OrderItemCreateHelper.builder()
                 .orderId(orderId)
                 .productId(cartItem.getProductId())
@@ -104,8 +120,11 @@ public interface OrderMapper {
                 .finalPrice(cartItem.getFinalPrice())
                 .unitPrice(cartItem.getFinalPrice())
                 .hasPromotion(cartItem.hasDiscount())
-                // Note: Promotion details would need to come from Product/ProductSize
-                // For now, we only capture that there IS a promotion
+                // Promotion details snapshot
+                .promotionType(promotionType)
+                .promotionValue(promotionValue)
+                .promotionFromDate(promotionFromDate)
+                .promotionToDate(promotionToDate)
                 .quantity(cartItem.getQuantity())
                 .build();
     }

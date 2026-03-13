@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -70,6 +71,12 @@ public class OrderItem extends BaseUUIDEntity {
 
     @Column(name = "promotion_value", precision = 10, scale = 2)
     private BigDecimal promotionValue;
+
+    @Column(name = "promotion_from_date")
+    private LocalDateTime promotionFromDate;
+
+    @Column(name = "promotion_to_date")
+    private LocalDateTime promotionToDate;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
