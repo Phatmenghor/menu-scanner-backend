@@ -854,7 +854,7 @@ BEGIN
 
     INSERT INTO refresh_tokens (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, token, expires_at, revoked, revoked_at
+        user_id, token, expiry_date, is_revoked, revoked_at, revocation_reason, device_info, ip_address
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
@@ -862,7 +862,10 @@ BEGIN
         'REFRESH_TOKEN_' || n || '_' || gen_random_uuid()::TEXT,
         t + INTERVAL '30 days',
         CASE WHEN n % 10 = 0 THEN true ELSE false END,
-        CASE WHEN n % 10 = 0 THEN t - INTERVAL '1 day' ELSE NULL END
+        CASE WHEN n % 10 = 0 THEN t - INTERVAL '1 day' ELSE NULL END,
+        CASE WHEN n % 10 = 0 THEN 'Token revoked' ELSE NULL END,
+        'Device_' || n,
+        '192.168.' || (n % 256) || '.' || ((n * 17) % 256)
     FROM GENERATE_SERIES(1, 40) n;
 
     RAISE NOTICE 'Refresh tokens created: 40 tokens';
