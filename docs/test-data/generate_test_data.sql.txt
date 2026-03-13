@@ -34,7 +34,7 @@ BEGIN
         DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE business_id = v_bid);
         DELETE FROM order_payments WHERE business_id = v_bid;
         DELETE FROM orders WHERE business_id = v_bid;
-        DELETE FROM order_process_status WHERE business_id = v_bid;
+        DELETE FROM order_process_statuses WHERE business_id = v_bid;
         DELETE FROM product_favorites WHERE product_id IN (SELECT id FROM products WHERE business_id = v_bid);
         DELETE FROM product_images WHERE product_id IN (SELECT id FROM products WHERE business_id = v_bid);
         DELETE FROM product_sizes WHERE product_id IN (SELECT id FROM products WHERE business_id = v_bid);
@@ -176,6 +176,22 @@ BEGIN
         gen_random_uuid(), 0, t - INTERVAL '1 year', t, 'system', 'system', false, NULL, NULL,
         bid, plan1, t - INTERVAL '1 year', t + INTERVAL '1 year', true
     );
+
+    -- Create 12 business roles
+    INSERT INTO roles (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, name, description, business_id, user_type)
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        bid,
+        CASE n
+            WHEN 1 THEN 'Manager' WHEN 2 THEN 'Chef' WHEN 3 THEN 'Sous Chef' WHEN 4 THEN 'Waiter'
+            WHEN 5 THEN 'Cashier' WHEN 6 THEN 'Delivery Driver' WHEN 7 THEN 'Kitchen Staff'
+            WHEN 8 THEN 'Supervisor' WHEN 9 THEN 'Accountant' WHEN 10 THEN 'Marketing'
+            WHEN 11 THEN 'HR Officer' WHEN 12 THEN 'Customer Service'
+        END,
+        'Business role #' || n,
+        bid,
+        'BUSINESS_USER'
+    FROM GENERATE_SERIES(1, 12) n;
 
     -- Create categories
     INSERT INTO categories (
@@ -439,7 +455,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- ORDER PROCESS STATUS (10 statuses)
+-- ORDER PROCESS STATUSES (10 statuses) - SCHEMA CORRECTED
 -- ============================================================
 
 DO $$
@@ -449,20 +465,20 @@ DECLARE
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
 
-    INSERT INTO order_process_status (
+    INSERT INTO order_process_statuses (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, name, description, color_code, sequence_order, is_default
+        business_id, name, description, status
     ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Pending', 'Order received', '#FFB800', 1, true),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Confirmed', 'Order confirmed', '#0088FF', 2, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Preparing', 'Kitchen preparing', '#FF9500', 3, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Ready', 'Ready for delivery', '#00DD00', 4, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'In Delivery', 'Out for delivery', '#0000FF', 5, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Delivered', 'Successfully delivered', '#00AA00', 6, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Completed', 'Order completed', '#00FF00', 7, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Cancelled', 'Order cancelled', '#FF0000', 8, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Refunded', 'Order refunded', '#FF6600', 9, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Failed', 'Delivery failed', '#CC0000', 10, false);
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Pending', 'Order received', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Confirmed', 'Order confirmed', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Preparing', 'Kitchen preparing', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Ready', 'Ready for delivery', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'In Delivery', 'Out for delivery', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Delivered', 'Successfully delivered', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Completed', 'Order completed', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Cancelled', 'Order cancelled', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Refunded', 'Order refunded', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Failed', 'Delivery failed', 'ACTIVE');
 
     RAISE NOTICE 'Order process statuses created: 10 statuses';
 END $$;
@@ -488,7 +504,7 @@ DECLARE
     order_counter INT;
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT id INTO order_process_status_id FROM order_process_status WHERE business_id = bid AND is_default = true LIMIT 1;
+    SELECT id INTO order_process_status_id FROM order_process_statuses WHERE business_id = bid AND name = 'Pending' LIMIT 1;
 
     FOR order_counter IN 1..1000 LOOP
         SELECT id INTO customer_id FROM users WHERE user_type = 'CUSTOMER' ORDER BY RANDOM() LIMIT 1;
@@ -573,17 +589,18 @@ BEGIN
 END $$;
 
 -- ============================================================
--- STAFF USERS (50 staff)
+-- STAFF USERS (3500 staff for comprehensive testing)
 -- ============================================================
 
 DO $$
 DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
-    role_staff UUID;
+    staff_roles UUID[];
+    role_names TEXT[] := ARRAY['Manager', 'Chef', 'Sous Chef', 'Waiter', 'Cashier', 'Delivery Driver', 'Kitchen Staff', 'Supervisor', 'Accountant', 'Marketing', 'HR Officer', 'Customer Service'];
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT id INTO role_staff FROM roles WHERE name = 'STAFF' LIMIT 1;
+    SELECT ARRAY_AGG(id ORDER BY id) INTO staff_roles FROM roles WHERE business_id = bid AND name = ANY(role_names);
 
     INSERT INTO users (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
@@ -594,20 +611,21 @@ BEGIN
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         'staff' || n || '@phatrestaurant.com', 'staff' || n || '@phatrestaurant.com',
         '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
-        'Staff', 'Member ' || n, '+855 10 123 0' || LPAD(n::TEXT, 3, '0'),
-        'https://via.placeholder.com/200/00AA88/FFFFFF?text=Staff' || n,
+        'Staff', 'Member ' || n, '+855 10 123 ' || LPAD((n % 10000)::TEXT, 4, '0'),
+        'https://via.placeholder.com/200/00AA88/FFFFFF?text=S' || (n % 1000),
         'BUSINESS_USER', 'ACTIVE', bid,
-        CASE WHEN n % 3 = 0 THEN 'Chef' WHEN n % 3 = 1 THEN 'Delivery Driver' ELSE 'Counter Staff' END,
+        role_names[((n-1) % 12 + 1)],
         'Phnom Penh, Cambodia', 'Staff member #' || n,
-        t - (RANDOM() * INTERVAL '7 days'), t - (RANDOM() * INTERVAL '1 day'), 1
-    FROM GENERATE_SERIES(1, 50) n;
+        t - (RANDOM() * INTERVAL '30 days'), t - (RANDOM() * INTERVAL '1 day'), 1
+    FROM GENERATE_SERIES(1, 3500) n;
 
     INSERT INTO user_roles (user_id, role_id)
-    SELECT u.id, role_staff FROM users u
+    SELECT u.id, staff_roles[((ROW_NUMBER() OVER (ORDER BY u.id) - 1) % ARRAY_LENGTH(staff_roles, 1) + 1)]
+    FROM users u
     WHERE u.email LIKE 'staff%@phatrestaurant.com'
     AND NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = u.id);
 
-    RAISE NOTICE '50 staff users created';
+    RAISE NOTICE '3500 staff users created with 12 business roles';
 END $$;
 
 -- ============================================================
