@@ -177,13 +177,23 @@ BEGIN
     -- Create business settings
     INSERT INTO business_settings (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, working_days_from, working_days_to, working_hours_open, working_hours_close,
-        business_image_url, website_url, social_media_link
+        business_id, logo_url, banner_url, business_type, opening_time, closing_time, is_open_24_hours,
+        working_days, timezone, currency, language, usd_to_khr_rate, contact_email, contact_phone,
+        whatsapp_number, facebook_url, instagram_url, website_url, primary_color, secondary_color,
+        email_notifications_enabled, sms_notifications_enabled, order_notifications_enabled,
+        tax_rate, service_charge_percentage, min_order_amount, delivery_radius_km, estimated_delivery_time,
+        terms_and_conditions, privacy_policy, refund_policy
     ) VALUES (
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        bid, 'MONDAY', 'SUNDAY', '06:00', '23:00',
-        'https://via.placeholder.com/400x200/FF6B6B/FFFFFF?text=Phat+Restaurant',
-        'https://phatrestaurant.com', 'https://facebook.com/phatrestaurant'
+        bid, 'https://via.placeholder.com/200/FF6B6B/FFFFFF?text=Logo',
+        'https://via.placeholder.com/1200x400/FF6B6B/FFFFFF?text=Banner', 'RESTAURANT',
+        '06:00', '23:00', false, 'MONDAY-SUNDAY', 'Asia/Phnom_Penh', 'USD', 'en', 4100.0,
+        'phatmenghor20@gmail.com', '+855 23 999 888', '+855 10 234 5678', 'https://facebook.com/phatrestaurant',
+        'https://instagram.com/phatrestaurant', 'https://phatrestaurant.com', '#FF6B6B', '#FFE66D',
+        true, false, true, 0.0, 10.0, 5.0, 25.0, '30-45 minutes',
+        'All dishes must be consumed fresh. No refund after delivery.',
+        'We collect data for order fulfillment only.',
+        'Full refund if order not received within estimated time'
     );
 
     -- Create subscription plan
