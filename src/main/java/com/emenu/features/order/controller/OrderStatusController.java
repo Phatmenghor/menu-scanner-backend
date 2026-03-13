@@ -19,72 +19,72 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/order-process-statuses")
+@RequestMapping("/api/v1/order-statuses")
 @RequiredArgsConstructor
 @Slf4j
-public class OrderProcessStatusController {
+public class OrderStatusController {
 
     private final OrderProcessStatusService orderProcessStatusService;
     private final SecurityUtils securityUtils;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<OrderProcessStatusResponse>> createOrderProcessStatus(
+    public ResponseEntity<ApiResponse<OrderProcessStatusResponse>> createOrderStatus(
             @Valid @RequestBody OrderProcessStatusCreateRequest request) {
-        log.info("Creating order process status: {}", request.getName());
+        log.info("Creating order status: {}", request.getName());
         OrderProcessStatusResponse response = orderProcessStatusService.createOrderProcessStatus(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Order process status created successfully", response));
+                .body(ApiResponse.success("Order status created successfully", response));
     }
 
     @PostMapping("/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<OrderProcessStatusResponse>>> getAllOrderProcessStatuses(
+    public ResponseEntity<ApiResponse<PaginationResponse<OrderProcessStatusResponse>>> getAllOrderStatuses(
             @Valid @RequestBody OrderProcessStatusFilterRequest filter) {
-        log.info("Getting all order process statuses with filters");
+        log.info("Getting all order statuses with filters");
         PaginationResponse<OrderProcessStatusResponse> response =
                 orderProcessStatusService.getAllOrderProcessStatuses(filter);
-        return ResponseEntity.ok(ApiResponse.success("Order process statuses retrieved successfully", response));
+        return ResponseEntity.ok(ApiResponse.success("Order statuses retrieved successfully", response));
     }
 
     @PostMapping("/my-business/all")
-    public ResponseEntity<ApiResponse<PaginationResponse<OrderProcessStatusResponse>>> getMyBusinessOrderProcessStatuses(
+    public ResponseEntity<ApiResponse<PaginationResponse<OrderProcessStatusResponse>>> getMyBusinessOrderStatuses(
             @Valid @RequestBody OrderProcessStatusFilterRequest filter) {
-        log.info("Getting order process statuses for current user's business");
+        log.info("Getting order statuses for current user's business");
         UUID businessId = securityUtils.getCurrentUser().getBusinessId();
         filter.setBusinessId(businessId);
         PaginationResponse<OrderProcessStatusResponse> response =
                 orderProcessStatusService.getAllOrderProcessStatuses(filter);
-        return ResponseEntity.ok(ApiResponse.success("Business order process statuses retrieved successfully", response));
+        return ResponseEntity.ok(ApiResponse.success("Business order statuses retrieved successfully", response));
     }
 
     @GetMapping("/business/{businessId}")
-    public ResponseEntity<ApiResponse<List<OrderProcessStatusResponse>>> getBusinessOrderProcessStatuses(
+    public ResponseEntity<ApiResponse<List<OrderProcessStatusResponse>>> getBusinessOrderStatuses(
             @PathVariable UUID businessId) {
-        log.info("Getting active order process statuses for business: {}", businessId);
+        log.info("Getting active order statuses for business: {}", businessId);
         List<OrderProcessStatusResponse> response =
                 orderProcessStatusService.getBusinessOrderProcessStatuses(businessId);
-        return ResponseEntity.ok(ApiResponse.success("Business order process statuses retrieved successfully", response));
+        return ResponseEntity.ok(ApiResponse.success("Business order statuses retrieved successfully", response));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<OrderProcessStatusResponse>> getOrderProcessStatusById(@PathVariable UUID id) {
-        log.info("Getting order process status by ID: {}", id);
+    public ResponseEntity<ApiResponse<OrderProcessStatusResponse>> getOrderStatusById(@PathVariable UUID id) {
+        log.info("Getting order status by ID: {}", id);
         OrderProcessStatusResponse response = orderProcessStatusService.getOrderProcessStatusById(id);
-        return ResponseEntity.ok(ApiResponse.success("Order process status retrieved successfully", response));
+        return ResponseEntity.ok(ApiResponse.success("Order status retrieved successfully", response));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<OrderProcessStatusResponse>> updateOrderProcessStatus(
+    public ResponseEntity<ApiResponse<OrderProcessStatusResponse>> updateOrderStatus(
             @PathVariable UUID id,
             @Valid @RequestBody OrderProcessStatusUpdateRequest request) {
-        log.info("Updating order process status: {}", id);
+        log.info("Updating order status: {}", id);
         OrderProcessStatusResponse response = orderProcessStatusService.updateOrderProcessStatus(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Order process status updated successfully", response));
+        return ResponseEntity.ok(ApiResponse.success("Order status updated successfully", response));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<OrderProcessStatusResponse>> deleteOrderProcessStatus(@PathVariable UUID id) {
-        log.info("Deleting order process status: {}", id);
+    public ResponseEntity<ApiResponse<OrderProcessStatusResponse>> deleteOrderStatus(@PathVariable UUID id) {
+        log.info("Deleting order status: {}", id);
         OrderProcessStatusResponse response = orderProcessStatusService.deleteOrderProcessStatus(id);
-        return ResponseEntity.ok(ApiResponse.success("Order process status deleted successfully", response));
+        return ResponseEntity.ok(ApiResponse.success("Order status deleted successfully", response));
     }
 }
