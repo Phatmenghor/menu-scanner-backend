@@ -980,7 +980,7 @@ BEGIN
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         bid,
         staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
-        (SELECT id FROM work_schedules WHERE user_id = staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1] LIMIT 1),
+        (SELECT id FROM work_schedules WHERE business_id = bid ORDER BY RANDOM() LIMIT 1),
         (t - INTERVAL '1 day' * (n % 30))::DATE,
         CASE WHEN n % 10 = 0 THEN 'ABSENT' WHEN n % 10 = 1 THEN 'LATE' ELSE 'PRESENT' END,
         CASE WHEN n % 7 = 0 THEN 'Medical leave' ELSE NULL END
