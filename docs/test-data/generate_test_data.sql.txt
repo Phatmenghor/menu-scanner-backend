@@ -317,8 +317,8 @@ BEGIN
         ) VALUES (
             order_id, 0, t - (RANDOM() * INTERVAL '60 days'), t, 'system', 'system', false, NULL, NULL,
             bid, customer_id, order_num, subtotal, discount_amt, deliv_fee, tax_amt, total_amt,
-            CASE (order_counter % 3) WHEN 0 THEN 'CARD' WHEN 1 THEN 'MOBILE' ELSE 'CASH' END,
-            CASE WHEN order_counter % 3 = 0 THEN 'PENDING' ELSE 'COMPLETED' END
+            CASE (order_counter % 4) WHEN 0 THEN 'CASH' WHEN 1 THEN 'BANK_TRANSFER' WHEN 2 THEN 'ONLINE' ELSE 'OTHER' END,
+            CASE WHEN order_counter % 3 = 0 THEN 'PENDING' WHEN order_counter % 3 = 1 THEN 'PAID' ELSE 'COMPLETED' END
         );
 
         -- Add order items (2-4 items per order)
@@ -342,8 +342,8 @@ BEGIN
             gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
             bid, order_id, 'PAY-' || LPAD(order_counter::TEXT, 8, '0'),
             subtotal, discount_amt, deliv_fee, tax_amt, total_amt,
-            CASE (order_counter % 3) WHEN 0 THEN 'CARD' WHEN 1 THEN 'MOBILE' ELSE 'CASH' END,
-            CASE WHEN order_counter % 3 = 0 THEN 'PENDING' ELSE 'COMPLETED' END, 'Card'
+            CASE (order_counter % 4) WHEN 0 THEN 'CASH' WHEN 1 THEN 'BANK_TRANSFER' WHEN 2 THEN 'ONLINE' ELSE 'OTHER' END,
+            CASE WHEN order_counter % 3 = 0 THEN 'PENDING' WHEN order_counter % 3 = 1 THEN 'FAILED' ELSE 'COMPLETED' END, 'Card'
         );
 
     END LOOP;
