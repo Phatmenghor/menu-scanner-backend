@@ -8,6 +8,7 @@ import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.dto.response.OrderStatusHistoryResponse;
 import com.emenu.features.order.dto.response.OrderStatusHistoryUserInfo;
 import com.emenu.features.order.dto.response.OrderPaymentInfo;
+import com.emenu.features.order.dto.response.OrderPricingInfo;
 import com.emenu.features.order.models.CartItem;
 import com.emenu.features.order.models.Order;
 import com.emenu.features.order.models.OrderItem;
@@ -35,9 +36,7 @@ public interface OrderMapper {
     @Mapping(target = "deliveryAddress", expression = "java(mapDeliveryAddress(order))")
     @Mapping(target = "deliveryOption", expression = "java(mapDeliveryOption(order))")
     @Mapping(target = "orderProcessStatus", expression = "java(mapOrderProcessStatus(order))")
-    @Mapping(source = "discountAmount", target = "totalDiscount")
-    @Mapping(source = "totalAmount", target = "finalTotal")
-    @Mapping(target = "totalItems", expression = "java(calculateTotalItems(order))")
+    @Mapping(target = "pricing", expression = "java(mapPricingInfo(order))")
     @Mapping(target = "statusHistory", expression = "java(mapStatusHistory(order))")
     @Mapping(target = "payment", expression = "java(mapPaymentInfo(order))")
     OrderResponse toResponse(Order order);
@@ -172,16 +171,24 @@ public interface OrderMapper {
     }
 
     /**
-     * Map order process status name snapshot to OrderStatusDto
+     * Map current order process status with details of who set it
+     * Returns the most recent status from history
      */
     default com.emenu.features.order.dto.response.OrderStatusDto mapOrderProcessStatus(Order order) {
-        if (order.getOrderProcessStatusName() == null || order.getOrderProcessStatusName().isBlank()) {
+        if (order.getStatusHistory() == null || order.getStatusHistory().isEmpty()) {
             return null;
         }
 
+        // Get the most recent status change (last in list)
+        OrderStatusHistory latestStatus = order.getStatusHistory().get(order.getStatusHistory().size() - 1);
+
         return com.emenu.features.order.dto.response.OrderStatusDto.builder()
-                .name(order.getOrderProcessStatusName())
-                .createdAt(order.getCreatedAt())
+                .name(latestStatus.getOrderProcessStatus() != null ?
+                        latestStatus.getOrderProcessStatus().getName() : null)
+                .description(latestStatus.getOrderProcessStatus() != null ?
+                        latestStatus.getOrderProcessStatus().getDescription() : null)
+                .changedBy(mapStatusHistoryUserInfo(latestStatus))
+                .createdAt(latestStatus.getCreatedAt())
                 .build();
     }
 
@@ -233,6 +240,23 @@ public interface OrderMapper {
                 .lastName(history.getChangedByUser().getLastName())
                 .phoneNumber(history.getChangedByUser().getPhoneNumber())
                 .businessId(history.getChangedByUser().getBusinessId())
+                .build();
+    }
+
+    /**
+     * Map pricing details to nested pricing info object
+     */
+    default OrderPricingInfo mapPricingInfo(Order order) {
+        if (order == null) {
+            return null;
+        }
+
+        return OrderPricingInfo.builder()
+                .totalItems(calculateTotalItems(order))
+                .subtotal(order.getSubtotal())
+                .totalDiscount(order.getDiscountAmount())
+                .deliveryFee(order.getDeliveryFee())
+                .finalTotal(order.getTotalAmount())
                 .build();
     }
 

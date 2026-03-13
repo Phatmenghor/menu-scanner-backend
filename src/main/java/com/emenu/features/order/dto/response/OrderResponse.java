@@ -32,12 +32,9 @@ public class OrderResponse extends BaseAuditResponse {
     private String customerNote;
     private String businessNote;
 
-    // Pricing - standardized field names
-    private Integer totalItems;
-    private BigDecimal subtotal;
-    private BigDecimal totalDiscount;
-    private BigDecimal deliveryFee;
-    private BigDecimal finalTotal;
+    // Pricing breakdown - nested object for cleaner structure
+    @Valid
+    private OrderPricingInfo pricing;
 
     // Payment info - nested object
     @Valid
