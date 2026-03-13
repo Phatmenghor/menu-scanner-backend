@@ -325,29 +325,18 @@ BEGIN
     -- Create sizes for products that have has_sizes = true
     INSERT INTO product_sizes (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        product_id, name, description, price, status,
-        promotion_type, promotion_value, promotion_from_date, promotion_to_date,
-        display_price, display_origin_price, display_promotion_type, display_promotion_value,
-        display_promotion_from_date, display_promotion_to_date, is_default
+        product_id, name, price,
+        promotion_type, promotion_value, promotion_from_date, promotion_to_date
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         p.id,
         CASE s WHEN 1 THEN 'Small' WHEN 2 THEN 'Medium' WHEN 3 THEN 'Large' WHEN 4 THEN 'Extra Large' END,
-        CASE s WHEN 1 THEN 'Small portion - 200g' WHEN 2 THEN 'Medium portion - 350g' WHEN 3 THEN 'Large portion - 500g' WHEN 4 THEN 'Extra Large portion - 750g' END,
         (p.price + (s * 2))::NUMERIC,
-        'ACTIVE',
         CASE WHEN p.promotion_type IS NOT NULL THEN p.promotion_type ELSE NULL END,
         CASE WHEN p.promotion_value IS NOT NULL THEN p.promotion_value ELSE NULL END,
         CASE WHEN p.promotion_from_date IS NOT NULL THEN p.promotion_from_date ELSE NULL END,
-        CASE WHEN p.promotion_to_date IS NOT NULL THEN p.promotion_to_date ELSE NULL END,
-        (p.price + (s * 2))::NUMERIC,
-        (p.price)::NUMERIC,
-        CASE WHEN p.promotion_type IS NOT NULL THEN p.promotion_type ELSE NULL END,
-        CASE WHEN p.promotion_value IS NOT NULL THEN p.promotion_value ELSE NULL END,
-        CASE WHEN p.promotion_from_date IS NOT NULL THEN p.promotion_from_date ELSE NULL END,
-        CASE WHEN p.promotion_to_date IS NOT NULL THEN p.promotion_to_date ELSE NULL END,
-        CASE WHEN s = 2 THEN true ELSE false END
+        CASE WHEN p.promotion_to_date IS NOT NULL THEN p.promotion_to_date ELSE NULL END
     FROM products p, GENERATE_SERIES(1, 4) s
     WHERE p.business_id = bid AND p.has_sizes = true;
 
@@ -371,14 +360,12 @@ BEGIN
 
     INSERT INTO product_images (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        product_id, image_url, display_order, is_primary
+        product_id, image_url
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         p.id,
-        'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Product' || p.id::TEXT || '_Image' || img_num,
-        img_num,
-        CASE WHEN img_num = 1 THEN true ELSE false END
+        'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Product' || p.id::TEXT || '_Image' || img_num
     FROM products p, GENERATE_SERIES(1, 4) img_num
     WHERE p.business_id = bid;
 
@@ -491,27 +478,14 @@ BEGIN
 
     INSERT INTO cart_items (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        cart_id, product_id, product_size_id, product_name, product_image_url, size_name,
-        base_price, current_price, final_price, has_active_promotion, quantity,
-        promotion_type, promotion_value, promotion_from_date, promotion_to_date
+        cart_id, product_id, product_size_id, quantity
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         cart_ids[(n-1) % ARRAY_LENGTH(cart_ids, 1) + 1],
         product_ids[(n-1) % ARRAY_LENGTH(product_ids, 1) + 1],
         NULL,
-        'Cart Item ' || n,
-        'https://via.placeholder.com/200x150/00AA88/FFFFFF?text=CartItem' || n,
-        NULL,
-        (15.00 + (n % 80))::NUMERIC,
-        (15.00 + (n % 80))::NUMERIC,
-        CASE WHEN n % 3 = 0 THEN (15.00 + (n % 80)) * 0.9 ELSE (15.00 + (n % 80)) END,
-        CASE WHEN n % 3 = 0 THEN true ELSE false END,
-        (1 + (n % 5)),
-        CASE WHEN n % 3 = 0 THEN 'PERCENTAGE' ELSE NULL END,
-        CASE WHEN n % 3 = 0 THEN 10 ELSE NULL END,
-        CASE WHEN n % 3 = 0 THEN t - INTERVAL '5 days' ELSE NULL END,
-        CASE WHEN n % 3 = 0 THEN t + INTERVAL '30 days' ELSE NULL END
+        (1 + (n % 5))
     FROM GENERATE_SERIES(1, ARRAY_LENGTH(cart_ids, 1) * 4) n;
 
     RAISE NOTICE 'Cart items created: % items in carts', ARRAY_LENGTH(cart_ids, 1) * 4;
@@ -701,10 +675,10 @@ BEGIN
         -- Add order status history
         INSERT INTO order_status_history (
             id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-            order_id, old_status, new_status, changed_by, reason
+            order_id, order_process_status_id, note, changed_by
         ) VALUES (
             gen_random_uuid(), 0, t - (RANDOM() * INTERVAL '60 days'), t, 'system', 'system', false, NULL, NULL,
-            order_id, NULL, 'Pending', 'system', 'Initial status'
+            order_id, order_process_status_id, 'Order created and awaiting confirmation', 'system'
         );
 
     END LOOP;
