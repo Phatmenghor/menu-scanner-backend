@@ -730,7 +730,9 @@ BEGIN
     INSERT INTO location_commune_cbc (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, commune_code, commune_en, commune_kh, district_code)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'C' || n, 'Commune ' || n, 'ឃុំ' || n,
+        'C' || ROW_NUMBER() OVER (ORDER BY d.district_code, n),
+        'Commune ' || ROW_NUMBER() OVER (ORDER BY d.district_code, n),
+        'ឃុំ' || ROW_NUMBER() OVER (ORDER BY d.district_code, n),
         d.district_code
     FROM location_district_cbc d, GENERATE_SERIES(1, 5) n;
 
@@ -738,7 +740,9 @@ BEGIN
     INSERT INTO location_village_cbc (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, village_code, village_en, village_kh, commune_code)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'V' || n, 'Village ' || n, 'village' || n,
+        'V' || ROW_NUMBER() OVER (ORDER BY c.commune_code, n),
+        'Village ' || ROW_NUMBER() OVER (ORDER BY c.commune_code, n),
+        'village' || ROW_NUMBER() OVER (ORDER BY c.commune_code, n),
         c.commune_code
     FROM location_commune_cbc c, GENERATE_SERIES(1, 3) n;
 
