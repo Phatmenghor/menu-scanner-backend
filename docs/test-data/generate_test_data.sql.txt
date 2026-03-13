@@ -821,17 +821,21 @@ BEGIN
 
     INSERT INTO user_sessions (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, session_token, ip_address, user_agent, login_at, logout_at, is_active
+        user_id, device_id, device_name, device_type, user_agent, browser, operating_system,
+        ip_address, location, status, login_at, last_active_at, expires_at, is_current_session
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1],
-        'SESSION_TOKEN_' || n,
-        '192.168.' || (n % 255) || '.' || ((n * 7) % 255),
+        'DEVICE_' || n, 'Device ' || n, 'MOBILE',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        t - INTERVAL '1 day' * (n % 7),
-        CASE WHEN n % 3 = 0 THEN t - INTERVAL '1 hour' ELSE NULL END,
-        CASE WHEN n % 3 = 0 THEN false ELSE true END
+        'Chrome', 'Windows 10',
+        '192.168.' || (n % 255) || '.' || ((n * 7) % 255), 'Phnom Penh, Cambodia',
+        CASE WHEN n % 3 = 0 THEN 'LOGGED_OUT' ELSE 'ACTIVE' END,
+        (t - INTERVAL '1 day' * (n % 7))::TIMESTAMP,
+        (t - INTERVAL '1 hour' * (n % 5))::TIMESTAMP,
+        CASE WHEN n % 3 != 0 THEN (t + INTERVAL '30 days')::TIMESTAMP ELSE NULL END,
+        CASE WHEN n % 3 != 0 THEN true ELSE false END
     FROM GENERATE_SERIES(1, 50) n;
 
     RAISE NOTICE 'User sessions created: 50 sessions';
