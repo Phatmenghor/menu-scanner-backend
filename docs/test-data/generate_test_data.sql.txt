@@ -142,7 +142,13 @@ BEGIN
         ('role_business', role_business),
         ('role_customer', role_customer);
 
-    -- ── Create 3 main users ────────────────────────────────
+    -- ── Create roles FIRST ─────────────────────────────────
+    INSERT INTO roles (id, name) VALUES
+        (role_admin, 'PLATFORM_ADMIN'),
+        (role_business, 'BUSINESS_OWNER'),
+        (role_customer, 'CUSTOMER');
+
+    -- ── Create 3 main users (without business_id for now) ───
     INSERT INTO users (
         id, version, created_at, updated_at, created_by, updated_by,
         is_deleted, deleted_at, deleted_by,
@@ -161,7 +167,7 @@ BEGIN
          'phatmenghor20@gmail.com', 'phatmenghor20@gmail.com',
          '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
          'Menghor', 'Business', '+855 10 234 5678', NULL,
-         'BUSINESS_USER', 'ACTIVE', bid, 'Business Owner', 'Phnom Penh, Cambodia', 'Business account',
+         'BUSINESS_USER', 'ACTIVE', NULL, 'Business Owner', 'Phnom Penh, Cambodia', 'Business account',
          t - INTERVAL '1 hour', t - INTERVAL '30 minutes', 2),
         (cuid, 0, t, t, 'system', 'system', false, NULL, NULL,
          'phatmenghor21@gmail.com', 'phatmenghor21@gmail.com',
@@ -169,12 +175,6 @@ BEGIN
          'Customer', 'Menghor', '+855 10 345 6789', NULL,
          'CUSTOMER', 'ACTIVE', NULL, NULL, 'Phnom Penh, Cambodia', 'Main customer account',
          t - INTERVAL '3 hours', t - INTERVAL '45 minutes', 1);
-
-    -- ── Create roles ───────────────────────────────────────
-    INSERT INTO roles (id, name) VALUES
-        (role_admin, 'PLATFORM_ADMIN'),
-        (role_business, 'BUSINESS_OWNER'),
-        (role_customer, 'CUSTOMER');
 
     -- ── Assign roles ──────────────────────────────────────
     INSERT INTO user_roles (user_id, role_id) VALUES
@@ -199,6 +199,9 @@ BEGIN
         'TAX-2020-001', NULL, NULL, 'Best restaurant in Phnom Penh',
         'ACTIVE', t, 'KHR'
     );
+
+    -- ── Update business user with business_id ──────────────
+    UPDATE users SET business_id = bid WHERE id = buid;
 
     -- ── Subscription Plans (20 types) ──────────────────────
     INSERT INTO subscription_plans (
