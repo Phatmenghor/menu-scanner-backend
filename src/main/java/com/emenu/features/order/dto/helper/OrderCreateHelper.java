@@ -1,6 +1,7 @@
 package com.emenu.features.order.dto.helper;
 
 import com.emenu.enums.payment.PaymentMethod;
+import com.emenu.enums.payment.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,7 @@ public class OrderCreateHelper {
     private UUID customerId;
     private UUID businessId;
     private PaymentMethod paymentMethod;
+    private PaymentStatus paymentStatus;
     private String customerNote;
 
     // Delivery snapshots - full JSON from frontend

@@ -1,13 +1,11 @@
 package com.emenu.features.order.dto.response;
 
-import com.emenu.enums.payment.PaymentMethod;
-import com.emenu.enums.payment.PaymentStatus;
 import com.emenu.shared.dto.BaseAuditResponse;
+import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,13 +39,9 @@ public class OrderResponse extends BaseAuditResponse {
     private BigDecimal deliveryFee;
     private BigDecimal finalTotal;
 
-    // Payment info
-    private PaymentMethod paymentMethod;
-    private PaymentStatus paymentStatus;
-
-    // Timestamps
-    private LocalDateTime confirmedAt;
-    private LocalDateTime completedAt;
+    // Payment info - nested object
+    @Valid
+    private OrderPaymentInfo payment;
 
     // Items
     private List<OrderItemResponse> items;

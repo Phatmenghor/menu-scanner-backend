@@ -6,6 +6,7 @@ import com.emenu.features.order.dto.helper.OrderItemCreateHelper;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.dto.response.OrderStatusHistoryResponse;
+import com.emenu.features.order.dto.response.OrderPaymentInfo;
 import com.emenu.features.order.models.CartItem;
 import com.emenu.features.order.models.Order;
 import com.emenu.features.order.models.OrderItem;
@@ -37,6 +38,7 @@ public interface OrderMapper {
     @Mapping(source = "totalAmount", target = "finalTotal")
     @Mapping(target = "totalItems", expression = "java(calculateTotalItems(order))")
     @Mapping(target = "statusHistory", expression = "java(mapStatusHistory(order))")
+    @Mapping(target = "payment", expression = "java(mapPaymentInfo(order))")
     OrderResponse toResponse(Order order);
 
     List<OrderResponse> toResponseList(List<Order> orders);
@@ -66,6 +68,7 @@ public interface OrderMapper {
                 .customerId(customerId)
                 .businessId(request.getBusinessId())
                 .paymentMethod(request.getPayment() != null ? request.getPayment().getPaymentMethod() : null)
+                .paymentStatus(request.getPayment() != null ? request.getPayment().getPaymentStatus() : null)
                 .customerNote(request.getCustomerNote());
 
         // Serialize full delivery address object as JSON snapshot
@@ -212,5 +215,19 @@ public interface OrderMapper {
                         .changedAt(history.getCreatedAt())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Map payment method and status to nested payment info object
+     */
+    default OrderPaymentInfo mapPaymentInfo(Order order) {
+        if (order == null) {
+            return null;
+        }
+
+        return OrderPaymentInfo.builder()
+                .paymentMethod(order.getPaymentMethod())
+                .paymentStatus(order.getPaymentStatus())
+                .build();
     }
 }
