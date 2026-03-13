@@ -699,22 +699,429 @@ BEGIN
 END $$;
 
 -- ============================================================
+-- LOCATION DATA (Provinces, Districts, Communes, Villages)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    prov_uuid UUID;
+    dist_uuid UUID;
+    comm_uuid UUID;
+BEGIN
+    -- Insert provinces (add more as needed)
+    INSERT INTO provinces (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, code, name_en, name_kh)
+    VALUES
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'PP', 'Phnom Penh', 'ភ្នំពេញ'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'KA', 'Kandal', 'កណ្តាល'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'TB', 'Takeo', 'តាកែវ'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'KT', 'Kampong Thom', 'កម្ពង់ធំ'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'KD', 'Kampong Chhnang', 'កម្ពង់ឆ្នាំង');
+
+    -- Insert districts (3 per province for example)
+    INSERT INTO districts (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, code, name_en, name_kh, province_id)
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        'D' || n, 'District ' || n, 'ស្រុក' || n,
+        (SELECT id FROM provinces WHERE code = 'PP' LIMIT 1)
+    FROM GENERATE_SERIES(1, 3) n;
+
+    -- Insert communes (5 per district)
+    INSERT INTO communes (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, code, name_en, name_kh, district_id)
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        'C' || n, 'Commune ' || n, 'ឃុំ' || n,
+        d.id
+    FROM districts d, GENERATE_SERIES(1, 5) n;
+
+    -- Insert villages (3 per commune)
+    INSERT INTO villages (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, code, name_en, name_kh, commune_id)
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        'V' || n, 'Village ' || n, ' village' || n,
+        c.id
+    FROM communes c, GENERATE_SERIES(1, 3) n;
+
+    RAISE NOTICE 'Location data created: Provinces, Districts, Communes, Villages';
+END $$;
+
+-- ============================================================
+-- PRODUCT FAVORITES (200 favorites)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+BEGIN
+    INSERT INTO product_favorites (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        user_id, product_id
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        (SELECT id FROM users WHERE user_type = 'CUSTOMER' ORDER BY RANDOM() LIMIT 1),
+        (SELECT id FROM products ORDER BY RANDOM() LIMIT 1)
+    FROM GENERATE_SERIES(1, 200) n;
+
+    RAISE NOTICE 'Product favorites created: 200 favorites';
+END $$;
+
+-- ============================================================
+-- EXCHANGE RATES (Global & Business-specific)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    bid UUID;
+BEGIN
+    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
+
+    -- Global exchange rates
+    INSERT INTO exchange_rates (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        from_currency, to_currency, rate, last_updated
+    ) VALUES
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'USD', 'KHR', 4100.0, t),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'USD', 'THB', 35.50, t),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'USD', 'VND', 24000.0, t),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'EUR', 'USD', 1.10, t),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'GBP', 'USD', 1.28, t);
+
+    -- Business-specific exchange rates
+    INSERT INTO business_exchange_rates (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        business_id, from_currency, to_currency, rate, last_updated
+    ) VALUES
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'USD', 'KHR', 4105.0, t),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'USD', 'THB', 35.45, t),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'EUR', 'USD', 1.09, t);
+
+    RAISE NOTICE 'Exchange rates created: 5 global + 3 business-specific';
+END $$;
+
+-- ============================================================
+-- USER SESSIONS (50 sessions for active users)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    user_ids UUID[];
+BEGIN
+    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO user_ids FROM users LIMIT 50;
+
+    INSERT INTO user_sessions (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        user_id, session_token, ip_address, user_agent, login_at, logout_at, is_active
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1],
+        'SESSION_TOKEN_' || n,
+        '192.168.' || (n % 255) || '.' || ((n * 7) % 255),
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        t - INTERVAL '1 day' * (n % 7),
+        CASE WHEN n % 3 = 0 THEN t - INTERVAL '1 hour' ELSE NULL END,
+        CASE WHEN n % 3 = 0 THEN false ELSE true END
+    FROM GENERATE_SERIES(1, 50) n;
+
+    RAISE NOTICE 'User sessions created: 50 sessions';
+END $$;
+
+-- ============================================================
+-- REFRESH TOKENS (40 tokens for valid sessions)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    user_ids UUID[];
+BEGIN
+    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO user_ids FROM users LIMIT 40;
+
+    INSERT INTO refresh_tokens (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        user_id, token, expires_at, revoked, revoked_at
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1],
+        'REFRESH_TOKEN_' || n || '_' || gen_random_uuid()::TEXT,
+        t + INTERVAL '30 days',
+        CASE WHEN n % 10 = 0 THEN true ELSE false END,
+        CASE WHEN n % 10 = 0 THEN t - INTERVAL '1 day' ELSE NULL END
+    FROM GENERATE_SERIES(1, 40) n;
+
+    RAISE NOTICE 'Refresh tokens created: 40 tokens';
+END $$;
+
+-- ============================================================
+-- BLACKLISTED TOKENS (20 revoked tokens)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+BEGIN
+    INSERT INTO blacklisted_tokens (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        token, user_id, reason, expires_at
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        'BLACKLISTED_TOKEN_' || n || '_' || gen_random_uuid()::TEXT,
+        (SELECT id FROM users ORDER BY RANDOM() LIMIT 1),
+        CASE n % 3 WHEN 0 THEN 'LOGOUT' WHEN 1 THEN 'PASSWORD_CHANGE' ELSE 'SECURITY_BREACH' END,
+        t + INTERVAL '7 days'
+    FROM GENERATE_SERIES(1, 20) n;
+
+    RAISE NOTICE 'Blacklisted tokens created: 20 tokens';
+END $$;
+
+-- ============================================================
+-- WORK SCHEDULES (100 schedules for staff)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    bid UUID;
+    staff_user_ids UUID[];
+BEGIN
+    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
+    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO staff_user_ids
+    FROM users WHERE business_id = bid AND user_type = 'BUSINESS_USER' LIMIT 100;
+
+    INSERT INTO work_schedules (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        business_id, user_id, schedule_type, start_date, end_date
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        bid,
+        staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
+        CASE (n % 3) WHEN 0 THEN 'WEEKLY' WHEN 1 THEN 'FIXED' ELSE 'FLEXIBLE' END,
+        t::DATE,
+        (t + INTERVAL '90 days')::DATE
+    FROM GENERATE_SERIES(1, 100) n;
+
+    RAISE NOTICE 'Work schedules created: 100 schedules';
+END $$;
+
+-- ============================================================
+-- SCHEDULE WORK DAYS (600 work days - 6 per schedule)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    sched_ids UUID[];
+BEGIN
+    SELECT ARRAY_AGG(id) INTO sched_ids FROM work_schedules;
+
+    INSERT INTO schedule_work_days (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        schedule_id, day_of_week, start_time, end_time, is_working_day
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        sched_ids[(n-1) % ARRAY_LENGTH(sched_ids, 1) + 1],
+        ((n % 7) + 1)::SMALLINT,
+        '08:00'::TIME,
+        '17:00'::TIME,
+        CASE WHEN (n % 7) < 5 THEN true ELSE false END
+    FROM GENERATE_SERIES(1, 600) n;
+
+    RAISE NOTICE 'Schedule work days created: 600 work days';
+END $$;
+
+-- ============================================================
+-- ATTENDANCE (500 attendance records)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    bid UUID;
+    staff_user_ids UUID[];
+BEGIN
+    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
+    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO staff_user_ids
+    FROM users WHERE business_id = bid AND user_type = 'BUSINESS_USER' LIMIT 100;
+
+    INSERT INTO attendance (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        business_id, user_id, attendance_date, check_in_time, check_out_time, status, note
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        bid,
+        staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
+        (t - INTERVAL '1 day' * (n % 30))::DATE,
+        (t - INTERVAL '1 day' * (n % 30))::TIMESTAMP + INTERVAL '08:00' + (n % 60)::INTERVAL MINUTE,
+        CASE WHEN n % 5 > 0 THEN ((t - INTERVAL '1 day' * (n % 30))::TIMESTAMP + INTERVAL '17:00' + (n % 60)::INTERVAL MINUTE) ELSE NULL END,
+        CASE WHEN n % 10 = 0 THEN 'ABSENT' WHEN n % 10 = 1 THEN 'LATE' ELSE 'PRESENT' END,
+        CASE WHEN n % 7 = 0 THEN 'Medical leave' ELSE NULL END
+    FROM GENERATE_SERIES(1, 500) n;
+
+    RAISE NOTICE 'Attendance records created: 500 records';
+END $$;
+
+-- ============================================================
+-- ATTENDANCE CHECK-INS (1000 check-in records)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    att_ids UUID[];
+BEGIN
+    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO att_ids FROM attendance LIMIT 500;
+
+    INSERT INTO attendance_check_in (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        attendance_id, check_in_time, latitude, longitude, device_id, ip_address
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        att_ids[(n-1) % ARRAY_LENGTH(att_ids, 1) + 1],
+        NOW() - INTERVAL '1 hour' * (n % 100),
+        11.5564 + (n::NUMERIC / 100000),
+        104.9282 + (n::NUMERIC / 100000),
+        'DEVICE_' || (n % 50),
+        '192.168.' || (n % 255) || '.' || ((n * 3) % 255)
+    FROM GENERATE_SERIES(1, 1000) n;
+
+    RAISE NOTICE 'Attendance check-ins created: 1000 check-ins';
+END $$;
+
+-- ============================================================
+-- LEAVES (200 leave records)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    bid UUID;
+    staff_user_ids UUID[];
+BEGIN
+    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
+    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO staff_user_ids
+    FROM users WHERE business_id = bid AND user_type = 'BUSINESS_USER' LIMIT 100;
+
+    INSERT INTO leaves (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        business_id, user_id, leave_type, start_date, end_date, reason, status, approved_by, approved_at
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        bid,
+        staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
+        CASE (n % 4) WHEN 0 THEN 'SICK' WHEN 1 THEN 'ANNUAL' WHEN 2 THEN 'PERSONAL' ELSE 'UNPAID' END,
+        (t + INTERVAL '1 day' * ((n % 30) + 1))::DATE,
+        (t + INTERVAL '1 day' * ((n % 30) + 1 + (n % 5)))::DATE,
+        'Leave reason #' || n,
+        CASE WHEN n % 3 = 0 THEN 'APPROVED' WHEN n % 3 = 1 THEN 'PENDING' ELSE 'REJECTED' END,
+        CASE WHEN n % 3 = 0 THEN (SELECT id FROM users WHERE user_type = 'BUSINESS_USER' ORDER BY RANDOM() LIMIT 1) ELSE NULL END,
+        CASE WHEN n % 3 = 0 THEN t - INTERVAL '1 day' * (n % 10) ELSE NULL END
+    FROM GENERATE_SERIES(1, 200) n;
+
+    RAISE NOTICE 'Leave records created: 200 leaves';
+END $$;
+
+-- ============================================================
+-- AUDIT LOGS (300 audit records)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+BEGIN
+    INSERT INTO audit_logs (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        user_id, action, entity_type, entity_id, old_values, new_values, ip_address, status
+    )
+    SELECT
+        gen_random_uuid(), 0, t - INTERVAL '1 hour' * (n % 100), t - INTERVAL '1 hour' * (n % 100), 'system', 'system', false, NULL, NULL,
+        (SELECT id FROM users ORDER BY RANDOM() LIMIT 1),
+        CASE (n % 5) WHEN 0 THEN 'CREATE' WHEN 1 THEN 'UPDATE' WHEN 2 THEN 'DELETE' WHEN 3 THEN 'VIEW' ELSE 'EXPORT' END,
+        CASE (n % 6) WHEN 0 THEN 'ORDER' WHEN 1 THEN 'PRODUCT' WHEN 2 THEN 'USER' WHEN 3 THEN 'BUSINESS' WHEN 4 THEN 'PAYMENT' ELSE 'REPORT' END,
+        gen_random_uuid(),
+        '{"previous":"value' || n || '"}',
+        '{"new":"value' || (n + 1) || '"}',
+        '192.168.' || (n % 255) || '.' || ((n * 5) % 255),
+        'SUCCESS'
+    FROM GENERATE_SERIES(1, 300) n;
+
+    RAISE NOTICE 'Audit logs created: 300 audit records';
+END $$;
+
+-- ============================================================
+-- PAYMENTS (100 general payment records)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    bid UUID;
+BEGIN
+    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
+
+    INSERT INTO payments (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        business_id, customer_id, amount, currency, payment_method, status, transaction_id, description, notes
+    )
+    SELECT
+        gen_random_uuid(), 0, t - INTERVAL '1 day' * (n % 60), t - INTERVAL '1 day' * (n % 60), 'system', 'system', false, NULL, NULL,
+        bid,
+        (SELECT id FROM users WHERE user_type = 'CUSTOMER' ORDER BY RANDOM() LIMIT 1),
+        (25.00 + (n * 1.5))::NUMERIC,
+        'USD',
+        CASE (n % 5) WHEN 0 THEN 'CASH' WHEN 1 THEN 'CREDIT_CARD' WHEN 2 THEN 'BANK_TRANSFER' WHEN 3 THEN 'MOBILE_WALLET' ELSE 'ONLINE' END,
+        CASE WHEN n % 10 = 0 THEN 'FAILED' WHEN n % 10 = 1 THEN 'PENDING' ELSE 'COMPLETED' END,
+        'TXN_' || LPAD(n::TEXT, 10, '0'),
+        'Payment for order #' || n,
+        CASE WHEN n % 20 = 0 THEN 'Manual review required' ELSE NULL END
+    FROM GENERATE_SERIES(1, 100) n;
+
+    RAISE NOTICE 'Payments created: 100 general payment records';
+END $$;
+
+-- ============================================================
 -- SUMMARY
 -- ============================================================
 
 SELECT
-    '✓ SUCCESS - Complete Test Data Generated!' as status,
+    '✓ SUCCESS - Complete Test Data Generated for ALL Tables!' as status,
     (SELECT COUNT(*) FROM users) as total_users,
     (SELECT COUNT(*) FROM roles) as total_roles,
+    (SELECT COUNT(*) FROM user_sessions) as total_user_sessions,
+    (SELECT COUNT(*) FROM refresh_tokens) as total_refresh_tokens,
+    (SELECT COUNT(*) FROM blacklisted_tokens) as total_blacklisted_tokens,
     (SELECT COUNT(*) FROM products) as total_products,
     (SELECT COUNT(*) FROM product_images) as total_product_images,
     (SELECT COUNT(*) FROM product_sizes) as total_product_sizes,
+    (SELECT COUNT(*) FROM product_favorites) as total_product_favorites,
     (SELECT COUNT(*) FROM orders) as total_orders,
     (SELECT COUNT(*) FROM order_items) as total_order_items,
     (SELECT COUNT(*) FROM order_payments) as total_order_payments,
+    (SELECT COUNT(*) FROM payments) as total_payments,
     (SELECT COUNT(*) FROM carts) as total_carts,
     (SELECT COUNT(*) FROM cart_items) as total_cart_items,
     (SELECT COUNT(*) FROM delivery_options) as total_delivery_options,
     (SELECT COUNT(*) FROM banners) as total_banners,
     (SELECT COUNT(*) FROM customer_addresses) as total_customer_addresses,
-    (SELECT COUNT(*) FROM notifications) as total_notifications;
+    (SELECT COUNT(*) FROM notifications) as total_notifications,
+    (SELECT COUNT(*) FROM provinces) as total_provinces,
+    (SELECT COUNT(*) FROM districts) as total_districts,
+    (SELECT COUNT(*) FROM communes) as total_communes,
+    (SELECT COUNT(*) FROM villages) as total_villages,
+    (SELECT COUNT(*) FROM exchange_rates) as total_exchange_rates,
+    (SELECT COUNT(*) FROM business_exchange_rates) as total_business_exchange_rates,
+    (SELECT COUNT(*) FROM work_schedules) as total_work_schedules,
+    (SELECT COUNT(*) FROM schedule_work_days) as total_schedule_work_days,
+    (SELECT COUNT(*) FROM attendance) as total_attendance,
+    (SELECT COUNT(*) FROM attendance_check_in) as total_attendance_check_in,
+    (SELECT COUNT(*) FROM leaves) as total_leaves,
+    (SELECT COUNT(*) FROM audit_logs) as total_audit_logs;
