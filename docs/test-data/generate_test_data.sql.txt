@@ -1007,7 +1007,7 @@ BEGIN
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         att_ids[(n-1) % ARRAY_LENGTH(att_ids, 1) + 1],
-        CASE WHEN n % 2 = 0 THEN 'CHECK_IN' ELSE 'CHECK_OUT' END,
+        CASE WHEN n % 2 = 0 THEN 'START' ELSE 'END' END,
         NOW() - INTERVAL '1 hour' * (n % 100),
         11.5564 + (n::NUMERIC / 100000),
         104.9282 + (n::NUMERIC / 100000),
