@@ -26,6 +26,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
            "LEFT JOIN FETCH o.customer " +
            "LEFT JOIN FETCH o.statusHistory sh " +
            "LEFT JOIN FETCH sh.orderProcessStatus " +
+           "LEFT JOIN FETCH sh.changedByUser " +
            "WHERE o.id = :id AND o.isDeleted = false")
     Optional<Order> findByIdWithDetails(@Param("id") UUID id);
 

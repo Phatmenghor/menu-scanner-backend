@@ -1,5 +1,6 @@
 package com.emenu.features.order.dto.response;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +18,10 @@ public class OrderStatusHistoryResponse {
     private String statusName;
     private String statusDescription;
     private String note;
-    private String changedBy;
+
+    // User who changed the status - nested object with full details
+    @Valid
+    private OrderStatusHistoryUserInfo changedBy;
+
     private LocalDateTime changedAt;
 }

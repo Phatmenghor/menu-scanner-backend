@@ -6,6 +6,7 @@ import com.emenu.features.order.dto.helper.OrderItemCreateHelper;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
 import com.emenu.features.order.dto.response.OrderStatusHistoryResponse;
+import com.emenu.features.order.dto.response.OrderStatusHistoryUserInfo;
 import com.emenu.features.order.dto.response.OrderPaymentInfo;
 import com.emenu.features.order.models.CartItem;
 import com.emenu.features.order.models.Order;
@@ -180,6 +181,7 @@ public interface OrderMapper {
 
         return com.emenu.features.order.dto.response.OrderStatusDto.builder()
                 .name(order.getOrderProcessStatusName())
+                .createdAt(order.getCreatedAt())
                 .build();
     }
 
@@ -211,10 +213,27 @@ public interface OrderMapper {
                         .statusDescription(history.getOrderProcessStatus() != null ?
                                 history.getOrderProcessStatus().getDescription() : null)
                         .note(history.getNote())
-                        .changedBy(history.getChangedBy())
+                        .changedBy(mapStatusHistoryUserInfo(history))
                         .changedAt(history.getCreatedAt())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Map user details from status history
+     */
+    default OrderStatusHistoryUserInfo mapStatusHistoryUserInfo(OrderStatusHistory history) {
+        if (history.getChangedByUser() == null) {
+            return null;
+        }
+
+        return OrderStatusHistoryUserInfo.builder()
+                .userId(history.getChangedByUserId())
+                .firstName(history.getChangedByUser().getFirstName())
+                .lastName(history.getChangedByUser().getLastName())
+                .phoneNumber(history.getChangedByUser().getPhoneNumber())
+                .businessId(history.getChangedByUser().getBusinessId())
+                .build();
     }
 
     /**
