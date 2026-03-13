@@ -705,12 +705,12 @@ END $$;
 DO $$
 DECLARE
     t TIMESTAMPTZ := NOW();
-    prov_uuid UUID;
-    dist_uuid UUID;
-    comm_uuid UUID;
+    prov_code VARCHAR;
+    dist_code VARCHAR;
+    comm_code VARCHAR;
 BEGIN
     -- Insert provinces (add more as needed)
-    INSERT INTO provinces (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, code, name_en, name_kh)
+    INSERT INTO location_province_cbc (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, province_code, province_en, province_kh)
     VALUES
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'PP', 'Phnom Penh', 'ភ្នំពេញ'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'KA', 'Kandal', 'កណ្តាល'),
@@ -719,28 +719,28 @@ BEGIN
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'KD', 'Kampong Chhnang', 'កម្ពង់ឆ្នាំង');
 
     -- Insert districts (3 per province for example)
-    INSERT INTO districts (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, code, name_en, name_kh, province_id)
+    INSERT INTO location_district_cbc (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, district_code, district_en, district_kh, province_code)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         'D' || n, 'District ' || n, 'ស្រុក' || n,
-        (SELECT id FROM provinces WHERE code = 'PP' LIMIT 1)
+        'PP'
     FROM GENERATE_SERIES(1, 3) n;
 
     -- Insert communes (5 per district)
-    INSERT INTO communes (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, code, name_en, name_kh, district_id)
+    INSERT INTO location_commune_cbc (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, commune_code, commune_en, commune_kh, district_code)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         'C' || n, 'Commune ' || n, 'ឃុំ' || n,
-        d.id
-    FROM districts d, GENERATE_SERIES(1, 5) n;
+        d.district_code
+    FROM location_district_cbc d, GENERATE_SERIES(1, 5) n;
 
     -- Insert villages (3 per commune)
-    INSERT INTO villages (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, code, name_en, name_kh, commune_id)
+    INSERT INTO location_village_cbc (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, village_code, village_en, village_kh, commune_code)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'V' || n, 'Village ' || n, ' village' || n,
-        c.id
-    FROM communes c, GENERATE_SERIES(1, 3) n;
+        'V' || n, 'Village ' || n, 'village' || n,
+        c.commune_code
+    FROM location_commune_cbc c, GENERATE_SERIES(1, 3) n;
 
     RAISE NOTICE 'Location data created: Provinces, Districts, Communes, Villages';
 END $$;
@@ -1113,10 +1113,10 @@ SELECT
     (SELECT COUNT(*) FROM banners) as total_banners,
     (SELECT COUNT(*) FROM customer_addresses) as total_customer_addresses,
     (SELECT COUNT(*) FROM notifications) as total_notifications,
-    (SELECT COUNT(*) FROM provinces) as total_provinces,
-    (SELECT COUNT(*) FROM districts) as total_districts,
-    (SELECT COUNT(*) FROM communes) as total_communes,
-    (SELECT COUNT(*) FROM villages) as total_villages,
+    (SELECT COUNT(*) FROM location_province_cbc) as total_provinces,
+    (SELECT COUNT(*) FROM location_district_cbc) as total_districts,
+    (SELECT COUNT(*) FROM location_commune_cbc) as total_communes,
+    (SELECT COUNT(*) FROM location_village_cbc) as total_villages,
     (SELECT COUNT(*) FROM exchange_rates) as total_exchange_rates,
     (SELECT COUNT(*) FROM business_exchange_rates) as total_business_exchange_rates,
     (SELECT COUNT(*) FROM work_schedules) as total_work_schedules,
