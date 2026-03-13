@@ -1,69 +1,82 @@
 package com.emenu.shared.generate;
 
+import com.emenu.features.order.models.OrderCounter;
+import com.emenu.features.order.repository.OrderCounterRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 /**
  * Utility class for generating unique order numbers.
- * Pattern: ORD-YYYYMMDD-XXXX where XXXX is a counter with random component.
+ * Pattern: ORD-YYYYMMDD-XXXXXX where XXXXXX is a database-backed counter (unlimited, starts from 000001).
  */
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class OrderNumberGenerator {
 
-    private static final AtomicLong orderCounter = new AtomicLong(System.currentTimeMillis() % 10000);
+    private final OrderCounterRepository orderCounterRepository;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final String ORDER_PREFIX = "ORD";
 
     /**
-     * Generate a unique order number with uniqueness check.
+     * Generate a unique order number with database-backed counter.
+     * Counter is per-day and grows dynamically without limits.
      *
-     * @param existsChecker Predicate to check if order number already exists
-     * @return Unique order number in format ORD-YYYYMMDD-XXXX
+     * @return Unique order number in format ORD-YYYYMMDD-XXXXXX
      */
-    public String generateUniqueOrderNumber(Predicate<String> existsChecker) {
-        String orderNumber;
-        long counter = orderCounter.incrementAndGet() % 10000;
-        int attempts = 0;
-        final int maxAttempts = 100;
+    @Transactional
+    public String generateOrderNumber() {
+        LocalDate today = LocalDate.now();
 
-        do {
-            orderNumber = generateOrderNumber(counter);
-            counter = (counter + 1) % 10000;
-            attempts++;
+        // Get or create counter for today
+        OrderCounter counter = orderCounterRepository.findByCounterDate(today)
+                .orElseGet(() -> {
+                    OrderCounter newCounter = new OrderCounter();
+                    newCounter.setCounterDate(today);
+                    newCounter.setCounterValue(0L);
+                    return orderCounterRepository.save(newCounter);
+                });
 
-            if (attempts >= maxAttempts) {
-                // Add random component to avoid infinite loop
-                counter = ThreadLocalRandom.current().nextLong(1000, 9999);
-            }
-        } while (existsChecker.test(orderNumber) && attempts < maxAttempts * 2);
+        // Increment counter
+        counter.setCounterValue(counter.getCounterValue() + 1);
+        OrderCounter savedCounter = orderCounterRepository.save(counter);
 
-        log.debug("Generated order number: {} after {} attempts", orderNumber, attempts);
-        return orderNumber;
+        String date = today.format(DATE_FORMATTER);
+        return String.format("%s-%s-%06d", ORDER_PREFIX, date, savedCounter.getCounterValue());
     }
 
     /**
-     * Generate order number without uniqueness check.
-     * Use when uniqueness is guaranteed by database constraints.
+     * Generate a unique order number with uniqueness check.
+     * For legacy compatibility.
      *
-     * @return Order number in format ORD-YYYYMMDD-XXXX
+     * @param existsChecker Predicate to check if order number already exists
+     * @return Unique order number in format ORD-YYYYMMDD-XXXXXX
      */
-    public String generateOrderNumber() {
-        long counter = orderCounter.incrementAndGet() % 10000;
-        return generateOrderNumber(counter);
-    }
+    @Transactional
+    public String generateUniqueOrderNumber(Predicate<String> existsChecker) {
+        String orderNumber = generateOrderNumber();
 
-    private String generateOrderNumber(long counter) {
-        String date = LocalDateTime.now().format(DATE_FORMATTER);
-        return String.format("%s-%s-%04d", ORDER_PREFIX, date, counter);
+        // Check if order number exists (should rarely happen with database sequence)
+        int attempts = 0;
+        final int maxAttempts = 5;
+
+        while (existsChecker.test(orderNumber) && attempts < maxAttempts) {
+            orderNumber = generateOrderNumber();
+            attempts++;
+        }
+
+        if (attempts > 0) {
+            log.warn("Had to retry order number generation {} times", attempts);
+        }
+
+        log.debug("Generated order number: {}", orderNumber);
+        return orderNumber;
     }
 
     /**
@@ -72,9 +85,22 @@ public class OrderNumberGenerator {
      * @param prefix Custom prefix (e.g., "POS", "WEB", "APP")
      * @return Order number with custom prefix
      */
+    @Transactional
     public String generateOrderNumber(String prefix) {
-        String date = LocalDateTime.now().format(DATE_FORMATTER);
-        long counter = orderCounter.incrementAndGet() % 10000;
-        return String.format("%s-%s-%04d", prefix, date, counter);
+        LocalDate today = LocalDate.now();
+
+        OrderCounter counter = orderCounterRepository.findByCounterDate(today)
+                .orElseGet(() -> {
+                    OrderCounter newCounter = new OrderCounter();
+                    newCounter.setCounterDate(today);
+                    newCounter.setCounterValue(0L);
+                    return orderCounterRepository.save(newCounter);
+                });
+
+        counter.setCounterValue(counter.getCounterValue() + 1);
+        OrderCounter savedCounter = orderCounterRepository.save(counter);
+
+        String date = today.format(DATE_FORMATTER);
+        return String.format("%s-%s-%06d", prefix, date, savedCounter.getCounterValue());
     }
 }
