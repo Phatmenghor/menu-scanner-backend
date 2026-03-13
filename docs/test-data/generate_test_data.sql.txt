@@ -210,9 +210,8 @@ DECLARE
     platform_roles UUID[];
 BEGIN
     -- Get all 12 platform role IDs
-    SELECT ARRAY_AGG(id) INTO platform_roles FROM roles
-    WHERE user_type = 'PLATFORM_USER'
-    ORDER BY name;
+    SELECT ARRAY_AGG(id ORDER BY id) INTO platform_roles FROM roles
+    WHERE user_type = 'PLATFORM_USER';
 
     -- Create 800 platform users
     INSERT INTO users (
