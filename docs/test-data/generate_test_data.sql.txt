@@ -33,6 +33,7 @@ BEGIN
         DELETE FROM order_status_history WHERE order_id IN (SELECT id FROM orders WHERE business_id = v_bid);
         DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE business_id = v_bid);
         DELETE FROM order_payments WHERE business_id = v_bid;
+        DELETE FROM order_counters;
         DELETE FROM orders WHERE business_id = v_bid;
         DELETE FROM order_process_statuses WHERE business_id = v_bid;
         DELETE FROM product_favorites WHERE product_id IN (SELECT id FROM products WHERE business_id = v_bid);
@@ -501,16 +502,28 @@ DECLARE
     total_amt NUMERIC;
     order_num TEXT;
     order_counter INT;
+    today_counter BIGINT;
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
     SELECT id INTO order_process_status_id FROM order_process_statuses WHERE business_id = bid AND name = 'Pending' LIMIT 1;
+
+    -- Initialize counter for today
+    INSERT INTO order_counters (counter_date, counter_value)
+    VALUES (CURRENT_DATE, 0)
+    ON CONFLICT (counter_date) DO NOTHING;
 
     FOR order_counter IN 1..1000 LOOP
         SELECT id INTO customer_id FROM users WHERE user_type = 'CUSTOMER' ORDER BY RANDOM() LIMIT 1;
         SELECT id INTO pid FROM products WHERE business_id = bid ORDER BY RANDOM() LIMIT 1;
 
         order_id := gen_random_uuid();
-        order_num := 'ORD-' || TO_CHAR(NOW(), 'YYYYMM') || '-' || LPAD(order_counter::TEXT, 6, '0');
+
+        -- Increment counter and get next value
+        UPDATE order_counters SET counter_value = counter_value + 1 WHERE counter_date = CURRENT_DATE;
+
+        SELECT counter_value INTO today_counter FROM order_counters WHERE counter_date = CURRENT_DATE;
+
+        order_num := 'ORD-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(today_counter::TEXT, 6, '0');
         subtotal := (20.00 + (order_counter % 100))::NUMERIC;
         discount_amt := (order_counter % 5)::NUMERIC;
         deliv_fee := (2.00 + (order_counter % 8))::NUMERIC;
