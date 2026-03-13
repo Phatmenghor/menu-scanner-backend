@@ -143,10 +143,10 @@ BEGIN
         ('role_customer', role_customer);
 
     -- ── Create roles FIRST ─────────────────────────────────
-    INSERT INTO roles (id, name) VALUES
-        (role_admin, 'PLATFORM_ADMIN'),
-        (role_business, 'BUSINESS_OWNER'),
-        (role_customer, 'CUSTOMER');
+    INSERT INTO roles (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, name, description, business_id, user_type) VALUES
+        (role_admin, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_ADMIN', 'Platform Administrator role', NULL, 'PLATFORM_USER'),
+        (role_business, 0, t, t, 'system', 'system', false, NULL, NULL, 'BUSINESS_OWNER', 'Business Owner role', bid, 'BUSINESS_USER'),
+        (role_customer, 0, t, t, 'system', 'system', false, NULL, NULL, 'CUSTOMER', 'Customer role', NULL, 'CUSTOMER');
 
     -- ── Create 3 main users (without business_id for now) ───
     INSERT INTO users (
