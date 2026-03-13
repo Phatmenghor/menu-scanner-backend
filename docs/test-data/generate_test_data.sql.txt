@@ -790,27 +790,22 @@ DECLARE
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
 
-    -- Global exchange rates
+    -- Global exchange rates (USD to KHR only)
     INSERT INTO exchange_rates (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        from_currency, to_currency, rate, last_updated
+        usd_to_khr_rate, is_active, notes
     ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'USD', 'KHR', 4100.0, t),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'USD', 'THB', 35.50, t),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'USD', 'VND', 24000.0, t),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'EUR', 'USD', 1.10, t),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'GBP', 'USD', 1.28, t);
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 4100.0, true, 'Standard USD to KHR rate');
 
     -- Business-specific exchange rates
     INSERT INTO business_exchange_rates (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, from_currency, to_currency, rate, last_updated
+        business_id, usd_to_khr_rate, usd_to_thb_rate, usd_to_cny_rate, usd_to_vnd_rate, is_active, notes
     ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'USD', 'KHR', 4105.0, t),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'USD', 'THB', 35.45, t),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'EUR', 'USD', 1.09, t);
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 4105.0, 35.45, 7.25, 24500.0, true, 'Business custom rates'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 4110.0, 35.50, 7.30, 24600.0, true, 'Alternative business rates');
 
-    RAISE NOTICE 'Exchange rates created: 5 global + 3 business-specific';
+    RAISE NOTICE 'Exchange rates created: 1 global + 2 business-specific';
 END $$;
 
 -- ============================================================
