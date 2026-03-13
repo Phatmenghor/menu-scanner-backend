@@ -92,10 +92,16 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<OrderResponse> getCustomerOrderHistory() {
+    public PaginationResponse<OrderResponse> getCustomerOrderHistory(OrderFilterRequest filter) {
         User currentUser = securityUtils.getCurrentUser();
-        List<Order> orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(currentUser.getId());
-        return orderMapper.toResponseList(orders);
+        filter.setBusinessId(null);  // Clear any business filter for customer orders
+
+        Pageable pageable = PaginationUtils.createPageable(
+                filter.getPageNo(), filter.getPageSize(), filter.getSortBy(), filter.getSortDirection()
+        );
+
+        Page<Order> page = orderRepository.findByCustomerIdAndIsDeletedFalseOrderByCreatedAtDesc(currentUser.getId(), pageable);
+        return orderMapper.toPaginationResponse(page, paginationMapper);
     }
 
     @Override
@@ -171,11 +177,36 @@ public class OrderServiceImpl implements OrderService {
         if (request.getPaymentMethod() != null) {
             order.setPaymentMethod(request.getPaymentMethod());
         }
+        if (request.getPaymentStatus() != null) {
+            order.setPaymentStatus(request.getPaymentStatus());
+        }
         if (request.getCustomerNote() != null) {
             order.setCustomerNote(request.getCustomerNote());
         }
         if (request.getBusinessNote() != null) {
             order.setBusinessNote(request.getBusinessNote());
+        }
+
+        // Full update fields
+        if (request.getDiscountAmount() != null) {
+            order.setDiscountAmount(request.getDiscountAmount());
+        }
+        if (request.getTaxAmount() != null) {
+            order.setTaxAmount(request.getTaxAmount());
+        }
+        if (request.getDeliveryFee() != null && request.getDeliveryOption() == null) {
+            // Only update delivery fee directly if delivery option is not provided
+            order.setDeliveryFee(request.getDeliveryFee());
+        }
+
+        // Recalculate total amount if any pricing fields are updated
+        if (request.getDiscountAmount() != null || request.getTaxAmount() != null ||
+            (request.getDeliveryFee() != null && request.getDeliveryOption() == null)) {
+            BigDecimal subtotal = order.getSubtotal() != null ? order.getSubtotal() : BigDecimal.ZERO;
+            BigDecimal discount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
+            BigDecimal delivery = order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO;
+            BigDecimal tax = order.getTaxAmount() != null ? order.getTaxAmount() : BigDecimal.ZERO;
+            order.setTotalAmount(subtotal.subtract(discount).add(delivery).add(tax));
         }
 
         Order updatedOrder = orderRepository.save(order);

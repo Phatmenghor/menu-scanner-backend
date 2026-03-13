@@ -13,7 +13,7 @@ public interface OrderService {
 
     // Customer Operations
     OrderResponse createOrderFromCart(OrderCreateRequest request);
-    List<OrderResponse> getCustomerOrderHistory();
+    PaginationResponse<OrderResponse> getCustomerOrderHistory(OrderFilterRequest filter);
     OrderResponse getOrderById(UUID orderId);
 
     // Business Operations

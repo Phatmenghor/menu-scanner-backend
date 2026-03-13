@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -62,12 +61,13 @@ public class OrderController {
     }
 
     /**
-     * Get customer order history (requires login)
+     * Get customer order history with pagination (requires login)
+     * POST method allows filtering and pagination
      */
-    @GetMapping("/my-orders")
-    public ResponseEntity<ApiResponse<List<OrderResponse>>> getMyOrders() {
-        log.info("Getting order history for current customer");
-        List<OrderResponse> orders = orderService.getCustomerOrderHistory();
+    @PostMapping("/my-orders")
+    public ResponseEntity<ApiResponse<PaginationResponse<OrderResponse>>> getMyOrders(@Valid @RequestBody OrderFilterRequest filter) {
+        log.info("Getting paginated order history for current customer");
+        PaginationResponse<OrderResponse> orders = orderService.getCustomerOrderHistory(filter);
         return ResponseEntity.ok(ApiResponse.success("Order history retrieved successfully", orders));
     }
 

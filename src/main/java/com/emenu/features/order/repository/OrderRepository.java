@@ -1,6 +1,8 @@
 package com.emenu.features.order.repository;
 
 import com.emenu.features.order.models.Order;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -53,4 +55,10 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
      */
     @Query("SELECT COUNT(o) FROM Order o WHERE o.businessId = :businessId AND o.orderProcessStatusName = :orderProcessStatusName AND o.isDeleted = false")
     long countByBusinessIdAndOrderProcessStatusName(@Param("businessId") UUID businessId, @Param("orderProcessStatusName") String orderProcessStatusName);
+
+    /**
+     * Finds paginated non-deleted orders by customer ID, ordered by creation date descending
+     */
+    @Query("SELECT o FROM Order o WHERE o.customerId = :customerId AND o.isDeleted = false ORDER BY o.createdAt DESC")
+    Page<Order> findByCustomerIdAndIsDeletedFalseOrderByCreatedAtDesc(@Param("customerId") UUID customerId, Pageable pageable);
 }
