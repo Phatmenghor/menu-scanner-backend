@@ -761,11 +761,20 @@ BEGIN
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         user_id, product_id
     )
+    WITH customer_product_pairs AS (
+        SELECT
+            u.id as user_id,
+            p.id as product_id,
+            ROW_NUMBER() OVER (ORDER BY u.id, p.id) as pair_num
+        FROM (SELECT id FROM users WHERE user_type = 'CUSTOMER' ORDER BY id) u
+        CROSS JOIN (SELECT id FROM products ORDER BY id LIMIT 500) p
+    )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        (SELECT id FROM users WHERE user_type = 'CUSTOMER' ORDER BY RANDOM() LIMIT 1),
-        (SELECT id FROM products ORDER BY RANDOM() LIMIT 1)
-    FROM GENERATE_SERIES(1, 200) n;
+        user_id,
+        product_id
+    FROM customer_product_pairs
+    WHERE pair_num <= 200;
 
     RAISE NOTICE 'Product favorites created: 200 favorites';
 END $$;
