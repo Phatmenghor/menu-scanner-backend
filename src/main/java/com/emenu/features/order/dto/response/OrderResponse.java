@@ -34,10 +34,12 @@ public class OrderResponse extends BaseAuditResponse {
     private String customerNote;
     private String businessNote;
 
-    // Pricing
+    // Pricing - standardized field names
+    private Integer totalItems;
     private BigDecimal subtotal;
+    private BigDecimal totalDiscount;
     private BigDecimal deliveryFee;
-    private BigDecimal totalAmount;
+    private BigDecimal finalTotal;
 
     // Payment info
     private PaymentMethod paymentMethod;
@@ -49,4 +51,7 @@ public class OrderResponse extends BaseAuditResponse {
 
     // Items
     private List<OrderItemResponse> items;
+
+    // Status history
+    private List<OrderStatusHistoryResponse> statusHistory;
 }

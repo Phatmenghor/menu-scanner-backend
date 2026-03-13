@@ -18,13 +18,13 @@ public class OrderPaymentResponse extends BaseAuditResponse {
     private String orderNumber;
     private String paymentReference;
 
-    // Pricing breakdown
+    // Pricing breakdown - standardized field names
     private BigDecimal subtotal;          // Items total before discounts
-    private BigDecimal discountAmount;    // Total discount applied
+    private BigDecimal totalDiscount;     // Total discount applied (renamed from discountAmount)
     private BigDecimal deliveryFee;       // Delivery cost
     private BigDecimal taxAmount;         // Tax (null if not applicable)
-    private BigDecimal totalAmount;       // Final amount paid
-    private String formattedAmount;       // Formatted totalAmount
+    private BigDecimal finalTotal;        // Final amount paid (renamed from totalAmount)
+    private String formattedAmount;       // Formatted finalTotal
 
     private PaymentMethod paymentMethod;
     private PaymentStatus status;

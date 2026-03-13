@@ -5,9 +5,11 @@ import com.emenu.features.order.dto.helper.OrderCreateHelper;
 import com.emenu.features.order.dto.helper.OrderItemCreateHelper;
 import com.emenu.features.order.dto.request.OrderCreateRequest;
 import com.emenu.features.order.dto.response.OrderResponse;
+import com.emenu.features.order.dto.response.OrderStatusHistoryResponse;
 import com.emenu.features.order.models.CartItem;
 import com.emenu.features.order.models.Order;
 import com.emenu.features.order.models.OrderItem;
+import com.emenu.features.order.models.OrderStatusHistory;
 import com.emenu.shared.dto.PaginationResponse;
 import com.emenu.shared.mapper.PaginationMapper;
 import org.mapstruct.Mapper;
@@ -17,9 +19,10 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        uses = {LocationMapper.class, DeliveryOptionMapper.class, OrderItemMapper.class, PaginationMapper.class, OrderProcessStatusMapper.class})
+        uses = {LocationMapper.class, DeliveryOptionMapper.class, OrderItemMapper.class, PaginationMapper.class, OrderProcessStatusMapper.class, OrderStatusHistoryMapper.class})
 public interface OrderMapper {
 
     @Mapping(target = "customerName", expression = "java(order.getCustomerIdentifier())")
@@ -28,6 +31,10 @@ public interface OrderMapper {
     @Mapping(target = "deliveryAddress", expression = "java(mapDeliveryAddress(order))")
     @Mapping(target = "deliveryOption", expression = "java(mapDeliveryOption(order))")
     @Mapping(target = "orderProcessStatus", expression = "java(mapOrderProcessStatus(order))")
+    @Mapping(source = "discountAmount", target = "totalDiscount")
+    @Mapping(source = "totalAmount", target = "finalTotal")
+    @Mapping(target = "totalItems", expression = "java(calculateTotalItems(order))")
+    @Mapping(target = "statusHistory", expression = "java(mapStatusHistory(order))")
     OrderResponse toResponse(Order order);
 
     List<OrderResponse> toResponseList(List<Order> orders);
@@ -152,5 +159,39 @@ public interface OrderMapper {
         return com.emenu.features.order.dto.response.OrderStatusDto.builder()
                 .name(order.getOrderProcessStatusName())
                 .build();
+    }
+
+    /**
+     * Calculate total number of items in the order
+     */
+    default Integer calculateTotalItems(Order order) {
+        if (order.getItems() == null || order.getItems().isEmpty()) {
+            return 0;
+        }
+        return order.getItems().stream()
+                .mapToInt(OrderItem::getQuantity)
+                .sum();
+    }
+
+    /**
+     * Map order status history to response DTOs
+     */
+    default List<OrderStatusHistoryResponse> mapStatusHistory(Order order) {
+        if (order.getStatusHistory() == null || order.getStatusHistory().isEmpty()) {
+            return null;
+        }
+
+        return order.getStatusHistory().stream()
+                .map(history -> OrderStatusHistoryResponse.builder()
+                        .id(history.getId())
+                        .statusName(history.getOrderProcessStatus() != null ?
+                                history.getOrderProcessStatus().getName() : null)
+                        .statusDescription(history.getOrderProcessStatus() != null ?
+                                history.getOrderProcessStatus().getDescription() : null)
+                        .note(history.getNote())
+                        .changedBy(history.getChangedBy())
+                        .changedAt(history.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

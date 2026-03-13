@@ -95,6 +95,9 @@ public class Order extends BaseUUIDEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items;
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OrderStatusHistory> statusHistory;
+
     // Business Methods
     public void updateStatus(String newOrderProcessStatusName) {
         this.orderProcessStatusName = newOrderProcessStatusName;

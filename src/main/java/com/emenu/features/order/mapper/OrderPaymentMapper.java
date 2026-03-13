@@ -17,6 +17,8 @@ public interface OrderPaymentMapper {
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(source = "order.orderNumber", target = "orderNumber")
+    @Mapping(source = "discountAmount", target = "totalDiscount")
+    @Mapping(source = "totalAmount", target = "finalTotal")
     @Mapping(target = "formattedAmount", expression = "java(payment.getFormattedAmount())")
     @Mapping(target = "customerName", expression = "java(getCustomerName(payment))")
     @Mapping(target = "customerPhone", expression = "java(getCustomerPhone(payment))")
