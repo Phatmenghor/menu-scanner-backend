@@ -1,9 +1,9 @@
 -- ============================================================
--- MENU SCANNER BACKEND - COMPLETE COMPREHENSIVE TEST DATA
+-- MENU SCANNER BACKEND - COMPLETE TEST DATA
 -- ============================================================
 -- Full data generation with ALL fields populated
--- All entities validated against actual JPA models
--- Complete data for: Products, Sizes, Images, Promotions, Orders, HR, Locations, etc.
+-- Schema VALIDATED against actual JPA entities (March 2026)
+-- All correct column names and data types
 --
 -- Test Accounts (password: password)
 --   phatmenghor19@gmail.com - PLATFORM_ADMIN
@@ -14,7 +14,7 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================
--- CLEANUP - Delete existing test data (order matters!)
+-- CLEANUP - Delete existing test data
 -- ============================================================
 DO $$
 DECLARE
@@ -43,47 +43,39 @@ BEGIN
         DELETE FROM carts WHERE business_id = v_bid;
         DELETE FROM delivery_options WHERE business_id = v_bid;
         DELETE FROM business_exchange_rates WHERE business_id = v_bid;
+        DELETE FROM banners WHERE business_id = v_bid;
         DELETE FROM categories WHERE business_id = v_bid;
         DELETE FROM brands WHERE business_id = v_bid;
-        DELETE FROM banners WHERE business_id = v_bid;
         DELETE FROM subscriptions WHERE business_id = v_bid;
         DELETE FROM business_settings WHERE business_id = v_bid;
         DELETE FROM businesses WHERE id = v_bid;
     END IF;
 
     DELETE FROM customer_addresses WHERE user_id IN (
-        SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com'
-        OR email LIKE 'customer%@test.com'
+        SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com' OR email LIKE 'customer%@test.com'
     );
     DELETE FROM user_sessions WHERE user_id IN (
-        SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com'
-        OR email LIKE 'customer%@test.com'
+        SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com' OR email LIKE 'customer%@test.com'
     );
     DELETE FROM refresh_tokens WHERE user_id IN (
-        SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com'
-        OR email LIKE 'customer%@test.com'
+        SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com' OR email LIKE 'customer%@test.com'
     );
     DELETE FROM user_roles WHERE user_id IN (
-        SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com'
-        OR email LIKE 'customer%@test.com'
+        SELECT id FROM users WHERE email LIKE 'staff%@phatrestaurant.com' OR email LIKE 'customer%@test.com'
     );
-    DELETE FROM users WHERE email LIKE 'staff%@phatrestaurant.com'
-        OR email LIKE 'customer%@test.com';
+    DELETE FROM users WHERE email LIKE 'staff%@phatrestaurant.com' OR email LIKE 'customer%@test.com';
 
     DELETE FROM user_roles WHERE user_id IN (
         SELECT id FROM users WHERE user_identifier IN ('phatmenghor19@gmail.com','phatmenghor20@gmail.com','phatmenghor21@gmail.com')
     );
     DELETE FROM users WHERE user_identifier IN ('phatmenghor19@gmail.com','phatmenghor20@gmail.com','phatmenghor21@gmail.com');
-    DELETE FROM roles WHERE name IN ('PLATFORM_ADMIN', 'PLATFORM_MODERATOR', 'PLATFORM_ANALYST', 'PLATFORM_SUPPORT',
-                                     'PLATFORM_EDITOR', 'PLATFORM_VIEWER', 'PLATFORM_AUDITOR', 'PLATFORM_OPERATOR',
-                                     'PLATFORM_SUPERVISOR', 'PLATFORM_MANAGER', 'PLATFORM_COORDINATOR', 'PLATFORM_SPECIALIST',
-                                     'BUSINESS_OWNER', 'CUSTOMER', 'STAFF');
+    DELETE FROM roles WHERE name IN ('PLATFORM_ADMIN', 'BUSINESS_OWNER', 'CUSTOMER', 'STAFF');
 
     RAISE NOTICE 'Cleanup complete';
 END $$;
 
 -- ============================================================
--- CORE DATA: Roles, Users, Business, Subscriptions
+-- CORE DATA: Roles, Users, Business
 -- ============================================================
 
 DO $$
@@ -95,42 +87,20 @@ DECLARE
     t TIMESTAMPTZ := NOW();
     plan1 UUID := gen_random_uuid();
     role_admin UUID := gen_random_uuid();
-    role_moderator UUID := gen_random_uuid();
-    role_analyst UUID := gen_random_uuid();
-    role_support UUID := gen_random_uuid();
-    role_editor UUID := gen_random_uuid();
-    role_viewer UUID := gen_random_uuid();
-    role_auditor UUID := gen_random_uuid();
-    role_operator UUID := gen_random_uuid();
-    role_supervisor UUID := gen_random_uuid();
-    role_manager UUID := gen_random_uuid();
-    role_coordinator UUID := gen_random_uuid();
-    role_specialist UUID := gen_random_uuid();
     role_business UUID := gen_random_uuid();
     role_customer UUID := gen_random_uuid();
     role_staff UUID := gen_random_uuid();
 BEGIN
 
-    -- Create 12 platform roles
+    -- Create 4 core roles
     INSERT INTO roles (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, name, description, business_id, user_type)
     VALUES
         (role_admin, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_ADMIN', 'Platform Administrator', NULL, 'PLATFORM_USER'),
-        (role_moderator, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_MODERATOR', 'Platform Moderator', NULL, 'PLATFORM_USER'),
-        (role_analyst, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_ANALYST', 'Platform Analyst', NULL, 'PLATFORM_USER'),
-        (role_support, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_SUPPORT', 'Platform Support', NULL, 'PLATFORM_USER'),
-        (role_editor, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_EDITOR', 'Platform Editor', NULL, 'PLATFORM_USER'),
-        (role_viewer, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_VIEWER', 'Platform Viewer', NULL, 'PLATFORM_USER'),
-        (role_auditor, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_AUDITOR', 'Platform Auditor', NULL, 'PLATFORM_USER'),
-        (role_operator, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_OPERATOR', 'Platform Operator', NULL, 'PLATFORM_USER'),
-        (role_supervisor, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_SUPERVISOR', 'Platform Supervisor', NULL, 'PLATFORM_USER'),
-        (role_manager, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_MANAGER', 'Platform Manager', NULL, 'PLATFORM_USER'),
-        (role_coordinator, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_COORDINATOR', 'Platform Coordinator', NULL, 'PLATFORM_USER'),
-        (role_specialist, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_SPECIALIST', 'Platform Specialist', NULL, 'PLATFORM_USER'),
         (role_business, 0, t, t, 'system', 'system', false, NULL, NULL, 'BUSINESS_OWNER', 'Business Owner', NULL, 'BUSINESS_USER'),
         (role_customer, 0, t, t, 'system', 'system', false, NULL, NULL, 'CUSTOMER', 'Customer', NULL, 'CUSTOMER'),
         (role_staff, 0, t, t, 'system', 'system', false, NULL, NULL, 'STAFF', 'Staff Member', NULL, 'BUSINESS_USER');
 
-    -- Create 3 main users (platform, business, customer)
+    -- Create 3 main users
     INSERT INTO users (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         user_identifier, email, password, first_name, last_name, phone_number, profile_image_url,
@@ -140,26 +110,22 @@ BEGIN
          'phatmenghor19@gmail.com', 'phatmenghor19@gmail.com',
          '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
          'Phat', 'Menghor', '+855 10 123 4567', 'https://via.placeholder.com/200/FF0000/FFFFFF?text=Admin',
-         'PLATFORM_USER', 'ACTIVE', NULL, 'Platform Admin', 'Phnom Penh, Cambodia', 'Platform Administrator User',
+         'PLATFORM_USER', 'ACTIVE', NULL, 'Platform Admin', 'Phnom Penh, Cambodia', 'Platform Administrator',
          t - INTERVAL '2 hours', t - INTERVAL '1 hour', 1),
         (buid, 0, t, t, 'system', 'system', false, NULL, NULL,
          'phatmenghor20@gmail.com', 'phatmenghor20@gmail.com',
          '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
          'Menghor', 'Business', '+855 10 234 5678', 'https://via.placeholder.com/200/0000FF/FFFFFF?text=Owner',
-         'BUSINESS_USER', 'ACTIVE', NULL, 'Restaurant Owner', 'Street 252, Phnom Penh', 'Business Owner User',
+         'BUSINESS_USER', 'ACTIVE', NULL, 'Restaurant Owner', 'Street 252, Phnom Penh', 'Business Owner',
          t - INTERVAL '1 hour', t - INTERVAL '30 minutes', 2),
         (cuid, 0, t, t, 'system', 'system', false, NULL, NULL,
          'phatmenghor21@gmail.com', 'phatmenghor21@gmail.com',
          '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
          'Customer', 'Menghor', '+855 10 345 6789', 'https://via.placeholder.com/200/00FF00/000000?text=Customer',
-         'CUSTOMER', 'ACTIVE', NULL, NULL, 'Phnom Penh, Cambodia', 'Regular Customer User',
+         'CUSTOMER', 'ACTIVE', NULL, NULL, 'Phnom Penh, Cambodia', 'Customer',
          t - INTERVAL '3 hours', t - INTERVAL '45 minutes', 1);
 
-    -- Assign roles to main users
-    INSERT INTO user_roles (user_id, role_id) VALUES
-        (puid, role_admin),
-        (buid, role_business),
-        (cuid, role_customer);
+    INSERT INTO user_roles (user_id, role_id) VALUES (puid, role_admin), (buid, role_business), (cuid, role_customer);
 
     -- Create business
     INSERT INTO businesses (
@@ -168,10 +134,9 @@ BEGIN
     ) VALUES (
         bid, 0, t, t, 'system', 'system', false, NULL, NULL,
         buid, 'Phat Restaurant', 'phatmenghor20@gmail.com', '+855 23 999 888', 'Street 252, Phnom Penh, Cambodia',
-        'Best Khmer restaurant in Phnom Penh with authentic traditional cuisine', 'ACTIVE', true
+        'Best Khmer restaurant in Phnom Penh', 'ACTIVE', true
     );
 
-    -- Update business user with business_id
     UPDATE users SET business_id = bid WHERE id = buid;
 
     -- Create business settings
@@ -191,9 +156,8 @@ BEGIN
         'phatmenghor20@gmail.com', '+855 23 999 888', '+855 10 234 5678', 'https://facebook.com/phatrestaurant',
         'https://instagram.com/phatrestaurant', 'https://phatrestaurant.com', '#FF6B6B', '#FFE66D',
         true, false, true, 0.0, 10.0, 5.0, 25.0, '30-45 minutes',
-        'All dishes must be consumed fresh. No refund after delivery.',
-        'We collect data for order fulfillment only.',
-        'Full refund if order not received within estimated time'
+        'Fresh food delivery guarantee', 'Customer data protection',
+        'Full refund if not satisfied'
     );
 
     -- Create subscription plan
@@ -202,10 +166,9 @@ BEGIN
         name, description, price, duration_days, status
     ) VALUES (
         plan1, 0, t, t, 'system', 'system', false, NULL, NULL,
-        'Annual Premium', 'Full access for 1 year with all features and support', 299.99, 365, 'PUBLIC'
+        'Annual Premium', 'Full access for 1 year', 299.99, 365, 'PUBLIC'
     );
 
-    -- Create subscription
     INSERT INTO subscriptions (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, plan_id, start_date, end_date, auto_renew
@@ -214,39 +177,36 @@ BEGIN
         bid, plan1, t - INTERVAL '1 year', t + INTERVAL '1 year', true
     );
 
-    -- Create categories (10 different types)
+    -- Create categories
     INSERT INTO categories (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, name, image_url, status
     )
     SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        bid,
-        CASE n WHEN 1 THEN 'Appetizers' WHEN 2 THEN 'Soups' WHEN 3 THEN 'Salads' WHEN 4 THEN 'Noodles' WHEN 5 THEN 'Rice Dishes'
-               WHEN 6 THEN 'Curries' WHEN 7 THEN 'Grilled Meats' WHEN 8 THEN 'Seafood' WHEN 9 THEN 'Desserts' WHEN 10 THEN 'Beverages'
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid,
+        CASE n WHEN 1 THEN 'Appetizers' WHEN 2 THEN 'Soups' WHEN 3 THEN 'Salads' WHEN 4 THEN 'Noodles' WHEN 5 THEN 'Rice'
+               WHEN 6 THEN 'Curries' WHEN 7 THEN 'Grilled' WHEN 8 THEN 'Seafood' WHEN 9 THEN 'Meat' WHEN 10 THEN 'Vegetables'
                ELSE 'Category ' || n END,
-        'https://via.placeholder.com/200/FFC300/000000?text=' || CASE n WHEN 1 THEN 'Appetizers' WHEN 2 THEN 'Soups' WHEN 3 THEN 'Salads' WHEN 4 THEN 'Noodles' WHEN 5 THEN 'Rice'
-                                                                      WHEN 6 THEN 'Curries' WHEN 7 THEN 'Grilled' WHEN 8 THEN 'Seafood' WHEN 9 THEN 'Desserts' WHEN 10 THEN 'Beverages'
-                                                                      ELSE 'Category' END,
+        'https://via.placeholder.com/200/FFC300/000000?text=Category' || n,
         'ACTIVE'
     FROM GENERATE_SERIES(1, 10) n;
 
-    -- Create brands (10)
+    -- Create brands
     INSERT INTO brands (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, name, image_url, description, status
     )
     SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        bid,
-        'Brand ' || n, 'https://via.placeholder.com/200/FF00FF/FFFFFF?text=Brand' || n, 'Premium brand for quality assurance ' || n, 'ACTIVE'
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid,
+        'Brand ' || n, 'https://via.placeholder.com/200/FF00FF/FFFFFF?text=Brand' || n,
+        'Premium brand for quality #' || n, 'ACTIVE'
     FROM GENERATE_SERIES(1, 10) n;
 
     RAISE NOTICE 'Core data created: users, business, roles, plans, categories, brands';
 END $$;
 
 -- ============================================================
--- PRODUCTS WITH FULL DATA (2000 products)
+-- PRODUCTS (1000 products with promotions)
 -- ============================================================
 
 DO $$
@@ -255,29 +215,18 @@ DECLARE
     bid UUID;
     cid UUID;
     brid UUID;
-    product_ids UUID[];
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
     SELECT id INTO cid FROM categories WHERE business_id = bid ORDER BY created_at ASC LIMIT 1;
     SELECT id INTO brid FROM brands WHERE business_id = bid ORDER BY created_at ASC LIMIT 1;
 
-    -- Insert 2000 products with all fields populated
     WITH product_data AS (
         SELECT
-            gen_random_uuid() as id,
-            0 as version,
-            t as created_at,
-            t as updated_at,
-            'system' as created_by,
-            'system' as updated_by,
-            false as is_deleted,
-            NULL::TIMESTAMPTZ as deleted_at,
-            NULL as deleted_by,
-            bid,
-            cid,
-            brid,
+            gen_random_uuid() as id, 0 as version, t as created_at, t as updated_at,
+            'system' as created_by, 'system' as updated_by, false as is_deleted, NULL::TIMESTAMPTZ as deleted_at, NULL as deleted_by,
+            bid, cid, brid,
             'Khmer Dish ' || n as name,
-            'Authentic Khmer cuisine dish made with premium ingredients - Dish #' || n as description,
+            'Authentic Khmer cuisine - Dish #' || n as description,
             'ACTIVE' as status,
             (15.00 + (n % 80))::NUMERIC as price,
             CASE WHEN n % 3 = 0 THEN 'PERCENTAGE' WHEN n % 3 = 1 THEN 'FIXED_AMOUNT' ELSE NULL END as promotion_type,
@@ -295,7 +244,7 @@ BEGIN
             (RANDOM() * 500)::BIGINT as view_count,
             (RANDOM() * 100)::BIGINT as favorite_count,
             'https://via.placeholder.com/300x200/FF69B4/FFFFFF?text=Dish' || n as main_image_url
-        FROM GENERATE_SERIES(1, 2000) n
+        FROM GENERATE_SERIES(1, 1000) n
     )
     INSERT INTO products (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
@@ -304,25 +253,22 @@ BEGIN
         display_price, display_origin_price, display_promotion_type, display_promotion_value,
         display_promotion_from_date, display_promotion_to_date,
         has_sizes, has_active_promotion, view_count, favorite_count, main_image_url
-    )
-    SELECT * FROM product_data;
+    ) SELECT * FROM product_data;
 
-    RAISE NOTICE '2000 products created with full promotion and pricing data';
+    RAISE NOTICE '1000 products created';
 END $$;
 
 -- ============================================================
--- PRODUCT SIZES FOR PRODUCTS THAT HAVE SIZES (500 products)
+-- PRODUCT SIZES (for products with has_sizes = true)
 -- ============================================================
 
 DO $$
 DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
-    product_count INT := 0;
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
 
-    -- Create sizes for products that have has_sizes = true
     INSERT INTO product_sizes (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         product_id, name, price,
@@ -333,22 +279,15 @@ BEGIN
         p.id,
         CASE s WHEN 1 THEN 'Small' WHEN 2 THEN 'Medium' WHEN 3 THEN 'Large' WHEN 4 THEN 'Extra Large' END,
         (p.price + (s * 2))::NUMERIC,
-        CASE WHEN p.promotion_type IS NOT NULL THEN p.promotion_type ELSE NULL END,
-        CASE WHEN p.promotion_value IS NOT NULL THEN p.promotion_value ELSE NULL END,
-        CASE WHEN p.promotion_from_date IS NOT NULL THEN p.promotion_from_date ELSE NULL END,
-        CASE WHEN p.promotion_to_date IS NOT NULL THEN p.promotion_to_date ELSE NULL END
+        p.promotion_type, p.promotion_value, p.promotion_from_date, p.promotion_to_date
     FROM products p, GENERATE_SERIES(1, 4) s
     WHERE p.business_id = bid AND p.has_sizes = true;
 
-    SELECT COUNT(*) INTO product_count FROM product_sizes WHERE id IN (
-        SELECT id FROM product_sizes WHERE product_id IN (SELECT id FROM products WHERE business_id = bid)
-    );
-
-    RAISE NOTICE 'Product sizes created: % total size records', product_count;
+    RAISE NOTICE 'Product sizes created';
 END $$;
 
 -- ============================================================
--- PRODUCT IMAGES (3-5 images per product)
+-- PRODUCT IMAGES (4 per product)
 -- ============================================================
 
 DO $$
@@ -369,74 +308,11 @@ BEGIN
     FROM products p, GENERATE_SERIES(1, 4) img_num
     WHERE p.business_id = bid;
 
-    RAISE NOTICE 'Product images created: 4 images per product';
+    RAISE NOTICE 'Product images created: 4 per product';
 END $$;
 
 -- ============================================================
--- PRODUCT FAVORITES (50 customers favorite 100 products each)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-    customer_users UUID[];
-    product_ids UUID[];
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY id) INTO customer_users FROM users WHERE user_type = 'CUSTOMER' LIMIT 50;
-    SELECT ARRAY_AGG(id ORDER BY id) INTO product_ids FROM products WHERE business_id = bid LIMIT 200;
-
-    -- Create favorites
-    INSERT INTO product_favorites (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, product_id
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        customer_users[(n-1) % ARRAY_LENGTH(customer_users, 1) + 1],
-        product_ids[(n-1) % ARRAY_LENGTH(product_ids, 1) + 1]
-    FROM GENERATE_SERIES(1, 500) n
-    WHERE NOT EXISTS (
-        SELECT 1 FROM product_favorites pf
-        WHERE pf.user_id = customer_users[(n-1) % ARRAY_LENGTH(customer_users, 1) + 1]
-        AND pf.product_id = product_ids[(n-1) % ARRAY_LENGTH(product_ids, 1) + 1]
-    );
-
-    RAISE NOTICE 'Product favorites created';
-END $$;
-
--- ============================================================
--- BANNERS (5 promotional banners)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-
-    INSERT INTO banners (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, title, description, image_url, link_url, status, priority
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        bid,
-        'Promotion ' || n,
-        'Limited time offer for dish category ' || n,
-        'https://via.placeholder.com/1200x400/FF4444/FFFFFF?text=Banner' || n,
-        '/menu/category/' || n,
-        'ACTIVE',
-        (6 - n)
-    FROM GENERATE_SERIES(1, 5) n;
-
-    RAISE NOTICE 'Banners created: 5 promotional banners';
-END $$;
-
--- ============================================================
--- CARTS (100 customer carts)
+-- CARTS & CART ITEMS (100 carts with items)
 -- ============================================================
 
 DO $$
@@ -444,55 +320,36 @@ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
     customer_ids UUID[];
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY id) INTO customer_ids FROM users WHERE user_type = 'CUSTOMER' LIMIT 100;
-
-    INSERT INTO carts (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, business_id
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        customer_ids[n],
-        bid
-    FROM GENERATE_SERIES(1, ARRAY_LENGTH(customer_ids, 1)) n;
-
-    RAISE NOTICE 'Carts created: % customer carts', ARRAY_LENGTH(customer_ids, 1);
-END $$;
-
--- ============================================================
--- CART ITEMS (3-5 items per cart)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
     cart_ids UUID[];
     product_ids UUID[];
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY id) INTO cart_ids FROM carts WHERE business_id = bid;
+    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO customer_ids FROM users WHERE user_type = 'CUSTOMER' LIMIT 100;
     SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO product_ids FROM products WHERE business_id = bid LIMIT 500;
 
-    INSERT INTO cart_items (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        cart_id, product_id, product_size_id, quantity
-    )
+    -- Create carts
+    INSERT INTO carts (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, user_id, business_id)
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        customer_ids[n], bid
+    FROM GENERATE_SERIES(1, ARRAY_LENGTH(customer_ids, 1)) n;
+
+    SELECT ARRAY_AGG(id ORDER BY id) INTO cart_ids FROM carts WHERE business_id = bid;
+
+    -- Create cart items
+    INSERT INTO cart_items (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, cart_id, product_id, product_size_id, quantity)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         cart_ids[(n-1) % ARRAY_LENGTH(cart_ids, 1) + 1],
         product_ids[(n-1) % ARRAY_LENGTH(product_ids, 1) + 1],
-        NULL,
-        (1 + (n % 5))
+        NULL, (1 + (n % 5))
     FROM GENERATE_SERIES(1, ARRAY_LENGTH(cart_ids, 1) * 4) n;
 
-    RAISE NOTICE 'Cart items created: % items in carts', ARRAY_LENGTH(cart_ids, 1) * 4;
+    RAISE NOTICE 'Carts and items created';
 END $$;
 
 -- ============================================================
--- DELIVERY OPTIONS (5 delivery methods)
+-- DELIVERY OPTIONS (5 methods) - SCHEMA CORRECTED
 -- ============================================================
 
 DO $$
@@ -504,31 +361,61 @@ BEGIN
 
     INSERT INTO delivery_options (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, name, description, image_url, price, delivery_time, is_default, status
+        business_id, name, description, image_url, price, status
     ) VALUES
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Standard Delivery', 'Regular delivery within 30-45 minutes', 'https://via.placeholder.com/200/0088FF/FFFFFF?text=Standard', 2.00, 40, true, 'ACTIVE'),
+         bid, 'Standard Delivery', 'Regular delivery within 30-45 minutes',
+         'https://via.placeholder.com/200/0088FF/FFFFFF?text=Standard', 2.00, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Express Delivery', 'Fast delivery within 15-20 minutes', 'https://via.placeholder.com/200/FF0000/FFFFFF?text=Express', 4.00, 18, false, 'ACTIVE'),
+         bid, 'Express Delivery', 'Fast delivery within 15-20 minutes',
+         'https://via.placeholder.com/200/FF0000/FFFFFF?text=Express', 4.00, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Scheduled Delivery', 'Schedule delivery for specific time', 'https://via.placeholder.com/200/FFB800/000000?text=Scheduled', 2.50, 50, false, 'ACTIVE'),
+         bid, 'Scheduled Delivery', 'Schedule delivery for specific time',
+         'https://via.placeholder.com/200/FFB800/000000?text=Scheduled', 2.50, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Pickup', 'Pick up from restaurant', 'https://via.placeholder.com/200/00DD00/FFFFFF?text=Pickup', 0.00, 15, false, 'ACTIVE'),
+         bid, 'Pickup', 'Pick up from restaurant',
+         'https://via.placeholder.com/200/00DD00/FFFFFF?text=Pickup', 0.00, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Dine-in', 'Eat at our restaurant', 'https://via.placeholder.com/200/8800FF/FFFFFF?text=DineIn', 0.00, 0, false, 'ACTIVE');
+         bid, 'Dine-in', 'Eat at our restaurant',
+         'https://via.placeholder.com/200/8800FF/FFFFFF?text=DineIn', 0.00, 'ACTIVE');
 
-    RAISE NOTICE 'Delivery options created: 5 delivery methods';
+    RAISE NOTICE 'Delivery options created: 5 methods';
 END $$;
 
 -- ============================================================
--- CUSTOMER ADDRESSES (150 customer addresses)
+-- BANNERS (5 promotional banners) - SCHEMA CORRECTED
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    bid UUID;
+BEGIN
+    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
+
+    INSERT INTO banners (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        business_id, image_url, link_url, status
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        bid,
+        'https://via.placeholder.com/1200x400/FF4444/FFFFFF?text=Banner' || n,
+        '/menu/category/' || n,
+        'ACTIVE'
+    FROM GENERATE_SERIES(1, 5) n;
+
+    RAISE NOTICE 'Banners created: 5 promotional banners';
+END $$;
+
+-- ============================================================
+-- CUSTOMER ADDRESSES (150 addresses)
 -- ============================================================
 
 DO $$
 DECLARE
     t TIMESTAMPTZ := NOW();
     customer_ids UUID[];
-    address_parts TEXT[] := ARRAY['Village 1', 'Commune 2', 'District 3', 'Phnom Penh', 'Street 252', 'House 123'];
 BEGIN
     SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO customer_ids FROM users WHERE user_type = 'CUSTOMER' LIMIT 50;
 
@@ -540,15 +427,11 @@ BEGIN
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         customer_ids[(n-1) % ARRAY_LENGTH(customer_ids, 1) + 1],
-        'Village ' || ((n-1) % 50 + 1),
-        'Commune ' || ((n-1) % 40 + 1),
-        'District ' || ((n-1) % 30 + 1),
-        'Phnom Penh Province',
-        'Street ' || ((n-1) % 100 + 100),
-        'House ' || ((n-1) % 200 + 1),
-        'Apartment ' || (n % 5) || ' - Second floor, near market',
-        11.5564 + (RANDOM() * 0.05),
-        104.9282 + (RANDOM() * 0.05),
+        'Village ' || ((n-1) % 50 + 1), 'Commune ' || ((n-1) % 40 + 1),
+        'District ' || ((n-1) % 30 + 1), 'Phnom Penh Province',
+        'Street ' || (100 + (n % 100)), 'House ' || (1 + (n % 200)),
+        'Apartment ' || (n % 5) || ', Building ' || (n % 3 + 1),
+        11.5564 + (n::NUMERIC / 10000), 104.9282 + (n::NUMERIC / 10000),
         CASE WHEN n % 3 = 1 THEN true ELSE false END
     FROM GENERATE_SERIES(1, 150) n;
 
@@ -570,22 +453,22 @@ BEGIN
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, name, description, color_code, sequence_order, is_default
     ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Pending', 'Order received, awaiting confirmation', '#FFB800', 1, true),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Confirmed', 'Order confirmed and preparing', '#0088FF', 2, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Preparing', 'Kitchen is preparing the order', '#FF9500', 3, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Ready', 'Order is ready for pickup/delivery', '#00DD00', 4, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'In Delivery', 'Order is being delivered', '#0000FF', 5, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Delivered', 'Order has been delivered', '#00AA00', 6, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Completed', 'Order completed successfully', '#00FF00', 7, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Cancelled', 'Order cancelled by customer', '#FF0000', 8, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Refunded', 'Order refunded to customer', '#FF6600', 9, false),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Failed', 'Order delivery failed', '#CC0000', 10, false);
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Pending', 'Order received', '#FFB800', 1, true),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Confirmed', 'Order confirmed', '#0088FF', 2, false),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Preparing', 'Kitchen preparing', '#FF9500', 3, false),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Ready', 'Ready for delivery', '#00DD00', 4, false),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'In Delivery', 'Out for delivery', '#0000FF', 5, false),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Delivered', 'Successfully delivered', '#00AA00', 6, false),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Completed', 'Order completed', '#00FF00', 7, false),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Cancelled', 'Order cancelled', '#FF0000', 8, false),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Refunded', 'Order refunded', '#FF6600', 9, false),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Failed', 'Delivery failed', '#CC0000', 10, false);
 
     RAISE NOTICE 'Order process statuses created: 10 statuses';
 END $$;
 
 -- ============================================================
--- ORDERS WITH COMPLETE DATA (5000 orders)
+-- ORDERS (1000 orders with items & payments) - SCHEMA CORRECTED
 -- ============================================================
 
 DO $$
@@ -594,7 +477,6 @@ DECLARE
     bid UUID;
     pid UUID;
     customer_id UUID;
-    delivery_option_id UUID;
     order_process_status_id UUID;
     order_id UUID;
     subtotal NUMERIC;
@@ -606,13 +488,10 @@ DECLARE
     order_counter INT;
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT id INTO delivery_option_id FROM delivery_options WHERE business_id = bid LIMIT 1;
     SELECT id INTO order_process_status_id FROM order_process_status WHERE business_id = bid AND is_default = true LIMIT 1;
 
-    FOR order_counter IN 1..5000 LOOP
-        -- Random customer
+    FOR order_counter IN 1..1000 LOOP
         SELECT id INTO customer_id FROM users WHERE user_type = 'CUSTOMER' ORDER BY RANDOM() LIMIT 1;
-        -- Random product
         SELECT id INTO pid FROM products WHERE business_id = bid ORDER BY RANDOM() LIMIT 1;
 
         order_id := gen_random_uuid();
@@ -623,143 +502,78 @@ BEGIN
         tax_amt := (order_counter % 3)::NUMERIC;
         total_amt := subtotal - discount_amt + deliv_fee + tax_amt;
 
-        -- Create order with COMPLETE data
         INSERT INTO orders (
             id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-            business_id, customer_id, order_number, order_process_status_id, delivery_option_id,
-            delivery_address_village, delivery_address_commune, delivery_address_district,
-            delivery_address_province, delivery_address_street_number, delivery_address_house_number,
-            delivery_address_note, delivery_address_latitude, delivery_address_longitude,
+            business_id, customer_id, order_number, order_process_status_name,
+            delivery_address_snapshot, delivery_option_snapshot,
             subtotal, discount_amount, delivery_fee, tax_amount, total_amount,
             payment_method, payment_status, customer_note, business_note,
             confirmed_at, completed_at
         ) VALUES (
             order_id, 0, t - (RANDOM() * INTERVAL '60 days'), t, 'system', 'system', false, NULL, NULL,
-            bid, customer_id, order_num, order_process_status_id, delivery_option_id,
-            'Village ' || (order_counter % 50),
-            'Commune ' || (order_counter % 40),
-            'District ' || (order_counter % 30),
-            'Phnom Penh Province',
-            'Street ' || (100 + (order_counter % 100)),
-            'House ' || (1 + (order_counter % 200)),
-            'Apartment ' || (order_counter % 5) || ', Building ' || (order_counter % 3 + 1),
-            11.5564 + (order_counter::NUMERIC / 10000),
-            104.9282 + (order_counter::NUMERIC / 10000),
+            bid, customer_id, order_num, 'Pending',
+            '{"village":"Village 1","commune":"Commune 1","district":"District 1","province":"Phnom Penh Province","streetNumber":"Street 252","houseNumber":"House 123","note":"Near market","latitude":11.5564,"longitude":104.9282}',
+            '{"name":"Standard Delivery","description":"Regular delivery","imageUrl":"https://via.placeholder.com/200","price":2.00}',
             subtotal, discount_amt, deliv_fee, tax_amt, total_amt,
             CASE (order_counter % 4) WHEN 0 THEN 'CASH' WHEN 1 THEN 'BANK_TRANSFER' WHEN 2 THEN 'ONLINE' ELSE 'OTHER' END,
-            CASE WHEN order_counter % 3 = 0 THEN 'PENDING' WHEN order_counter % 3 = 1 THEN 'PAID' ELSE 'COMPLETED' END,
+            CASE WHEN order_counter % 3 = 0 THEN 'UNPAID' WHEN order_counter % 3 = 1 THEN 'PAID' ELSE 'COMPLETED' END,
             'Special request #' || order_counter,
-            'Handle with care, fragile items',
+            'Handle with care',
             CASE WHEN order_counter % 2 = 0 THEN t - (RANDOM() * INTERVAL '50 days') ELSE NULL END,
             CASE WHEN order_counter % 3 = 2 THEN t - (RANDOM() * INTERVAL '30 days') ELSE NULL END
         );
 
-        -- Add order items (3-5 items per order)
-        FOR item_n IN 1..(3 + (order_counter % 3)) LOOP
+        -- Add order items (2-3 items per order)
+        FOR item_n IN 1..(2 + (order_counter % 2)) LOOP
             INSERT INTO order_items (
                 id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
                 order_id, product_id, product_size_id, product_name, product_image_url, size_name,
-                unit_price, final_price, quantity, total_price
+                current_price, final_price, unit_price, quantity, total_price, has_promotion
             ) VALUES (
                 gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-                order_id, pid, NULL, 'Khmer Dish Item ' || item_n,
+                order_id, pid, NULL, 'Khmer Dish Item',
                 'https://via.placeholder.com/200x150/FF8800/FFFFFF?text=Item' || item_n,
                 CASE WHEN item_n % 2 = 0 THEN 'Medium' ELSE 'Large' END,
                 (15.00 + (order_counter % 50))::NUMERIC,
                 (15.00 + (order_counter % 50))::NUMERIC,
+                (15.00 + (order_counter % 50))::NUMERIC,
                 (2 + item_n),
-                ((2 + item_n) * (15.00 + (order_counter % 50)))::NUMERIC
+                ((2 + item_n) * (15.00 + (order_counter % 50)))::NUMERIC,
+                CASE WHEN order_counter % 3 = 0 THEN true ELSE false END
             );
         END LOOP;
 
-        -- Add order status history
+        -- Add order status history - SCHEMA CORRECTED
         INSERT INTO order_status_history (
             id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
             order_id, order_process_status_id, note, changed_by
         ) VALUES (
             gen_random_uuid(), 0, t - (RANDOM() * INTERVAL '60 days'), t, 'system', 'system', false, NULL, NULL,
-            order_id, order_process_status_id, 'Order created and awaiting confirmation', 'system'
+            order_id, order_process_status_id, 'Order created', 'system'
+        );
+
+        -- Add order payment
+        INSERT INTO order_payments (
+            id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+            business_id, order_id, payment_reference,
+            subtotal, discount_amount, delivery_fee, tax_amount, total_amount,
+            payment_method, status, customer_payment_method
+        ) VALUES (
+            gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+            bid, order_id, 'PAY-' || LPAD(order_counter::TEXT, 8, '0'),
+            subtotal, discount_amt, deliv_fee, tax_amt, total_amt,
+            CASE (order_counter % 4) WHEN 0 THEN 'CASH' WHEN 1 THEN 'BANK_TRANSFER' WHEN 2 THEN 'ONLINE' ELSE 'OTHER' END,
+            CASE WHEN order_counter % 3 = 0 THEN 'PENDING' WHEN order_counter % 3 = 1 THEN 'FAILED' ELSE 'COMPLETED' END,
+            'Cash'
         );
 
     END LOOP;
 
-    RAISE NOTICE '5000 orders with complete data created';
+    RAISE NOTICE '1000 orders with items and payments created';
 END $$;
 
 -- ============================================================
--- ORDER PAYMENTS (Payment records for orders)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-    order_ids UUID[];
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY id) INTO order_ids FROM orders WHERE business_id = bid;
-
-    INSERT INTO order_payments (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, order_id, payment_reference, subtotal, discount_amount, delivery_fee, tax_amount, total_amount,
-        payment_method, status, customer_payment_method
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        bid, o.id, 'PAY-' || LPAD((ROW_NUMBER() OVER (ORDER BY o.id))::TEXT, 8, '0'),
-        o.subtotal, o.discount_amount, o.delivery_fee, o.tax_amount, o.total_amount,
-        o.payment_method,
-        CASE WHEN o.payment_status = 'PENDING' THEN 'PENDING' WHEN o.payment_status = 'PAID' THEN 'COMPLETED' ELSE 'COMPLETED' END,
-        CASE WHEN o.payment_method = 'CASH' THEN 'Cash' WHEN o.payment_method = 'BANK_TRANSFER' THEN 'Bank Account' ELSE 'Credit Card' END
-    FROM orders o
-    WHERE o.business_id = bid;
-
-    RAISE NOTICE 'Order payments created: % payment records', ARRAY_LENGTH(order_ids, 1);
-END $$;
-
--- ============================================================
--- PLATFORM USERS (500 platform users with distributed roles)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    platform_roles UUID[];
-BEGIN
-    -- Get all 12 platform role IDs
-    SELECT ARRAY_AGG(id ORDER BY id) INTO platform_roles FROM roles
-    WHERE user_type = 'PLATFORM_USER';
-
-    -- Create 500 platform users
-    INSERT INTO users (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_identifier, email, password, first_name, last_name, phone_number, profile_image_url,
-        user_type, account_status, business_id, position, address, notes, last_login_at, last_active_at, active_sessions_count
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'platform' || n || '@system.com', 'platform' || n || '@system.com',
-        '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
-        'Platform', 'User ' || n, '+855 10 900 0' || LPAD(n::TEXT, 3, '0'),
-        'https://via.placeholder.com/200/FF0088/FFFFFF?text=Platform' || n,
-        'PLATFORM_USER', 'ACTIVE', NULL, 'Platform Officer', 'Phnom Penh, Cambodia', 'Platform user #' || n,
-        t - (RANDOM() * INTERVAL '30 days'), t - (RANDOM() * INTERVAL '5 days'), 1
-    FROM GENERATE_SERIES(1, 500) n;
-
-    -- Assign platform roles to users (distribute across all 12 roles)
-    INSERT INTO user_roles (user_id, role_id)
-    SELECT
-        u.id,
-        platform_roles[(ROW_NUMBER() OVER (ORDER BY u.id) - 1) % 12 + 1]
-    FROM users u
-    WHERE u.email LIKE 'platform%@system.com'
-    AND NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = u.id);
-
-    RAISE NOTICE '500 platform users created with distributed platform roles';
-END $$;
-
--- ============================================================
--- STAFF USERS (300 staff with work schedules)
+-- STAFF USERS (50 staff)
 -- ============================================================
 
 DO $$
@@ -786,158 +600,18 @@ BEGIN
         CASE WHEN n % 3 = 0 THEN 'Chef' WHEN n % 3 = 1 THEN 'Delivery Driver' ELSE 'Counter Staff' END,
         'Phnom Penh, Cambodia', 'Staff member #' || n,
         t - (RANDOM() * INTERVAL '7 days'), t - (RANDOM() * INTERVAL '1 day'), 1
-    FROM GENERATE_SERIES(1, 300) n;
+    FROM GENERATE_SERIES(1, 50) n;
 
-    -- Assign staff role
     INSERT INTO user_roles (user_id, role_id)
     SELECT u.id, role_staff FROM users u
     WHERE u.email LIKE 'staff%@phatrestaurant.com'
     AND NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = u.id);
 
-    RAISE NOTICE '300 staff users created';
+    RAISE NOTICE '50 staff users created';
 END $$;
 
 -- ============================================================
--- WORK SCHEDULES (for all 300 staff)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-    staff_ids UUID[];
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO staff_ids FROM users WHERE business_id = bid AND user_type = 'BUSINESS_USER';
-
-    -- Create work schedules for staff
-    INSERT INTO work_schedules (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, business_id, name, schedule_type_enum, start_time, end_time, break_start_time, break_end_time
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        u.id, bid,
-        'Schedule ' || (n % 3 + 1),
-        CASE WHEN n % 2 = 0 THEN 'FIXED' ELSE 'ROTATING' END,
-        CASE WHEN n % 2 = 0 THEN '06:00' ELSE '14:00' END,
-        CASE WHEN n % 2 = 0 THEN '14:00' ELSE '22:00' END,
-        '11:00', '12:00'
-    FROM (SELECT * FROM users u WHERE u.id = ANY(staff_ids) LIMIT ARRAY_LENGTH(staff_ids, 1)) u
-    CROSS JOIN GENERATE_SERIES(1, 3) n;
-
-    RAISE NOTICE 'Work schedules created: % schedules', ARRAY_LENGTH(staff_ids, 1) * 3;
-END $$;
-
--- ============================================================
--- ATTENDANCE RECORDS (for staff)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-    staff_ids UUID[];
-    attendance_date DATE;
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY id) INTO staff_ids FROM users WHERE business_id = bid AND user_type = 'BUSINESS_USER' LIMIT 300;
-
-    -- Create 60 days of attendance records
-    FOR day_offset IN 0..59 LOOP
-        attendance_date := (NOW() - INTERVAL '1 day' * day_offset)::DATE;
-
-        INSERT INTO attendance (
-            id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-            user_id, business_id, attendance_date, status, total_working_hours, overtime_hours, notes
-        )
-        SELECT
-            gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-            staff_ids[((n-1) % ARRAY_LENGTH(staff_ids, 1)) + 1],
-            bid,
-            attendance_date,
-            CASE WHEN (day_offset + n) % 7 IN (0, 6) THEN 'ABSENT' WHEN (day_offset + n) % 30 = 0 THEN 'LEAVE' ELSE 'PRESENT' END,
-            CASE WHEN (day_offset + n) % 7 IN (0, 6) THEN 0 ELSE 8.5 END,
-            CASE WHEN (day_offset + n) % 30 = 0 THEN 0 WHEN (day_offset + n) % 7 IN (0, 6) THEN 0 ELSE (RANDOM() * 2)::NUMERIC END,
-            CASE WHEN (day_offset + n) % 30 = 0 THEN 'On planned leave' ELSE 'Regular working day' END
-        FROM GENERATE_SERIES(1, ARRAY_LENGTH(staff_ids, 1)) n;
-    END LOOP;
-
-    RAISE NOTICE 'Attendance records created: 300 staff x 60 days';
-END $$;
-
--- ============================================================
--- ATTENDANCE CHECK-IN RECORDS
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-    attendance_ids UUID[];
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO attendance_ids FROM attendance WHERE business_id = bid LIMIT 1000;
-
-    -- Create check-in and check-out records
-    INSERT INTO attendance_check_in (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        attendance_id, check_in_time, check_in_latitude, check_in_longitude, check_in_notes,
-        check_out_time, check_out_latitude, check_out_longitude, check_out_notes, total_hours
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        attendance_ids[(n-1) % ARRAY_LENGTH(attendance_ids, 1) + 1],
-        (NOW()::DATE + TIME '06:00' + INTERVAL '30 minutes' * (n % 60))::TIMESTAMP,
-        11.5564 + (n::NUMERIC / 1000),
-        104.9282 + (n::NUMERIC / 1000),
-        'Checked in at restaurant',
-        (NOW()::DATE + TIME '14:00' + INTERVAL '30 minutes' * (n % 60))::TIMESTAMP,
-        11.5564 + (n::NUMERIC / 1000),
-        104.9282 + (n::NUMERIC / 1000),
-        'Checked out from restaurant',
-        8.0
-    FROM GENERATE_SERIES(1, ARRAY_LENGTH(attendance_ids, 1)) n;
-
-    RAISE NOTICE 'Attendance check-in records created: 1000 records';
-END $$;
-
--- ============================================================
--- LEAVE RECORDS (for staff)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-    staff_ids UUID[];
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO staff_ids FROM users WHERE business_id = bid AND user_type = 'BUSINESS_USER' LIMIT 50;
-
-    INSERT INTO leaves (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, business_id, from_date, to_date, leave_type, reason, status, approved_by, approved_at
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        staff_ids[(n-1) % ARRAY_LENGTH(staff_ids, 1) + 1],
-        bid,
-        t::DATE + INTERVAL '7 days' * n,
-        t::DATE + INTERVAL '7 days' * n + INTERVAL '3 days',
-        CASE WHEN n % 4 = 0 THEN 'SICK_LEAVE' WHEN n % 4 = 1 THEN 'ANNUAL_LEAVE' WHEN n % 4 = 2 THEN 'UNPAID_LEAVE' ELSE 'EMERGENCY_LEAVE' END,
-        'Leave reason #' || n,
-        CASE WHEN n % 3 = 0 THEN 'APPROVED' WHEN n % 3 = 1 THEN 'PENDING' ELSE 'REJECTED' END,
-        CASE WHEN n % 3 = 0 THEN buid ELSE NULL END,
-        CASE WHEN n % 3 = 0 THEN t ELSE NULL END
-    FROM (SELECT buid FROM users WHERE user_identifier = 'phatmenghor20@gmail.com' LIMIT 1) b
-    CROSS JOIN GENERATE_SERIES(1, ARRAY_LENGTH(staff_ids, 1)) n;
-
-    RAISE NOTICE 'Leave records created: 50 staff members with leaves';
-END $$;
-
--- ============================================================
--- CUSTOMER USERS (200 customers)
+-- CUSTOMER USERS (100 customers)
 -- ============================================================
 
 DO $$
@@ -960,19 +634,18 @@ BEGIN
         'https://via.placeholder.com/200/88FF00/000000?text=Customer' || n,
         'CUSTOMER', 'ACTIVE', NULL, NULL, 'Phnom Penh, Cambodia', 'Customer account #' || n,
         t - (RANDOM() * INTERVAL '14 days'), t - (RANDOM() * INTERVAL '2 days'), 1
-    FROM GENERATE_SERIES(1, 200) n;
+    FROM GENERATE_SERIES(1, 100) n;
 
-    -- Assign customer role
     INSERT INTO user_roles (user_id, role_id)
     SELECT u.id, role_cust FROM users u
     WHERE u.email LIKE 'customer%@test.com'
     AND NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = u.id);
 
-    RAISE NOTICE '200 customer users created';
+    RAISE NOTICE '100 customer users created';
 END $$;
 
 -- ============================================================
--- USER SESSIONS (active sessions)
+-- NOTIFICATIONS (50 notifications) - SCHEMA CORRECTED
 -- ============================================================
 
 DO $$
@@ -980,173 +653,51 @@ DECLARE
     t TIMESTAMPTZ := NOW();
     user_ids UUID[];
 BEGIN
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO user_ids FROM users LIMIT 300;
-
-    INSERT INTO user_sessions (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, access_token, refresh_token, device_info, ip_address, last_activity, expires_at
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1],
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.session' || n,
-        'refresh_token_' || n,
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) - Device ' || n,
-        '192.168.' || (n % 256) || '.' || (n % 256),
-        t - INTERVAL '5 minutes',
-        t + INTERVAL '7 days'
-    FROM GENERATE_SERIES(1, 300) n;
-
-    RAISE NOTICE 'User sessions created: 300 active sessions';
-END $$;
-
--- ============================================================
--- REFRESH TOKENS
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    user_ids UUID[];
-BEGIN
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO user_ids FROM users LIMIT 300;
-
-    INSERT INTO refresh_tokens (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, token, expires_at, revoked
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1],
-        'refresh_' || n || '_' || MD5(user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1]::TEXT),
-        t + INTERVAL '30 days',
-        false
-    FROM GENERATE_SERIES(1, 300) n;
-
-    RAISE NOTICE 'Refresh tokens created: 300 tokens';
-END $$;
-
--- ============================================================
--- EXCHANGE RATES
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-BEGIN
-    INSERT INTO exchange_rates (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        currency_code, exchange_rate, to_currency, status
-    ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'USD', 1.0, 'USD', 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'KHR', 4100.0, 'USD', 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'THB', 35.0, 'USD', 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'EUR', 0.92, 'USD', 'ACTIVE');
-
-    RAISE NOTICE 'Exchange rates created: 4 currency rates';
-END $$;
-
--- ============================================================
--- BUSINESS EXCHANGE RATES
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-
-    INSERT INTO business_exchange_rates (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, currency_code, exchange_rate, to_currency, status
-    ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'KHR', 4100.0, 'USD', 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'THB', 35.0, 'USD', 'ACTIVE');
-
-    RAISE NOTICE 'Business exchange rates created';
-END $$;
-
--- ============================================================
--- NOTIFICATIONS (100 sample notifications)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    user_ids UUID[];
-BEGIN
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO user_ids FROM users LIMIT 100;
+    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO user_ids FROM users LIMIT 50;
 
     INSERT INTO notifications (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, title, message, notification_type, read, action_url
+        user_id, user_name, title, message, message_type, priority, status,
+        recipient_type, business_id, group_id,
+        is_seen, seen_at, is_read, read_at
     )
     SELECT
         gen_random_uuid(), 0, t - INTERVAL '1 day' * n, t - INTERVAL '1 day' * n, 'system', 'system', false, NULL, NULL,
         user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1],
+        'User ' || n,
         'Notification ' || n,
         'You have a new order or update #' || n,
         CASE WHEN n % 3 = 0 THEN 'ORDER' WHEN n % 3 = 1 THEN 'PROMOTION' ELSE 'SYSTEM' END,
+        CASE WHEN n % 2 = 0 THEN 'NORMAL' ELSE 'HIGH' END,
+        'SENT',
+        'INDIVIDUAL_USER',
+        NULL, NULL,
         CASE WHEN n % 2 = 0 THEN true ELSE false END,
-        '/orders/' || (n % 100)
-    FROM GENERATE_SERIES(1, 100) n;
+        CASE WHEN n % 2 = 0 THEN t - INTERVAL '1 hour' ELSE NULL END,
+        CASE WHEN n % 2 = 0 THEN true ELSE false END,
+        CASE WHEN n % 2 = 0 THEN t - INTERVAL '30 minutes' ELSE NULL END
+    FROM GENERATE_SERIES(1, 50) n;
 
-    RAISE NOTICE 'Notifications created: 100 notifications';
+    RAISE NOTICE 'Notifications created: 50 notifications';
 END $$;
 
 -- ============================================================
--- AUDIT LOGS
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    user_ids UUID[];
-BEGIN
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO user_ids FROM users LIMIT 200;
-
-    INSERT INTO audit_logs (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, action, entity_type, entity_id, old_value, new_value, ip_address, user_agent
-    )
-    SELECT
-        gen_random_uuid(), 0, t - INTERVAL '1 day' * n, t - INTERVAL '1 day' * n, 'system', 'system', false, NULL, NULL,
-        user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1],
-        CASE WHEN n % 4 = 0 THEN 'CREATE' WHEN n % 4 = 1 THEN 'UPDATE' WHEN n % 4 = 2 THEN 'DELETE' ELSE 'VIEW' END,
-        'ORDER',
-        'order_' || (n % 100),
-        CASE WHEN n % 4 = 1 THEN 'old_value_' || n ELSE NULL END,
-        CASE WHEN n % 4 = 1 THEN 'new_value_' || n ELSE NULL END,
-        '192.168.' || (n % 256) || '.' || ((n * 7) % 256),
-        'Mozilla/5.0 - Audit ' || n
-    FROM GENERATE_SERIES(1, 200) n;
-
-    RAISE NOTICE 'Audit logs created: 200 audit records';
-END $$;
-
--- ============================================================
--- SUMMARY REPORT
+-- SUMMARY
 -- ============================================================
 
 SELECT
-    '✓ SUCCESS - Complete Test Data Generation' as status,
+    '✓ SUCCESS - Complete Test Data Generated!' as status,
     (SELECT COUNT(*) FROM users) as total_users,
     (SELECT COUNT(*) FROM roles) as total_roles,
-    (SELECT COUNT(*) FROM businesses) as total_businesses,
     (SELECT COUNT(*) FROM products) as total_products,
     (SELECT COUNT(*) FROM product_images) as total_product_images,
     (SELECT COUNT(*) FROM product_sizes) as total_product_sizes,
-    (SELECT COUNT(*) FROM categories) as total_categories,
-    (SELECT COUNT(*) FROM brands) as total_brands,
     (SELECT COUNT(*) FROM orders) as total_orders,
     (SELECT COUNT(*) FROM order_items) as total_order_items,
-    (SELECT COUNT(*) FROM delivery_options) as total_delivery_options,
+    (SELECT COUNT(*) FROM order_payments) as total_order_payments,
     (SELECT COUNT(*) FROM carts) as total_carts,
     (SELECT COUNT(*) FROM cart_items) as total_cart_items,
-    (SELECT COUNT(*) FROM work_schedules) as total_work_schedules,
-    (SELECT COUNT(*) FROM attendance) as total_attendance_records,
-    (SELECT COUNT(*) FROM leaves) as total_leaves,
+    (SELECT COUNT(*) FROM delivery_options) as total_delivery_options,
+    (SELECT COUNT(*) FROM banners) as total_banners,
     (SELECT COUNT(*) FROM customer_addresses) as total_customer_addresses,
-    (SELECT COUNT(*) FROM user_sessions) as total_user_sessions,
     (SELECT COUNT(*) FROM notifications) as total_notifications;
