@@ -53,13 +53,13 @@ public interface OrderPaymentRepository extends JpaRepository<OrderPayment, UUID
     /**
      * Calculates total revenue for a business from completed payments
      */
-    @Query("SELECT SUM(bop.amount) FROM OrderPayment bop WHERE bop.businessId = :businessId AND bop.status = 'COMPLETED' AND bop.isDeleted = false")
+    @Query("SELECT SUM(bop.totalAmount) FROM OrderPayment bop WHERE bop.businessId = :businessId AND bop.status = 'COMPLETED' AND bop.isDeleted = false")
     BigDecimal getTotalRevenue(@Param("businessId") UUID businessId);
 
     /**
      * Calculates revenue for a business within a date range from completed payments
      */
-    @Query("SELECT SUM(bop.amount) FROM OrderPayment bop WHERE bop.businessId = :businessId AND bop.status = 'COMPLETED' AND bop.createdAt >= :fromDate AND bop.createdAt <= :toDate AND bop.isDeleted = false")
+    @Query("SELECT SUM(bop.totalAmount) FROM OrderPayment bop WHERE bop.businessId = :businessId AND bop.status = 'COMPLETED' AND bop.createdAt >= :fromDate AND bop.createdAt <= :toDate AND bop.isDeleted = false")
     BigDecimal getRevenueByDateRange(@Param("businessId") UUID businessId, @Param("fromDate") LocalDateTime fromDate, @Param("toDate") LocalDateTime toDate);
 
     /**
