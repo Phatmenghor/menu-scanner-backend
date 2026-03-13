@@ -421,14 +421,14 @@ BEGIN
 
     INSERT INTO customer_addresses (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, village, commune, district, province, street_number, house_number, address_note,
+        user_id, village, commune, district, province, country, street_number, house_number, note,
         latitude, longitude, is_default
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         customer_ids[(n-1) % ARRAY_LENGTH(customer_ids, 1) + 1],
         'Village ' || ((n-1) % 50 + 1), 'Commune ' || ((n-1) % 40 + 1),
-        'District ' || ((n-1) % 30 + 1), 'Phnom Penh Province',
+        'District ' || ((n-1) % 30 + 1), 'Phnom Penh Province', 'Cambodia',
         'Street ' || (100 + (n % 100)), 'House ' || (1 + (n % 200)),
         'Apartment ' || (n % 5) || ', Building ' || (n % 3 + 1),
         11.5564 + (n::NUMERIC / 10000), 104.9282 + (n::NUMERIC / 10000),
