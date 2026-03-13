@@ -54,7 +54,10 @@ BEGIN
         SELECT id FROM users WHERE user_identifier IN ('phatmenghor19@gmail.com','phatmenghor20@gmail.com','phatmenghor21@gmail.com')
     );
     DELETE FROM users WHERE user_identifier IN ('phatmenghor19@gmail.com','phatmenghor20@gmail.com','phatmenghor21@gmail.com');
-    DELETE FROM roles WHERE name IN ('PLATFORM_ADMIN', 'BUSINESS_OWNER', 'CUSTOMER', 'STAFF');
+    DELETE FROM roles WHERE name IN ('PLATFORM_ADMIN', 'PLATFORM_MODERATOR', 'PLATFORM_ANALYST', 'PLATFORM_SUPPORT',
+                                     'PLATFORM_EDITOR', 'PLATFORM_VIEWER', 'PLATFORM_AUDITOR', 'PLATFORM_OPERATOR',
+                                     'PLATFORM_SUPERVISOR', 'PLATFORM_MANAGER', 'PLATFORM_COORDINATOR', 'PLATFORM_SPECIALIST',
+                                     'BUSINESS_OWNER', 'CUSTOMER', 'STAFF');
 
     RAISE NOTICE 'Cleanup complete';
 END $$;
@@ -72,15 +75,37 @@ DECLARE
     t TIMESTAMPTZ := NOW();
     plan1 UUID := gen_random_uuid();
     role_admin UUID := gen_random_uuid();
+    role_moderator UUID := gen_random_uuid();
+    role_analyst UUID := gen_random_uuid();
+    role_support UUID := gen_random_uuid();
+    role_editor UUID := gen_random_uuid();
+    role_viewer UUID := gen_random_uuid();
+    role_auditor UUID := gen_random_uuid();
+    role_operator UUID := gen_random_uuid();
+    role_supervisor UUID := gen_random_uuid();
+    role_manager UUID := gen_random_uuid();
+    role_coordinator UUID := gen_random_uuid();
+    role_specialist UUID := gen_random_uuid();
     role_business UUID := gen_random_uuid();
     role_customer UUID := gen_random_uuid();
     role_staff UUID := gen_random_uuid();
 BEGIN
 
-    -- Create roles
+    -- Create 12 platform roles
     INSERT INTO roles (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, name, description, business_id, user_type)
     VALUES
-        (role_admin, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_ADMIN', 'Platform Admin', NULL, 'PLATFORM_USER'),
+        (role_admin, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_ADMIN', 'Platform Administrator', NULL, 'PLATFORM_USER'),
+        (role_moderator, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_MODERATOR', 'Platform Moderator', NULL, 'PLATFORM_USER'),
+        (role_analyst, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_ANALYST', 'Platform Analyst', NULL, 'PLATFORM_USER'),
+        (role_support, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_SUPPORT', 'Platform Support', NULL, 'PLATFORM_USER'),
+        (role_editor, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_EDITOR', 'Platform Editor', NULL, 'PLATFORM_USER'),
+        (role_viewer, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_VIEWER', 'Platform Viewer', NULL, 'PLATFORM_USER'),
+        (role_auditor, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_AUDITOR', 'Platform Auditor', NULL, 'PLATFORM_USER'),
+        (role_operator, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_OPERATOR', 'Platform Operator', NULL, 'PLATFORM_USER'),
+        (role_supervisor, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_SUPERVISOR', 'Platform Supervisor', NULL, 'PLATFORM_USER'),
+        (role_manager, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_MANAGER', 'Platform Manager', NULL, 'PLATFORM_USER'),
+        (role_coordinator, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_COORDINATOR', 'Platform Coordinator', NULL, 'PLATFORM_USER'),
+        (role_specialist, 0, t, t, 'system', 'system', false, NULL, NULL, 'PLATFORM_SPECIALIST', 'Platform Specialist', NULL, 'PLATFORM_USER'),
         (role_business, 0, t, t, 'system', 'system', false, NULL, NULL, 'BUSINESS_OWNER', 'Business Owner', NULL, 'BUSINESS_USER'),
         (role_customer, 0, t, t, 'system', 'system', false, NULL, NULL, 'CUSTOMER', 'Customer', NULL, 'CUSTOMER'),
         (role_staff, 0, t, t, 'system', 'system', false, NULL, NULL, 'STAFF', 'Staff Member', NULL, 'BUSINESS_USER');
@@ -110,7 +135,7 @@ BEGIN
          'CUSTOMER', 'ACTIVE', NULL, NULL, 'Phnom Penh', 'Customer user',
          t - INTERVAL '3 hours', t - INTERVAL '45 minutes', 1);
 
-    -- Assign roles
+    -- Assign roles to main users
     INSERT INTO user_roles (user_id, role_id) VALUES
         (puid, role_admin),
         (buid, role_business),
@@ -172,7 +197,48 @@ BEGIN
         'Brand ' || n, 'https://via.placeholder.com/200', 'Brand description ' || n, 'ACTIVE'
     FROM GENERATE_SERIES(1, 10) n;
 
-    RAISE NOTICE 'Core data created: roles, users, business, plans, categories, brands';
+    RAISE NOTICE 'Core data created: 12 platform roles, main users, business, plans, categories, brands';
+END $$;
+
+-- ============================================================
+-- PLATFORM USERS (800)
+-- ============================================================
+
+DO $$
+DECLARE
+    t TIMESTAMPTZ := NOW();
+    platform_roles UUID[];
+BEGIN
+    -- Get all 12 platform role IDs
+    SELECT ARRAY_AGG(id) INTO platform_roles FROM roles
+    WHERE user_type = 'PLATFORM_USER'
+    ORDER BY name;
+
+    -- Create 800 platform users
+    INSERT INTO users (
+        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
+        user_identifier, email, password, first_name, last_name, phone_number, profile_image_url,
+        user_type, account_status, business_id, position, address, notes, last_login_at, last_active_at, active_sessions_count
+    )
+    SELECT
+        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        'platform' || n || '@system.com', 'platform' || n || '@system.com',
+        '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
+        'Platform', 'User ' || n, '+855 10 900 0' || LPAD(n::TEXT, 3, '0'), NULL,
+        'PLATFORM_USER', 'ACTIVE', NULL, 'Platform User', 'Phnom Penh', 'Platform user #' || n,
+        t - (RANDOM() * INTERVAL '30 days'), t - (RANDOM() * INTERVAL '5 days'), 1
+    FROM GENERATE_SERIES(1, 800) n;
+
+    -- Assign platform roles to users (distribute across all 12 roles)
+    INSERT INTO user_roles (user_id, role_id)
+    SELECT
+        u.id,
+        platform_roles[(ROW_NUMBER() OVER (ORDER BY u.id) - 1) % 12 + 1]
+    FROM users u
+    WHERE u.email LIKE 'platform%@system.com'
+    AND NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = u.id);
+
+    RAISE NOTICE '800 platform users created with distributed platform roles';
 END $$;
 
 -- ============================================================
@@ -356,8 +422,9 @@ END $$;
 -- ============================================================
 
 SELECT
-    'SUCCESS' as status,
+    'SUCCESS - Test Data Generation Complete!' as status,
     (SELECT COUNT(*) FROM users) as total_users,
+    (SELECT COUNT(*) FROM roles) as total_roles,
     (SELECT COUNT(*) FROM users WHERE user_type = 'PLATFORM_USER') as platform_users,
     (SELECT COUNT(*) FROM users WHERE user_type = 'BUSINESS_USER') as business_users,
     (SELECT COUNT(*) FROM users WHERE user_type = 'CUSTOMER') as customer_users,
