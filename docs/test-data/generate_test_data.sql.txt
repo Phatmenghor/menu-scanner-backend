@@ -684,7 +684,7 @@ BEGIN
         'User ' || n,
         'Notification ' || n,
         'You have a new order or update #' || n,
-        CASE WHEN n % 3 = 0 THEN 'ORDER' WHEN n % 3 = 1 THEN 'PROMOTION' ELSE 'SYSTEM' END,
+        CASE WHEN n % 3 = 0 THEN 'ORDER_NEW' WHEN n % 3 = 1 THEN 'PROMOTION_ANNOUNCEMENT' ELSE 'SYSTEM_ALERT' END,
         CASE WHEN n % 2 = 0 THEN 'NORMAL' ELSE 'HIGH' END,
         'SENT',
         'INDIVIDUAL_USER',
