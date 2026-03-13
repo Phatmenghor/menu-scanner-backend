@@ -881,14 +881,15 @@ DECLARE
 BEGIN
     INSERT INTO blacklisted_tokens (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        token, user_id, reason, expires_at
+        token, user_identifier, blacklisted_at, expiry_date, reason
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         'BLACKLISTED_TOKEN_' || n || '_' || gen_random_uuid()::TEXT,
-        (SELECT id FROM users ORDER BY RANDOM() LIMIT 1),
-        CASE n % 3 WHEN 0 THEN 'LOGOUT' WHEN 1 THEN 'PASSWORD_CHANGE' ELSE 'SECURITY_BREACH' END,
-        t + INTERVAL '7 days'
+        'USER_' || n || '_' || gen_random_uuid()::TEXT,
+        t,
+        t + INTERVAL '7 days',
+        CASE n % 3 WHEN 0 THEN 'LOGOUT' WHEN 1 THEN 'PASSWORD_CHANGE' ELSE 'SECURITY_BREACH' END
     FROM GENERATE_SERIES(1, 20) n;
 
     RAISE NOTICE 'Blacklisted tokens created: 20 tokens';
@@ -910,15 +911,18 @@ BEGIN
 
     INSERT INTO work_schedules (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, user_id, schedule_type, start_date, end_date
+        business_id, user_id, name, schedule_type_enum, start_time, end_time, break_start_time, break_end_time
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         bid,
         staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
+        'Schedule_' || n,
         CASE (n % 3) WHEN 0 THEN 'WEEKLY' WHEN 1 THEN 'FIXED' ELSE 'FLEXIBLE' END,
-        t::DATE,
-        (t + INTERVAL '90 days')::DATE
+        '08:00'::TIME,
+        '17:00'::TIME,
+        '12:00'::TIME,
+        '13:00'::TIME
     FROM GENERATE_SERIES(1, 100) n;
 
     RAISE NOTICE 'Work schedules created: 100 schedules';
@@ -936,16 +940,19 @@ BEGIN
     SELECT ARRAY_AGG(id) INTO sched_ids FROM work_schedules;
 
     INSERT INTO schedule_work_days (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        schedule_id, day_of_week, start_time, end_time, is_working_day
+        schedule_id, day_of_week
     )
     SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         sched_ids[(n-1) % ARRAY_LENGTH(sched_ids, 1) + 1],
-        ((n % 7) + 1)::SMALLINT,
-        '08:00'::TIME,
-        '17:00'::TIME,
-        CASE WHEN (n % 7) < 5 THEN true ELSE false END
+        CASE ((n-1) % 7)
+            WHEN 0 THEN 'MONDAY'
+            WHEN 1 THEN 'TUESDAY'
+            WHEN 2 THEN 'WEDNESDAY'
+            WHEN 3 THEN 'THURSDAY'
+            WHEN 4 THEN 'FRIDAY'
+            WHEN 5 THEN 'SATURDAY'
+            WHEN 6 THEN 'SUNDAY'
+        END
     FROM GENERATE_SERIES(1, 600) n;
 
     RAISE NOTICE 'Schedule work days created: 600 work days';
@@ -965,17 +972,16 @@ BEGIN
     SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO staff_user_ids
     FROM users WHERE business_id = bid AND user_type = 'BUSINESS_USER' LIMIT 100;
 
-    INSERT INTO attendance (
+    INSERT INTO attendances (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, user_id, attendance_date, check_in_time, check_out_time, status, note
+        business_id, user_id, work_schedule_id, attendance_date, status, remarks
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         bid,
         staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
+        (SELECT id FROM work_schedules WHERE user_id = staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1] LIMIT 1),
         (t - INTERVAL '1 day' * (n % 30))::DATE,
-        (t - INTERVAL '1 day' * (n % 30))::TIMESTAMP + INTERVAL '08:00' + (n % 60)::INTERVAL MINUTE,
-        CASE WHEN n % 5 > 0 THEN ((t - INTERVAL '1 day' * (n % 30))::TIMESTAMP + INTERVAL '17:00' + (n % 60)::INTERVAL MINUTE) ELSE NULL END,
         CASE WHEN n % 10 = 0 THEN 'ABSENT' WHEN n % 10 = 1 THEN 'LATE' ELSE 'PRESENT' END,
         CASE WHEN n % 7 = 0 THEN 'Medical leave' ELSE NULL END
     FROM GENERATE_SERIES(1, 500) n;
@@ -994,18 +1000,18 @@ DECLARE
 BEGIN
     SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO att_ids FROM attendance LIMIT 500;
 
-    INSERT INTO attendance_check_in (
+    INSERT INTO attendance_check_ins (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        attendance_id, check_in_time, latitude, longitude, device_id, ip_address
+        attendance_id, check_in_type, check_in_time, latitude, longitude, remarks
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         att_ids[(n-1) % ARRAY_LENGTH(att_ids, 1) + 1],
+        CASE WHEN n % 2 = 0 THEN 'CHECK_IN' ELSE 'CHECK_OUT' END,
         NOW() - INTERVAL '1 hour' * (n % 100),
         11.5564 + (n::NUMERIC / 100000),
         104.9282 + (n::NUMERIC / 100000),
-        'DEVICE_' || (n % 50),
-        '192.168.' || (n % 255) || '.' || ((n * 3) % 255)
+        CASE WHEN n % 10 = 0 THEN 'Late arrival' ELSE NULL END
     FROM GENERATE_SERIES(1, 1000) n;
 
     RAISE NOTICE 'Attendance check-ins created: 1000 check-ins';
@@ -1027,19 +1033,21 @@ BEGIN
 
     INSERT INTO leaves (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, user_id, leave_type, start_date, end_date, reason, status, approved_by, approved_at
+        business_id, user_id, leave_type_enum, start_date, end_date, total_days, reason, status, action_by, action_at, action_note
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         bid,
         staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
-        CASE (n % 4) WHEN 0 THEN 'SICK' WHEN 1 THEN 'ANNUAL' WHEN 2 THEN 'PERSONAL' ELSE 'UNPAID' END,
+        NULL,
         (t + INTERVAL '1 day' * ((n % 30) + 1))::DATE,
         (t + INTERVAL '1 day' * ((n % 30) + 1 + (n % 5)))::DATE,
+        (n % 5)::NUMERIC + 0.5,
         'Leave reason #' || n,
         CASE WHEN n % 3 = 0 THEN 'APPROVED' WHEN n % 3 = 1 THEN 'PENDING' ELSE 'REJECTED' END,
         CASE WHEN n % 3 = 0 THEN (SELECT id FROM users WHERE user_type = 'BUSINESS_USER' ORDER BY RANDOM() LIMIT 1) ELSE NULL END,
-        CASE WHEN n % 3 = 0 THEN t - INTERVAL '1 day' * (n % 10) ELSE NULL END
+        CASE WHEN n % 3 = 0 THEN t - INTERVAL '1 day' * (n % 10) ELSE NULL END,
+        CASE WHEN n % 3 = 0 THEN 'Approved' WHEN n % 3 = 2 THEN 'Rejected' ELSE NULL END
     FROM GENERATE_SERIES(1, 200) n;
 
     RAISE NOTICE 'Leave records created: 200 leaves';
@@ -1055,18 +1063,21 @@ DECLARE
 BEGIN
     INSERT INTO audit_logs (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, action, entity_type, entity_id, old_values, new_values, ip_address, status
+        user_id, user_identifier, user_type, http_method, endpoint, ip_address, user_agent, status_code, response_time_ms, error_message, session_id
     )
     SELECT
         gen_random_uuid(), 0, t - INTERVAL '1 hour' * (n % 100), t - INTERVAL '1 hour' * (n % 100), 'system', 'system', false, NULL, NULL,
         (SELECT id FROM users ORDER BY RANDOM() LIMIT 1),
-        CASE (n % 5) WHEN 0 THEN 'CREATE' WHEN 1 THEN 'UPDATE' WHEN 2 THEN 'DELETE' WHEN 3 THEN 'VIEW' ELSE 'EXPORT' END,
-        CASE (n % 6) WHEN 0 THEN 'ORDER' WHEN 1 THEN 'PRODUCT' WHEN 2 THEN 'USER' WHEN 3 THEN 'BUSINESS' WHEN 4 THEN 'PAYMENT' ELSE 'REPORT' END,
-        gen_random_uuid(),
-        '{"previous":"value' || n || '"}',
-        '{"new":"value' || (n + 1) || '"}',
+        'user_' || n,
+        CASE WHEN n % 3 = 0 THEN 'ADMIN' WHEN n % 3 = 1 THEN 'BUSINESS_USER' ELSE 'CUSTOMER' END,
+        CASE (n % 4) WHEN 0 THEN 'POST' WHEN 1 THEN 'GET' WHEN 2 THEN 'PUT' ELSE 'DELETE' END,
+        CASE (n % 5) WHEN 0 THEN '/api/orders' WHEN 1 THEN '/api/products' WHEN 2 THEN '/api/users' WHEN 3 THEN '/api/businesses' ELSE '/api/payments' END,
         '192.168.' || (n % 255) || '.' || ((n * 5) % 255),
-        'SUCCESS'
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        CASE WHEN n % 10 = 0 THEN 500 WHEN n % 20 = 0 THEN 400 ELSE 200 END,
+        CASE WHEN n % 10 = 0 THEN (n % 1000 + 100) ELSE (n % 500) END,
+        CASE WHEN n % 10 = 0 THEN 'Internal server error' ELSE NULL END,
+        'SESSION_' || (n % 100)
     FROM GENERATE_SERIES(1, 300) n;
 
     RAISE NOTICE 'Audit logs created: 300 audit records';
@@ -1085,18 +1096,19 @@ BEGIN
 
     INSERT INTO payments (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, customer_id, amount, currency, payment_method, status, transaction_id, description, notes
+        business_id, plan_id, subscription_id, amount, amount_khr, payment_method, status, payment_type, reference_number, notes
     )
     SELECT
         gen_random_uuid(), 0, t - INTERVAL '1 day' * (n % 60), t - INTERVAL '1 day' * (n % 60), 'system', 'system', false, NULL, NULL,
         bid,
-        (SELECT id FROM users WHERE user_type = 'CUSTOMER' ORDER BY RANDOM() LIMIT 1),
-        (25.00 + (n * 1.5))::NUMERIC,
-        'USD',
+        (SELECT id FROM subscription_plans LIMIT 1),
+        (SELECT id FROM subscriptions WHERE business_id = bid LIMIT 1),
+        (25.00 + (n * 1.5))::NUMERIC(10, 2),
+        ((25.00 + (n * 1.5)) * 4100)::NUMERIC(15, 2),
         CASE (n % 5) WHEN 0 THEN 'CASH' WHEN 1 THEN 'CREDIT_CARD' WHEN 2 THEN 'BANK_TRANSFER' WHEN 3 THEN 'MOBILE_WALLET' ELSE 'ONLINE' END,
         CASE WHEN n % 10 = 0 THEN 'FAILED' WHEN n % 10 = 1 THEN 'PENDING' ELSE 'COMPLETED' END,
-        'TXN_' || LPAD(n::TEXT, 10, '0'),
-        'Payment for order #' || n,
+        'SUBSCRIPTION',
+        'PAY_' || LPAD(n::TEXT, 10, '0'),
         CASE WHEN n % 20 = 0 THEN 'Manual review required' ELSE NULL END
     FROM GENERATE_SERIES(1, 100) n;
 
