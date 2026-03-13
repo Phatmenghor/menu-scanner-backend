@@ -24,7 +24,7 @@ import com.emenu.features.order.repository.OrderRepository;
 import com.emenu.features.order.service.OrderService;
 import com.emenu.security.SecurityUtils;
 import com.emenu.shared.dto.PaginationResponse;
-import com.emenu.shared.generate.OrderNumberGenerator;
+import com.emenu.shared.generate.ReferenceNumberGenerator;
 import com.emenu.shared.generate.PaymentReferenceGenerator;
 import com.emenu.shared.mapper.PaginationMapper;
 import com.emenu.shared.pagination.PaginationUtils;
@@ -53,7 +53,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final OrderPaymentMapper paymentMapper;
     private final SecurityUtils securityUtils;
-    private final OrderNumberGenerator orderNumberGenerator;
+    private final ReferenceNumberGenerator referenceNumberGenerator;
     private final PaymentReferenceGenerator paymentReferenceGenerator;
     private final PaginationMapper paginationMapper;
 
@@ -354,6 +354,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private String generateOrderNumber() {
-        return orderNumberGenerator.generateUniqueOrderNumber(orderRepository::existsByOrderNumber);
+        return referenceNumberGenerator.generateOrderNumber();
     }
 }

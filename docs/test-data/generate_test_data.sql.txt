@@ -33,7 +33,7 @@ BEGIN
         DELETE FROM order_status_history WHERE order_id IN (SELECT id FROM orders WHERE business_id = v_bid);
         DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE business_id = v_bid);
         DELETE FROM order_payments WHERE business_id = v_bid;
-        DELETE FROM order_counters;
+        DELETE FROM reference_counters;
         DELETE FROM orders WHERE business_id = v_bid;
         DELETE FROM order_process_statuses WHERE business_id = v_bid;
         DELETE FROM product_favorites WHERE product_id IN (SELECT id FROM products WHERE business_id = v_bid);
@@ -508,9 +508,9 @@ BEGIN
     SELECT id INTO order_process_status_id FROM order_process_statuses WHERE business_id = bid AND name = 'Pending' LIMIT 1;
 
     -- Initialize counter for today
-    INSERT INTO order_counters (counter_date, counter_value)
-    VALUES (CURRENT_DATE, 0)
-    ON CONFLICT (counter_date) DO NOTHING;
+    INSERT INTO reference_counters (entity_type, counter_date, counter_value)
+    VALUES ('ORDER', CURRENT_DATE, 0)
+    ON CONFLICT (entity_type, counter_date) DO NOTHING;
 
     FOR order_counter IN 1..1000 LOOP
         SELECT id INTO customer_id FROM users WHERE user_type = 'CUSTOMER' ORDER BY RANDOM() LIMIT 1;
@@ -519,9 +519,9 @@ BEGIN
         order_id := gen_random_uuid();
 
         -- Increment counter and get next value
-        UPDATE order_counters SET counter_value = counter_value + 1 WHERE counter_date = CURRENT_DATE;
+        UPDATE reference_counters SET counter_value = counter_value + 1 WHERE entity_type = 'ORDER' AND counter_date = CURRENT_DATE;
 
-        SELECT counter_value INTO today_counter FROM order_counters WHERE counter_date = CURRENT_DATE;
+        SELECT counter_value INTO today_counter FROM reference_counters WHERE entity_type = 'ORDER' AND counter_date = CURRENT_DATE;
 
         order_num := 'ORD-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(today_counter::TEXT, 6, '0');
         subtotal := (20.00 + (order_counter % 100))::NUMERIC;
@@ -987,10 +987,11 @@ BEGIN
 
     INSERT INTO attendances (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, user_id, work_schedule_id, attendance_date, status, remarks
+        reference_number, business_id, user_id, work_schedule_id, attendance_date, status, remarks
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        'ATT-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(n::TEXT, 6, '0'),
         bid,
         staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
         (SELECT id FROM work_schedules WHERE business_id = bid ORDER BY RANDOM() LIMIT 1),
@@ -1015,10 +1016,11 @@ BEGIN
 
     INSERT INTO attendance_check_ins (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        attendance_id, check_in_type, check_in_time, latitude, longitude, remarks
+        reference_number, attendance_id, check_in_type, check_in_time, latitude, longitude, remarks
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        'CHK-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(n::TEXT, 6, '0'),
         att_ids[(n-1) % ARRAY_LENGTH(att_ids, 1) + 1],
         CASE WHEN n % 2 = 0 THEN 'START' ELSE 'END' END,
         NOW() - INTERVAL '1 hour' * (n % 100),
@@ -1046,10 +1048,11 @@ BEGIN
 
     INSERT INTO leaves (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, user_id, leave_type_enum, start_date, end_date, total_days, reason, status, action_by, action_at, action_note
+        reference_number, business_id, user_id, leave_type_enum, start_date, end_date, total_days, reason, status, action_by, action_at, action_note
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+        'LEV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(n::TEXT, 6, '0'),
         bid,
         staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
         NULL,

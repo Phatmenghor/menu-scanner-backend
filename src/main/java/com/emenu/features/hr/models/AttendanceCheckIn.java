@@ -18,7 +18,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AttendanceCheckIn extends BaseUUIDEntity {
-    
+
+    @Column(name = "reference_number", nullable = false, unique = true)
+    private String referenceNumber;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "attendance_id", nullable = false)
     private Attendance attendance;

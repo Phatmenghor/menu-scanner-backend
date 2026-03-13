@@ -27,6 +27,9 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Attendance extends BaseUUIDEntity {
 
+    @Column(name = "reference_number", nullable = false, unique = true)
+    private String referenceNumber;
+
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
