@@ -187,6 +187,44 @@ public class OrderServiceImpl implements OrderService {
             order.setBusinessNote(request.getBusinessNote());
         }
 
+        // Update order items if provided
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
+            log.info("Updating order items for order: {}", orderId);
+            // Clear existing items - cascade delete will handle cleanup
+            order.getItems().clear();
+
+            // Create new items from the request
+            for (OrderItemCreateHelper itemHelper : request.getItems()) {
+                OrderItem item = new OrderItem();
+                item.setOrderId(orderId);
+                item.setProductId(itemHelper.getProductId());
+                item.setProductSizeId(itemHelper.getProductSizeId());
+                item.setProductName(itemHelper.getProductName());
+                item.setProductImageUrl(itemHelper.getProductImageUrl());
+                item.setSizeName(itemHelper.getSizeName());
+                item.setCurrentPrice(itemHelper.getCurrentPrice());
+                item.setFinalPrice(itemHelper.getFinalPrice());
+                item.setUnitPrice(itemHelper.getUnitPrice());
+                item.setQuantity(itemHelper.getQuantity());
+                item.setTotalPrice(itemHelper.getFinalPrice().multiply(new BigDecimal(itemHelper.getQuantity())));
+                item.setHasPromotion(itemHelper.getHasPromotion());
+                item.setPromotionType(itemHelper.getPromotionType());
+                item.setPromotionValue(itemHelper.getPromotionValue());
+                item.setPromotionFromDate(itemHelper.getPromotionFromDate());
+                item.setPromotionToDate(itemHelper.getPromotionToDate());
+                item.setSpecialInstructions(itemHelper.getSpecialInstructions());
+                item.setOrder(order);
+
+                order.getItems().add(item);
+            }
+
+            // Recalculate subtotal from items
+            BigDecimal newSubtotal = order.getItems().stream()
+                    .map(OrderItem::getTotalPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            order.setSubtotal(newSubtotal);
+        }
+
         // Full update fields
         if (request.getDiscountAmount() != null) {
             order.setDiscountAmount(request.getDiscountAmount());
@@ -199,8 +237,8 @@ public class OrderServiceImpl implements OrderService {
             order.setDeliveryFee(request.getDeliveryFee());
         }
 
-        // Recalculate total amount if any pricing fields are updated
-        if (request.getDiscountAmount() != null || request.getTaxAmount() != null ||
+        // Recalculate total amount if any pricing fields are updated or items changed
+        if (request.getItems() != null || request.getDiscountAmount() != null || request.getTaxAmount() != null ||
             (request.getDeliveryFee() != null && request.getDeliveryOption() == null)) {
             BigDecimal subtotal = order.getSubtotal() != null ? order.getSubtotal() : BigDecimal.ZERO;
             BigDecimal discount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
