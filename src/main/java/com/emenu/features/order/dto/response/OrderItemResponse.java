@@ -19,7 +19,11 @@ public class OrderItemResponse {
     private Boolean hasActivePromotion;     // Whether it had active promotion when ordered
 
     private Integer quantity;
-    private BigDecimal totalPrice;          // finalPrice * quantity
+
+    // Detailed pricing breakdown
+    private BigDecimal totalBeforeDiscount; // currentPrice * quantity
+    private BigDecimal discountAmount;      // totalBeforeDiscount - totalPrice (discount per item line)
+    private BigDecimal totalPrice;          // finalPrice * quantity (final total after discount)
 
     // Promotion details (snapshot from order time)
     private String promotionType;           // PERCENTAGE or FIXED_AMOUNT

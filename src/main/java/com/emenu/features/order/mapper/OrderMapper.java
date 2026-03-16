@@ -256,6 +256,7 @@ public interface OrderMapper {
                 .subtotal(order.getSubtotal())
                 .totalDiscount(order.getDiscountAmount())
                 .deliveryFee(order.getDeliveryFee())
+                .taxAmount(order.getTaxAmount())
                 .finalTotal(order.getTotalAmount())
                 .build();
     }
