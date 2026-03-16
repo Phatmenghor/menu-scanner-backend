@@ -1,8 +1,7 @@
 -- ============================================================
--- MENU SCANNER BACKEND - COMPLETE TEST DATA WITH UNSPLASH PHOTOS
+-- MENU SCANNER BACKEND - COMPLETE TEST DATA
 -- ============================================================
--- Using 2 working Unsplash premium photos (rotating)
--- All image URLs verified working on plus.unsplash.com
+-- Using ONLY 2 Unsplash Premium Photos (rotating)
 -- Schema VALIDATED against actual JPA entities (March 2026)
 
 -- Test Accounts (password: password)
@@ -12,6 +11,10 @@
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Define the 2 photos as constants
+-- photo1: https://plus.unsplash.com/premium_photo-1661432977872-b47a927e1828?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
+-- photo2: https://plus.unsplash.com/premium_photo-1681489662994-5e2805750ef1?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
 
 -- ============================================================
 -- CLEANUP - Delete existing test data
@@ -153,8 +156,8 @@ BEGIN
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         bid, photo1, photo2, 'RESTAURANT',
         '06:00', '23:00', false, 'MONDAY-SUNDAY', 'Asia/Phnom_Penh', 'USD', 'en', 4100.0,
-        'phatmenghor20@gmail.com', '+855 23 999 888', '+855 10 234 5678', 'https://plus.unsplash.com/premium_photo-1661432977872-b47a927e1828?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-        'https://plus.unsplash.com/premium_photo-1681489662994-5e2805750ef1?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 'https://plus.unsplash.com/premium_photo-1661432977872-b47a927e1828?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', '#FF6B6B', '#FFE66D',
+        'phatmenghor20@gmail.com', '+855 23 999 888', '+855 10 234 5678', photo1,
+        photo2, photo1, '#FF6B6B', '#FFE66D',
         true, false, true, 0.0, 10.0, 5.0, 25.0, '30-45 minutes',
         'Fresh food delivery guarantee', 'Customer data protection',
         'Full refund if not satisfied'
@@ -192,7 +195,7 @@ BEGIN
         'BUSINESS_USER'
     FROM GENERATE_SERIES(1, 12) n;
 
-    -- Create categories
+    -- Create categories - ONLY 2 PHOTOS
     INSERT INTO categories (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, name, image_url, status
@@ -216,7 +219,7 @@ BEGIN
         'ACTIVE'
     FROM GENERATE_SERIES(1, 10) n;
 
-    -- Create brands
+    -- Create brands - ONLY 2 PHOTOS
     INSERT INTO brands (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, name, image_url, description, status
@@ -244,7 +247,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- PRODUCTS (1000 products with UNSPLASH IMAGES - 2 photos)
+-- PRODUCTS (1000 products - ONLY 2 PHOTOS)
 -- ============================================================
 
 DO $$ DECLARE
@@ -294,11 +297,11 @@ BEGIN
         has_sizes, has_active_promotion, view_count, favorite_count, main_image_url
     ) SELECT * FROM product_data;
 
-    RAISE NOTICE '1000 products created with alternating Unsplash photos';
+    RAISE NOTICE '1000 products created';
 END $$;
 
 -- ============================================================
--- PRODUCT SIZES (for products with has_sizes = true)
+-- PRODUCT SIZES
 -- ============================================================
 
 DO $$ DECLARE
@@ -325,7 +328,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- PRODUCT IMAGES (4 per product - alternating UNSPLASH)
+-- PRODUCT IMAGES (4 per product - ONLY 2 PHOTOS)
 -- ============================================================
 
 DO $$ DECLARE
@@ -347,11 +350,11 @@ BEGIN
     FROM products p, GENERATE_SERIES(1, 4) img_num
     WHERE p.business_id = bid;
 
-    RAISE NOTICE 'Product images created: 4 per product, alternating photos';
+    RAISE NOTICE 'Product images created: 4 per product';
 END $$;
 
 -- ============================================================
--- CARTS & CART ITEMS (100 carts with items)
+-- CARTS & CART ITEMS
 -- ============================================================
 
 DO $$ DECLARE
@@ -365,7 +368,6 @@ BEGIN
     SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO customer_ids FROM users WHERE user_type = 'CUSTOMER' LIMIT 100;
     SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO product_ids FROM products WHERE business_id = bid LIMIT 500;
 
-    -- Create carts
     INSERT INTO carts (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, user_id, business_id)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
@@ -374,7 +376,6 @@ BEGIN
 
     SELECT ARRAY_AGG(id ORDER BY id) INTO cart_ids FROM carts WHERE business_id = bid;
 
-    -- Create cart items
     INSERT INTO cart_items (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, cart_id, product_id, product_size_id, quantity)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
@@ -387,7 +388,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- DELIVERY OPTIONS (5 methods)
+-- DELIVERY OPTIONS (5 methods - ONLY 2 PHOTOS)
 -- ============================================================
 
 DO $$ DECLARE
@@ -402,27 +403,17 @@ BEGIN
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, name, description, image_url, price, status
     ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Standard Delivery', 'Regular delivery within 30-45 minutes',
-         photo1, 2.00, 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Express Delivery', 'Fast delivery within 15-20 minutes',
-         photo2, 4.00, 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Scheduled Delivery', 'Schedule delivery for specific time',
-         photo1, 2.50, 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Pickup', 'Pick up from restaurant',
-         photo2, 0.00, 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'Dine-in', 'Eat at our restaurant',
-         photo1, 0.00, 'ACTIVE');
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Standard Delivery', 'Regular delivery within 30-45 minutes', photo1, 2.00, 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Express Delivery', 'Fast delivery within 15-20 minutes', photo2, 4.00, 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Scheduled Delivery', 'Schedule delivery for specific time', photo1, 2.50, 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Pickup', 'Pick up from restaurant', photo2, 0.00, 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 'Dine-in', 'Eat at our restaurant', photo1, 0.00, 'ACTIVE');
 
     RAISE NOTICE 'Delivery options created: 5 methods';
 END $$;
 
 -- ============================================================
--- BANNERS (5 promotional banners)
+-- BANNERS (5 promotional banners - ONLY 2 PHOTOS)
 -- ============================================================
 
 DO $$ DECLARE
@@ -437,22 +428,17 @@ BEGIN
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, image_url, link_url, status
     ) VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, photo1, '/menu/category/1', 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, photo2, '/menu/category/2', 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, photo1, '/menu/category/3', 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, photo2, '/menu/category/4', 'ACTIVE'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, photo1, '/menu/category/5', 'ACTIVE');
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, photo1, '/menu/category/1', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, photo2, '/menu/category/2', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, photo1, '/menu/category/3', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, photo2, '/menu/category/4', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, photo1, '/menu/category/5', 'ACTIVE');
 
     RAISE NOTICE 'Banners created: 5 promotional banners';
 END $$;
 
 -- ============================================================
--- CUSTOMER ADDRESSES (150 addresses)
+-- CUSTOMER ADDRESSES
 -- ============================================================
 
 DO $$ DECLARE
@@ -481,7 +467,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- ORDER PROCESS STATUSES (10 statuses)
+-- ORDER PROCESS STATUSES
 -- ============================================================
 
 DO $$ DECLARE
@@ -509,7 +495,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- ORDERS (1000 orders with items & payments)
+-- ORDERS (1000 orders - ONLY 2 PHOTOS)
 -- ============================================================
 
 DO $$ DECLARE
@@ -528,11 +514,12 @@ DO $$ DECLARE
     order_counter INT;
     today_counter BIGINT;
     item_n INT;
+    photo1 TEXT := 'https://plus.unsplash.com/premium_photo-1661432977872-b47a927e1828?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
+    photo2 TEXT := 'https://plus.unsplash.com/premium_photo-1681489662994-5e2805750ef1?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
     SELECT id INTO order_process_status_id FROM order_process_statuses WHERE business_id = bid AND name = 'Pending' LIMIT 1;
 
-    -- Initialize counter for today
     INSERT INTO reference_counters (entity_type, counter_date, counter_value)
     VALUES ('ORDER', CURRENT_DATE, 0)
     ON CONFLICT (entity_type, counter_date) DO NOTHING;
@@ -543,9 +530,7 @@ BEGIN
 
         order_id := gen_random_uuid();
 
-        -- Increment counter and get next value
         UPDATE reference_counters SET counter_value = counter_value + 1 WHERE entity_type = 'ORDER' AND counter_date = CURRENT_DATE;
-
         SELECT counter_value INTO today_counter FROM reference_counters WHERE entity_type = 'ORDER' AND counter_date = CURRENT_DATE;
 
         order_num := 'ORD-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(today_counter::TEXT, 6, '0');
@@ -566,7 +551,7 @@ BEGIN
             order_id, 0, t - (RANDOM() * INTERVAL '60 days'), t, 'system', 'system', false, NULL, NULL,
             bid, customer_id, order_num, 'Pending',
             '{"village":"Village 1","commune":"Commune 1","district":"District 1","province":"Phnom Penh Province","streetNumber":"Street 252","houseNumber":"House 123","note":"Near market","latitude":11.5564,"longitude":104.9282}',
-            '{"name":"Standard Delivery","description":"Regular delivery","imageUrl":"https://plus.unsplash.com/premium_photo-1661432977872-b47a927e1828?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D","price":2.00}',
+            '{"name":"Standard Delivery","description":"Regular delivery","imageUrl":"' || (CASE WHEN order_counter % 2 = 0 THEN photo1 ELSE photo2 END) || '","price":2.00}',
             subtotal, discount_amt, deliv_fee, tax_amt, total_amt,
             CASE (order_counter % 4) WHEN 0 THEN 'CASH' WHEN 1 THEN 'BANK_TRANSFER' WHEN 2 THEN 'ONLINE' ELSE 'OTHER' END,
             CASE WHEN order_counter % 3 = 0 THEN 'UNPAID' WHEN order_counter % 3 = 1 THEN 'PAID' ELSE 'COMPLETED' END,
@@ -576,7 +561,6 @@ BEGIN
             CASE WHEN order_counter % 3 = 2 THEN t - (RANDOM() * INTERVAL '30 days') ELSE NULL END
         );
 
-        -- Add order items (2-3 items per order)
         FOR item_n IN 1..(2 + (order_counter % 2)) LOOP
             INSERT INTO order_items (
                 id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
@@ -585,11 +569,7 @@ BEGIN
             ) VALUES (
                 gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
                 order_id, pid, NULL, 'Khmer Dish Item',
-                CASE WHEN item_n % 2 = 0 THEN
-                    'https://plus.unsplash.com/premium_photo-1661432977872-b47a927e1828?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-                ELSE
-                    'https://plus.unsplash.com/premium_photo-1681489662994-5e2805750ef1?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-                END,
+                CASE WHEN item_n % 2 = 0 THEN photo1 ELSE photo2 END,
                 CASE WHEN item_n % 2 = 0 THEN 'Medium' ELSE 'Large' END,
                 (15.00 + (order_counter % 50))::NUMERIC,
                 (15.00 + (order_counter % 50))::NUMERIC,
@@ -600,7 +580,6 @@ BEGIN
             );
         END LOOP;
 
-        -- Add order status history
         INSERT INTO order_status_history (
             id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
             order_id, order_process_status_id, note, changed_by_user_id
@@ -609,7 +588,6 @@ BEGIN
             order_id, order_process_status_id, 'Order created', NULL
         );
 
-        -- Add order payment
         INSERT INTO order_payments (
             id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
             business_id, order_id, payment_reference,
@@ -630,7 +608,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- STAFF USERS (3500 staff)
+-- STAFF USERS (3500 staff - ONLY 2 PHOTOS)
 -- ============================================================
 
 DO $$ DECLARE
@@ -671,7 +649,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- CUSTOMER USERS (100 customers)
+-- CUSTOMER USERS (100 customers - ONLY 2 PHOTOS)
 -- ============================================================
 
 DO $$ DECLARE
@@ -706,7 +684,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- PRODUCT FAVORITES (200 favorites)
+-- PRODUCT FAVORITES
 -- ============================================================
 
 DO $$ DECLARE
@@ -744,14 +722,12 @@ DO $$ DECLARE
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
 
-    -- Global exchange rates
     INSERT INTO exchange_rates (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         usd_to_khr_rate, is_active, notes
     ) VALUES
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 4100.0, true, 'Standard USD to KHR rate');
 
-    -- Business-specific exchange rates
     INSERT INTO business_exchange_rates (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, usd_to_khr_rate, usd_to_thb_rate, usd_to_cny_rate, usd_to_vnd_rate, is_active, notes
@@ -763,15 +739,14 @@ BEGIN
 END $$;
 
 -- ============================================================
--- SUMMARY - UNSPLASH PHOTOS (2 Premium Photos)
+-- SUMMARY
 -- ============================================================
 
 SELECT
-    '✓ SUCCESS - COMPLETE TEST DATA WITH UNSPLASH PHOTOS!' as status,
+    '✓ SUCCESS - COMPLETE TEST DATA WITH ONLY 2 UNSPLASH PHOTOS!' as status,
     (SELECT COUNT(*) FROM users) as total_users,
     (SELECT COUNT(*) FROM products) as total_products,
     (SELECT COUNT(*) FROM product_images) as total_product_images,
     (SELECT COUNT(*) FROM orders) as total_orders,
     (SELECT COUNT(*) FROM delivery_options) as total_delivery_options,
-    (SELECT COUNT(*) FROM banners) as total_banners,
-    'Unsplash Premium Photos (plus.unsplash.com)' as image_source;
+    (SELECT COUNT(*) FROM banners) as total_banners;
