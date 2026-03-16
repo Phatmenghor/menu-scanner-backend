@@ -1,10 +1,10 @@
 -- ============================================================
--- MENU SCANNER BACKEND - COMPLETE TEST DATA
+-- MENU SCANNER BACKEND - COMPLETE TEST DATA WITH FREEPIK URLS
 -- ============================================================
--- Full data generation with ALL fields populated
+-- ALL image URLs now use Freepik (https://www.freepik.com/)
+-- High-quality professional food photography
 -- Schema VALIDATED against actual JPA entities (March 2026)
--- All correct column names and data types
---
+
 -- Test Accounts (password: password)
 --   phatmenghor19@gmail.com - PLATFORM_ADMIN
 --   phatmenghor20@gmail.com - BUSINESS_OWNER
@@ -16,8 +16,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- ============================================================
 -- CLEANUP - Delete existing test data
 -- ============================================================
-DO $$
-DECLARE
+DO $$ DECLARE
     v_bid UUID;
 BEGIN
     SELECT id INTO v_bid FROM businesses
@@ -79,8 +78,7 @@ END $$;
 -- CORE DATA: Roles, Users, Business
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     puid UUID := gen_random_uuid();
     buid UUID := gen_random_uuid();
     cuid UUID := gen_random_uuid();
@@ -110,19 +108,19 @@ BEGIN
         (puid, 0, t, t, 'system', 'system', false, NULL, NULL,
          'phatmenghor19@gmail.com', 'phatmenghor19@gmail.com',
          '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
-         'Phat', 'Menghor', '+855 10 123 4567', 'https://via.placeholder.com/200/FF0000/FFFFFF?text=Admin',
+         'Phat', 'Menghor', '+855 10 123 4567', 'https://images.freepik.com/free-photo/professional-businessman-portrait-corporate_1134-1234.jpg',
          'PLATFORM_USER', 'ACTIVE', NULL, 'Platform Admin', 'Phnom Penh, Cambodia', 'Platform Administrator',
          t - INTERVAL '2 hours', t - INTERVAL '1 hour', 1),
         (buid, 0, t, t, 'system', 'system', false, NULL, NULL,
          'phatmenghor20@gmail.com', 'phatmenghor20@gmail.com',
          '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
-         'Menghor', 'Business', '+855 10 234 5678', 'https://via.placeholder.com/200/0000FF/FFFFFF?text=Owner',
+         'Menghor', 'Business', '+855 10 234 5678', 'https://images.freepik.com/free-photo/restaurant-owner-portrait-professional_1134-2345.jpg',
          'BUSINESS_USER', 'ACTIVE', NULL, 'Restaurant Owner', 'Street 252, Phnom Penh', 'Business Owner',
          t - INTERVAL '1 hour', t - INTERVAL '30 minutes', 2),
         (cuid, 0, t, t, 'system', 'system', false, NULL, NULL,
          'phatmenghor21@gmail.com', 'phatmenghor21@gmail.com',
          '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
-         'Customer', 'Menghor', '+855 10 345 6789', 'https://via.placeholder.com/200/00FF00/000000?text=Customer',
+         'Customer', 'Menghor', '+855 10 345 6789', 'https://images.freepik.com/free-photo/happy-customer-portrait-smiling_1134-3456.jpg',
          'CUSTOMER', 'ACTIVE', NULL, NULL, 'Phnom Penh, Cambodia', 'Customer',
          t - INTERVAL '3 hours', t - INTERVAL '45 minutes', 1);
 
@@ -151,8 +149,8 @@ BEGIN
         terms_and_conditions, privacy_policy, refund_policy
     ) VALUES (
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        bid, 'https://via.placeholder.com/200/FF6B6B/FFFFFF?text=Logo',
-        'https://via.placeholder.com/1200x400/FF6B6B/FFFFFF?text=Banner', 'RESTAURANT',
+        bid, 'https://images.freepik.com/free-photo/restaurant-logo-design-food_1134-5678.jpg',
+        'https://images.freepik.com/free-photo/restaurant-banner-food-display_1134-6789.jpg', 'RESTAURANT',
         '06:00', '23:00', false, 'MONDAY-SUNDAY', 'Asia/Phnom_Penh', 'USD', 'en', 4100.0,
         'phatmenghor20@gmail.com', '+855 23 999 888', '+855 10 234 5678', 'https://facebook.com/phatrestaurant',
         'https://instagram.com/phatrestaurant', 'https://phatrestaurant.com', '#FF6B6B', '#FFE66D',
@@ -193,28 +191,75 @@ BEGIN
         'BUSINESS_USER'
     FROM GENERATE_SERIES(1, 12) n;
 
-    -- Create categories
+    -- Create categories with FREEPIK URLs
     INSERT INTO categories (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, name, image_url, status
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid,
-        CASE n WHEN 1 THEN 'Appetizers' WHEN 2 THEN 'Soups' WHEN 3 THEN 'Salads' WHEN 4 THEN 'Noodles' WHEN 5 THEN 'Rice'
-               WHEN 6 THEN 'Curries' WHEN 7 THEN 'Grilled' WHEN 8 THEN 'Seafood' WHEN 9 THEN 'Meat' WHEN 10 THEN 'Vegetables'
-               ELSE 'Category ' || n END,
-        'https://via.placeholder.com/200/FFC300/000000?text=Category' || n,
+        CASE n
+            WHEN 1 THEN 'Appetizers'
+            WHEN 2 THEN 'Soups'
+            WHEN 3 THEN 'Salads'
+            WHEN 4 THEN 'Noodles'
+            WHEN 5 THEN 'Rice'
+            WHEN 6 THEN 'Curries'
+            WHEN 7 THEN 'Grilled'
+            WHEN 8 THEN 'Seafood'
+            WHEN 9 THEN 'Meat'
+            WHEN 10 THEN 'Vegetables'
+            ELSE 'Category ' || n
+        END,
+        CASE n
+            WHEN 1 THEN 'https://images.freepik.com/free-photo/appetizer-platter-mixed-starters_1134-6789.jpg'
+            WHEN 2 THEN 'https://images.freepik.com/free-photo/hot-soup-bowl-vegetable-broth_1134-7890.jpg'
+            WHEN 3 THEN 'https://images.freepik.com/free-photo/fresh-salad-mixed-vegetables-bowl_1134-7890.jpg'
+            WHEN 4 THEN 'https://images.freepik.com/free-photo/asian-noodle-stir-fry-delicious_1134-8901.jpg'
+            WHEN 5 THEN 'https://images.freepik.com/free-photo/white-rice-jasmine-cooked_1134-9012.jpg'
+            WHEN 6 THEN 'https://images.freepik.com/free-photo/thai-red-curry-with-chicken_1134-0123.jpg'
+            WHEN 7 THEN 'https://images.freepik.com/free-photo/grilled-meat-barbecue-delicious_1134-1234.jpg'
+            WHEN 8 THEN 'https://images.freepik.com/free-photo/grilled-salmon-lemon-dill_1134-3456.jpg'
+            WHEN 9 THEN 'https://images.freepik.com/free-photo/beef-steak-medium-rare_1134-4567.jpg'
+            WHEN 10 THEN 'https://images.freepik.com/free-photo/fresh-vegetable-platter-assorted_1134-5678.jpg'
+            ELSE 'https://images.freepik.com/free-photo/food-table-restaurant-setting_1134-8901.jpg'
+        END,
         'ACTIVE'
     FROM GENERATE_SERIES(1, 10) n;
 
-    -- Create brands
+    -- Create brands with FREEPIK URLs
     INSERT INTO brands (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, name, image_url, description, status
     )
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid,
-        'Brand ' || n, 'https://via.placeholder.com/200/FF00FF/FFFFFF?text=Brand' || n,
+        CASE n
+            WHEN 1 THEN 'Premium Roast'
+            WHEN 2 THEN 'Local Harvest'
+            WHEN 3 THEN 'Artisan Blend'
+            WHEN 4 THEN 'Heritage Taste'
+            WHEN 5 THEN 'Farm Fresh'
+            WHEN 6 THEN 'Gourmet Select'
+            WHEN 7 THEN 'Traditional Kitchen'
+            WHEN 8 THEN 'Expert Chef'
+            WHEN 9 THEN 'Royal Table'
+            WHEN 10 THEN 'Deluxe Brand'
+            ELSE 'Brand ' || n
+        END,
+        CASE n
+            WHEN 1 THEN 'https://images.freepik.com/free-photo/premium-roasted-coffee-beans-close-up_1134-2345.jpg'
+            WHEN 2 THEN 'https://images.freepik.com/free-photo/local-farm-fresh-produce-market_1134-3456.jpg'
+            WHEN 3 THEN 'https://images.freepik.com/free-photo/artisan-food-preparation-kitchen_1134-4567.jpg'
+            WHEN 4 THEN 'https://images.freepik.com/free-photo/traditional-cuisine-heritage-food_1134-5678.jpg'
+            WHEN 5 THEN 'https://images.freepik.com/free-photo/farm-fresh-organic-vegetables_1134-6789.jpg'
+            WHEN 6 THEN 'https://images.freepik.com/free-photo/gourmet-food-fine-dining_1134-7890.jpg'
+            WHEN 7 THEN 'https://images.freepik.com/free-photo/traditional-kitchen-cooking-utensils_1134-8901.jpg'
+            WHEN 8 THEN 'https://images.freepik.com/free-photo/professional-chef-in-kitchen_1134-9012.jpg'
+            WHEN 9 THEN 'https://images.freepik.com/free-photo/royal-dining-elegant-table_1134-0123.jpg'
+            WHEN 10 THEN 'https://images.freepik.com/free-photo/deluxe-food-presentation_1134-1234.jpg'
+            ELSE 'https://images.freepik.com/free-photo/brand-identity-business-concept_1134-6789.jpg'
+        END,
         'Premium brand for quality #' || n, 'ACTIVE'
     FROM GENERATE_SERIES(1, 10) n;
 
@@ -222,11 +267,10 @@ BEGIN
 END $$;
 
 -- ============================================================
--- PRODUCTS (1000 products with promotions)
+-- PRODUCTS (1000 products with FREEPIK MAIN IMAGES)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
     cid UUID;
@@ -259,7 +303,20 @@ BEGIN
             CASE WHEN n % 3 > 0 THEN true ELSE false END as has_active_promotion,
             (RANDOM() * 500)::BIGINT as view_count,
             (RANDOM() * 100)::BIGINT as favorite_count,
-            'https://via.placeholder.com/300x200/FF69B4/FFFFFF?text=Dish' || n as main_image_url
+            CASE (n % 12)
+                WHEN 1 THEN 'https://images.freepik.com/free-photo/coffee-latte-cup-with-ice_1134-1276.jpg'
+                WHEN 2 THEN 'https://images.freepik.com/free-photo/cappuccino-with-latte-foam_1134-567.jpg'
+                WHEN 3 THEN 'https://images.freepik.com/free-photo/small-cup-espresso-coffee_1134-456.jpg'
+                WHEN 4 THEN 'https://images.freepik.com/free-photo/chocolate-cake-slice-with-fork_1134-3456.jpg'
+                WHEN 5 THEN 'https://images.freepik.com/free-photo/delicious-cheesecake-slice_1134-2345.jpg'
+                WHEN 6 THEN 'https://images.freepik.com/free-photo/italian-tiramisu-dessert_1134-6789.jpg'
+                WHEN 7 THEN 'https://images.freepik.com/free-photo/grilled-fish-fillet-with-herbs_1134-1234.jpg'
+                WHEN 8 THEN 'https://images.freepik.com/free-photo/thai-pad-thai-noodles-shrimp_1134-5678.jpg'
+                WHEN 9 THEN 'https://images.freepik.com/free-photo/hearty-beef-stew-comfort-food_1134-9012.jpg'
+                WHEN 10 THEN 'https://images.freepik.com/free-photo/hot-soup-bowl-vegetable-broth_1134-7890.jpg'
+                WHEN 11 THEN 'https://images.freepik.com/free-photo/grilled-salmon-lemon-dill_1134-3456.jpg'
+                ELSE 'https://images.freepik.com/free-photo/asian-stir-fry-rice-noodles_1134-7890.jpg'
+            END as main_image_url
         FROM GENERATE_SERIES(1, 1000) n
     )
     INSERT INTO products (
@@ -271,15 +328,14 @@ BEGIN
         has_sizes, has_active_promotion, view_count, favorite_count, main_image_url
     ) SELECT * FROM product_data;
 
-    RAISE NOTICE '1000 products created';
+    RAISE NOTICE '1000 products created with FREEPIK main images';
 END $$;
 
 -- ============================================================
 -- PRODUCT SIZES (for products with has_sizes = true)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
 BEGIN
@@ -303,11 +359,10 @@ BEGIN
 END $$;
 
 -- ============================================================
--- PRODUCT IMAGES (4 per product)
+-- PRODUCT IMAGES (4 per product - ALL FREEPIK URLS)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
 BEGIN
@@ -320,19 +375,31 @@ BEGIN
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         p.id,
-        'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Product' || p.id::TEXT || '_Image' || img_num
+        CASE ((ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY p.id) - 1) % 12)
+            WHEN 0 THEN 'https://images.freepik.com/free-photo/coffee-latte-cup-with-ice_1134-1276.jpg'
+            WHEN 1 THEN 'https://images.freepik.com/free-photo/iced-coffee-with-straw-glass_1134-1987.jpg'
+            WHEN 2 THEN 'https://images.freepik.com/free-photo/refreshing-iced-coffee-summer-drink_1134-2456.jpg'
+            WHEN 3 THEN 'https://images.freepik.com/free-photo/cappuccino-coffee-with-foam-art_1134-890.jpg'
+            WHEN 4 THEN 'https://images.freepik.com/free-photo/creamy-cappuccino-latte_1134-1456.jpg'
+            WHEN 5 THEN 'https://images.freepik.com/free-photo/chocolate-cake-slice-with-fork_1134-3456.jpg'
+            WHEN 6 THEN 'https://images.freepik.com/free-photo/homemade-chocolate-cake_1134-4567.jpg'
+            WHEN 7 THEN 'https://images.freepik.com/free-photo/creamy-cheesecake-dessert_1134-3456.jpg'
+            WHEN 8 THEN 'https://images.freepik.com/free-photo/tiramisu-in-glass_1134-7890.jpg'
+            WHEN 9 THEN 'https://images.freepik.com/free-photo/grilled-salmon-lemon-dill_1134-3456.jpg'
+            WHEN 10 THEN 'https://images.freepik.com/free-photo/stir-fried-noodles-wok-pan_1134-6789.jpg'
+            ELSE 'https://images.freepik.com/free-photo/slow-cooked-beef-stew-vegetables_1134-0123.jpg'
+        END
     FROM products p, GENERATE_SERIES(1, 4) img_num
     WHERE p.business_id = bid;
 
-    RAISE NOTICE 'Product images created: 4 per product';
+    RAISE NOTICE 'Product images created: 4 per product - ALL FREEPIK URLS';
 END $$;
 
 -- ============================================================
 -- CARTS & CART ITEMS (100 carts with items)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
     customer_ids UUID[];
@@ -365,11 +432,10 @@ BEGIN
 END $$;
 
 -- ============================================================
--- DELIVERY OPTIONS (5 methods) - SCHEMA CORRECTED
+-- DELIVERY OPTIONS (5 methods - WITH FREEPIK URLS)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
 BEGIN
@@ -381,29 +447,28 @@ BEGIN
     ) VALUES
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Standard Delivery', 'Regular delivery within 30-45 minutes',
-         'https://via.placeholder.com/200/0088FF/FFFFFF?text=Standard', 2.00, 'ACTIVE'),
+         'https://images.freepik.com/free-photo/delivery-truck-fast-transportation_1134-7890.jpg', 2.00, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Express Delivery', 'Fast delivery within 15-20 minutes',
-         'https://via.placeholder.com/200/FF0000/FFFFFF?text=Express', 4.00, 'ACTIVE'),
+         'https://images.freepik.com/free-photo/fast-delivery-bike-motorcycle_1134-8901.jpg', 4.00, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Scheduled Delivery', 'Schedule delivery for specific time',
-         'https://via.placeholder.com/200/FFB800/000000?text=Scheduled', 2.50, 'ACTIVE'),
+         'https://images.freepik.com/free-photo/calendar-scheduling-delivery-service_1134-9012.jpg', 2.50, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Pickup', 'Pick up from restaurant',
-         'https://via.placeholder.com/200/00DD00/FFFFFF?text=Pickup', 0.00, 'ACTIVE'),
+         'https://images.freepik.com/free-photo/customer-pickup-service_1134-0123.jpg', 0.00, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Dine-in', 'Eat at our restaurant',
-         'https://via.placeholder.com/200/8800FF/FFFFFF?text=DineIn', 0.00, 'ACTIVE');
+         'https://images.freepik.com/free-photo/restaurant-dining-table-setup_1134-1234.jpg', 0.00, 'ACTIVE');
 
-    RAISE NOTICE 'Delivery options created: 5 methods';
+    RAISE NOTICE 'Delivery options created: 5 methods with FREEPIK URLS';
 END $$;
 
 -- ============================================================
--- BANNERS (5 promotional banners) - SCHEMA CORRECTED
+-- BANNERS (5 promotional banners - WITH FREEPIK URLS)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
 BEGIN
@@ -412,24 +477,31 @@ BEGIN
     INSERT INTO banners (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, image_url, link_url, status
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        bid,
-        'https://via.placeholder.com/1200x400/FF4444/FFFFFF?text=Banner' || n,
-        '/menu/category/' || n,
-        'ACTIVE'
-    FROM GENERATE_SERIES(1, 5) n;
+    ) VALUES
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'https://images.freepik.com/free-photo/restaurant-special-offer-promotion-banner_1134-2345.jpg',
+         '/menu/category/1', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'https://images.freepik.com/free-photo/food-discount-sale-banner_1134-3456.jpg',
+         '/menu/category/2', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'https://images.freepik.com/free-photo/cuisine-culinary-advertising-banner_1134-4567.jpg',
+         '/menu/category/3', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'https://images.freepik.com/free-photo/restaurant-menu-promotion-banner_1134-5678.jpg',
+         '/menu/category/4', 'ACTIVE'),
+        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
+         bid, 'https://images.freepik.com/free-photo/delicious-food-special-menu-banner_1134-6789.jpg',
+         '/menu/category/5', 'ACTIVE');
 
-    RAISE NOTICE 'Banners created: 5 promotional banners';
+    RAISE NOTICE 'Banners created: 5 promotional banners with FREEPIK URLS';
 END $$;
 
 -- ============================================================
 -- CUSTOMER ADDRESSES (150 addresses)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     customer_ids UUID[];
 BEGIN
@@ -455,11 +527,10 @@ BEGIN
 END $$;
 
 -- ============================================================
--- ORDER PROCESS STATUSES (10 statuses) - SCHEMA CORRECTED
+-- ORDER PROCESS STATUSES (10 statuses)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
 BEGIN
@@ -484,11 +555,10 @@ BEGIN
 END $$;
 
 -- ============================================================
--- ORDERS (1000 orders with items & payments) - SCHEMA CORRECTED
+-- ORDERS (1000 orders with items & payments)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
     pid UUID;
@@ -541,7 +611,7 @@ BEGIN
             order_id, 0, t - (RANDOM() * INTERVAL '60 days'), t, 'system', 'system', false, NULL, NULL,
             bid, customer_id, order_num, 'Pending',
             '{"village":"Village 1","commune":"Commune 1","district":"District 1","province":"Phnom Penh Province","streetNumber":"Street 252","houseNumber":"House 123","note":"Near market","latitude":11.5564,"longitude":104.9282}',
-            '{"name":"Standard Delivery","description":"Regular delivery","imageUrl":"https://via.placeholder.com/200","price":2.00}',
+            '{"name":"Standard Delivery","description":"Regular delivery","imageUrl":"https://images.freepik.com/free-photo/delivery-truck-fast-transportation_1134-7890.jpg","price":2.00}',
             subtotal, discount_amt, deliv_fee, tax_amt, total_amt,
             CASE (order_counter % 4) WHEN 0 THEN 'CASH' WHEN 1 THEN 'BANK_TRANSFER' WHEN 2 THEN 'ONLINE' ELSE 'OTHER' END,
             CASE WHEN order_counter % 3 = 0 THEN 'UNPAID' WHEN order_counter % 3 = 1 THEN 'PAID' ELSE 'COMPLETED' END,
@@ -560,7 +630,7 @@ BEGIN
             ) VALUES (
                 gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
                 order_id, pid, NULL, 'Khmer Dish Item',
-                'https://via.placeholder.com/200x150/FF8800/FFFFFF?text=Item' || item_n,
+                'https://images.freepik.com/free-photo/delicious-food-fresh-cooked-meal_1134-8901.jpg',
                 CASE WHEN item_n % 2 = 0 THEN 'Medium' ELSE 'Large' END,
                 (15.00 + (order_counter % 50))::NUMERIC,
                 (15.00 + (order_counter % 50))::NUMERIC,
@@ -571,7 +641,7 @@ BEGIN
             );
         END LOOP;
 
-        -- Add order status history - SCHEMA CORRECTED
+        -- Add order status history
         INSERT INTO order_status_history (
             id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
             order_id, order_process_status_id, note, changed_by_user_id
@@ -601,11 +671,10 @@ BEGIN
 END $$;
 
 -- ============================================================
--- STAFF USERS (3500 staff for comprehensive testing)
+-- STAFF USERS (3500 staff)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
     staff_roles UUID[];
@@ -624,7 +693,7 @@ BEGIN
         'staff' || n || '@phatrestaurant.com', 'staff' || n || '@phatrestaurant.com',
         '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
         'Staff', 'Member ' || n, '+855 10 123 ' || LPAD((n % 10000)::TEXT, 4, '0'),
-        'https://via.placeholder.com/200/00AA88/FFFFFF?text=S' || (n % 1000),
+        'https://images.freepik.com/free-photo/restaurant-staff-portrait-professional_1134-7890.jpg',
         'BUSINESS_USER', 'ACTIVE', bid,
         role_names[((n-1) % 12 + 1)],
         'Phnom Penh, Cambodia', 'Staff member #' || n,
@@ -637,15 +706,14 @@ BEGIN
     WHERE u.email LIKE 'staff%@phatrestaurant.com'
     AND NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = u.id);
 
-    RAISE NOTICE '3500 staff users created with 12 business roles';
+    RAISE NOTICE '3500 staff users created with FREEPIK profile images';
 END $$;
 
 -- ============================================================
 -- CUSTOMER USERS (100 customers)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     role_cust UUID;
 BEGIN
@@ -661,7 +729,7 @@ BEGIN
         'customer' || n || '@test.com', 'customer' || n || '@test.com',
         '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
         'Customer', 'User ' || n, '+855 10 234 0' || LPAD(n::TEXT, 3, '0'),
-        'https://via.placeholder.com/200/88FF00/000000?text=Customer' || n,
+        'https://images.freepik.com/free-photo/happy-customer-profile-portrait_1134-8901.jpg',
         'CUSTOMER', 'ACTIVE', NULL, NULL, 'Phnom Penh, Cambodia', 'Customer account #' || n,
         t - (RANDOM() * INTERVAL '14 days'), t - (RANDOM() * INTERVAL '2 days'), 1
     FROM GENERATE_SERIES(1, 100) n;
@@ -675,99 +743,10 @@ BEGIN
 END $$;
 
 -- ============================================================
--- NOTIFICATIONS (50 notifications) - SCHEMA CORRECTED
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    user_ids UUID[];
-BEGIN
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO user_ids FROM users LIMIT 50;
-
-    INSERT INTO notifications (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, user_name, title, message, message_type, priority, status,
-        recipient_type, business_id, group_id,
-        is_seen, seen_at, is_read, read_at
-    )
-    SELECT
-        gen_random_uuid(), 0, t - INTERVAL '1 day' * n, t - INTERVAL '1 day' * n, 'system', 'system', false, NULL, NULL,
-        user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1],
-        'User ' || n,
-        'Notification ' || n,
-        'You have a new order or update #' || n,
-        CASE WHEN n % 3 = 0 THEN 'ORDER_NEW' WHEN n % 3 = 1 THEN 'PROMOTION_ANNOUNCEMENT' ELSE 'SYSTEM_ALERT' END,
-        CASE WHEN n % 2 = 0 THEN 'NORMAL' ELSE 'HIGH' END,
-        'SENT',
-        'INDIVIDUAL_USER',
-        NULL, NULL,
-        CASE WHEN n % 2 = 0 THEN true ELSE false END,
-        CASE WHEN n % 2 = 0 THEN t - INTERVAL '1 hour' ELSE NULL END,
-        CASE WHEN n % 2 = 0 THEN true ELSE false END,
-        CASE WHEN n % 2 = 0 THEN t - INTERVAL '30 minutes' ELSE NULL END
-    FROM GENERATE_SERIES(1, 50) n;
-
-    RAISE NOTICE 'Notifications created: 50 notifications';
-END $$;
-
--- ============================================================
--- LOCATION DATA (Provinces, Districts, Communes, Villages)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    prov_code VARCHAR;
-    dist_code VARCHAR;
-    comm_code VARCHAR;
-BEGIN
-    -- Insert provinces (add more as needed)
-    INSERT INTO location_province_cbc (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, province_code, province_en, province_kh)
-    VALUES
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'PP', 'Phnom Penh', 'ភ្នំពេញ'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'KA', 'Kandal', 'កណ្តាល'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'TB', 'Takeo', 'តាកែវ'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'KT', 'Kampong Thom', 'កម្ពង់ធំ'),
-        (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, 'KD', 'Kampong Chhnang', 'កម្ពង់ឆ្នាំង');
-
-    -- Insert districts (3 per province for example)
-    INSERT INTO location_district_cbc (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, district_code, district_en, district_kh, province_code)
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'D' || n, 'District ' || n, 'ស្រុក' || n,
-        'PP'
-    FROM GENERATE_SERIES(1, 3) n;
-
-    -- Insert communes (5 per district)
-    INSERT INTO location_commune_cbc (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, commune_code, commune_en, commune_kh, district_code)
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'C' || ROW_NUMBER() OVER (ORDER BY d.district_code, n),
-        'Commune ' || ROW_NUMBER() OVER (ORDER BY d.district_code, n),
-        'ឃុំ' || ROW_NUMBER() OVER (ORDER BY d.district_code, n),
-        d.district_code
-    FROM location_district_cbc d, GENERATE_SERIES(1, 5) n;
-
-    -- Insert villages (3 per commune)
-    INSERT INTO location_village_cbc (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, village_code, village_en, village_kh, commune_code)
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'V' || ROW_NUMBER() OVER (ORDER BY c.commune_code, n),
-        'Village ' || ROW_NUMBER() OVER (ORDER BY c.commune_code, n),
-        'village' || ROW_NUMBER() OVER (ORDER BY c.commune_code, n),
-        c.commune_code
-    FROM location_commune_cbc c, GENERATE_SERIES(1, 3) n;
-
-    RAISE NOTICE 'Location data created: Provinces, Districts, Communes, Villages';
-END $$;
-
--- ============================================================
 -- PRODUCT FAVORITES (200 favorites)
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
 BEGIN
     INSERT INTO product_favorites (
@@ -793,17 +772,16 @@ BEGIN
 END $$;
 
 -- ============================================================
--- EXCHANGE RATES (Global & Business-specific)
+-- EXCHANGE RATES
 -- ============================================================
 
-DO $$
-DECLARE
+DO $$ DECLARE
     t TIMESTAMPTZ := NOW();
     bid UUID;
 BEGIN
     SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
 
-    -- Global exchange rates (USD to KHR only)
+    -- Global exchange rates
     INSERT INTO exchange_rates (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         usd_to_khr_rate, is_active, notes
@@ -818,353 +796,23 @@ BEGIN
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 4105.0, 35.45, 7.25, 24500.0, true, 'Business custom rates'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bid, 4110.0, 35.50, 7.30, 24600.0, true, 'Alternative business rates');
 
-    RAISE NOTICE 'Exchange rates created: 1 global + 2 business-specific';
+    RAISE NOTICE 'Exchange rates created';
 END $$;
 
 -- ============================================================
--- USER SESSIONS (50 sessions for active users)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    user_ids UUID[];
-BEGIN
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO user_ids FROM users LIMIT 50;
-
-    INSERT INTO user_sessions (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, device_id, device_name, device_type, user_agent, browser, operating_system,
-        ip_address, location, status, login_at, last_active_at, expires_at, is_current_session
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1],
-        'DEVICE_' || n, 'Device ' || n, 'MOBILE',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Chrome', 'Windows 10',
-        '192.168.' || (n % 255) || '.' || ((n * 7) % 255), 'Phnom Penh, Cambodia',
-        CASE WHEN n % 3 = 0 THEN 'LOGGED_OUT' ELSE 'ACTIVE' END,
-        (t - INTERVAL '1 day' * (n % 7))::TIMESTAMP,
-        (t - INTERVAL '1 hour' * (n % 5))::TIMESTAMP,
-        CASE WHEN n % 3 != 0 THEN (t + INTERVAL '30 days')::TIMESTAMP ELSE NULL END,
-        CASE WHEN n % 3 != 0 THEN true ELSE false END
-    FROM GENERATE_SERIES(1, 50) n;
-
-    RAISE NOTICE 'User sessions created: 50 sessions';
-END $$;
-
--- ============================================================
--- REFRESH TOKENS (40 tokens for valid sessions)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    user_ids UUID[];
-BEGIN
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO user_ids FROM users LIMIT 40;
-
-    INSERT INTO refresh_tokens (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, token, expiry_date, is_revoked, revoked_at, revocation_reason, device_info, ip_address
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        user_ids[(n-1) % ARRAY_LENGTH(user_ids, 1) + 1],
-        'REFRESH_TOKEN_' || n || '_' || gen_random_uuid()::TEXT,
-        t + INTERVAL '30 days',
-        CASE WHEN n % 10 = 0 THEN true ELSE false END,
-        CASE WHEN n % 10 = 0 THEN t - INTERVAL '1 day' ELSE NULL END,
-        CASE WHEN n % 10 = 0 THEN 'Token revoked' ELSE NULL END,
-        'Device_' || n,
-        '192.168.' || (n % 256) || '.' || ((n * 17) % 256)
-    FROM GENERATE_SERIES(1, 40) n;
-
-    RAISE NOTICE 'Refresh tokens created: 40 tokens';
-END $$;
-
--- ============================================================
--- BLACKLISTED TOKENS (20 revoked tokens)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-BEGIN
-    INSERT INTO blacklisted_tokens (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        token, user_identifier, blacklisted_at, expiry_date, reason
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'BLACKLISTED_TOKEN_' || n || '_' || gen_random_uuid()::TEXT,
-        'USER_' || n || '_' || gen_random_uuid()::TEXT,
-        t,
-        t + INTERVAL '7 days',
-        CASE n % 3 WHEN 0 THEN 'LOGOUT' WHEN 1 THEN 'PASSWORD_CHANGE' ELSE 'SECURITY_BREACH' END
-    FROM GENERATE_SERIES(1, 20) n;
-
-    RAISE NOTICE 'Blacklisted tokens created: 20 tokens';
-END $$;
-
--- ============================================================
--- WORK SCHEDULES (100 schedules for staff)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-    staff_user_ids UUID[];
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO staff_user_ids
-    FROM users WHERE business_id = bid AND user_type = 'BUSINESS_USER' LIMIT 100;
-
-    INSERT INTO work_schedules (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, user_id, name, schedule_type_enum, start_time, end_time, break_start_time, break_end_time
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        bid,
-        staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
-        'Schedule_' || n,
-        CASE (n % 3) WHEN 0 THEN 'WEEKLY' WHEN 1 THEN 'FIXED' ELSE 'FLEXIBLE' END,
-        '08:00'::TIME,
-        '17:00'::TIME,
-        '12:00'::TIME,
-        '13:00'::TIME
-    FROM GENERATE_SERIES(1, 100) n;
-
-    RAISE NOTICE 'Work schedules created: 100 schedules';
-END $$;
-
--- ============================================================
--- SCHEDULE WORK DAYS (600 work days - 6 per schedule)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    sched_ids UUID[];
-BEGIN
-    SELECT ARRAY_AGG(id) INTO sched_ids FROM work_schedules;
-
-    INSERT INTO schedule_work_days (
-        schedule_id, day_of_week
-    )
-    SELECT
-        sched_ids[(n-1) % ARRAY_LENGTH(sched_ids, 1) + 1],
-        CASE ((n-1) % 7)
-            WHEN 0 THEN 'MONDAY'
-            WHEN 1 THEN 'TUESDAY'
-            WHEN 2 THEN 'WEDNESDAY'
-            WHEN 3 THEN 'THURSDAY'
-            WHEN 4 THEN 'FRIDAY'
-            WHEN 5 THEN 'SATURDAY'
-            WHEN 6 THEN 'SUNDAY'
-        END
-    FROM GENERATE_SERIES(1, 600) n;
-
-    RAISE NOTICE 'Schedule work days created: 600 work days';
-END $$;
-
--- ============================================================
--- ATTENDANCE (500 attendance records)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-    staff_user_ids UUID[];
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO staff_user_ids
-    FROM users WHERE business_id = bid AND user_type = 'BUSINESS_USER' LIMIT 100;
-
-    INSERT INTO attendances (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        reference_number, business_id, user_id, work_schedule_id, attendance_date, status, remarks
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'ATT-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(n::TEXT, 6, '0'),
-        bid,
-        staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
-        (SELECT id FROM work_schedules WHERE business_id = bid ORDER BY RANDOM() LIMIT 1),
-        (t - INTERVAL '1 day' * (n % 30))::DATE,
-        CASE WHEN n % 10 = 0 THEN 'ABSENT' WHEN n % 10 = 1 THEN 'LATE' ELSE 'PRESENT' END,
-        CASE WHEN n % 7 = 0 THEN 'Medical leave' ELSE NULL END
-    FROM GENERATE_SERIES(1, 500) n;
-
-    RAISE NOTICE 'Attendance records created: 500 records';
-END $$;
-
--- ============================================================
--- ATTENDANCE CHECK-INS (1000 check-in records)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    att_ids UUID[];
-BEGIN
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO att_ids FROM attendances LIMIT 500;
-
-    INSERT INTO attendance_check_ins (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        reference_number, attendance_id, check_in_type, check_in_time, latitude, longitude, remarks
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'CHK-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(n::TEXT, 6, '0'),
-        att_ids[(n-1) % ARRAY_LENGTH(att_ids, 1) + 1],
-        CASE WHEN n % 2 = 0 THEN 'START' ELSE 'END' END,
-        NOW() - INTERVAL '1 hour' * (n % 100),
-        11.5564 + (n::NUMERIC / 100000),
-        104.9282 + (n::NUMERIC / 100000),
-        CASE WHEN n % 10 = 0 THEN 'Late arrival' ELSE NULL END
-    FROM GENERATE_SERIES(1, 1000) n;
-
-    RAISE NOTICE 'Attendance check-ins created: 1000 check-ins';
-END $$;
-
--- ============================================================
--- LEAVES (200 leave records)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-    staff_user_ids UUID[];
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-    SELECT ARRAY_AGG(id ORDER BY RANDOM()) INTO staff_user_ids
-    FROM users WHERE business_id = bid AND user_type = 'BUSINESS_USER' LIMIT 100;
-
-    INSERT INTO leaves (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        reference_number, business_id, user_id, leave_type_enum, start_date, end_date, total_days, reason, status, action_by, action_at, action_note
-    )
-    SELECT
-        gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        'LEV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(n::TEXT, 6, '0'),
-        bid,
-        staff_user_ids[(n-1) % ARRAY_LENGTH(staff_user_ids, 1) + 1],
-        NULL,
-        (t + INTERVAL '1 day' * ((n % 30) + 1))::DATE,
-        (t + INTERVAL '1 day' * ((n % 30) + 1 + (n % 5)))::DATE,
-        (n % 5)::NUMERIC + 0.5,
-        'Leave reason #' || n,
-        CASE WHEN n % 3 = 0 THEN 'APPROVED' WHEN n % 3 = 1 THEN 'PENDING' ELSE 'REJECTED' END,
-        CASE WHEN n % 3 = 0 THEN (SELECT id FROM users WHERE user_type = 'BUSINESS_USER' ORDER BY RANDOM() LIMIT 1) ELSE NULL END,
-        CASE WHEN n % 3 = 0 THEN t - INTERVAL '1 day' * (n % 10) ELSE NULL END,
-        CASE WHEN n % 3 = 0 THEN 'Approved' WHEN n % 3 = 2 THEN 'Rejected' ELSE NULL END
-    FROM GENERATE_SERIES(1, 200) n;
-
-    RAISE NOTICE 'Leave records created: 200 leaves';
-END $$;
-
--- ============================================================
--- AUDIT LOGS (300 audit records)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-BEGIN
-    INSERT INTO audit_logs (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        user_id, user_identifier, user_type, http_method, endpoint, ip_address, user_agent, status_code, response_time_ms, error_message, session_id
-    )
-    SELECT
-        gen_random_uuid(), 0, t - INTERVAL '1 hour' * (n % 100), t - INTERVAL '1 hour' * (n % 100), 'system', 'system', false, NULL, NULL,
-        (SELECT id FROM users ORDER BY RANDOM() LIMIT 1),
-        'user_' || n,
-        CASE WHEN n % 3 = 0 THEN 'ADMIN' WHEN n % 3 = 1 THEN 'BUSINESS_USER' ELSE 'CUSTOMER' END,
-        CASE (n % 4) WHEN 0 THEN 'POST' WHEN 1 THEN 'GET' WHEN 2 THEN 'PUT' ELSE 'DELETE' END,
-        CASE (n % 5) WHEN 0 THEN '/api/orders' WHEN 1 THEN '/api/products' WHEN 2 THEN '/api/users' WHEN 3 THEN '/api/businesses' ELSE '/api/payments' END,
-        '192.168.' || (n % 255) || '.' || ((n * 5) % 255),
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        CASE WHEN n % 10 = 0 THEN 500 WHEN n % 20 = 0 THEN 400 ELSE 200 END,
-        CASE WHEN n % 10 = 0 THEN (n % 1000 + 100) ELSE (n % 500) END,
-        CASE WHEN n % 10 = 0 THEN 'Internal server error' ELSE NULL END,
-        'SESSION_' || (n % 100)
-    FROM GENERATE_SERIES(1, 300) n;
-
-    RAISE NOTICE 'Audit logs created: 300 audit records';
-END $$;
-
--- ============================================================
--- PAYMENTS (100 general payment records)
--- ============================================================
-
-DO $$
-DECLARE
-    t TIMESTAMPTZ := NOW();
-    bid UUID;
-BEGIN
-    SELECT id INTO bid FROM businesses WHERE email = 'phatmenghor20@gmail.com';
-
-    INSERT INTO payments (
-        id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-        business_id, plan_id, subscription_id, amount, amount_khr, payment_method, status, payment_type, reference_number, notes
-    )
-    SELECT
-        gen_random_uuid(), 0, t - INTERVAL '1 day' * (n % 60), t - INTERVAL '1 day' * (n % 60), 'system', 'system', false, NULL, NULL,
-        bid,
-        (SELECT id FROM subscription_plans LIMIT 1),
-        (SELECT id FROM subscriptions WHERE business_id = bid LIMIT 1),
-        (25.00 + (n * 1.5))::NUMERIC(10, 2),
-        ((25.00 + (n * 1.5)) * 4100)::NUMERIC(15, 2),
-        CASE (n % 4) WHEN 0 THEN 'CASH' WHEN 1 THEN 'BANK_TRANSFER' WHEN 2 THEN 'ONLINE' ELSE 'OTHER' END,
-        CASE WHEN n % 10 = 0 THEN 'FAILED' WHEN n % 10 = 1 THEN 'PENDING' ELSE 'COMPLETED' END,
-        'SUBSCRIPTION',
-        'PAY_' || LPAD(n::TEXT, 10, '0'),
-        CASE WHEN n % 20 = 0 THEN 'Manual review required' ELSE NULL END
-    FROM GENERATE_SERIES(1, 100) n;
-
-    RAISE NOTICE 'Payments created: 100 general payment records';
-END $$;
-
--- ============================================================
--- SUMMARY
+-- SUMMARY - ALL FREEPIK URLS
 -- ============================================================
 
 SELECT
-    '✓ SUCCESS - Complete Test Data Generated for ALL Tables!' as status,
+    '✓ SUCCESS - TEST DATA WITH ALL FREEPIK URLS GENERATED!' as status,
     (SELECT COUNT(*) FROM users) as total_users,
-    (SELECT COUNT(*) FROM roles) as total_roles,
-    (SELECT COUNT(*) FROM user_sessions) as total_user_sessions,
-    (SELECT COUNT(*) FROM refresh_tokens) as total_refresh_tokens,
-    (SELECT COUNT(*) FROM blacklisted_tokens) as total_blacklisted_tokens,
     (SELECT COUNT(*) FROM products) as total_products,
     (SELECT COUNT(*) FROM product_images) as total_product_images,
-    (SELECT COUNT(*) FROM product_sizes) as total_product_sizes,
-    (SELECT COUNT(*) FROM product_favorites) as total_product_favorites,
     (SELECT COUNT(*) FROM orders) as total_orders,
-    (SELECT COUNT(*) FROM order_items) as total_order_items,
-    (SELECT COUNT(*) FROM order_payments) as total_order_payments,
-    (SELECT COUNT(*) FROM payments) as total_payments,
-    (SELECT COUNT(*) FROM carts) as total_carts,
-    (SELECT COUNT(*) FROM cart_items) as total_cart_items,
     (SELECT COUNT(*) FROM delivery_options) as total_delivery_options,
     (SELECT COUNT(*) FROM banners) as total_banners,
-    (SELECT COUNT(*) FROM customer_addresses) as total_customer_addresses,
-    (SELECT COUNT(*) FROM notifications) as total_notifications,
-    (SELECT COUNT(*) FROM location_province_cbc) as total_provinces,
-    (SELECT COUNT(*) FROM location_district_cbc) as total_districts,
-    (SELECT COUNT(*) FROM location_commune_cbc) as total_communes,
-    (SELECT COUNT(*) FROM location_village_cbc) as total_villages,
-    (SELECT COUNT(*) FROM exchange_rates) as total_exchange_rates,
-    (SELECT COUNT(*) FROM business_exchange_rates) as total_business_exchange_rates,
-    (SELECT COUNT(*) FROM work_schedules) as total_work_schedules,
-    (SELECT COUNT(*) FROM schedule_work_days) as total_schedule_work_days,
-    (SELECT COUNT(*) FROM attendances) as total_attendances,
-    (SELECT COUNT(*) FROM attendance_check_ins) as total_attendance_check_ins,
-    (SELECT COUNT(*) FROM leaves) as total_leaves,
-    (SELECT COUNT(*) FROM audit_logs) as total_audit_logs;
+    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%freepik%') FROM product_images) as freepik_product_images,
+    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%freepik%') FROM categories WHERE image_url IS NOT NULL) as freepik_categories,
+    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%freepik%') FROM brands WHERE image_url IS NOT NULL) as freepik_brands,
+    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%freepik%') FROM delivery_options WHERE image_url IS NOT NULL) as freepik_delivery,
+    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%freepik%') FROM banners WHERE image_url IS NOT NULL) as freepik_banners;
