@@ -13,6 +13,7 @@ import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,11 +59,31 @@ public interface CartMapper {
         }
     }
 
+    /**
+     * Calculate detailed pricing breakdown for standardized format across cart/checkout/order
+     */
+    @AfterMapping
+    default void calculatePricingBreakdown(@MappingTarget CartItemResponse response, CartItem cartItem) {
+        if (response.getCurrentPrice() != null && response.getQuantity() != null) {
+            // totalBeforeDiscount: currentPrice * quantity
+            BigDecimal totalBeforeDiscount = response.getCurrentPrice()
+                    .multiply(new BigDecimal(response.getQuantity()));
+            response.setTotalBeforeDiscount(totalBeforeDiscount);
+
+            // discountAmount: totalBeforeDiscount - totalPrice
+            if (response.getTotalPrice() != null) {
+                BigDecimal discountAmount = totalBeforeDiscount.subtract(response.getTotalPrice());
+                response.setDiscountAmount(discountAmount);
+            }
+        }
+    }
+
     List<CartItemResponse> toItemResponseList(List<CartItem> cartItems);
     List<CartResponse> toResponseList(List<Cart> carts);
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(target = "totalItems", expression = "java(cart.getTotalItems())")
+    @Mapping(target = "subtotalBeforeDiscount", expression = "java(calculateSubtotalBeforeDiscount(cart))")
     @Mapping(target = "subtotal", expression = "java(cart.getSubtotal())")
     @Mapping(target = "totalDiscount", expression = "java(cart.getTotalDiscount())")
     @Mapping(target = "finalTotal", expression = "java(cart.getSubtotal())")
@@ -71,9 +92,9 @@ public interface CartMapper {
 
     @AfterMapping
     default void setCartItems(@MappingTarget CartResponse response, Cart cart) {
-if (cart.getItems() != null) {
-    response.setItems(toItemResponseList(cart.getItems()));
-}
+        if (cart.getItems() != null) {
+            response.setItems(toItemResponseList(cart.getItems()));
+        }
     }
 
     default PaginationResponse<CartResponse> toPaginationResponse(Page<Cart> cartPage, PaginationMapper paginationMapper) {
@@ -82,6 +103,7 @@ return paginationMapper.toPaginationResponse(cartPage, this::toResponseList);
 
     @Mapping(source = "business.name", target = "businessName")
     @Mapping(target = "totalItems", expression = "java(cart.getTotalItems())")
+    @Mapping(target = "subtotalBeforeDiscount", expression = "java(calculateSubtotalBeforeDiscount(cart))")
     @Mapping(target = "subtotal", expression = "java(cart.getSubtotal())")
     @Mapping(target = "totalDiscount", expression = "java(cart.getTotalDiscount())")
     @Mapping(target = "finalTotal", expression = "java(cart.getSubtotal())")
@@ -92,6 +114,24 @@ return paginationMapper.toPaginationResponse(cartPage, this::toResponseList);
         if (cart.getItems() != null) {
             response.setItems(toItemResponseList(cart.getItems()));
         }
+    }
+
+    /**
+     * Calculate cart subtotal before any discounts by summing items at original price (currentPrice * quantity)
+     */
+    default BigDecimal calculateSubtotalBeforeDiscount(Cart cart) {
+        if (cart == null || cart.getItems() == null || cart.getItems().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        return cart.getItems().stream()
+                .map(item -> {
+                    if (item.getCurrentPrice() != null && item.getQuantity() != null) {
+                        return item.getCurrentPrice().multiply(new BigDecimal(item.getQuantity()));
+                    }
+                    return BigDecimal.ZERO;
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /**

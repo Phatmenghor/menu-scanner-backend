@@ -12,7 +12,8 @@ public class CartSummaryResponse {
     private String businessName;
     private List<CartItemResponse> items;
     private Integer totalItems;
-    private BigDecimal subtotal;
-    private BigDecimal totalDiscount;
-    private BigDecimal finalTotal;
+    private BigDecimal subtotalBeforeDiscount;  // Sum of all items at original price
+    private BigDecimal subtotal;                 // Sum of all items after discount
+    private BigDecimal totalDiscount;            // Total discount on all items
+    private BigDecimal finalTotal;               // subtotal + fees (delivery, tax)
 }

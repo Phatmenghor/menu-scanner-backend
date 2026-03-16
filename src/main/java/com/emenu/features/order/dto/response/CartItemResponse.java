@@ -14,15 +14,19 @@ public class CartItemResponse {
     private CartItemProductInfo product;
 
     // Current pricing (always real-time from product)
-    private BigDecimal currentPrice;      // Current base price
-    private BigDecimal finalPrice;        // Current price with active promotions
-    private Boolean hasActivePromotion;   // Whether current price has active promotion
+    private BigDecimal currentPrice;           // Base price
+    private BigDecimal finalPrice;             // Price with active promotions
+    private Boolean hasActivePromotion;        // Whether has active promotion
 
     private Integer quantity;
-    private BigDecimal totalPrice;        // finalPrice * quantity
+
+    // Detailed pricing breakdown (standardized across cart/checkout/order)
+    private BigDecimal totalBeforeDiscount;    // currentPrice * quantity
+    private BigDecimal discountAmount;         // totalBeforeDiscount - totalPrice (discount for this item)
+    private BigDecimal totalPrice;             // finalPrice * quantity (final total after discount)
 
     // Promotion details (for display)
-    private String promotionType;         // PERCENTAGE or FIXED_AMOUNT
+    private String promotionType;              // PERCENTAGE or FIXED_AMOUNT
     private BigDecimal promotionValue;
     private LocalDateTime promotionFromDate;
     private LocalDateTime promotionToDate;
