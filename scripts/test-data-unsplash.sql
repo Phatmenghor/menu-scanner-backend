@@ -153,8 +153,8 @@ BEGIN
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         bid, photo1, photo2, 'RESTAURANT',
         '06:00', '23:00', false, 'MONDAY-SUNDAY', 'Asia/Phnom_Penh', 'USD', 'en', 4100.0,
-        'phatmenghor20@gmail.com', '+855 23 999 888', '+855 10 234 5678', 'https://facebook.com/phatrestaurant',
-        'https://instagram.com/phatrestaurant', 'https://phatrestaurant.com', '#FF6B6B', '#FFE66D',
+        'phatmenghor20@gmail.com', '+855 23 999 888', '+855 10 234 5678', 'https://plus.unsplash.com/premium_photo-1661432977872-b47a927e1828?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'https://plus.unsplash.com/premium_photo-1681489662994-5e2805750ef1?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 'https://plus.unsplash.com/premium_photo-1661432977872-b47a927e1828?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', '#FF6B6B', '#FFE66D',
         true, false, true, 0.0, 10.0, 5.0, 25.0, '30-45 minutes',
         'Fresh food delivery guarantee', 'Customer data protection',
         'Full refund if not satisfied'
