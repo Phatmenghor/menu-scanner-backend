@@ -38,6 +38,10 @@ BEGIN
     DELETE FROM subscriptions;
     DELETE FROM subscription_plans;
     DELETE FROM customer_addresses;
+    DELETE FROM attendance_check_ins;
+    DELETE FROM attendances;
+    DELETE FROM leaves;
+    DELETE FROM work_schedules;
     DELETE FROM business_settings;
     DELETE FROM categories;
     DELETE FROM brands;
