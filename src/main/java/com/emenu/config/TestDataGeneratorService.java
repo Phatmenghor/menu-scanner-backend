@@ -183,7 +183,7 @@ public class TestDataGeneratorService {
             icedLatte.setCategoryId(beverageCategory.getId());
             icedLatte.setBrandId(premiumRoast.getId());
             icedLatte.setStatus(ProductStatus.ACTIVE);
-            icedLatte.setMainImageUrl("https://images.freepik.com/free-photo/iced-coffee-latte-drink_90220-1174.jpg");
+            icedLatte.setMainImageUrl("https://images.freepik.com/free-photo/coffee-latte-cup-with-ice_1134-1276.jpg");
 
             icedLatte = productRepository.save(icedLatte);
 
@@ -199,8 +199,9 @@ public class TestDataGeneratorService {
 
             // Add images
             addProductImages(icedLatte,
-                "https://images.freepik.com/free-photo/iced-coffee-with-milk_90220-1245.jpg",
-                "https://images.freepik.com/free-photo/cold-coffee-drink_90220-1567.jpg"
+                "https://images.freepik.com/free-photo/iced-coffee-with-straw-glass_1134-1987.jpg",
+                "https://images.freepik.com/free-photo/refreshing-iced-coffee-summer-drink_1134-2456.jpg",
+                "https://images.freepik.com/free-photo/cold-iced-latte-coffee-drink_1134-1567.jpg"
             );
         }
 
@@ -213,7 +214,7 @@ public class TestDataGeneratorService {
             espresso.setCategoryId(beverageCategory.getId());
             espresso.setBrandId(premiumRoast.getId());
             espresso.setStatus(ProductStatus.ACTIVE);
-            espresso.setMainImageUrl("https://images.freepik.com/free-photo/cup-espresso-with-beans_90220-1323.jpg");
+            espresso.setMainImageUrl("https://images.freepik.com/free-photo/small-cup-espresso-coffee_1134-456.jpg");
 
             espresso = productRepository.save(espresso);
 
@@ -223,8 +224,9 @@ public class TestDataGeneratorService {
             );
 
             addProductImages(espresso,
-                "https://images.freepik.com/free-photo/black-coffee-cup_90220-1876.jpg",
-                "https://images.freepik.com/free-photo/coffee-beans-and-cup_90220-2145.jpg"
+                "https://images.freepik.com/free-photo/hot-espresso-coffee-cup_1134-789.jpg",
+                "https://images.freepik.com/free-photo/espresso-coffee-beans-cup_1134-1234.jpg",
+                "https://images.freepik.com/free-photo/black-espresso-coffee_1134-2012.jpg"
             );
         }
 
@@ -237,7 +239,7 @@ public class TestDataGeneratorService {
             cappuccino.setCategoryId(beverageCategory.getId());
             cappuccino.setBrandId(premiumRoast.getId());
             cappuccino.setStatus(ProductStatus.ACTIVE);
-            cappuccino.setMainImageUrl("https://images.freepik.com/free-photo/cappuccino-coffee_90220-1578.jpg");
+            cappuccino.setMainImageUrl("https://images.freepik.com/free-photo/cappuccino-with-latte-foam_1134-567.jpg");
 
             cappuccino = productRepository.save(cappuccino);
 
@@ -250,8 +252,9 @@ public class TestDataGeneratorService {
             addPromotion(cappuccino, PromotionType.FIXED_AMOUNT, new BigDecimal("0.75"));
 
             addProductImages(cappuccino,
-                "https://images.freepik.com/free-photo/cappuccino-with-foam_90220-1923.jpg",
-                "https://images.freepik.com/free-photo/coffee-latte_90220-2034.jpg"
+                "https://images.freepik.com/free-photo/cappuccino-coffee-with-foam-art_1134-890.jpg",
+                "https://images.freepik.com/free-photo/creamy-cappuccino-latte_1134-1456.jpg",
+                "https://images.freepik.com/free-photo/coffee-cappuccino-with-milk-foam_1134-2789.jpg"
             );
         }
     }
@@ -269,7 +272,7 @@ public class TestDataGeneratorService {
             chocolateCake.setCategoryId(dessertCategory.getId());
             chocolateCake.setBrandId(artisanBlend.getId());
             chocolateCake.setStatus(ProductStatus.ACTIVE);
-            chocolateCake.setMainImageUrl("https://images.freepik.com/free-photo/chocolate-cake_90220-1567.jpg");
+            chocolateCake.setMainImageUrl("https://images.freepik.com/free-photo/chocolate-cake-slice-with-fork_1134-3456.jpg");
 
             chocolateCake = productRepository.save(chocolateCake);
 
@@ -279,8 +282,9 @@ public class TestDataGeneratorService {
             );
 
             addProductImages(chocolateCake,
-                "https://images.freepik.com/free-photo/chocolate-cake-slice_90220-1678.jpg",
-                "https://images.freepik.com/free-photo/delicious-chocolate-cake_90220-1789.jpg"
+                "https://images.freepik.com/free-photo/homemade-chocolate-cake_1134-4567.jpg",
+                "https://images.freepik.com/free-photo/dark-chocolate-cake-dessert_1134-5678.jpg",
+                "https://images.freepik.com/free-photo/rich-chocolate-layer-cake_1134-6789.jpg"
             );
         }
 
@@ -293,7 +297,7 @@ public class TestDataGeneratorService {
             cheesecake.setCategoryId(dessertCategory.getId());
             cheesecake.setBrandId(artisanBlend.getId());
             cheesecake.setStatus(ProductStatus.ACTIVE);
-            cheesecake.setMainImageUrl("https://images.freepik.com/free-photo/cheesecake-dessert_90220-1834.jpg");
+            cheesecake.setMainImageUrl("https://images.freepik.com/free-photo/delicious-cheesecake-slice_1134-2345.jpg");
 
             cheesecake = productRepository.save(cheesecake);
 
@@ -305,8 +309,9 @@ public class TestDataGeneratorService {
             addPromotion(cheesecake, PromotionType.PERCENTAGE, new BigDecimal("15"));
 
             addProductImages(cheesecake,
-                "https://images.freepik.com/free-photo/cheesecake-slice_90220-1945.jpg",
-                "https://images.freepik.com/free-photo/dessert-cheesecake_90220-2056.jpg"
+                "https://images.freepik.com/free-photo/creamy-cheesecake-dessert_1134-3456.jpg",
+                "https://images.freepik.com/free-photo/strawberry-cheesecake_1134-4567.jpg",
+                "https://images.freepik.com/free-photo/ny-style-cheesecake-slice_1134-5678.jpg"
             );
         }
 
@@ -319,7 +324,7 @@ public class TestDataGeneratorService {
             tiramisu.setCategoryId(dessertCategory.getId());
             tiramisu.setBrandId(artisanBlend.getId());
             tiramisu.setStatus(ProductStatus.ACTIVE);
-            tiramisu.setMainImageUrl("https://images.freepik.com/free-photo/tiramisu-dessert_90220-2167.jpg");
+            tiramisu.setMainImageUrl("https://images.freepik.com/free-photo/italian-tiramisu-dessert_1134-6789.jpg");
 
             tiramisu = productRepository.save(tiramisu);
 
@@ -329,8 +334,9 @@ public class TestDataGeneratorService {
             );
 
             addProductImages(tiramisu,
-                "https://images.freepik.com/free-photo/italian-tiramisu_90220-2278.jpg",
-                "https://images.freepik.com/free-photo/tiramisu-cake_90220-2389.jpg"
+                "https://images.freepik.com/free-photo/tiramisu-in-glass_1134-7890.jpg",
+                "https://images.freepik.com/free-photo/traditional-tiramisu-cake_1134-8901.jpg",
+                "https://images.freepik.com/free-photo/homemade-tiramisu-layered_1134-9012.jpg"
             );
         }
     }
@@ -348,7 +354,7 @@ public class TestDataGeneratorService {
             grilledFish.setCategoryId(mainCategory.getId());
             grilledFish.setBrandId(localHarvest.getId());
             grilledFish.setStatus(ProductStatus.ACTIVE);
-            grilledFish.setMainImageUrl("https://images.freepik.com/free-photo/grilled-fish-with-herbs_90220-2490.jpg");
+            grilledFish.setMainImageUrl("https://images.freepik.com/free-photo/grilled-fish-fillet-with-herbs_1134-1234.jpg");
 
             grilledFish = productRepository.save(grilledFish);
 
@@ -360,8 +366,9 @@ public class TestDataGeneratorService {
             addPromotion(grilledFish, PromotionType.PERCENTAGE, new BigDecimal("12"));
 
             addProductImages(grilledFish,
-                "https://images.freepik.com/free-photo/fish-dish-restaurant_90220-2601.jpg",
-                "https://images.freepik.com/free-photo/grilled-seafood_90220-2712.jpg"
+                "https://images.freepik.com/free-photo/baked-fish-with-vegetables_1134-2345.jpg",
+                "https://images.freepik.com/free-photo/grilled-salmon-lemon-dill_1134-3456.jpg",
+                "https://images.freepik.com/free-photo/seafood-dinner-fresh-fish_1134-4567.jpg"
             );
         }
 
@@ -374,7 +381,7 @@ public class TestDataGeneratorService {
             padThai.setCategoryId(mainCategory.getId());
             padThai.setBrandId(localHarvest.getId());
             padThai.setStatus(ProductStatus.ACTIVE);
-            padThai.setMainImageUrl("https://images.freepik.com/free-photo/pad-thai-noodles_90220-2823.jpg");
+            padThai.setMainImageUrl("https://images.freepik.com/free-photo/thai-pad-thai-noodles-shrimp_1134-5678.jpg");
 
             padThai = productRepository.save(padThai);
 
@@ -384,8 +391,9 @@ public class TestDataGeneratorService {
             );
 
             addProductImages(padThai,
-                "https://images.freepik.com/free-photo/thai-noodles-wok_90220-2934.jpg",
-                "https://images.freepik.com/free-photo/asian-noodle-dish_90220-3045.jpg"
+                "https://images.freepik.com/free-photo/stir-fried-noodles-wok-pan_1134-6789.jpg",
+                "https://images.freepik.com/free-photo/asian-stir-fry-rice-noodles_1134-7890.jpg",
+                "https://images.freepik.com/free-photo/pad-thai-with-shrimp-peanuts_1134-8901.jpg"
             );
         }
 
@@ -398,7 +406,7 @@ public class TestDataGeneratorService {
             beefStew.setCategoryId(mainCategory.getId());
             beefStew.setBrandId(localHarvest.getId());
             beefStew.setStatus(ProductStatus.ACTIVE);
-            beefStew.setMainImageUrl("https://images.freepik.com/free-photo/beef-stew-bowl_90220-3156.jpg");
+            beefStew.setMainImageUrl("https://images.freepik.com/free-photo/hearty-beef-stew-comfort-food_1134-9012.jpg");
 
             beefStew = productRepository.save(beefStew);
 
@@ -410,8 +418,9 @@ public class TestDataGeneratorService {
             addPromotion(beefStew, PromotionType.FIXED_AMOUNT, new BigDecimal("1.50"));
 
             addProductImages(beefStew,
-                "https://images.freepik.com/free-photo/beef-stew-comfort-food_90220-3267.jpg",
-                "https://images.freepik.com/free-photo/stewed-meat-dish_90220-3378.jpg"
+                "https://images.freepik.com/free-photo/slow-cooked-beef-stew-vegetables_1134-0123.jpg",
+                "https://images.freepik.com/free-photo/braised-beef-with-potatoes-carrots_1134-1234.jpg",
+                "https://images.freepik.com/free-photo/beef-bourguignon-stew_1134-2345.jpg"
             );
         }
     }
@@ -456,12 +465,12 @@ public class TestDataGeneratorService {
      */
     private String getFreepikImageForCategory(String categoryName) {
         return switch (categoryName) {
-            case "Beverages" -> "https://images.freepik.com/free-photo/variety-of-beverages_90220-4489.jpg";
-            case "Desserts" -> "https://images.freepik.com/free-photo/assorted-desserts_90220-4600.jpg";
-            case "Main Courses" -> "https://images.freepik.com/free-photo/variety-of-main-courses_90220-4711.jpg";
-            case "Appetizers" -> "https://images.freepik.com/free-photo/appetizer-platter_90220-4822.jpg";
-            case "Salads" -> "https://images.freepik.com/free-photo/fresh-salad-ingredients_90220-4933.jpg";
-            default -> "https://images.freepik.com/free-photo/food-table_90220-5044.jpg";
+            case "Beverages" -> "https://images.freepik.com/free-photo/variety-hot-cold-beverages-flat-lay_1134-3456.jpg";
+            case "Desserts" -> "https://images.freepik.com/free-photo/assorted-homemade-desserts-table_1134-4567.jpg";
+            case "Main Courses" -> "https://images.freepik.com/free-photo/various-cooked-main-course-dishes_1134-5678.jpg";
+            case "Appetizers" -> "https://images.freepik.com/free-photo/appetizer-platter-mixed-starters_1134-6789.jpg";
+            case "Salads" -> "https://images.freepik.com/free-photo/fresh-salad-mixed-vegetables-bowl_1134-7890.jpg";
+            default -> "https://images.freepik.com/free-photo/food-table-restaurant-setting_1134-8901.jpg";
         };
     }
 
@@ -470,11 +479,11 @@ public class TestDataGeneratorService {
      */
     private String getFreepikImageForBrand(String brandName) {
         return switch (brandName) {
-            case "Premium Roast" -> "https://images.freepik.com/free-photo/premium-coffee-beans_90220-5155.jpg";
-            case "Local Harvest" -> "https://images.freepik.com/free-photo/local-produce_90220-5266.jpg";
-            case "Artisan Blend" -> "https://images.freepik.com/free-photo/artisan-food-preparation_90220-5377.jpg";
-            case "Heritage Taste" -> "https://images.freepik.com/free-photo/traditional-cuisine_90220-5488.jpg";
-            default -> "https://images.freepik.com/free-photo/brand-identity_90220-5599.jpg";
+            case "Premium Roast" -> "https://images.freepik.com/free-photo/premium-roasted-coffee-beans-close-up_1134-2345.jpg";
+            case "Local Harvest" -> "https://images.freepik.com/free-photo/local-farm-fresh-produce-market_1134-3456.jpg";
+            case "Artisan Blend" -> "https://images.freepik.com/free-photo/artisan-food-preparation-kitchen_1134-4567.jpg";
+            case "Heritage Taste" -> "https://images.freepik.com/free-photo/traditional-cuisine-heritage-food_1134-5678.jpg";
+            default -> "https://images.freepik.com/free-photo/brand-identity-business-concept_1134-6789.jpg";
         };
     }
 
