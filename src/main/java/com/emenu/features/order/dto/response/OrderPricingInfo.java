@@ -9,17 +9,18 @@ import java.math.BigDecimal;
 
 /**
  * Pricing and costs breakdown for an order
- * Shows detailed breakdown: subtotal -> discount -> tax -> delivery -> final total
+ * Shows detailed breakdown: subtotal before discount -> subtotal after discount -> tax -> delivery -> final total
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderPricingInfo {
-    private Integer totalItems;      // Number of items in order
-    private BigDecimal subtotal;     // Total before discounts and fees
-    private BigDecimal totalDiscount; // Total discounts applied to items
-    private BigDecimal deliveryFee;  // Delivery charge
-    private BigDecimal taxAmount;    // Tax amount
-    private BigDecimal finalTotal;   // Total amount to pay (subtotal - discount + delivery + tax)
+    private Integer totalItems;          // Number of items in order
+    private BigDecimal subtotalBeforeDiscount; // Sum of all items at original price
+    private BigDecimal subtotal;         // Sum of all items after discount (subtotalBeforeDiscount - totalDiscount)
+    private BigDecimal totalDiscount;    // Total discounts applied to items
+    private BigDecimal deliveryFee;      // Delivery charge
+    private BigDecimal taxAmount;        // Tax amount
+    private BigDecimal finalTotal;       // Total amount to pay (subtotal - discount + delivery + tax)
 }

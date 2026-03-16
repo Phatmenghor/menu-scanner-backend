@@ -251,14 +251,37 @@ public interface OrderMapper {
             return null;
         }
 
+        BigDecimal subtotalBeforeDiscount = calculateSubtotalBeforeDiscount(order);
+        BigDecimal discount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal subtotalAfterDiscount = subtotalBeforeDiscount.subtract(discount);
+
         return OrderPricingInfo.builder()
                 .totalItems(calculateTotalItems(order))
-                .subtotal(order.getSubtotal())
-                .totalDiscount(order.getDiscountAmount())
+                .subtotalBeforeDiscount(subtotalBeforeDiscount)
+                .subtotal(subtotalAfterDiscount)
+                .totalDiscount(discount)
                 .deliveryFee(order.getDeliveryFee())
                 .taxAmount(order.getTaxAmount())
                 .finalTotal(order.getTotalAmount())
                 .build();
+    }
+
+    /**
+     * Calculate subtotal before any discounts by summing items at original price (currentPrice * quantity)
+     */
+    default BigDecimal calculateSubtotalBeforeDiscount(Order order) {
+        if (order == null || order.getItems() == null || order.getItems().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        return order.getItems().stream()
+                .map(item -> {
+                    if (item.getCurrentPrice() != null && item.getQuantity() != null) {
+                        return item.getCurrentPrice().multiply(new BigDecimal(item.getQuantity()));
+                    }
+                    return BigDecimal.ZERO;
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /**
