@@ -1,7 +1,7 @@
 -- ============================================================
--- MENU SCANNER BACKEND - COMPLETE TEST DATA WITH FREEPIK URLS
+-- MENU SCANNER BACKEND - COMPLETE TEST DATA WITH UNSPLASH URLS
 -- ============================================================
--- ALL image URLs now use Freepik (https://www.freepik.com/)
+-- ALL image URLs now use Unsplash (https://unsplash.com/)
 -- High-quality professional food photography
 -- Schema VALIDATED against actual JPA entities (March 2026)
 
@@ -108,19 +108,19 @@ BEGIN
         (puid, 0, t, t, 'system', 'system', false, NULL, NULL,
          'phatmenghor19@gmail.com', 'phatmenghor19@gmail.com',
          '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
-         'Phat', 'Menghor', '+855 10 123 4567', 'https://images.freepik.com/free-photo/professional-businessman-portrait-corporate_1134-1234.jpg',
+         'Phat', 'Menghor', '+855 10 123 4567', 'https://unsplash.com/s/photos/businessman-portrait',
          'PLATFORM_USER', 'ACTIVE', NULL, 'Platform Admin', 'Phnom Penh, Cambodia', 'Platform Administrator',
          t - INTERVAL '2 hours', t - INTERVAL '1 hour', 1),
         (buid, 0, t, t, 'system', 'system', false, NULL, NULL,
          'phatmenghor20@gmail.com', 'phatmenghor20@gmail.com',
          '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
-         'Menghor', 'Business', '+855 10 234 5678', 'https://images.freepik.com/free-photo/restaurant-owner-portrait-professional_1134-2345.jpg',
+         'Menghor', 'Business', '+855 10 234 5678', 'https://unsplash.com/s/photos/restaurant-owner',
          'BUSINESS_USER', 'ACTIVE', NULL, 'Restaurant Owner', 'Street 252, Phnom Penh', 'Business Owner',
          t - INTERVAL '1 hour', t - INTERVAL '30 minutes', 2),
         (cuid, 0, t, t, 'system', 'system', false, NULL, NULL,
          'phatmenghor21@gmail.com', 'phatmenghor21@gmail.com',
          '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
-         'Customer', 'Menghor', '+855 10 345 6789', 'https://images.freepik.com/free-photo/happy-customer-portrait-smiling_1134-3456.jpg',
+         'Customer', 'Menghor', '+855 10 345 6789', 'https://unsplash.com/s/photos/customer-smiling',
          'CUSTOMER', 'ACTIVE', NULL, NULL, 'Phnom Penh, Cambodia', 'Customer',
          t - INTERVAL '3 hours', t - INTERVAL '45 minutes', 1);
 
@@ -149,8 +149,8 @@ BEGIN
         terms_and_conditions, privacy_policy, refund_policy
     ) VALUES (
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        bid, 'https://images.freepik.com/free-photo/restaurant-logo-design-food_1134-5678.jpg',
-        'https://images.freepik.com/free-photo/restaurant-banner-food-display_1134-6789.jpg', 'RESTAURANT',
+        bid, 'https://unsplash.com/s/photos/restaurant-logo',
+        'https://unsplash.com/s/photos/restaurant-banner-food', 'RESTAURANT',
         '06:00', '23:00', false, 'MONDAY-SUNDAY', 'Asia/Phnom_Penh', 'USD', 'en', 4100.0,
         'phatmenghor20@gmail.com', '+855 23 999 888', '+855 10 234 5678', 'https://facebook.com/phatrestaurant',
         'https://instagram.com/phatrestaurant', 'https://phatrestaurant.com', '#FF6B6B', '#FFE66D',
@@ -191,7 +191,7 @@ BEGIN
         'BUSINESS_USER'
     FROM GENERATE_SERIES(1, 12) n;
 
-    -- Create categories with FREEPIK URLs
+    -- Create categories with UNSPLASH URLs
     INSERT INTO categories (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, name, image_url, status
@@ -212,22 +212,22 @@ BEGIN
             ELSE 'Category ' || n
         END,
         CASE n
-            WHEN 1 THEN 'https://images.freepik.com/free-photo/appetizer-platter-mixed-starters_1134-6789.jpg'
-            WHEN 2 THEN 'https://images.freepik.com/free-photo/hot-soup-bowl-vegetable-broth_1134-7890.jpg'
-            WHEN 3 THEN 'https://images.freepik.com/free-photo/fresh-salad-mixed-vegetables-bowl_1134-7890.jpg'
-            WHEN 4 THEN 'https://images.freepik.com/free-photo/asian-noodle-stir-fry-delicious_1134-8901.jpg'
-            WHEN 5 THEN 'https://images.freepik.com/free-photo/white-rice-jasmine-cooked_1134-9012.jpg'
-            WHEN 6 THEN 'https://images.freepik.com/free-photo/thai-red-curry-with-chicken_1134-0123.jpg'
-            WHEN 7 THEN 'https://images.freepik.com/free-photo/grilled-meat-barbecue-delicious_1134-1234.jpg'
-            WHEN 8 THEN 'https://images.freepik.com/free-photo/grilled-salmon-lemon-dill_1134-3456.jpg'
-            WHEN 9 THEN 'https://images.freepik.com/free-photo/beef-steak-medium-rare_1134-4567.jpg'
-            WHEN 10 THEN 'https://images.freepik.com/free-photo/fresh-vegetable-platter-assorted_1134-5678.jpg'
-            ELSE 'https://images.freepik.com/free-photo/food-table-restaurant-setting_1134-8901.jpg'
+            WHEN 1 THEN 'https://unsplash.com/s/photos/appetizer'
+            WHEN 2 THEN 'https://unsplash.com/s/photos/soup'
+            WHEN 3 THEN 'https://unsplash.com/s/photos/salad'
+            WHEN 4 THEN 'https://unsplash.com/s/photos/noodles'
+            WHEN 5 THEN 'https://unsplash.com/s/photos/rice'
+            WHEN 6 THEN 'https://unsplash.com/s/photos/curry'
+            WHEN 7 THEN 'https://unsplash.com/s/photos/grilled-food'
+            WHEN 8 THEN 'https://unsplash.com/s/photos/seafood'
+            WHEN 9 THEN 'https://unsplash.com/s/photos/meat-food'
+            WHEN 10 THEN 'https://unsplash.com/s/photos/vegetables'
+            ELSE 'https://unsplash.com/s/photos/food'
         END,
         'ACTIVE'
     FROM GENERATE_SERIES(1, 10) n;
 
-    -- Create brands with FREEPIK URLs
+    -- Create brands with UNSPLASH URLs
     INSERT INTO brands (
         id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
         business_id, name, image_url, description, status
@@ -248,17 +248,17 @@ BEGIN
             ELSE 'Brand ' || n
         END,
         CASE n
-            WHEN 1 THEN 'https://images.freepik.com/free-photo/premium-roasted-coffee-beans-close-up_1134-2345.jpg'
-            WHEN 2 THEN 'https://images.freepik.com/free-photo/local-farm-fresh-produce-market_1134-3456.jpg'
-            WHEN 3 THEN 'https://images.freepik.com/free-photo/artisan-food-preparation-kitchen_1134-4567.jpg'
-            WHEN 4 THEN 'https://images.freepik.com/free-photo/traditional-cuisine-heritage-food_1134-5678.jpg'
-            WHEN 5 THEN 'https://images.freepik.com/free-photo/farm-fresh-organic-vegetables_1134-6789.jpg'
-            WHEN 6 THEN 'https://images.freepik.com/free-photo/gourmet-food-fine-dining_1134-7890.jpg'
-            WHEN 7 THEN 'https://images.freepik.com/free-photo/traditional-kitchen-cooking-utensils_1134-8901.jpg'
-            WHEN 8 THEN 'https://images.freepik.com/free-photo/professional-chef-in-kitchen_1134-9012.jpg'
-            WHEN 9 THEN 'https://images.freepik.com/free-photo/royal-dining-elegant-table_1134-0123.jpg'
-            WHEN 10 THEN 'https://images.freepik.com/free-photo/deluxe-food-presentation_1134-1234.jpg'
-            ELSE 'https://images.freepik.com/free-photo/brand-identity-business-concept_1134-6789.jpg'
+            WHEN 1 THEN 'https://unsplash.com/s/photos/coffee-roasted'
+            WHEN 2 THEN 'https://unsplash.com/s/photos/farm-fresh'
+            WHEN 3 THEN 'https://unsplash.com/s/photos/artisan-cooking'
+            WHEN 4 THEN 'https://unsplash.com/s/photos/traditional-food'
+            WHEN 5 THEN 'https://unsplash.com/s/photos/farm-vegetables'
+            WHEN 6 THEN 'https://unsplash.com/s/photos/gourmet-food'
+            WHEN 7 THEN 'https://unsplash.com/s/photos/kitchen'
+            WHEN 8 THEN 'https://unsplash.com/s/photos/chef-cooking'
+            WHEN 9 THEN 'https://unsplash.com/s/photos/fine-dining'
+            WHEN 10 THEN 'https://unsplash.com/s/photos/restaurant-food'
+            ELSE 'https://unsplash.com/s/photos/food-brand'
         END,
         'Premium brand for quality #' || n, 'ACTIVE'
     FROM GENERATE_SERIES(1, 10) n;
@@ -267,7 +267,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- PRODUCTS (1000 products with FREEPIK MAIN IMAGES)
+-- PRODUCTS (1000 products with UNSPLASH MAIN IMAGES)
 -- ============================================================
 
 DO $$ DECLARE
@@ -304,18 +304,18 @@ BEGIN
             (RANDOM() * 500)::BIGINT as view_count,
             (RANDOM() * 100)::BIGINT as favorite_count,
             CASE (n % 12)
-                WHEN 1 THEN 'https://images.freepik.com/free-photo/coffee-latte-cup-with-ice_1134-1276.jpg'
-                WHEN 2 THEN 'https://images.freepik.com/free-photo/cappuccino-with-latte-foam_1134-567.jpg'
-                WHEN 3 THEN 'https://images.freepik.com/free-photo/small-cup-espresso-coffee_1134-456.jpg'
-                WHEN 4 THEN 'https://images.freepik.com/free-photo/chocolate-cake-slice-with-fork_1134-3456.jpg'
-                WHEN 5 THEN 'https://images.freepik.com/free-photo/delicious-cheesecake-slice_1134-2345.jpg'
-                WHEN 6 THEN 'https://images.freepik.com/free-photo/italian-tiramisu-dessert_1134-6789.jpg'
-                WHEN 7 THEN 'https://images.freepik.com/free-photo/grilled-fish-fillet-with-herbs_1134-1234.jpg'
-                WHEN 8 THEN 'https://images.freepik.com/free-photo/thai-pad-thai-noodles-shrimp_1134-5678.jpg'
-                WHEN 9 THEN 'https://images.freepik.com/free-photo/hearty-beef-stew-comfort-food_1134-9012.jpg'
-                WHEN 10 THEN 'https://images.freepik.com/free-photo/hot-soup-bowl-vegetable-broth_1134-7890.jpg'
-                WHEN 11 THEN 'https://images.freepik.com/free-photo/grilled-salmon-lemon-dill_1134-3456.jpg'
-                ELSE 'https://images.freepik.com/free-photo/asian-stir-fry-rice-noodles_1134-7890.jpg'
+                WHEN 1 THEN 'https://unsplash.com/s/photos/coffee'
+                WHEN 2 THEN 'https://unsplash.com/s/photos/cappuccino'
+                WHEN 3 THEN 'https://unsplash.com/s/photos/espresso'
+                WHEN 4 THEN 'https://unsplash.com/s/photos/chocolate-cake'
+                WHEN 5 THEN 'https://unsplash.com/s/photos/cheesecake'
+                WHEN 6 THEN 'https://unsplash.com/s/photos/tiramisu'
+                WHEN 7 THEN 'https://unsplash.com/s/photos/grilled-fish'
+                WHEN 8 THEN 'https://unsplash.com/s/photos/pad-thai'
+                WHEN 9 THEN 'https://unsplash.com/s/photos/beef-stew'
+                WHEN 10 THEN 'https://unsplash.com/s/photos/soup'
+                WHEN 11 THEN 'https://unsplash.com/s/photos/grilled-salmon'
+                ELSE 'https://unsplash.com/s/photos/asian-food'
             END as main_image_url
         FROM GENERATE_SERIES(1, 1000) n
     )
@@ -328,7 +328,7 @@ BEGIN
         has_sizes, has_active_promotion, view_count, favorite_count, main_image_url
     ) SELECT * FROM product_data;
 
-    RAISE NOTICE '1000 products created with FREEPIK main images';
+    RAISE NOTICE '1000 products created with UNSPLASH main images';
 END $$;
 
 -- ============================================================
@@ -359,7 +359,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- PRODUCT IMAGES (4 per product - ALL FREEPIK URLS)
+-- PRODUCT IMAGES (4 per product - ALL UNSPLASH URLS)
 -- ============================================================
 
 DO $$ DECLARE
@@ -376,23 +376,23 @@ BEGIN
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         p.id,
         CASE ((ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY p.id) - 1) % 12)
-            WHEN 0 THEN 'https://images.freepik.com/free-photo/coffee-latte-cup-with-ice_1134-1276.jpg'
-            WHEN 1 THEN 'https://images.freepik.com/free-photo/iced-coffee-with-straw-glass_1134-1987.jpg'
-            WHEN 2 THEN 'https://images.freepik.com/free-photo/refreshing-iced-coffee-summer-drink_1134-2456.jpg'
-            WHEN 3 THEN 'https://images.freepik.com/free-photo/cappuccino-coffee-with-foam-art_1134-890.jpg'
-            WHEN 4 THEN 'https://images.freepik.com/free-photo/creamy-cappuccino-latte_1134-1456.jpg'
-            WHEN 5 THEN 'https://images.freepik.com/free-photo/chocolate-cake-slice-with-fork_1134-3456.jpg'
-            WHEN 6 THEN 'https://images.freepik.com/free-photo/homemade-chocolate-cake_1134-4567.jpg'
-            WHEN 7 THEN 'https://images.freepik.com/free-photo/creamy-cheesecake-dessert_1134-3456.jpg'
-            WHEN 8 THEN 'https://images.freepik.com/free-photo/tiramisu-in-glass_1134-7890.jpg'
-            WHEN 9 THEN 'https://images.freepik.com/free-photo/grilled-salmon-lemon-dill_1134-3456.jpg'
-            WHEN 10 THEN 'https://images.freepik.com/free-photo/stir-fried-noodles-wok-pan_1134-6789.jpg'
-            ELSE 'https://images.freepik.com/free-photo/slow-cooked-beef-stew-vegetables_1134-0123.jpg'
+            WHEN 0 THEN 'https://unsplash.com/s/photos/coffee-latte'
+            WHEN 1 THEN 'https://unsplash.com/s/photos/iced-coffee'
+            WHEN 2 THEN 'https://unsplash.com/s/photos/coffee-cup'
+            WHEN 3 THEN 'https://unsplash.com/s/photos/cappuccino-latte'
+            WHEN 4 THEN 'https://unsplash.com/s/photos/creamy-cappuccino'
+            WHEN 5 THEN 'https://unsplash.com/s/photos/chocolate-cake'
+            WHEN 6 THEN 'https://unsplash.com/s/photos/homemade-cake'
+            WHEN 7 THEN 'https://unsplash.com/s/photos/cheesecake'
+            WHEN 8 THEN 'https://unsplash.com/s/photos/tiramisu-dessert'
+            WHEN 9 THEN 'https://unsplash.com/s/photos/salmon-grilled'
+            WHEN 10 THEN 'https://unsplash.com/s/photos/stir-fry-noodles'
+            ELSE 'https://unsplash.com/s/photos/beef-stew'
         END
     FROM products p, GENERATE_SERIES(1, 4) img_num
     WHERE p.business_id = bid;
 
-    RAISE NOTICE 'Product images created: 4 per product - ALL FREEPIK URLS';
+    RAISE NOTICE 'Product images created: 4 per product - ALL UNSPLASH URLS';
 END $$;
 
 -- ============================================================
@@ -432,7 +432,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- DELIVERY OPTIONS (5 methods - WITH FREEPIK URLS)
+-- DELIVERY OPTIONS (5 methods - WITH UNSPLASH URLS)
 -- ============================================================
 
 DO $$ DECLARE
@@ -447,25 +447,25 @@ BEGIN
     ) VALUES
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Standard Delivery', 'Regular delivery within 30-45 minutes',
-         'https://images.freepik.com/free-photo/delivery-truck-fast-transportation_1134-7890.jpg', 2.00, 'ACTIVE'),
+         'https://unsplash.com/s/photos/delivery-truck', 2.00, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Express Delivery', 'Fast delivery within 15-20 minutes',
-         'https://images.freepik.com/free-photo/fast-delivery-bike-motorcycle_1134-8901.jpg', 4.00, 'ACTIVE'),
+         'https://unsplash.com/s/photos/delivery-bike', 4.00, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Scheduled Delivery', 'Schedule delivery for specific time',
-         'https://images.freepik.com/free-photo/calendar-scheduling-delivery-service_1134-9012.jpg', 2.50, 'ACTIVE'),
+         'https://unsplash.com/s/photos/calendar-schedule', 2.50, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Pickup', 'Pick up from restaurant',
-         'https://images.freepik.com/free-photo/customer-pickup-service_1134-0123.jpg', 0.00, 'ACTIVE'),
+         'https://unsplash.com/s/photos/restaurant-pickup', 0.00, 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
          bid, 'Dine-in', 'Eat at our restaurant',
-         'https://images.freepik.com/free-photo/restaurant-dining-table-setup_1134-1234.jpg', 0.00, 'ACTIVE');
+         'https://unsplash.com/s/photos/restaurant-dining', 0.00, 'ACTIVE');
 
-    RAISE NOTICE 'Delivery options created: 5 methods with FREEPIK URLS';
+    RAISE NOTICE 'Delivery options created: 5 methods with UNSPLASH URLS';
 END $$;
 
 -- ============================================================
--- BANNERS (5 promotional banners - WITH FREEPIK URLS)
+-- BANNERS (5 promotional banners - WITH UNSPLASH URLS)
 -- ============================================================
 
 DO $$ DECLARE
@@ -479,22 +479,22 @@ BEGIN
         business_id, image_url, link_url, status
     ) VALUES
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'https://images.freepik.com/free-photo/restaurant-special-offer-promotion-banner_1134-2345.jpg',
+         bid, 'https://unsplash.com/s/photos/restaurant-promotion',
          '/menu/category/1', 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'https://images.freepik.com/free-photo/food-discount-sale-banner_1134-3456.jpg',
+         bid, 'https://unsplash.com/s/photos/food-sale-discount',
          '/menu/category/2', 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'https://images.freepik.com/free-photo/cuisine-culinary-advertising-banner_1134-4567.jpg',
+         bid, 'https://unsplash.com/s/photos/food-banner',
          '/menu/category/3', 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'https://images.freepik.com/free-photo/restaurant-menu-promotion-banner_1134-5678.jpg',
+         bid, 'https://unsplash.com/s/photos/restaurant-menu',
          '/menu/category/4', 'ACTIVE'),
         (gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-         bid, 'https://images.freepik.com/free-photo/delicious-food-special-menu-banner_1134-6789.jpg',
+         bid, 'https://unsplash.com/s/photos/delicious-food-menu',
          '/menu/category/5', 'ACTIVE');
 
-    RAISE NOTICE 'Banners created: 5 promotional banners with FREEPIK URLS';
+    RAISE NOTICE 'Banners created: 5 promotional banners with UNSPLASH URLS';
 END $$;
 
 -- ============================================================
@@ -611,7 +611,7 @@ BEGIN
             order_id, 0, t - (RANDOM() * INTERVAL '60 days'), t, 'system', 'system', false, NULL, NULL,
             bid, customer_id, order_num, 'Pending',
             '{"village":"Village 1","commune":"Commune 1","district":"District 1","province":"Phnom Penh Province","streetNumber":"Street 252","houseNumber":"House 123","note":"Near market","latitude":11.5564,"longitude":104.9282}',
-            '{"name":"Standard Delivery","description":"Regular delivery","imageUrl":"https://images.freepik.com/free-photo/delivery-truck-fast-transportation_1134-7890.jpg","price":2.00}',
+            '{"name":"Standard Delivery","description":"Regular delivery","imageUrl":"https://unsplash.com/s/photos/delivery-truck","price":2.00}',
             subtotal, discount_amt, deliv_fee, tax_amt, total_amt,
             CASE (order_counter % 4) WHEN 0 THEN 'CASH' WHEN 1 THEN 'BANK_TRANSFER' WHEN 2 THEN 'ONLINE' ELSE 'OTHER' END,
             CASE WHEN order_counter % 3 = 0 THEN 'UNPAID' WHEN order_counter % 3 = 1 THEN 'PAID' ELSE 'COMPLETED' END,
@@ -630,7 +630,7 @@ BEGIN
             ) VALUES (
                 gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
                 order_id, pid, NULL, 'Khmer Dish Item',
-                'https://images.freepik.com/free-photo/delicious-food-fresh-cooked-meal_1134-8901.jpg',
+                'https://unsplash.com/s/photos/delicious-food',
                 CASE WHEN item_n % 2 = 0 THEN 'Medium' ELSE 'Large' END,
                 (15.00 + (order_counter % 50))::NUMERIC,
                 (15.00 + (order_counter % 50))::NUMERIC,
@@ -693,7 +693,7 @@ BEGIN
         'staff' || n || '@phatrestaurant.com', 'staff' || n || '@phatrestaurant.com',
         '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
         'Staff', 'Member ' || n, '+855 10 123 ' || LPAD((n % 10000)::TEXT, 4, '0'),
-        'https://images.freepik.com/free-photo/restaurant-staff-portrait-professional_1134-7890.jpg',
+        'https://unsplash.com/s/photos/restaurant-staff',
         'BUSINESS_USER', 'ACTIVE', bid,
         role_names[((n-1) % 12 + 1)],
         'Phnom Penh, Cambodia', 'Staff member #' || n,
@@ -706,7 +706,7 @@ BEGIN
     WHERE u.email LIKE 'staff%@phatrestaurant.com'
     AND NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = u.id);
 
-    RAISE NOTICE '3500 staff users created with FREEPIK profile images';
+    RAISE NOTICE '3500 staff users created with UNSPLASH profile images';
 END $$;
 
 -- ============================================================
@@ -729,7 +729,7 @@ BEGIN
         'customer' || n || '@test.com', 'customer' || n || '@test.com',
         '$2a$12$hgZ6m7pwOA8AYv.r7YbuN.Yi8gHh.5NWqpEd2Jn6sgCRyu29a1DEK',
         'Customer', 'User ' || n, '+855 10 234 0' || LPAD(n::TEXT, 3, '0'),
-        'https://images.freepik.com/free-photo/happy-customer-profile-portrait_1134-8901.jpg',
+        'https://unsplash.com/s/photos/happy-customer',
         'CUSTOMER', 'ACTIVE', NULL, NULL, 'Phnom Penh, Cambodia', 'Customer account #' || n,
         t - (RANDOM() * INTERVAL '14 days'), t - (RANDOM() * INTERVAL '2 days'), 1
     FROM GENERATE_SERIES(1, 100) n;
@@ -800,19 +800,19 @@ BEGIN
 END $$;
 
 -- ============================================================
--- SUMMARY - ALL FREEPIK URLS
+-- SUMMARY - ALL UNSPLASH URLS
 -- ============================================================
 
 SELECT
-    '✓ SUCCESS - TEST DATA WITH ALL FREEPIK URLS GENERATED!' as status,
+    '✓ SUCCESS - TEST DATA WITH ALL UNSPLASH URLS GENERATED!' as status,
     (SELECT COUNT(*) FROM users) as total_users,
     (SELECT COUNT(*) FROM products) as total_products,
     (SELECT COUNT(*) FROM product_images) as total_product_images,
     (SELECT COUNT(*) FROM orders) as total_orders,
     (SELECT COUNT(*) FROM delivery_options) as total_delivery_options,
     (SELECT COUNT(*) FROM banners) as total_banners,
-    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%freepik%') FROM product_images) as freepik_product_images,
-    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%freepik%') FROM categories WHERE image_url IS NOT NULL) as freepik_categories,
-    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%freepik%') FROM brands WHERE image_url IS NOT NULL) as freepik_brands,
-    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%freepik%') FROM delivery_options WHERE image_url IS NOT NULL) as freepik_delivery,
-    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%freepik%') FROM banners WHERE image_url IS NOT NULL) as freepik_banners;
+    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%unsplash%') FROM product_images) as unsplash_product_images,
+    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%unsplash%') FROM categories WHERE image_url IS NOT NULL) as unsplash_categories,
+    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%unsplash%') FROM brands WHERE image_url IS NOT NULL) as unsplash_brands,
+    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%unsplash%') FROM delivery_options WHERE image_url IS NOT NULL) as unsplash_delivery,
+    (SELECT COUNT(DISTINCT image_url) FILTER (WHERE image_url LIKE '%unsplash%') FROM banners WHERE image_url IS NOT NULL) as unsplash_banners;
