@@ -574,10 +574,10 @@ BEGIN
         -- Add order status history - SCHEMA CORRECTED
         INSERT INTO order_status_history (
             id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by,
-            order_id, order_process_status_id, note, changed_by
+            order_id, order_process_status_id, note, changed_by_user_id
         ) VALUES (
             gen_random_uuid(), 0, t - (RANDOM() * INTERVAL '60 days'), t, 'system', 'system', false, NULL, NULL,
-            order_id, order_process_status_id, 'Order created', 'system'
+            order_id, order_process_status_id, 'Order created', NULL
         );
 
         -- Add order payment
