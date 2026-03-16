@@ -62,7 +62,8 @@ app:
     admin-email: "phatmenghor19@gmail.com"
     admin-password: "88889999"
     # Generate test data with sample businesses, products, and Freepik images
-    generate-test-data: true
+    # Set to false and trigger manually via API: POST /api/admin/test-data/generate
+    generate-test-data: false
   security:
     token-cleanup:
       enabled: true
