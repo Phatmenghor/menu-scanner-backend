@@ -313,7 +313,8 @@ BEGIN
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         (SELECT id FROM users WHERE user_type = 'CUSTOMER' ORDER BY RANDOM() LIMIT 1),
         (SELECT id FROM products ORDER BY RANDOM() LIMIT 1)
-    FROM GENERATE_SERIES(1, 10000) pf;
+    FROM GENERATE_SERIES(1, 10000) pf
+    ON CONFLICT DO NOTHING;
 
     -- ========== HR: WORK SCHEDULES ==========
     INSERT INTO work_schedules (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, date, start_time, end_time, type)
