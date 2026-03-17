@@ -268,8 +268,8 @@ BEGIN
         BEGIN
             SELECT id INTO customer_id FROM users WHERE user_type = 'CUSTOMER' ORDER BY RANDOM() LIMIT 1;
             SELECT id INTO business_id FROM businesses ORDER BY RANDOM() LIMIT 1;
-            SELECT id FROM products WHERE business_id = business_id ORDER BY RANDOM() LIMIT 1 INTO product_id;
-            SELECT id INTO status_id FROM order_process_statuses WHERE business_id = business_id AND name = 'Pending' LIMIT 1;
+            SELECT id FROM products p WHERE p.business_id = business_id ORDER BY RANDOM() LIMIT 1 INTO product_id;
+            SELECT id INTO status_id FROM order_process_statuses ops WHERE ops.business_id = business_id AND ops.name = 'Pending' LIMIT 1;
 
             UPDATE reference_counters SET counter_value = counter_value + 1 WHERE entity_type = 'ORDER' AND counter_date = CURRENT_DATE;
             SELECT counter_value INTO counter FROM reference_counters WHERE entity_type = 'ORDER' AND counter_date = CURRENT_DATE;
