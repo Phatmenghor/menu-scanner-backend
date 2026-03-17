@@ -352,16 +352,20 @@ BEGIN
     FROM (SELECT id FROM users WHERE user_type = 'BUSINESS_USER') aci_u, GENERATE_SERIES(1, 10) aci;
 
     -- ========== HR: LEAVES ==========
-    INSERT INTO leaves (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, start_date, end_date, reason, status, approved_by_user_id, approved_at)
+    INSERT INTO leaves (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, reference_number, user_id, business_id, leave_type_enum, start_date, end_date, total_days, reason, status, action_by, action_at, action_note)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        lv_u.business_id, lv_u.id,
+        'LEV-' || gen_random_uuid()::TEXT,
+        lv_u.id, lv_u.business_id,
+        (SELECT id FROM leave_type_enum ORDER BY RANDOM() LIMIT 1),
         (t + (INTERVAL '1 day' * (lv % 365)))::DATE,
         (t + (INTERVAL '1 day' * ((lv % 365) + 3)))::DATE,
+        (3 + (lv % 5))::DOUBLE PRECISION,
         'Leave reason ' || lv,
         CASE WHEN lv % 4 = 0 THEN 'PENDING' WHEN lv % 4 = 1 THEN 'APPROVED' WHEN lv % 4 = 2 THEN 'REJECTED' ELSE 'CANCELLED' END,
         CASE WHEN lv % 2 = 0 THEN (SELECT id FROM users lv_uu WHERE lv_uu.business_id = lv_u.business_id AND lv_uu.user_type = 'BUSINESS_USER' ORDER BY RANDOM() LIMIT 1) ELSE NULL END,
-        CASE WHEN lv % 2 = 0 THEN t ELSE NULL END
+        CASE WHEN lv % 2 = 0 THEN t ELSE NULL END,
+        CASE WHEN lv % 2 = 0 THEN 'Approved' ELSE NULL END
     FROM (SELECT id, business_id FROM users WHERE user_type = 'BUSINESS_USER') lv_u, GENERATE_SERIES(1, 2) lv;
 
     -- ========== EXCHANGE RATES ==========
