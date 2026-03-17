@@ -329,22 +329,27 @@ BEGIN
     FROM (SELECT id, business_id FROM users WHERE user_type = 'BUSINESS_USER') ws_u, GENERATE_SERIES(1, 10) ws;
 
     -- ========== HR: ATTENDANCE ==========
-    INSERT INTO attendances (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, date, total_hours, status)
+    INSERT INTO attendances (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, reference_number, user_id, business_id, work_schedule_id, attendance_date, status, remarks)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        att_u.business_id, att_u.id, (t - (INTERVAL '1 day' * (att % 60)))::DATE, (7 + (att % 2))::NUMERIC,
-        CASE WHEN att % 10 = 0 THEN 'ABSENT' ELSE 'PRESENT' END
+        'ATT-' || gen_random_uuid()::TEXT,
+        att_u.id, att_u.business_id, (SELECT id FROM work_schedules WHERE user_id = att_u.id LIMIT 1),
+        (t - (INTERVAL '1 day' * (att % 60)))::DATE,
+        CASE WHEN att % 10 = 0 THEN 'ABSENT' ELSE 'PRESENT' END,
+        'Attendance record ' || att
     FROM (SELECT id, business_id FROM users WHERE user_type = 'BUSINESS_USER') att_u, GENERATE_SERIES(1, 5) att;
 
     -- ========== HR: ATTENDANCE CHECK-INS ==========
-    INSERT INTO attendance_check_ins (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, check_in_time, check_out_time, notes)
+    INSERT INTO attendance_check_ins (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, reference_number, attendance_id, check_in_type, check_in_time, latitude, longitude, remarks)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
-        aci_u.business_id, aci_u.id,
+        'CHK-' || gen_random_uuid()::TEXT,
+        (SELECT id FROM attendances WHERE user_id = aci_u.id ORDER BY RANDOM() LIMIT 1),
+        CASE WHEN aci % 2 = 0 THEN 'CHECK_IN' ELSE 'CHECK_OUT' END,
         (t - (INTERVAL '1 day' * (aci % 60)))::TIMESTAMP + ('06:' || LPAD((aci % 60)::TEXT, 2, '0') || ':00')::TIME,
-        (t - (INTERVAL '1 day' * (aci % 60)))::TIMESTAMP + ('14:' || LPAD((aci % 60)::TEXT, 2, '0') || ':00')::TIME,
+        11.5564 + (aci::NUMERIC / 1000), 104.9282 + (aci::NUMERIC / 1000),
         'Check-in ' || aci
-    FROM (SELECT id, business_id FROM users WHERE user_type = 'BUSINESS_USER') aci_u, GENERATE_SERIES(1, 10) aci;
+    FROM (SELECT id FROM users WHERE user_type = 'BUSINESS_USER') aci_u, GENERATE_SERIES(1, 10) aci;
 
     -- ========== HR: LEAVES ==========
     INSERT INTO leaves (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, start_date, end_date, reason, status, approved_by_user_id, approved_at)
