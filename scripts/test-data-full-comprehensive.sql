@@ -339,7 +339,7 @@ BEGIN
     WHERE u.user_type = 'BUSINESS_USER';
 
     -- ========== HR: LEAVE (2000 records) ==========
-    INSERT INTO leave (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, start_date, end_date, reason, status, approved_by_user_id, approved_at)
+    INSERT INTO leaves (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, start_date, end_date, reason, status, approved_by_user_id, approved_at)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         u.business_id, u.id,
@@ -347,7 +347,7 @@ BEGIN
         (t + (INTERVAL '1 day' * ((lv % 365) + 3)))::DATE,
         'Leave reason ' || lv,
         CASE WHEN lv % 4 = 0 THEN 'PENDING' WHEN lv % 4 = 1 THEN 'APPROVED' WHEN lv % 4 = 2 THEN 'REJECTED' ELSE 'CANCELLED' END,
-        CASE WHEN lv % 2 = 0 THEN (SELECT id FROM users WHERE business_id = u.business_id AND user_type = 'BUSINESS_USER' ORDER BY RANDOM() LIMIT 1) ELSE NULL END,
+        CASE WHEN lv % 2 = 0 THEN (SELECT id FROM users uu WHERE uu.business_id = u.business_id AND uu.user_type = 'BUSINESS_USER' ORDER BY RANDOM() LIMIT 1) ELSE NULL END,
         CASE WHEN lv % 2 = 0 THEN t ELSE NULL END
     FROM users u, GENERATE_SERIES(1, 2) lv
     WHERE u.user_type = 'BUSINESS_USER';
