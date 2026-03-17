@@ -308,7 +308,7 @@ BEGIN
     FROM GENERATE_SERIES(1, 10000) pf;
 
     -- ========== HR: WORK SCHEDULES (1000 per business for staff) ==========
-    INSERT INTO work_schedule (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, date, start_time, end_time, type)
+    INSERT INTO work_schedules (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, date, start_time, end_time, type)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         u.business_id, u.id,
@@ -320,7 +320,7 @@ BEGIN
     WHERE u.user_type = 'BUSINESS_USER';
 
     -- ========== HR: ATTENDANCE (5000 records) ==========
-    INSERT INTO attendance (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, date, total_hours, status)
+    INSERT INTO attendances (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, date, total_hours, status)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         u.business_id, u.id, (t - (INTERVAL '1 day' * (att % 60)))::DATE, (7 + (att % 2))::NUMERIC, CASE WHEN att % 10 = 0 THEN 'ABSENT' ELSE 'PRESENT' END
@@ -328,7 +328,7 @@ BEGIN
     WHERE u.user_type = 'BUSINESS_USER';
 
     -- ========== HR: ATTENDANCE CHECK-IN (10000 records) ==========
-    INSERT INTO attendance_check_in (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, check_in_time, check_out_time, notes)
+    INSERT INTO attendance_check_ins (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, check_in_time, check_out_time, notes)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         u.business_id, u.id,
