@@ -118,10 +118,10 @@ BEGIN
     SELECT gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, (SELECT u.id FROM users u WHERE u.user_type = 'PLATFORM_USER' ORDER BY RANDOM() LIMIT 1), 'Business ' || n, 'business' || n || '@test.com', '+855 23 ' || LPAD((n % 10000)::TEXT, 4, '0'), 'Address ' || n || ', Phnom Penh', 'Business description ' || n, 'ACTIVE', CASE WHEN n % 2 = 0 THEN true ELSE false END
     FROM GENERATE_SERIES(1, 99) n;
 
-    -- ========== BUSINESS SETTINGS FOR ALL BUSINESSES ==========
+    -- ========== BUSINESS SETTINGS FOR OTHER BUSINESSES (key_business already has settings) ==========
     INSERT INTO business_settings (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, logo_url, banner_url, business_type, opening_time, closing_time, is_open_24_hours, working_days, timezone, currency, language, usd_to_khr_rate, contact_email, contact_phone, whatsapp_number, facebook_url, instagram_url, website_url, primary_color, secondary_color, email_notifications_enabled, sms_notifications_enabled, order_notifications_enabled, tax_rate, service_charge_percentage, min_order_amount, delivery_radius_km, estimated_delivery_time, terms_and_conditions, privacy_policy, refund_policy)
     SELECT gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL, bs.id, photo1, photo2, 'RESTAURANT', '06:00', '23:00', false, 'MONDAY-SUNDAY', 'Asia/Phnom_Penh', 'USD', 'en', 4100.0, bs.email, bs.phone, '+855 10 100 0001', photo1, photo2, photo1, '#FF6B6B', '#FFE66D', true, false, true, 0.0, 10.0, 5.0, 25.0, '30-45 minutes', 'Fresh guarantee', 'Data protection', 'Full refund'
-    FROM businesses bs;
+    FROM businesses bs WHERE bs.id != key_business_id;
 
     -- ========== SUBSCRIPTIONS FOR ALL BUSINESSES ==========
     INSERT INTO subscriptions (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, plan_id, start_date, end_date, auto_renew)
