@@ -276,7 +276,7 @@ BEGIN
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         oi_ord.id, oi_prod.id, NULL, 'Item', CASE WHEN oi_n % 2 = 0 THEN photo1 ELSE photo2 END,
         CASE WHEN oi_n % 2 = 0 THEN 'Medium' ELSE 'Large' END,
-        (10 + oi_n)::NUMERIC, (10 + oi_n)::NUMERIC, (10 + oi_n)::NUMERIC, oi_n, (oi_n * (10 + oi_n))::NUMERIC,
+        (10.00 + (oi_n % 50))::NUMERIC(10,2), (10.00 + (oi_n % 50))::NUMERIC(10,2), (10.00 + (oi_n % 50))::NUMERIC(10,2), (1 + (oi_n % 5))::INTEGER, ((10.00 + (oi_n % 50)) * (1 + (oi_n % 5)))::NUMERIC(10,2),
         false
     FROM
         (SELECT id FROM orders ORDER BY RANDOM() LIMIT 1) oi_ord,
