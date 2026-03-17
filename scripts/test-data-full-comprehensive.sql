@@ -345,7 +345,7 @@ BEGIN
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         'CHK-' || gen_random_uuid()::TEXT,
         (SELECT id FROM attendances WHERE user_id = aci_u.id ORDER BY RANDOM() LIMIT 1),
-        CASE WHEN aci % 2 = 0 THEN 'CHECK_IN' ELSE 'CHECK_OUT' END,
+        CASE WHEN aci % 2 = 0 THEN 'START' ELSE 'END' END,
         (t - (INTERVAL '1 day' * (aci % 60)))::TIMESTAMP + ('06:' || LPAD((aci % 60)::TEXT, 2, '0') || ':00')::TIME,
         11.5564 + (aci::NUMERIC / 1000), 104.9282 + (aci::NUMERIC / 1000),
         'Check-in ' || aci
