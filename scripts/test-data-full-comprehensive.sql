@@ -317,14 +317,15 @@ BEGIN
     ON CONFLICT DO NOTHING;
 
     -- ========== HR: WORK SCHEDULES ==========
-    INSERT INTO work_schedules (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, date, start_time, end_time, type)
+    INSERT INTO work_schedules (id, version, created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, business_id, user_id, name, schedule_type_enum, start_time, end_time, break_start_time, break_end_time)
     SELECT
         gen_random_uuid(), 0, t, t, 'system', 'system', false, NULL, NULL,
         ws_u.business_id, ws_u.id,
-        (t + (INTERVAL '1 day' * (ws % 30)))::DATE,
-        CASE WHEN ws % 3 = 0 THEN '06:00' WHEN ws % 3 = 1 THEN '10:00' ELSE '14:00' END,
-        CASE WHEN ws % 3 = 0 THEN '14:00' WHEN ws % 3 = 1 THEN '18:00' ELSE '22:00' END,
-        CASE WHEN ws % 2 = 0 THEN 'MORNING' ELSE 'EVENING' END
+        'Schedule ' || ws,
+        CASE WHEN ws % 2 = 0 THEN 'MORNING_SHIFT' ELSE 'EVENING_SHIFT' END,
+        CASE WHEN ws % 3 = 0 THEN '06:00'::TIME WHEN ws % 3 = 1 THEN '10:00'::TIME ELSE '14:00'::TIME END,
+        CASE WHEN ws % 3 = 0 THEN '14:00'::TIME WHEN ws % 3 = 1 THEN '18:00'::TIME ELSE '22:00'::TIME END,
+        '12:00'::TIME, '13:00'::TIME
     FROM (SELECT id, business_id FROM users WHERE user_type = 'BUSINESS_USER') ws_u, GENERATE_SERIES(1, 10) ws;
 
     -- ========== HR: ATTENDANCE ==========
